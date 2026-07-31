@@ -52,6 +52,13 @@ mean-binned to 29+31 points per channel (`quicklook_bin` 8) rather than the
 `quicklook_interval_s` is **1.0 s — the 2 kbit/s budget maximum** (1.814 kbit/s
 with HK), and it is the only knob that spends downlink budget:
 `sample_interval_s` and `exposure_us` are independent of it.
+
+**That 1 Hz depends on HK staying lean.** The budget leaves ~83 B for a framed
+HK packet, i.e. an **HK payload ceiling of 67 B**; `hk.SIZE` is 44 B today. The
+spec originally allowed ~180 B, at which size 1 Hz quick-look totals
+~2.9 kbit/s and busts the limit. Grow `Housekeeping` past 67 B and you must bin
+the quick-look harder or slow its cadence —
+`tests/test_fsw_telemetry.py::TestDownlinkBudget` fails first, by design.
 That is correct behaviour, but it looks broken if you wanted the instrument.
 "The GUI" in this project means the **bench panel**.
 

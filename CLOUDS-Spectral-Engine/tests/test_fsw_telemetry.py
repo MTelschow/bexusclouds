@@ -79,6 +79,25 @@ class TestDownlinkBudget:
         cfg = FswConfig(quicklook_interval_s=half)
         assert self._rate_kbit_s(cfg) > cfg.budget_kbit_s
 
+    def test_hk_payload_stays_within_its_ceiling(self):
+        """1 Hz quick-look only fits because HK is lean (SOFTWARE_SPEC.md).
+
+        The spec originally allowed HK ~180 B, at which size 1 Hz quick-look
+        totals ~2.9 kbit/s and busts the 2 kbit/s continuous limit. Growing
+        Housekeeping past the ceiling must fail here, not in flight.
+        """
+        from clouds_fsw.config import FswConfig
+        cfg = FswConfig()
+        overhead = len(frames.Frame(type=frames.PacketType.HK,
+                                    payload=b"").stamp().encode())
+        budget_bytes_s = cfg.budget_kbit_s * 1000 / 8
+        ql_and_pistatus = self._rate_kbit_s(cfg, hk_hz=0.0) * 1000 / 8
+        ceiling = budget_bytes_s - ql_and_pistatus - overhead   # payload bytes
+        assert hk.SIZE <= ceiling, (
+            f"HK payload {hk.SIZE} B exceeds the {ceiling:.0f} B that "
+            f"{cfg.quicklook_interval_s}s quick-look leaves: bin harder or "
+            f"slow the quick-look cadence")
+
 
 class TestSequenceNumbering:
     """One counter per packet type, as the MCU does and GapStats assumes."""

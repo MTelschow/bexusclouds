@@ -35,7 +35,7 @@ Code: `flight/mcu/` (M-xx), `flight/pi/` (P-xx), `gse/` (G-xx), `clouds_link/` +
 | P-01 | Spectrometer USB acquisition @ 1 Hz, both channels, exposure control — `spectro/eureca_driver.py` is cross-platform (Linux `.so` from `drivers/e9u_LSMD_LIB_Linux/`); ◐ until it is run against the camera on real Pi hardware | P0 | F.1, F.2, P.3 | ◐ |
 | P-02 | Pixel→wavelength calibration + dark handling (reuse `spectro/calibration.py`, `processing.py`) | P0 | F.2 | ✔ |
 | P-03 | Frame storage: ring buffer → block writes, timestamped files, 10-min rotation, CRC-16 | P0 | O.3, S.5 | ✔ |
-| P-04 | UDP telemetry: HK relay @ 1 Hz + 8×-binned quick-look spectrum / 30 s + events, ≤ 2 kbit/s avg | P0 | O.4 | ✔ |
+| P-04 | UDP telemetry: HK relay @ 1 Hz + 8×-binned quick-look spectrum @ 1 Hz + events, 1.814 of 2 kbit/s avg (needs HK payload ≤ 67 B — see SOFTWARE_SPEC.md) | P0 | O.4 | ✔ |
 | P-05 | TCP command server: ACK, arm/execute for actuator commands, forward to MCU over UART | P0 | S.8 | ✔ |
 | P-06 | UART master: command forwarding, HK ingest, time sync every 10 s (RTC/NTP master) | P0 | S.4 | ✔ |
 | P-07 | Communications log (all up/downlink traffic) to Pi SD | P1 | SED storage split | ✔ |

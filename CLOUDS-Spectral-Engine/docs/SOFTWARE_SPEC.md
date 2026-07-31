@@ -83,9 +83,36 @@ Capable of 450 fps; required rate 1 Hz → huge margin.
 | HK (2× temp, BME280, 2× pressure, IMU, actuator status) | 1 Hz, ≤ 256 B | ≤ 4.6 MB | 2× RP2350 SD (redundant) |
 | Event/error log | sporadic | ≪ 1 MB | all 3 cards |
 
-Downlink subset (O.4): HK packet 1 Hz (~180 B ≈ 1.5 kbit/s) + 8×-binned
-quick-look spectrum every 30 s (~1.1 kB burst ≈ 0.3 kbit/s avg) + events.
-Full-resolution data recovered from SD after landing.
+Downlink subset (O.4): HK packet 1 Hz + 8×-binned quick-look spectrum **1 Hz**
++ events. Full-resolution data recovered from SD after landing.
+
+Sizes below are the **encoded frame sizes of the implementation** (14 B header
++ payload + 2 B CRC), measured on the wire, not estimates:
+
+| Packet | Framed size | Cadence | Rate |
+|---|---|---|---|
+| HK (relayed, payload `hk.SIZE` = 44 B) | 60 B | 1 Hz | 0.480 kbit/s |
+| Quick-look, both channels (29 + 31 bins) | 164 B | 1 Hz | 1.312 kbit/s |
+| PISTATUS | 28 B | 10 s | 0.022 kbit/s |
+| **Total** | | | **1.814 kbit/s** of 2 kbit/s |
+
+~9 % margin, leaving ~24 B/s for sporadic events.
+
+This supersedes the earlier "quick-look every 30 s (~1.1 kB burst ≈ 0.3 kbit/s
+avg)". That 1.1 kB assumed ~256 bins per channel — i.e. the whole detector
+binned 8× — but the two fibre channels occupy only px 0–235 and 1516–1766, so
+8× binning yields **29 + 31 bins, 164 B for both channels**, roughly 7× smaller
+than assumed. The 30 s cadence was therefore ~30× more conservative than the
+link required; at the true size a quick-look accompanies every 1 Hz sample and
+still fits.
+
+**Constraint this introduces:** at 1 Hz quick-look the budget leaves ~83 B for
+a framed HK packet, i.e. an **HK payload of ≤ 67 B** (implementation: 44 B). HK
+was originally allowed ~180 B here; at that size 1 Hz quick-look would total
+~2.9 kbit/s and bust the 2 kbit/s continuous limit. If HK grows past ~67 B,
+either bin the quick-look harder or reduce its cadence.
+`tests/test_fsw_telemetry.py::TestDownlinkBudget` enforces this from real
+encoded frames, so exceeding it fails a test rather than the flight link.
 
 Buffering: ring buffers (Pi 64 kB, MCU 8 kB), block writes; storage write
 rate ≥ 100× data rate; on overflow drop the downlink copy, never the
