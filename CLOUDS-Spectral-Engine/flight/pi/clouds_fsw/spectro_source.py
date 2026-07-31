@@ -39,9 +39,39 @@ class SpectroSource:
         self._info = None
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
+        self._pending_exposure_us: int | None = None
         self.connected = False
         self.frames = 0
         self.errors = 0
+
+    @property
+    def info(self):
+        """Device identity from the last successful connect, or None."""
+        return self._info
+
+    @property
+    def exposure_us(self) -> int:
+        return self._exposure_us
+
+    def request_exposure_us(self, exposure_us: int) -> None:
+        """Ask for a new exposure from *another* thread (bench stream).
+
+        The vendor library is not thread-safe and only the acquisition thread
+        touches the driver, so this just parks the value; ``_run`` applies it
+        before the next grab.
+        """
+        self._pending_exposure_us = min(max(int(exposure_us), _EXP_MIN_US),
+                                        _EXP_MAX_US)
+
+    def _apply_pending_exposure(self) -> None:
+        us, self._pending_exposure_us = self._pending_exposure_us, None
+        if us is None or us == self._exposure_us or self._driver is None:
+            return
+        try:
+            self._driver.set_times_us(us)
+            self._exposure_us = us
+        except Exception:  # noqa: BLE001
+            self.errors += 1
 
     def start(self) -> None:
         self._thread = threading.Thread(target=self._run, daemon=True,
@@ -83,6 +113,7 @@ class SpectroSource:
                 if not self._connect():
                     self._stop.wait(self._reconnect_s)   # P-10 retry loop
                     continue
+            self._apply_pending_exposure()    # bench request, driver thread
             t0 = time.time()
             try:
                 counts = self._driver.grab()

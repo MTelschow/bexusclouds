@@ -107,7 +107,14 @@ class CommandServer:
 
     def stop(self) -> None:
         self.stopping.set()
-        self._server.shutdown()
+        # BaseServer.shutdown() waits for serve_forever() to exit, and blocks
+        # forever if it never ran: an error path unwinding between __init__ and
+        # start() would hang the app inside shutdown() instead of exiting. Only
+        # stop a loop that is really running; always release the socket.
+        if self._thread is not None:
+            self._server.shutdown()
+            self._thread.join(timeout=2.0)
+            self._thread = None
         self._server.server_close()
 
     # -- command policy ------------------------------------------------------

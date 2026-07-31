@@ -3,6 +3,7 @@
 Run on the Pi:      python -m clouds_fsw.main --config /etc/clouds/fsw.json
 Bench, no hardware: python -m clouds_fsw.main --mock
 Bench, real spectrometer but no MCU wired: python -m clouds_fsw.main --no-uart
+Bench + live panel at the same time:       ... --no-uart --bench-stream
 (from flight/pi/, with clouds_link + spectro on PYTHONPATH - see README)
 
 Design rule (S.7): nothing here gates the RP2350 sequence. Every component
@@ -24,6 +25,7 @@ from clouds_link.frames import EventSeverity, PacketType
 from spectro.calibration import Calibration
 from spectro.driver import open_driver
 
+from .bench_stream import BenchStream
 from .command_server import CommandServer, CommandState
 from .config import FswConfig
 from .spectro_source import SpectroSource
@@ -37,7 +39,7 @@ _EV_SPECTRO = 0x11
 
 
 class FlightApp:
-    def __init__(self, cfg: FswConfig, transport=None):
+    def __init__(self, cfg: FswConfig, transport=None, bench_port=None):
         self.cfg = cfg
         self.cal = Calibration.load(cfg.calibration_path)
         self.stop_event = threading.Event()
@@ -69,6 +71,16 @@ class FlightApp:
             auto_exposure=cfg.auto_exposure, reconnect_s=cfg.reconnect_s,
             on_status=self._on_spectro_status)
 
+        # Optional bench frame stream (off in flight). Serves the frames this
+        # app already acquired, so the live panel and the GSE dashboard can run
+        # at the same time on one detector - see bench_stream.py.
+        self.bench = None
+        if bench_port is not None:
+            self.bench = BenchStream(
+                info_provider=lambda: self.source.info,
+                exposure_setter=self.source.request_exposure_us,
+                log=self.comm_log.log, port=bench_port)
+
         self.watchdog = SystemdWatchdog()
         self._latest_frame = None
         self._latest_lock = threading.Lock()
@@ -81,6 +93,8 @@ class FlightApp:
         self.store.write(t, counts, exposure_us, flags)   # storage first, O.3
         with self._latest_lock:
             self._latest_frame = (t, counts, exposure_us)
+        if self.bench is not None:                        # bench mirror, O.3 first
+            self.bench.publish(counts, exposure_us)
 
     def _on_mcu_frame(self, frame: frames.Frame) -> None:
         if frame.type in (PacketType.HK, PacketType.EVENT):
@@ -139,6 +153,8 @@ class FlightApp:
         self.uart.start()
         self.cmd_server.start()
         self.source.start()
+        if self.bench is not None:
+            self.bench.start()
         self.watchdog.ready()
 
     def run(self) -> None:
@@ -177,6 +193,8 @@ class FlightApp:
             return
         self._shutdown_done.set()
         self.watchdog.stopping()
+        if self.bench is not None:
+            self.bench.stop()
         self.source.stop()
         self.cmd_server.stop()
         self.uart.stop()
@@ -202,6 +220,11 @@ def main(argv=None) -> int:
                     help="stub the UART only: real spectrometer, no RP2350 "
                          "attached (bench). Implied by --mock.")
     ap.add_argument("--data-dir", help="override data directory")
+    ap.add_argument("--bench-stream", nargs="?", type=int, const=4010,
+                    default=None, metavar="PORT",
+                    help="bench only: also serve acquired frames on PORT "
+                         "(default 4010) so `clouds_spectral.py --net HOST` "
+                         "runs live alongside the GSE dashboard. Off in flight.")
     args = ap.parse_args(argv)
 
     overrides = {}
@@ -218,7 +241,7 @@ def main(argv=None) -> int:
         # without this there is no way to run on a bench with no MCU wired up.
         transport, _ = PipeTransport.pair()
 
-    app = FlightApp(cfg, transport=transport)
+    app = FlightApp(cfg, transport=transport, bench_port=args.bench_stream)
     signal.signal(signal.SIGTERM, lambda *_: app.stop())
     try:
         app.run()

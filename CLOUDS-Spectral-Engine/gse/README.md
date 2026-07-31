@@ -6,6 +6,18 @@ with CSV/JSON export. The downlink-fed sibling of the bench app at the
 repo root — same `clouds_link` protocol, same `spectro` calibration +
 processing, with the UDP receiver in place of the USB driver.
 
+> **This is not a live instrument view.** Its quick-look spectrum is
+> mean-binned (`quicklook_bin`, 8) and rate-limited to the 2 kbit/s E-Link
+> budget — **one update roughly every 30 s** (`quicklook_interval_s`), and
+> the HK grid stays empty with no RP2350 attached. That is the flight
+> downlink working as specified, not a fault.
+>
+> To *look at the detector* — continuous trace, responds to light
+> immediately — use the bench panel instead:
+> `run_clouds_spectral_pi.bat`, i.e. `python clouds_spectral.py --net <pi>`.
+> Start the Pi with `clouds_fsw.main --no-uart --bench-stream` and both this
+> dashboard and that panel run at the same time off one detector.
+
 ## Run (from the repo root)
 
 ```sh

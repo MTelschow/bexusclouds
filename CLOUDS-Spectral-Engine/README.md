@@ -113,26 +113,52 @@ ssh clouds@192.168.100.10          # shell on the flight Pi
 python -m clouds_gse.main --gui    # ground station — defaults already match
 ```
 
-### Live bench view with the detector on the Pi
+### Which GUI: live instrument view vs flight downlink view
 
-The GSE dashboard is a *flight* view: quick-looks are binned and rate-limited to
-the 2 kbit/s E-Link budget (default one every 30 s), so it is not a live
-instrument display. For the bench panel's continuous view with the spectrometer
-plugged into the Pi, serve whole frames over the cable instead:
+Two GUIs, and picking the wrong one looks like a broken system:
+
+| Want to… | Use | Rate |
+|---|---|---|
+| **look at the detector** — trace responds to light immediately | `run_clouds_spectral_pi.bat` → `clouds_spectral.py --net <pi>` | continuous |
+| watch the **flight downlink** — HK, events, commanding, budget | `python -m clouds_gse.main --gui` | quick-look ~30 s, binned |
+
+The GSE dashboard is deliberately *not* a live instrument view: quick-looks are
+mean-binned and rate-limited to the 2 kbit/s E-Link budget
+(`quicklook_interval_s`), and with no RP2350 attached its HK grid stays empty.
+Working as specified — just not what you want when checking the spectrometer.
+
+### Both at once, one detector
+
+The vendor library owns the USB device **exclusively**, so the flight app and a
+standalone frame server cannot both hold it. `--bench-stream` resolves that by
+serving the frames the FSW has *already acquired*:
 
 ```sh
-# Pi — stop the FSW first, the vendor library owns the USB device exclusively
-python3 -m spectro.net_server                 # port 4010, full 2048-px frames
+# Pi — flight chain and live view from one process
+python3 -m clouds_fsw.main --no-uart --bench-stream
 
-# PC — the normal bench panel, live over the cable
-python clouds_spectral.py --net 192.168.100.10
+# PC — run both simultaneously
+python -m clouds_gse.main --gui --experiment 192.168.100.10   # downlink view
+run_clouds_spectral_pi.bat                                    # live view
 ```
 
-Measured **26 fps** end-to-end at 20 ms exposure (~50 KB/s), versus ~12 fps with
-the detector local — the cable is not the bottleneck. `spectro/net_driver.py`
-implements `SpectrometerDriver`, so the UI cannot tell the difference; the
-`"net"` kind is selectable anywhere `kind=` is (or via `CLOUDS_SPECTRO_HOST`).
-Bench only — it ignores the downlink budget and assumes a direct link.
+The live view then updates at the FSW's own cadence (`sample_interval_s`, 1 Hz
+in flight — lower it in the bench config for a faster trace). A bench client
+changing the exposure changes the *flight* exposure, since it is one shared
+detector; that is logged to the comms log, and the flag is off by default.
+
+For maximum frame rate with no flight chain running, the exclusive server still
+exists and reaches **26 fps** at 20 ms exposure (~50 KB/s), versus ~12 fps with
+the detector local — the cable is not the bottleneck:
+
+```sh
+python3 -m spectro.net_server        # port 4010, full 2048-px frames, exclusive
+```
+
+`spectro/net_driver.py` implements `SpectrometerDriver`, so the UI cannot tell
+the difference; the `"net"` kind is selectable anywhere `kind=` is (or via
+`CLOUDS_SPECTRO_HOST`). Bench only — it ignores the downlink budget and assumes
+a direct link.
 
 Neither end has a gateway on this link — it is host-to-host only, so both
 machines keep their normal default route (the Pi over `wlan0`) and `apt`/`pip`
