@@ -1,0 +1,28 @@
+{
+  "ground_host": "192.168.100.1",
+  "ground_port": 4000,
+  "cmd_bind": "0.0.0.0",
+  "cmd_port": 4001,
+
+  "uart_port": "/dev/ttyAMA0",
+  "uart_baud": 115200,
+
+  "data_dir": "/data/clouds",
+  "rotate_s": 600,
+  "flush_every": 10,
+
+  "spectro_kind": "std",
+  "sample_interval_s": 1.0,
+  "exposure_us": 100000,
+  "auto_exposure": false,
+  "reconnect_s": 5.0,
+
+  "quicklook_interval_s": 30.0,
+  "quicklook_bin": 8,
+  "pistatus_interval_s": 10.0,
+  "timesync_interval_s": 10.0,
+  "budget_kbit_s": 2.0,
+
+  "mcu_silent_alarm_s": 10.0,
+  "calibration_path": "/opt/clouds/calibration.json"
+}
