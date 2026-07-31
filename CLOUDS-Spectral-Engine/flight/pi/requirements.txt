@@ -1,0 +1,6 @@
+# CLOUDS FSW-PI - Raspberry Pi 5 flight application (Python 3.11+)
+numpy>=1.26          # frames + spectro processing
+scipy>=1.11          # spectro/processing.py (Savitzky-Golay)
+pyserial>=3.5        # UART link to the RP2350
+# dev/test only:
+#   pytest  (run the repo-root suite: python -m pytest tests/)

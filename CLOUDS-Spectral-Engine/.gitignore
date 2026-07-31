@@ -1,0 +1,22 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.idea/
+.vscode/
+.claude/
+*.spec
+.pytest_cache/
+
+# runtime artefacts (captures, exports, screenshots)
+output/
+
+# captured session data
+data/sessions/
+
+# vendor Linux library build trees (built from the tarball by install.sh)
+drivers/e9u_LSMD_LIB_Linux/e9u_lsmd_camera_library-*/

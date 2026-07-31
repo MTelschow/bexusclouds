@@ -1,0 +1,52 @@
+{
+  "schema": "clouds-spectral-calibration/1",
+  "instrument": {
+    "product": "EURECA e9u-SPMD-350850-10-Duo",
+    "board": "e9u_LSMD-TCD1304-PRO",
+    "detector": "Toshiba TCD1304DG",
+    "pixels": 2048,
+    "adc_bits": 12,
+    "transfer_bits": 16,
+    "count_full_scale": 65535,
+    "saturation_count": 65520,
+    "serials": {
+      "eureca": "20260312-004",
+      "insion": "P.167/999016",
+      "insion_article": "P.305.BG.0100"
+    }
+  },
+  "source": "INSION spectrometer data sheet P.167.PR.0001 (2026-05-12); 2nd-order wavelength-to-pixel fit on IF450/IF550/IF650/IF750/IF850. Extracted from 'EURECA Kalibrierkurve.pdf'.",
+  "wavelength_model": "poly2",
+  "wavelength_formula": "nm = a*x^2 + b*x + c   (x = pixel index)",
+  "channels": [
+    {
+      "name": "Ch1",
+      "role_default": "measurement",
+      "fiber": "SMA Ch1, 30 cm",
+      "pixel_window": [0, 235],
+      "poly": { "a": -3.2e-05, "b": 2.0017, "c": 383.6101 },
+      "range_nm": [383.6, 850.3],
+      "fwhm_nm": 7.4,
+      "intensity_correction": 1.289
+    },
+    {
+      "name": "Ch2",
+      "role_default": "reference",
+      "fiber": "SMA Ch2, 30 cm",
+      "pixel_window": [1516, 1766],
+      "poly": { "a": -2.2e-05, "b": 2.0693, "c": -2737.1739 },
+      "range_nm": [350.0, 850.0],
+      "fwhm_nm": 7.3,
+      "intensity_correction": 1.0
+    }
+  ],
+  "notes": [
+    "The Duo images BOTH fibre channels onto ONE 2048-px detector: Ch1 on the low pixels, Ch2 on the high pixels; the pixels between the windows are dark.",
+    "Both channels share a single exposure (one detector readout).",
+    "role_default (Ch1=measurement, Ch2=reference) is the app default; which physical SMA fibre is chamber vs reference is user-assignable in the UI.",
+    "Validated against a covers-on dark-frame: stray-light peaks fell inside the predicted Ch1/Ch2 windows, confirming this pixel axis matches the EURECA readout.",
+    "Factory polynomials. Empirical line-based recalibration is a planned later addition (recal tool).",
+    "Detector is the Toshiba TCD1304DG (confirmed via the DLL identity 'DT: TCD1304DG'), not a Hamamatsu sensor; the INSION serials above refer to the optical bench/calibration. Firmware reports CG1.36 / RN46.1: read noise ~46-50 e- rms; full well ~40-89 ke- and gain ~0.6-1.4 e-/count are ~2x uncertain (vendor spec 40-65 ke- vs CG1.36-derived 89 ke-). Absolute optical-power figures in docs/BENCH.md.",
+    "RAW-STREAM ARTIFACT: the USB transfer corrupts a random ~9% of pixels per frame to a fixed ~33514 (16-bit) code (it MOVES frame-to-frame, so dark-subtraction will not remove it); aggravated by the long ~5 m USB cable. Reject by MEDIAN-combining frames or clipping that code -- never plain-average (a mean lifts the true ~1500-count baseline to ~4500)."
+  ]
+}

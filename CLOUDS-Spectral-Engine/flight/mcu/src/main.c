@@ -1,0 +1,128 @@
+/* CLOUDS FSW-MCU main loop (RP2350).
+ *
+ * 1 Hz: read sensors -> log redundantly -> emit HK over UART -> step the
+ * sequencer. Every iteration: poll UART commands, service the timed
+ * actuator drives, kick the watchdog. Nothing in the loop blocks longer
+ * than one 10 ms pass, so the 2 s watchdog only ever bites on a real hang.
+ * The Pi is a peer, never a dependency (S.7): this loop is complete with
+ * the UART unplugged.
+ */
+#include <string.h>
+
+#include "pico/stdlib.h"
+
+#include "core/config.h"
+#include "core/frame.h"
+#include "core/sequencer.h"
+#include "hw/hw.h"
+#include "hw/uart_io.h"
+
+#define HK_PERIOD_MS 1000u
+
+static cfg_t cfg;
+static sequencer_t seq;
+static uint16_t hk_seq_no;
+static uint16_t ev_seq_no;
+
+static void send_event(uint8_t code, const char *msg)
+{
+    uint8_t payload[2 + 64];
+    uint16_t plen = event_pack(code, 1, msg, payload, sizeof payload);
+    uint32_t wall = hw_wall_s();
+
+    if (plen)
+        uart_io_send(PKT_EVENT, ev_seq_no++, wall, 0, payload, plen);
+    hw_log_event(code, msg, wall);
+}
+
+static void send_hk(uint64_t t_ms)
+{
+    hk_t hk;
+    uint8_t payload[HK_SIZE];
+    uint32_t wall = hw_wall_s();
+
+    memset(&hk, 0, sizeof hk);
+    hw_read_sensors(&hk);
+    hk.state = (uint8_t)seq.state;
+    hk.fired = seq.fired;
+    hk.flags = (uint8_t)((seq.autonomy.autonomous_latched
+                              ? MCUF_AUTONOMOUS_LATCHED
+                              : 0) |
+                         (seq.autonomy.has_seen_cmd &&
+                                  !seq.autonomy.autonomous_latched
+                              ? MCUF_LINK_OK
+                              : 0) |
+                         (seq.seal_verified ? MCUF_SEAL_VERIFIED : 0) |
+                         (seq.hold ? MCUF_HOLD : 0));
+    hk.uptime_s = (uint32_t)(t_ms / 1000u);
+    hk.mission_t_s = seq_mission_t_s(&seq, wall);
+
+    hw_log_hk(&hk, wall); /* storage copy first (O.3), then downlink */
+    hk_pack(&hk, payload);
+    uart_io_send(PKT_HK, hk_seq_no++, wall, 0, payload, HK_SIZE);
+
+    /* step the sequence with the same sensor sweep */
+    seq_step(&seq, t_ms, wall, hk.p_amb_pa, hk.p_ch_pa);
+}
+
+static void poll_commands(uint64_t t_ms)
+{
+    frame_view_t view;
+    uint8_t cmd, key;
+    int32_t value;
+    uint32_t ts_s;
+    uint16_t ts_ms;
+
+    while (uart_io_poll(&view)) {
+        if (view.type == PKT_CMD && cmd_unpack(&view, &cmd, &key, &value)) {
+            seq_command(&seq, t_ms, hw_wall_s(), cmd, key, value, &cfg);
+        } else if (view.type == PKT_TIMESYNC &&
+                   timesync_unpack(&view, &ts_s, &ts_ms)) {
+            hw_timesync(ts_s, ts_ms); /* S.4 */
+        }
+    }
+}
+
+/* Sequencer events go to both the SD log and the downlink. */
+static void event_shim(void *ctx, uint8_t code, const char *msg)
+{
+    (void)ctx;
+    send_event(code, msg);
+}
+
+int main(void)
+{
+    seq_persist_t restored;
+    bool have_restore;
+    uint64_t next_hk_ms = 0;
+    static seq_ops_t ops;
+
+    hw_init();
+    uart_io_init();
+
+    ops = hw_seq_ops;
+    ops.event = event_shim;
+
+    cfg_defaults(&cfg);
+    have_restore = hw_restore_persist(&restored); /* S.3 brownout resume */
+    seq_init(&seq, &cfg, &ops, have_restore ? &restored : NULL,
+             hw_monotonic_ms(), hw_wall_s());
+
+    hw_watchdog_enable(); /* after init: a hung boot must not loop forever */
+
+    for (;;) {
+        uint64_t now = hw_monotonic_ms();
+
+        hw_watchdog_kick();
+        poll_commands(now);
+        if (now >= next_hk_ms) {
+            send_hk(now);
+            next_hk_ms = now + HK_PERIOD_MS;
+        }
+        /* Start/end valve drives here, after the step that requested them:
+         * the 5 s pulse outlives the 2 s watchdog, so it is timed across
+         * loop passes instead of slept through (S.9). */
+        hw_actuators_service(hw_monotonic_ms());
+        sleep_ms(10);
+    }
+}

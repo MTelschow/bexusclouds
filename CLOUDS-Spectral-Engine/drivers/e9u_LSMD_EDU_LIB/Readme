@@ -1,0 +1,30 @@
+Compile Demo with Visual Studio for 64 Bit
+
+1st 
+create an empty C/C++ project
+
+2nd 
+choose Platform Target -> x64
+
+3rd 
+add one of the files e9u_LSMD_LIB/bin_src/e9u_LSMD_easy-access.c or e9u_LSMD_LIB/example/e9u_LSMD_thread_example.c to your project
+
+4th 
+add the file e9u_LSMD_LIB/lib_x64/libe9u_LSMD_x64.lib to your project
+
+5th 
+in the menu
+    Project 
+    -> Properties 
+    -> Configuration Properties 
+    -> C/C++ 
+    -> General 
+    -> Additional Include Directories
+add the path to e9u_LSMD_LIB/include
+
+6th 
+copy the file e9u_LSMD_LIB/lib_x64/libe9u_LSMD_x64.dll into the build directory
+(were the .exe will be)
+
+7th
+comile and run

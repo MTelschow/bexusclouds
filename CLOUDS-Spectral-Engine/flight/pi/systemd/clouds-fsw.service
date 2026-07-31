@@ -1,0 +1,25 @@
+# CLOUDS FSW-PI systemd unit (feature P-08, requirement S.9).
+# Install: copy to /etc/systemd/system/, then
+#   systemctl enable --now clouds-fsw
+# Pair with the hardware watchdog: set RuntimeWatchdogSec=15 in
+# /etc/systemd/system.conf (BCM2712 watchdog reboots the Pi if PID 1 hangs).
+[Unit]
+Description=CLOUDS flight software (FSW-PI)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+# deployment root containing clouds_fsw/, clouds_link/, spectro/
+WorkingDirectory=/opt/clouds
+Environment=PYTHONPATH=/opt/clouds
+ExecStart=/usr/bin/python3 -m clouds_fsw.main --config /etc/clouds/fsw.json
+Restart=always
+RestartSec=2
+WatchdogSec=15
+# storage must stay writable even if the service is wedged mid-write
+TimeoutStopSec=10
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

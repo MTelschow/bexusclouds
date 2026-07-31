@@ -1,0 +1,34 @@
+{
+  "schema": "clouds-spectral-calibration/1",
+  "instrument": {
+    "product": "EURECA e9u_LSMD-TCD1304-EDU (single channel)",
+    "board": "e9u_LSMD-TCD1304-EDU",
+    "detector": "Toshiba TCD1304DG",
+    "pixels": 3648,
+    "adc_bits": 12,
+    "transfer_bits": 16,
+    "count_full_scale": 65535,
+    "saturation_count": 65520
+  },
+  "source": "PLACEHOLDER - linear placeholder for the 3648-px EDU board, NOT factory INSION data. Recalibrate against your unit before trusting any wavelength.",
+  "wavelength_model": "poly2",
+  "wavelength_formula": "nm = a*x^2 + b*x + c   (x = pixel index)",
+  "channels": [
+    {
+      "name": "Ch1",
+      "role_default": "measurement",
+      "fiber": "single SMA fibre",
+      "pixel_window": [0, 3647],
+      "poly": { "a": 0.0, "b": 0.13710, "c": 350.0 },
+      "range_nm": [350.0, 850.0],
+      "fwhm_nm": 7.4,
+      "intensity_correction": 1.0
+    }
+  ],
+  "notes": [
+    "Loaded automatically by `python clouds_spectral.py --edu` (and by kind='edu' in the FSW), because the EDU board reads out 3648 px on ONE fibre - the Duo's calibration.json would slice a phantom reference channel out of it.",
+    "The pixel window and pixel count are hardware facts (e9u_LSMD_EDU_get_pixel_count reports 3648). The polynomial is NOT: it is a linear placeholder spreading the INSION bench's 350-850 nm evenly across the detector (b = 500 nm / 3647 px). Replace it with the factory data sheet for your EDU unit, or fit it with the Calibrate dialog against a known line source (see docs/CALIBRATION.md).",
+    "Single channel = no reference: the Engine hides the reference trace, ratio (transmission/absorbance) views fall back to counts, and the cursor/stats show 'ref --'.",
+    "An explicit CLOUDS_CALIBRATION env var, or the Calibrate dialog's Load..., overrides this file."
+  ]
+}

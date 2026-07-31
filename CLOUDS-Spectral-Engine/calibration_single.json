@@ -1,0 +1,33 @@
+{
+  "schema": "clouds-spectral-calibration/1",
+  "instrument": {
+    "product": "EURECA e9u-LSMD-TCD1304 (single channel)",
+    "board": "e9u_LSMD-TCD1304",
+    "detector": "Toshiba TCD1304DG",
+    "pixels": 2048,
+    "adc_bits": 12,
+    "transfer_bits": 16,
+    "count_full_scale": 65535,
+    "saturation_count": 65520
+  },
+  "source": "Example single-channel calibration (one fibre imaged across the whole detector).",
+  "wavelength_model": "poly2",
+  "wavelength_formula": "nm = a*x^2 + b*x + c   (x = pixel index)",
+  "channels": [
+    {
+      "name": "Ch1",
+      "role_default": "measurement",
+      "fiber": "single SMA fibre",
+      "pixel_window": [0, 2047],
+      "poly": { "a": 0.0, "b": 0.224, "c": 350.0 },
+      "range_nm": [350.0, 808.5],
+      "fwhm_nm": 7.4,
+      "intensity_correction": 1.0
+    }
+  ],
+  "notes": [
+    "Single-channel example: ONE fibre across the full detector, NO reference channel.",
+    "Load via the Calibrate dialog's Load... button or the CLOUDS_CALIBRATION env var. With no reference channel the Engine hides the reference trace, the ratio (transmission/absorbance) views fall back to counts, and the cursor/stats show 'ref --'. Recalibrate the linear b/c against your real STD/EDU unit.",
+    "For a 3648-px STD set pixels=3648 and pixel_window [0, 3647]."
+  ]
+}

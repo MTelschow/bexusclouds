@@ -1,0 +1,11 @@
+# CLOUDS Spectral Engine - pinned (Python 3.13, Windows, Microsoft-Store interpreter)
+numpy==2.2.6
+scipy==1.16.0           # Savitzky-Golay smoothing (spectro/processing.py)
+PyQt5==5.15.11
+matplotlib==3.10.8
+# branded PDF report + logo/icon assets
+reportlab==4.5.1
+pillow==12.1.1
+svglib==1.6.0
+# Hardware (EURECA e9u_LSMD Duo) is reached through the vendor DLL
+# libe9u_LSMD_x64.dll via ctypes (Python stdlib) - no extra package required.

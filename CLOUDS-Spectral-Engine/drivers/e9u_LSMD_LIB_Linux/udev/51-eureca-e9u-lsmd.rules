@@ -1,0 +1,8 @@
+# enable all interfaces:
+ACTION=="add", SUBSYSTEM=="tty", SUBSYSTEMS=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6010", ATTRS{manufacturer}=="EURECA", MODE="0666"
+
+# unbind unused interface case by case:
+ACTION=="add", ATTRS{interface}=="e9u_LSMD-TCD1304-ECO", SUBSYSTEMS=="usb", DRIVERS=="ftdi_sio", ATTRS{bInterfaceNumber}=="00", RUN="/bin/sh -c 'echo $kernel > /sys/bus/usb/drivers/ftdi_sio/unbind'"
+ACTION=="add", ATTRS{interface}=="e9u_LSMD-TCD1304-STD", SUBSYSTEMS=="usb", DRIVERS=="ftdi_sio", ATTRS{bInterfaceNumber}=="00", RUN="/bin/sh -c 'echo $kernel > /sys/bus/usb/drivers/ftdi_sio/unbind'"
+ACTION=="add", ATTRS{interface}=="e9u_LSMD-TCD1304-TRG", SUBSYSTEMS=="usb", DRIVERS=="ftdi_sio", ATTRS{bInterfaceNumber}=="00", RUN="/bin/sh -c 'echo $kernel > /sys/bus/usb/drivers/ftdi_sio/unbind'"
+ACTION=="add", ATTRS{interface}=="e9u_LSMD-TCD1304-PRO", SUBSYSTEMS=="usb", DRIVERS=="ftdi_sio", ATTRS{bInterfaceNumber}=="00", RUN="/bin/sh -c 'echo $kernel > /sys/bus/usb/drivers/ftdi_sio/unbind'"
