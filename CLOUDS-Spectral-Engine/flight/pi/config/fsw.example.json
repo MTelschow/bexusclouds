@@ -17,7 +17,7 @@
   "auto_exposure": false,
   "reconnect_s": 5.0,
 
-  "quicklook_interval_s": 30.0,
+  "quicklook_interval_s": 1.0,
   "quicklook_bin": 8,
   "pistatus_interval_s": 10.0,
   "timesync_interval_s": 10.0,

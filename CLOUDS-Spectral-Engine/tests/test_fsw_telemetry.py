@@ -35,6 +35,51 @@ class TestRelay:
         assert hk.Housekeeping.unpack(f.payload).p_amb_pa == 42_000
 
 
+class TestDownlinkBudget:
+    """The configured cadences must fit the 2 kbit/s continuous E-Link limit.
+
+    Sizes come from real encoded frames, not assumptions, so a payload or
+    cadence change that busts the budget fails here instead of in flight.
+    """
+
+    def _rate_kbit_s(self, cfg, hk_hz=1.0):
+        cal = Calibration.load(None)
+        counts = np.zeros(2048, dtype=np.uint16)
+        ql_bytes = sum(
+            len(frames.Frame(
+                type=frames.PacketType.QUICKLOOK,
+                payload=frames.pack_quicklook(
+                    i, cfg.quicklook_bin, 100,
+                    bin_channel(counts, ch.pixel_window[0], ch.pixel_window[1],
+                                cfg.quicklook_bin)),
+                seq=0).stamp().encode())
+            for i, ch in enumerate(cal.channels))
+        pistatus_bytes = len(frames.Frame(
+            type=frames.PacketType.PISTATUS,
+            payload=frames.pack_pistatus(1, 2, True, True, 3000),
+            seq=0).stamp().encode())
+        hk_bytes = len(frames.Frame(
+            type=frames.PacketType.HK, payload=hk.Housekeeping().pack(),
+            seq=0).stamp().encode())
+        per_s = (ql_bytes / cfg.quicklook_interval_s
+                 + pistatus_bytes / cfg.pistatus_interval_s
+                 + hk_bytes * hk_hz)
+        return per_s * 8 / 1000.0
+
+    def test_defaults_fit_the_continuous_budget(self):
+        from clouds_fsw.config import FswConfig
+        cfg = FswConfig()
+        rate = self._rate_kbit_s(cfg)
+        assert rate <= cfg.budget_kbit_s, f"{rate:.3f} kbit/s over budget"
+
+    def test_twice_as_fast_would_bust_it(self):
+        """Guards the claim that the default cadence IS the maximum."""
+        from clouds_fsw.config import FswConfig
+        half = FswConfig().quicklook_interval_s / 2
+        cfg = FswConfig(quicklook_interval_s=half)
+        assert self._rate_kbit_s(cfg) > cfg.budget_kbit_s
+
+
 class TestSequenceNumbering:
     """One counter per packet type, as the MCU does and GapStats assumes."""
 

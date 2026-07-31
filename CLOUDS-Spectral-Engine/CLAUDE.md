@@ -44,11 +44,14 @@ flight/mcu/test/run_native.sh           # firmware core (C, host compiler)
 | Goal | Use | Rate |
 |---|---|---|
 | **look at the detector**, see it respond to light | `clouds_spectral.py --net <pi>` (`run_clouds_spectral_pi.bat`) | continuous |
-| flight **downlink**: HK, events, commanding, budget | `clouds_gse.main --gui` | quick-look ~30 s, binned |
+| flight **downlink**: HK, events, commanding, budget | `clouds_gse.main --gui` | quick-look 1 Hz, binned |
 
-The GSE dashboard is **not** a live instrument view: quick-looks are mean-binned
-(`quicklook_bin` 8) and rate-limited to the 2 kbit/s E-Link budget
-(`quicklook_interval_s` 30 s), and its HK grid stays empty without the RP2350.
+The GSE dashboard is **not** a live instrument view: each quick-look is
+mean-binned to 29+31 points per channel (`quicklook_bin` 8) rather than the
+2048-px trace, and its HK grid stays empty without the RP2350.
+`quicklook_interval_s` is **1.0 s — the 2 kbit/s budget maximum** (1.814 kbit/s
+with HK), and it is the only knob that spends downlink budget:
+`sample_interval_s` and `exposure_us` are independent of it.
 That is correct behaviour, but it looks broken if you wanted the instrument.
 "The GUI" in this project means the **bench panel**.
 

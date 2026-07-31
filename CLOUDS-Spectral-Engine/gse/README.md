@@ -6,11 +6,11 @@ with CSV/JSON export. The downlink-fed sibling of the bench app at the
 repo root — same `clouds_link` protocol, same `spectro` calibration +
 processing, with the UDP receiver in place of the USB driver.
 
-> **This is not a live instrument view.** Its quick-look spectrum is
-> mean-binned (`quicklook_bin`, 8) and rate-limited to the 2 kbit/s E-Link
-> budget — **one update roughly every 30 s** (`quicklook_interval_s`), and
-> the HK grid stays empty with no RP2350 attached. That is the flight
-> downlink working as specified, not a fault.
+> **This is not a live instrument view.** Its quick-look spectrum updates at
+> **1 Hz** — `quicklook_interval_s`, the 2 kbit/s E-Link budget maximum
+> (1.814 kbit/s with HK) — and each update is mean-binned to 29+31 points per
+> channel (`quicklook_bin`, 8), not the 2048-px trace. The HK grid stays empty
+> with no RP2350 attached. That is the flight downlink working as specified.
 >
 > To *look at the detector* — continuous trace, responds to light
 > immediately — use the bench panel instead:

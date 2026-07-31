@@ -120,12 +120,32 @@ Two GUIs, and picking the wrong one looks like a broken system:
 | Want to… | Use | Rate |
 |---|---|---|
 | **look at the detector** — trace responds to light immediately | `run_clouds_spectral_pi.bat` → `clouds_spectral.py --net <pi>` | continuous |
-| watch the **flight downlink** — HK, events, commanding, budget | `python -m clouds_gse.main --gui` | quick-look ~30 s, binned |
+| watch the **flight downlink** — HK, events, commanding, budget | `python -m clouds_gse.main --gui` | quick-look 1 Hz, binned to 29+31 pts |
 
-The GSE dashboard is deliberately *not* a live instrument view: quick-looks are
-mean-binned and rate-limited to the 2 kbit/s E-Link budget
-(`quicklook_interval_s`), and with no RP2350 attached its HK grid stays empty.
-Working as specified — just not what you want when checking the spectrometer.
+The GSE dashboard is deliberately *not* a live instrument view: each quick-look
+is mean-binned to 29+31 points per channel (`quicklook_bin`) rather than the
+2048-px trace, and with no RP2350 attached its HK grid stays empty. Working as
+specified — just not what you want when checking the spectrometer.
+
+**Downlink cadence.** `quicklook_interval_s` is **1.0 s**, the maximum the
+2 kbit/s continuous E-Link limit allows, and it is the *only* knob that spends
+budget — acquisition (`sample_interval_s`) and `exposure_us` are independent of
+it, so transmitting more often changes nothing on the instrument. Measured frame
+sizes: quick-look cycle 164 B (80 + 84, both channels), PISTATUS 28 B, HK 60 B.
+
+| | rate |
+|---|---|
+| quick-look @ 1 Hz | 1.312 kbit/s |
+| HK @ 1 Hz (`HK_PERIOD_MS`, relayed from the MCU) | 0.480 kbit/s |
+| PISTATUS @ 0.1 Hz | 0.022 kbit/s |
+| **total, full flight mix** | **1.814 kbit/s** of 2.0 |
+| total with no RP2350 attached (bench today) | 1.334 kbit/s |
+
+Halving the interval would reach 3.1 kbit/s and bust the limit;
+`tests/test_fsw_telemetry.py::TestDownlinkBudget` asserts both directions from
+real encoded frame sizes, so a payload or cadence change cannot quietly exceed
+it. The headroom assumes HK stays at its implemented 44 B payload — the spec
+allows ~180 B, which would force the interval back to ~2.4 s.
 
 ### Both at once, one detector
 

@@ -28,7 +28,13 @@ class FswConfig:
     auto_exposure: bool = False    # optional guard servo
     reconnect_s: float = 5.0       # spectrometer retry period (P-10)
     # telemetry (O.4 downlink subset)
-    quicklook_interval_s: float = 30.0
+    # Transmitted spectra per second - this is the only knob that spends
+    # downlink budget; acquisition (sample_interval_s) and exposure_us are
+    # independent of it. 1.0 s is the budget maximum: a quick-look cycle is
+    # 164 B (both channels), so 1 Hz = 1.31 kbit/s on top of HK (60 B @ 1 Hz =
+    # 0.48) and PISTATUS (0.02) -> 1.81 kbit/s against the 2 kbit/s continuous
+    # E-Link limit. Guarded by tests/test_fsw_telemetry.py::TestDownlinkBudget.
+    quicklook_interval_s: float = 1.0
     quicklook_bin: int = 8
     pistatus_interval_s: float = 10.0
     timesync_interval_s: float = 10.0   # S.4
