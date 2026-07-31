@@ -79,7 +79,8 @@ class FlightApp:
             self.bench = BenchStream(
                 info_provider=lambda: self.source.info,
                 exposure_setter=self.source.request_exposure_us,
-                log=self.comm_log.log, port=bench_port)
+                log=self.comm_log.log, port=bench_port,
+                flight_exposure_us=cfg.exposure_us)
 
         self.watchdog = SystemdWatchdog()
         self._latest_frame = None

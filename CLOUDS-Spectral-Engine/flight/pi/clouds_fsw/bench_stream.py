@@ -19,11 +19,17 @@ sample and exposure changes are *requested*, then applied by that thread
 so this is the only safe arrangement.
 
 Consequences, deliberately:
-  * The live view updates at the FSW's own cadence (``sample_interval_s``,
-    1 Hz in flight), not at full detector rate. For fast work use the exclusive
-    ``spectro.net_server`` instead.
-  * A bench client setting the exposure changes the *flight* exposure - the
-    detector is shared. Hence opt-in, off by default, and logged.
+  * The live view updates at the FSW's own cadence - ``sample_interval_s``,
+    **1 Hz on the bench exactly as in flight**, never tuned up for bench use, so
+    the tested configuration is the flown one. For a faster trace use the
+    exclusive ``spectro.net_server`` instead of changing flight settings.
+  * The exposure is the one setting a client can change, because the detector is
+    physically shared. Each change is logged, and the configured flight
+    ``exposure_us`` is **restored when the last client disconnects** so a bench
+    session cannot leave the flight app on different settings. (Refusing the
+    change outright is not an option: the panel calls ``set_times_us`` from a Qt
+    slot without a guard, and PyQt5 aborts on an unhandled exception there.)
+  * Off by default; enabled only by ``--bench-stream``.
 """
 from __future__ import annotations
 
@@ -115,31 +121,48 @@ class _Handler(socketserver.StreamRequestHandler):
         finally:
             srv.clients.discard(peer)
             srv.log("bench", f"stream client gone: {peer}")
+            srv.restore_flight_exposure()
 
 
 class _Server(socketserver.ThreadingTCPServer):
     allow_reuse_address = True
     daemon_threads = True
 
-    def __init__(self, addr, hub, info_provider, exposure_setter, log):
+    def __init__(self, addr, hub, info_provider, exposure_setter, log,
+                 flight_exposure_us=None):
         self.hub = hub
         self.info_provider = info_provider
         self.exposure_setter = exposure_setter
         self.log = log
+        self.flight_exposure_us = flight_exposure_us
         self.clients: set[str] = set()
         super().__init__(addr, _Handler)
+
+    def restore_flight_exposure(self) -> None:
+        """Put the configured flight exposure back once nobody is watching.
+
+        The bench must not leave the flight app on different settings; only the
+        last client out restores it, so two panels do not fight.
+        """
+        if self.clients or self.flight_exposure_us is None:
+            return
+        self.exposure_setter(self.flight_exposure_us)
+        self.log("bench", f"last client gone: exposure restored to the "
+                          f"configured {self.flight_exposure_us} us")
 
 
 class BenchStream:
     """Lifecycle wrapper: ``publish()`` from the acquisition thread."""
 
     def __init__(self, info_provider, exposure_setter, log=None,
-                 bind: str = "0.0.0.0", port: int = DEFAULT_PORT):
+                 bind: str = "0.0.0.0", port: int = DEFAULT_PORT,
+                 flight_exposure_us: int | None = None):
         self.hub = FrameHub()
         self._addr = (bind, int(port))
         self._info_provider = info_provider
         self._exposure_setter = exposure_setter
         self._log = log or (lambda *_: None)
+        self._flight_exposure_us = flight_exposure_us
         self._srv: _Server | None = None
         self._thread: threading.Thread | None = None
 
@@ -152,7 +175,8 @@ class BenchStream:
 
     def start(self) -> None:
         self._srv = _Server(self._addr, self.hub, self._info_provider,
-                            self._exposure_setter, self._log)
+                            self._exposure_setter, self._log,
+                            self._flight_exposure_us)
         self._thread = threading.Thread(target=self._srv.serve_forever,
                                         daemon=True, name="bench-stream")
         self._thread.start()

@@ -142,10 +142,17 @@ python -m clouds_gse.main --gui --experiment 192.168.100.10   # downlink view
 run_clouds_spectral_pi.bat                                    # live view
 ```
 
-The live view then updates at the FSW's own cadence (`sample_interval_s`, 1 Hz
-in flight — lower it in the bench config for a faster trace). A bench client
-changing the exposure changes the *flight* exposure, since it is one shared
-detector; that is logged to the comms log, and the flag is off by default.
+The live view updates at the FSW's acquisition cadence, which is **1 Hz on the
+bench exactly as in flight** (`sample_interval_s`). The bench runs the same
+config as flight — no faster sampling, no bench-only tuning — so what you watch
+here is the real flight cadence, and there is one less difference between the
+tested and flown configuration.
+
+One setting is unavoidably shared: the panel sets the exposure on the single
+physical detector, so it does change the *flight* exposure while connected. Every
+change is logged to the comms log, and the FSW **restores the configured
+`exposure_us` when the last bench client disconnects**, so a bench session cannot
+silently leave the flight app on different settings. The flag is off by default.
 
 For maximum frame rate with no flight chain running, the exclusive server still
 exists and reaches **26 fps** at 20 ms exposure (~50 KB/s), versus ~12 fps with

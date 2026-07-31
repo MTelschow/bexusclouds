@@ -4,6 +4,8 @@ Covers the invariant that makes it safe: the stream never touches the driver -
 frames come from the acquisition callback and exposure changes are parked for
 the acquisition thread to apply.
 """
+import time
+
 import numpy as np
 import pytest
 
@@ -18,7 +20,8 @@ def stream():
     info = DeviceInfo(model="e9u_LSMD-TCD1304-PRO", serial="SN-TEST",
                       com_port="/dev/ttyUSB1", pixels=2048)
     bs = BenchStream(info_provider=lambda: info,
-                     exposure_setter=applied.append, port=0)
+                     exposure_setter=applied.append, port=0,
+                     flight_exposure_us=100_000)
     bs.start()
     yield bs, applied
     bs.stop()
@@ -75,6 +78,38 @@ class TestBenchStream:
     def test_client_count_tracked(self, client):
         _drv, bs, _applied = client
         assert bs.clients == 1
+
+
+class TestFlightSettingsRestored:
+    """The bench must not leave the flight app on different settings."""
+
+    def test_exposure_restored_when_last_client_leaves(self, stream):
+        bs, applied = stream
+        drv = NetDriver(f"127.0.0.1:{bs.port}")
+        drv.connect()
+        drv.set_times_us(5_000)
+        assert applied == [5_000]
+        drv.close()
+        deadline = time.time() + 3.0
+        while bs.clients and time.time() < deadline:
+            time.sleep(0.02)
+        while applied[-1] != 100_000 and time.time() < deadline:
+            time.sleep(0.02)
+        assert applied[-1] == 100_000        # configured flight exposure back
+
+    def test_no_restore_while_another_client_watches(self, stream):
+        bs, applied = stream
+        a = NetDriver(f"127.0.0.1:{bs.port}")
+        b = NetDriver(f"127.0.0.1:{bs.port}")
+        a.connect()
+        b.connect()
+        a.set_times_us(5_000)
+        a.close()
+        time.sleep(0.4)                      # b is still connected
+        try:
+            assert applied == [5_000]        # not restored yet
+        finally:
+            b.close()
 
 
 class TestDisabledByDefault:

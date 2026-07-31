@@ -1,0 +1,164 @@
+# CLOUDS Spectral Engine — working notes
+
+BEXUS 38 dual-spectrometer software: a Qt **bench panel**, the **Raspberry Pi 5
+flight app** (FSW-PI), the **RP2350 sequencer firmware**, and the **ground
+station** (GSE), all sharing one protocol (`clouds_link/`) and one instrument
+layer (`spectro/`).
+
+`docs/` is the source of truth for design detail — `DRIVER.md` (vendor
+libraries, USB glitch), `CALIBRATION.md` (pixel→nm, **data scaling**),
+`SOFTWARE_SPEC.md` / `SOFTWARE_FEATURES.md` (spec + feature status),
+`DEVLOG.md` (why things are as they are), `UI_STYLE.md`, `BENCH.md`.
+Don't duplicate them here; update them when behaviour changes.
+
+## Commands
+
+`PYTHONPATH` must include the repo root, plus `gse/` and `flight/pi/` for their
+packages. On Windows also `$env:PYTHONIOENCODING='utf-8'` for `verify_qt.py`.
+
+```sh
+# bench panel (detector on this machine)
+python clouds_spectral.py               # real Duo
+python clouds_spectral.py --edu         # single-channel EDU board (Windows only)
+python clouds_spectral.py --mock        # synthetic, no hardware
+python clouds_spectral.py --net 192.168.100.10    # detector on the Pi
+
+# flight app (on the Pi, from /opt/clouds)
+python3 -m clouds_fsw.main --config /etc/clouds/fsw.json
+python3 -m clouds_fsw.main --mock                  # mock spectrometer + UART stub
+python3 -m clouds_fsw.main --no-uart               # real detector, no RP2350 wired
+python3 -m clouds_fsw.main --no-uart --bench-stream  # + serve the live panel
+
+# ground station
+python -m clouds_gse.main --gui --experiment 192.168.100.10
+
+# checks — run all three before committing
+python -m pytest tests/                 # 130+ tests, no hardware needed
+python verify.py                        # driver + calibration self-checks
+python -u verify_qt.py                  # offscreen UI; must end "VERIFY OK"
+flight/mcu/test/run_native.sh           # firmware core (C, host compiler)
+```
+
+## Which GUI — read this before "opening the GUI"
+
+| Goal | Use | Rate |
+|---|---|---|
+| **look at the detector**, see it respond to light | `clouds_spectral.py --net <pi>` (`run_clouds_spectral_pi.bat`) | continuous |
+| flight **downlink**: HK, events, commanding, budget | `clouds_gse.main --gui` | quick-look ~30 s, binned |
+
+The GSE dashboard is **not** a live instrument view: quick-looks are mean-binned
+(`quicklook_bin` 8) and rate-limited to the 2 kbit/s E-Link budget
+(`quicklook_interval_s` 30 s), and its HK grid stays empty without the RP2350.
+That is correct behaviour, but it looks broken if you wanted the instrument.
+"The GUI" in this project means the **bench panel**.
+
+## Architecture
+
+- **Strict driver/UI split.** UI and FSW talk only to
+  `spectro.driver.SpectrometerDriver` via `open_driver(mock=, kind=)`. Kinds:
+  `std` (Duo), `edu` (EDU board), `net` (remote — `spectro/net_driver.py` over
+  TCP to `spectro.net_server` or the FSW's `--bench-stream`). Construction must
+  stay side-effect-free; reaching hardware is `connect()`'s job
+  (`tests/test_driver_factory.py` enforces this).
+- **`spectro/` is shared** by bench app, FSW and GSE — calibration, processing,
+  export. The GSE swaps the USB driver for a downlink source.
+- **`clouds_link/`** is one schema for MCU, Pi and GSE: CRC-16/CCITT-FALSE,
+  COBS, 14-byte frame header, HK, commands.
+- **The Pi never sequences the experiment** (S.7). Losing it degrades the
+  mission; it cannot block the release. The MCU is autonomous; the Pi's command
+  server is authoritative for arm/execute and the ground interlock.
+
+Env vars: `CLOUDS_SPECTRO_KIND`, `CLOUDS_SPECTRO_HOST`, `CLOUDS_CALIBRATION`,
+`CLOUDS_E9U_DLL_DIR` / `CLOUDS_E9U_LIB_DIR`, `CLOUDS_E9U_COUNT_SHIFT`.
+
+## Hardware
+
+EURECA **e9u-SPMD-350850-10-Duo**, board `e9u_LSMD-TCD1304-PRO`, **S/N
+20260312-004**, INSION bench, **Toshiba TCD1304DG** 2048-px line CCD.
+USB → FTDI **FT2232H** (`0403:6010`, iSerial `EU02290003`) → VCP serial. The
+vendor library auto-detects the camera; no COM port or tty is hardcoded.
+
+- **One detector carries both fibre channels.** `calibration.json`: Ch1 window
+  `[0, 235]` (measurement), Ch2 `[1516, 1766]` (reference); the gap is dark.
+  One shared exposure for both.
+- **ADC is 12-bit**, transfer 16 bits/pixel. Identity reports
+  `Dark_Pixel: 0 x 16` *before* `Pixel: 1 x 2048` — parse with care.
+- `saturation_count` is **65520**, i.e. the 16-bit scale (12-bit × 16), not 4095.
+
+## Traps that have cost real time
+
+**Data scaling differs by platform.** The Windows DLL returns each sample
+left-shifted into 16 bits (0..65520); the **Linux `.so` returns raw 12-bit**.
+`spectro/eureca_driver.py` normalises Linux up (`grab()` and `dark_value()`
+share the shift; `CLOUDS_E9U_COUNT_SHIFT=0` disables). Without it every
+`saturation_count` threshold breaks: clipping is undetectable and the P-09
+exposure servo only ever ramps up. See `docs/CALIBRATION.md`.
+
+**The vendor library owns the USB device exclusively.** The FSW and a
+standalone `spectro.net_server` cannot both hold it. To run the flight chain and
+the live panel together use `clouds_fsw.main --bench-stream`, which serves
+frames the FSW already acquired and never touches the driver.
+
+**udev rules are `ACTION=="add"`.** `udevadm trigger` defaults to `change`, so a
+plain trigger applies nothing while appearing to succeed — the tty stays `0660`
+with `ftdi_sio` on interface 0. Use
+`udevadm trigger --action=add --subsystem-match=usb --subsystem-match=tty`, or
+software-replug: `echo -n 1-1.2 | sudo tee /sys/bus/usb/drivers/usb/{unbind,bind}`.
+Correct end state: one tty at `0666`, interface `:1.0` unbound.
+
+**A charge-only USB cable** enumerates as Code 43 / `Port Reset Failed` and the
+camera is invisible. Use a data cable.
+
+**PyQt5 aborts the process** on an unhandled exception in a slot.
+`clouds_spectral.py` calls `set_times_us()` / `grab()` from a timer slot without
+a guard, so a driver that raises there kills the panel — never make a driver
+method fail where the UI cannot handle it.
+
+**`socketserver.shutdown()` blocks forever if `serve_forever()` never ran.**
+Guard `stop()` on "was it started", or an error path unwinding before `start()`
+hangs the app instead of exiting.
+
+**Sequence numbers are per packet type**, on both the MCU (`hk_seq_no`,
+`ev_seq_no`) and the Pi (`Downlink._next_seq`). A single shared counter makes
+every interleaved packet of another type look lost. `EVENT` has two independent
+emitters (MCU-relayed and Pi-origin), so it is in
+`clouds_link.frames.UNSEQUENCED_TYPES`: counted, never charged as loss.
+
+**On the Pi, `pkill -f` / `pgrep -f` match your own command line** — including
+strings inside `echo`. Bracket the pattern (`"clouds_fs[w].main"`) *and* keep the
+literal name out of surrounding messages, or the shell kills itself mid-script.
+
+## Bench setup (PC ↔ Pi)
+
+Direct Ethernet, no switch, no DHCP, no gateway — host-to-host only, so both
+machines keep their normal default route (the Pi's internet is `wlan0`).
+
+| End | Address | Ports |
+|---|---|---|
+| PC (ground) | `192.168.100.1/24` static | — |
+| Pi (experiment) | `192.168.100.10/24` static, `eth0` | UDP 4000 downlink, TCP 4001 commands, TCP 4010 bench frames |
+
+Addresses match `FswConfig.ground_host` and the GSE `--experiment` default, so
+both run with no host flags. `pi.local` resolves to the **WiFi** address —
+address `192.168.100.10` explicitly for the cable, and check `$SSH_CONNECTION`.
+Pi config is persistent in `/etc/netplan/90-NM-75a1216a-*.yaml`.
+
+Pi is **Debian 13 / Python 3.13, PEP 668** — install deps with apt
+(`python3-numpy python3-scipy python3-serial`), not pip; pip would build scipy
+from source on ARM. Deployment lives in `/opt/clouds` with `clouds_fsw/`,
+`clouds_link/`, `spectro/` side by side and **`calibration.json` as a sibling of
+`spectro/`** (`_DEFAULT_JSON` resolves to `spectro/../calibration.json`).
+Vendor library: `/usr/local/lib/libe9u_LSMD.so` via
+`drivers/e9u_LSMD_LIB_Linux/install.sh`.
+
+## Conventions
+
+- **The bench runs the same settings as flight.** `sample_interval_s` is 1 Hz in
+  both — never tune it up for bench use. For a faster trace use the exclusive
+  `spectro.net_server`, not a settings change. The one shared-hardware exception
+  is exposure: a bench client changes it on the real detector, so it is logged
+  and the configured `exposure_us` is restored when the last client disconnects.
+- Calibration lives in `calibration.json`, never hardcoded in the UI.
+- Storage first, then downlink (O.3) — see `FlightApp._on_spectrum`.
+- Don't commit unless asked; the default branch is `main`.
+- New hardware findings belong in `docs/`, with the measurement that showed it.
