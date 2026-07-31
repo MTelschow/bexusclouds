@@ -86,7 +86,11 @@ class SessionLog:
              "files": {"hk": self.hk_path, "events": self.events_path,
                        "quicklook": self.ql_path}}
         if gaps is not None:
-            s["link"] = {"received": gaps.received, "lost": gaps.lost}
+            # "unsequenced" = packets received but exempt from gap accounting
+            # (dual-origin types, see clouds_link.frames.UNSEQUENCED_TYPES), so
+            # "lost" is never inflated by them and is not a coverage claim.
+            s["link"] = {"received": gaps.received, "lost": gaps.lost,
+                         "unsequenced": getattr(gaps, "unsequenced", 0)}
         return s
 
     def export_summary(self, path: str, gaps=None) -> None:

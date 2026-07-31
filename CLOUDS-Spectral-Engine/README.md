@@ -39,33 +39,33 @@ Qt patterns of the *CLOUDS Raytracing Engine*.
 
 ## Documentation
 
-| Doc | Covers |
-|---|---|
-| [`docs/DRIVER.md`](docs/DRIVER.md) | Driver architecture, all three vendor libraries, detector facts, USB-glitch mechanism & mitigation |
-| [`docs/CALIBRATION.md`](docs/CALIBRATION.md) | Pixel → wavelength fit, data scaling, validation |
-| [`docs/BENCH.md`](docs/BENCH.md) | Home-Assistant-driven light/shutter QC rig + findings |
-| [`docs/UI_STYLE.md`](docs/UI_STYLE.md) | CLOUDS design language, shared widgets/patterns |
-| [`docs/DEVLOG.md`](docs/DEVLOG.md) | Why each feature is built as it is, with the mock/live evidence |
+| Doc                                           | Covers                                                                                             |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| [`docs/DRIVER.md`](docs/DRIVER.md)           | Driver architecture, all three vendor libraries, detector facts, USB-glitch mechanism & mitigation |
+| [`docs/CALIBRATION.md`](docs/CALIBRATION.md) | Pixel → wavelength fit, data scaling, validation                                                  |
+| [`docs/BENCH.md`](docs/BENCH.md)             | Home-Assistant-driven light/shutter QC rig + findings                                              |
+| [`docs/UI_STYLE.md`](docs/UI_STYLE.md)       | CLOUDS design language, shared widgets/patterns                                                    |
+| [`docs/DEVLOG.md`](docs/DEVLOG.md)           | Why each feature is built as it is, with the mock/live evidence                                    |
 
 ## Repository layout
 
-| Path | Role |
-|---|---|
-| `clouds_spectral.py` | Qt control panel + live dual-trace spectrum view |
-| `spectro/driver.py` | `SpectrometerDriver` interface + `open_driver(mock=, kind=)` factory |
-| `spectro/eureca_driver.py` | ctypes wrapper over the Duo vendor library — Windows DLL or Linux `.so` |
-| `spectro/eureca_edu_driver.py` | ctypes wrapper over `libe9u_LSMD_EDU_x64.dll` (single-channel EDU board, Windows only) |
-| `spectro/mock_driver.py` | synthetic Duo frames for hardware-free testing |
-| `spectro/calibration.py` | `calibration.json` → pixel→nm, channel split, dark subtract |
-| `spectro/processing.py` | averaging, ratio / transmission / absorbance, saturation flags |
-| `spectro/export.py` | CSV session log + branded PDF report |
-| `calibration.json` / `calibration_edu.json` | factory INSION pixel→wavelength polynomials (Duo / EDU, versioned) |
-| `vendor/` | EURECA Duo Windows DLL (`libe9u_LSMD_x64.dll`) + runtime deps + licence |
-| `drivers/e9u_LSMD_LIB_Linux/` | EURECA Duo **Linux** vendor source + build/udev installer (feature P-01) |
-| `drivers/e9u_LSMD_EDU_LIB/` | EURECA EDU vendor SDK (headers, C source, `libe9u_LSMD_EDU_x64.dll`) |
-| `verify.py` / `verify_qt.py` | headless driver/calibration checks / offscreen UI exercise — run before committing |
-| `run_clouds_spectral.bat` | branded launcher; **hardcodes the interpreter path** |
-| `assets/` | logo, icon, Futura-Bold.ttf (shared with the engine) |
+| Path                                            | Role                                                                                    |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `clouds_spectral.py`                          | Qt control panel + live dual-trace spectrum view                                        |
+| `spectro/driver.py`                           | `SpectrometerDriver` interface + `open_driver(mock=, kind=)` factory                |
+| `spectro/eureca_driver.py`                    | ctypes wrapper over the Duo vendor library — Windows DLL or Linux`.so`               |
+| `spectro/eureca_edu_driver.py`                | ctypes wrapper over`libe9u_LSMD_EDU_x64.dll` (single-channel EDU board, Windows only) |
+| `spectro/mock_driver.py`                      | synthetic Duo frames for hardware-free testing                                          |
+| `spectro/calibration.py`                      | `calibration.json` → pixel→nm, channel split, dark subtract                         |
+| `spectro/processing.py`                       | averaging, ratio / transmission / absorbance, saturation flags                          |
+| `spectro/export.py`                           | CSV session log + branded PDF report                                                    |
+| `calibration.json` / `calibration_edu.json` | factory INSION pixel→wavelength polynomials (Duo / EDU, versioned)                     |
+| `vendor/`                                     | EURECA Duo Windows DLL (`libe9u_LSMD_x64.dll`) + runtime deps + licence               |
+| `drivers/e9u_LSMD_LIB_Linux/`                 | EURECA Duo**Linux** vendor source + build/udev installer (feature P-01)           |
+| `drivers/e9u_LSMD_EDU_LIB/`                   | EURECA EDU vendor SDK (headers, C source,`libe9u_LSMD_EDU_x64.dll`)                   |
+| `verify.py` / `verify_qt.py`                | headless driver/calibration checks / offscreen UI exercise — run before committing     |
+| `run_clouds_spectral.bat`                     | branded launcher;**hardcodes the interpreter path**                               |
+| `assets/`                                     | logo, icon, Futura-Bold.ttf (shared with the engine)                                    |
 
 This is **ground / bench** software — the balloon spectrometer itself is run by
 the **Raspberry Pi** flight software below, which now shares the *same* real
@@ -80,13 +80,13 @@ The flight and ground-station software (built to
 [docs/SOFTWARE_SPEC.md](docs/SOFTWARE_SPEC.md), status in
 [docs/SOFTWARE_FEATURES.md](docs/SOFTWARE_FEATURES.md)) lives alongside:
 
-| Path | Role |
-|---|---|
-| `clouds_link/` | shared packet protocol (CRC-16, COBS, frames, HK, commands) — one schema for MCU, Pi, GSE |
-| `flight/mcu/` | **RP2350 sequencer firmware** (C, Pico SDK): autonomous double release, persist-before-fire, watchdog — native tests via `pio test -e native` or `test/run_native.sh` |
-| `flight/pi/` | **Raspberry Pi 5 flight app** (Python, systemd): 1 Hz spectra, CRC'd storage, UDP downlink, TCP commands, UART to MCU |
-| `gse/` | **ground station** (Python): telemetry monitor + PyQt5 dashboard, arm/execute commanding, ground interlock, session export |
-| `tests/` | pytest suite for all Python parts incl. the fake-MCU ↔ Pi ↔ GSE end-to-end chain |
+| Path             | Role                                                                                                                                                                             |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `clouds_link/` | shared packet protocol (CRC-16, COBS, frames, HK, commands) — one schema for MCU, Pi, GSE                                                                                       |
+| `flight/mcu/`  | **RP2350 sequencer firmware** (C, Pico SDK): autonomous double release, persist-before-fire, watchdog — native tests via `pio test -e native` or `test/run_native.sh` |
+| `flight/pi/`   | **Raspberry Pi 5 flight app** (Python, systemd): 1 Hz spectra, CRC'd storage, UDP downlink, TCP commands, UART to MCU                                                      |
+| `gse/`         | **ground station** (Python): telemetry monitor + PyQt5 dashboard, arm/execute commanding, ground interlock, session export                                                 |
+| `tests/`       | pytest suite for all Python parts incl. the fake-MCU ↔ Pi ↔ GSE end-to-end chain                                                                                               |
 
 Run everything hardware-free: `python -m pytest tests/` (Python) and
 `flight/mcu/test/run_native.sh` (firmware core).
@@ -98,15 +98,15 @@ cable** from the bench PC — no switch, no DHCP server, no WiFi in the path. Th
 addressing deliberately mirrors **E-Link (Table 6-3)** so that `FswConfig` and
 the GSE talk over the cable on their *defaults*, with no host flags:
 
-| End | Address | Matches |
-|---|---|---|
-| Bench PC (ground station) | `192.168.100.1/24` | `FswConfig.ground_host` (`flight/pi/clouds_fsw/config.py`) |
-| Pi (experiment), `eth0` | `192.168.100.10/24` | `--experiment` default (`gse/clouds_gse/main.py`) |
+| End                       | Address               | Matches                                                        |
+| ------------------------- | --------------------- | -------------------------------------------------------------- |
+| Bench PC (ground station) | `192.168.100.1/24`  | `FswConfig.ground_host` (`flight/pi/clouds_fsw/config.py`) |
+| Pi (experiment),`eth0`  | `192.168.100.10/24` | `--experiment` default (`gse/clouds_gse/main.py`)          |
 
-| Port | Direction | Carries |
-|---|---|---|
-| UDP 4000 | Pi → PC | telemetry downlink (`ground_port`) |
-| TCP 4001 | PC → Pi | commands (`cmd_port`) |
+| Port     | Direction | Carries                              |
+| -------- | --------- | ------------------------------------ |
+| UDP 4000 | Pi → PC  | telemetry downlink (`ground_port`) |
+| TCP 4001 | PC → Pi  | commands (`cmd_port`)              |
 
 ```sh
 ssh clouds@192.168.100.10          # shell on the flight Pi
@@ -166,9 +166,7 @@ New-NetIPAddress -InterfaceIndex 3 -IPAddress 192.168.100.1 -PrefixLength 24
 > `New-NetFirewallRule -DisplayName "CLOUDS downlink" -Direction Inbound -Protocol UDP -LocalPort 4000 -Action Allow`
 >
 > **Gotcha:** setting the static address **disables DHCP** on that adapter. To
-> use the port on a normal network again: `Set-NetIPInterface -InterfaceIndex 3
-> -Dhcp Enabled` plus `Remove-NetIPAddress -InterfaceIndex 3 -IPAddress
-> 192.168.100.1`.
+> use the port on a normal network again: `Set-NetIPInterface -InterfaceIndex 3 -Dhcp Enabled` plus `Remove-NetIPAddress -InterfaceIndex 3 -IPAddress 192.168.100.1`.
 >
 > **Gotcha:** if `netplan apply` leaves `eth0` on a *volatile* NM profile
 > (`nmcli -f NAME,DEVICE con show --active` shows a bare `eth0` instead of
@@ -183,8 +181,7 @@ EURECA e9u-SPMD-350850-10-Duo, S/N 20260312-004. USB → FTDI FT2232H
 the camera (`e9u_LSMD_search_for_camera`) — no COM number or tty is hardcoded;
 it walks `COM99…COM0` on Windows and `/dev/ttyUSB99…0` on Linux.
 
-> **Gotcha:** a *charge-only* USB cable enumerates as `Unknown USB Device
-> (Port Reset Failed)` / Code 43 and the camera is invisible. Use a real
+> **Gotcha:** a *charge-only* USB cable enumerates as `Unknown USB Device (Port Reset Failed)` / Code 43 and the camera is invisible. Use a real
 > **data** cable. The FTDI VCP driver ships in Windows' DriverStore and
 > auto-installs on enumeration — it is never the blocker.
 >
