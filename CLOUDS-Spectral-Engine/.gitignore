@@ -20,3 +20,5 @@ data/sessions/
 
 # vendor Linux library build trees (built from the tarball by install.sh)
 drivers/e9u_LSMD_LIB_Linux/e9u_lsmd_camera_library-*/
+
+.DS_Store
