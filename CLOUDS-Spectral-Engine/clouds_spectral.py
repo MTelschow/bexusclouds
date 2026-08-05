@@ -373,6 +373,10 @@ class Engine(QtWidgets.QMainWindow):
         self.btn_connect.setStyleSheet(self._primary_btn())
         self.btn_connect.clicked.connect(self._toggle_connect)
         v.addWidget(self.btn_connect)
+        self.lbl_conn_error = QtWidgets.QLabel("")
+        self.lbl_conn_error.setWordWrap(True)
+        self.lbl_conn_error.setStyleSheet("color:#b3261e; font-size:11px; font-weight:bold;")
+        v.addWidget(self.lbl_conn_error)
         self.lbl_device = QtWidgets.QLabel("not connected")
         self.lbl_device.setWordWrap(True)
         self.lbl_device.setStyleSheet("color:#5a6b7a; font-size:11px;")
@@ -809,9 +813,12 @@ class Engine(QtWidgets.QMainWindow):
         self._render_plot()
 
     # ------------------------------------------------------------ connection
-    def _disconnect_ui(self, hint: str) -> None:
+    def _disconnect_ui(self, hint: str, error: str = "") -> None:
         """Tear down to 'not connected', for a manual Disconnect click or a
-        driver error that leaves the link unusable."""
+        driver error that leaves the link unusable. `error`, if given, stays
+        posted under the Connect button until the next successful connect -
+        the bottom hint line gets overwritten by whatever the operator does
+        next, so it alone isn't a reliable place to notice a dropped link."""
         self._stop()
         try:
             self.driver.close()
@@ -821,6 +828,7 @@ class Engine(QtWidgets.QMainWindow):
         self.info = None
         self.btn_connect.setText("Connect")
         self.lbl_device.setText("not connected")
+        self.lbl_conn_error.setText(error)
         self._set_hint(hint)
 
     def _on_driver_error(self, exc) -> None:
@@ -829,8 +837,9 @@ class Engine(QtWidgets.QMainWindow):
         the process on an unhandled exception in a slot, so this must never
         propagate - drop the link cleanly and let the operator reconnect."""
         self._resume_on_reconnect = self.running
-        self._disconnect_ui(f"link lost ({exc}) - retrying every "
-                            f"{RECONNECT_INTERVAL_MS // 1000}s ..."[:160])
+        retry_s = RECONNECT_INTERVAL_MS // 1000
+        self._disconnect_ui(f"link lost - retrying every {retry_s}s ...",
+                            error=f"Link lost: {exc}"[:200])
         self._reconnect_timer.start()
 
     def _toggle_connect(self):
@@ -848,6 +857,7 @@ class Engine(QtWidgets.QMainWindow):
         self.connected = True
         self._applied_us = None
         self.btn_connect.setText("Disconnect")
+        self.lbl_conn_error.setText("")
         inst = self.cal.instrument
         model = (self.info.model if (self.info.model and "-" in self.info.model)
                  else inst.get("board", self.info.model or "e9u_LSMD"))
@@ -879,6 +889,7 @@ class Engine(QtWidgets.QMainWindow):
         except DriverError as e:
             self.connected = False
             self.lbl_device.setText("connection failed")
+            self.lbl_conn_error.setText(str(e).split('\n')[0][:200])
             self._set_hint(str(e).split('\n')[0])
             try:
                 self.driver.close()        # release a half-opened device
@@ -912,8 +923,9 @@ class Engine(QtWidgets.QMainWindow):
         self._on_connected(info)
 
     def _on_reconnect_failed(self, msg):
-        self._set_hint(f"link down, retrying every {RECONNECT_INTERVAL_MS // 1000}s "
-                       f"({str(msg)[:80]})")
+        retry_s = RECONNECT_INTERVAL_MS // 1000
+        self.lbl_conn_error.setText(f"Link lost: {msg}"[:200])
+        self._set_hint(f"link down, retrying every {retry_s}s ({str(msg)[:80]})")
 
     def closeEvent(self, ev):
         """Tear down cleanly when the window closes: stop the live timer, let
