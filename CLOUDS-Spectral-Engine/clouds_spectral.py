@@ -148,7 +148,9 @@ class Engine(QtWidgets.QMainWindow):
         ico = os.path.join(HERE, "assets", "clouds.ico")
         if os.path.exists(ico):
             self.setWindowIcon(QtGui.QIcon(ico))
-        self.resize(1420, 920)
+        screen = QtWidgets.QApplication.primaryScreen()
+        max_h = screen.availableGeometry().height() if screen else 920
+        self.resize(1420, min(920, max_h))
         self.futura = self._load_futura()
 
         self.kind = resolve_kind(kind)
@@ -379,6 +381,7 @@ class Engine(QtWidgets.QMainWindow):
             "Averaging  [frames]", 1, 64, self.navg, self._on_navg)
         v.addWidget(row)
         self.chk_clean = QtWidgets.QCheckBox("glitch filter  (median + despike)")
+        self.chk_clean.setStyleSheet(self._checkbox_style())
         self.chk_clean.setChecked(True)
         self.chk_clean.setToolTip("Removes USB-cable transfer glitches (not real signal).\n"
                                   "Uncheck to see / export RAW sensor data.")
@@ -401,6 +404,7 @@ class Engine(QtWidgets.QMainWindow):
         run.addWidget(self.btn_auto)
         v.addLayout(run)
         self.chk_track = QtWidgets.QCheckBox("auto integration time  (continuous)")
+        self.chk_track.setStyleSheet(self._checkbox_style())
         self.chk_track.setToolTip("On by default. While live, keeps adjusting the integration time every\n"
                                   "frame from the recent measurements so the brightest channel's peak\n"
                                   "stays between 60-80% of full scale - for scenes whose brightness\n"
@@ -423,9 +427,11 @@ class Engine(QtWidgets.QMainWindow):
         dk.addWidget(self.btn_dark_clear)
         v.addLayout(dk)
         self.chk_dark = QtWidgets.QCheckBox("subtract dark")
+        self.chk_dark.setStyleSheet(self._checkbox_style())
         self.chk_dark.toggled.connect(self._on_dark_toggle)
         v.addWidget(self.chk_dark)
         self.offset_combo = QtWidgets.QComboBox()
+        self.offset_combo.setStyleSheet(self._combo_style())
         self.offset_combo.addItems(["offset: none", "subtract minimum", "subtract dark pixels"])
         self.offset_combo.setToolTip("Extra per-frame baseline: the signal minimum, or the\n"
                                      "on-chip optical-black (dark-pixel) level read from the sensor.")
@@ -444,6 +450,7 @@ class Engine(QtWidgets.QMainWindow):
         rf.addWidget(self.btn_ref); rf.addWidget(self.btn_ref_clear)
         v.addLayout(rf)
         self.chk_flat = QtWidgets.QCheckBox("divide by reference (flat-field)")
+        self.chk_flat.setStyleSheet(self._checkbox_style())
         self.chk_flat.setToolTip("Capture a no-sample baseline, then show signal / reference.\n"
                                  "The no-sample line reads ~1.0; a sample shows as the dip.")
         self.chk_flat.toggled.connect(self._on_flat)
@@ -452,22 +459,26 @@ class Engine(QtWidgets.QMainWindow):
         # --- View ---
         v.addWidget(self._heading("View"))
         self.view_combo = QtWidgets.QComboBox()
+        self.view_combo.setStyleSheet(self._combo_style())
         self.view_combo.addItems(["Counts  (both channels)",
                                   "Transmission  (meas / ref)",
                                   "Absorbance  (-log10)"])
         self.view_combo.currentIndexChanged.connect(self._on_view)
         v.addWidget(self.view_combo)
         self.axis_combo = QtWidgets.QComboBox()
+        self.axis_combo.setStyleSheet(self._combo_style())
         self.axis_combo.addItems(["x-axis: wavelength (nm)", "x-axis: pixel"])
         self.axis_combo.currentIndexChanged.connect(self._on_axis)
         v.addWidget(self.axis_combo)
         self.chk_peak = QtWidgets.QCheckBox("peak marker")
+        self.chk_peak.setStyleSheet(self._checkbox_style())
         self.chk_peak.setChecked(True)
         self.chk_peak.setToolTip("Vertical line + readout at each channel's spectral peak.")
         self.chk_peak.toggled.connect(self._on_peak)
         v.addWidget(self.chk_peak)
         srow = QtWidgets.QHBoxLayout()
         self.smooth_combo = QtWidgets.QComboBox()
+        self.smooth_combo.setStyleSheet(self._combo_style())
         self.smooth_combo.addItems(["smooth: off", "Savitzky-Golay", "boxcar"])
         self.smooth_combo.currentIndexChanged.connect(self._on_smooth)
         self.sp_smooth = QtWidgets.QSpinBox()
@@ -478,6 +489,7 @@ class Engine(QtWidgets.QMainWindow):
         v.addLayout(srow)
         zrow = QtWidgets.QHBoxLayout()
         self.yscale_combo = QtWidgets.QComboBox()
+        self.yscale_combo.setStyleSheet(self._combo_style())
         self.yscale_combo.addItems(["y: linear", "y: log", "y: sqrt"])
         self.yscale_combo.currentIndexChanged.connect(self._on_yscale)
         self.sp_xlo = QtWidgets.QDoubleSpinBox(); self.sp_xlo.setRange(300, 1100)
@@ -505,6 +517,7 @@ class Engine(QtWidgets.QMainWindow):
         self.btn_export.clicked.connect(self._export)
         v.addWidget(self.btn_export)
         self.chk_log = QtWidgets.QCheckBox("log session to CSV")
+        self.chk_log.setStyleSheet(self._checkbox_style())
         self.chk_log.toggled.connect(self._on_log_toggle)
         v.addWidget(self.chk_log)
 
@@ -535,6 +548,39 @@ class Engine(QtWidgets.QMainWindow):
                 "QPushButton:hover{background:#e2e8ee;}"
                 "QPushButton:disabled{color:#aebccb;}")
 
+    def _checkbox_style(self):
+        """Same native-rendering gap as combo boxes (see _combo_style) - the
+        label text silently fails to draw on recent macOS without this."""
+        return ("QCheckBox{color:#33414d; spacing:8px;}"
+                "QCheckBox::indicator{width:15px; height:15px; border:1px solid #c3cfd9;"
+                "border-radius:3px; background:#ffffff;}"
+                "QCheckBox::indicator:hover{border-color:#8fa3b3;}"
+                f"QCheckBox::indicator:checked{{background:{NAVY}; border-color:{NAVY};}}")
+
+    def _combo_style(self):
+        """PyQt5's native macOS combo box renders blank text on recent macOS
+        (Qt5 is EOL, untested past ~macOS 13) - style it explicitly like the
+        buttons above instead of relying on Cocoa/Aqua drawing."""
+        return (f"QComboBox{{background:#eef1f4; color:#33414d; border:1px solid #d3dde6;"
+                "border-radius:5px; padding:5px 24px 5px 8px;}"
+                "QComboBox:hover{background:#e2e8ee;}"
+                "QComboBox::drop-down{border:0; width:22px;}"
+                "QComboBox::down-arrow{image:none; width:0; height:0;"
+                "border-left:4px solid transparent; border-right:4px solid transparent;"
+                "border-top:5px solid #5a6b7a; margin-right:8px;}"
+                f"QComboBox QAbstractItemView{{background:#ffffff; color:#33414d;"
+                f"selection-background-color:{NAVY}; selection-color:#ffffff;"
+                "border:1px solid #d3dde6; outline:0;}")
+
+    def _slider_style(self):
+        """Same native-rendering gap as combo boxes (see _combo_style) - the
+        groove/handle silently fail to draw on recent macOS without this."""
+        return (f"QSlider::groove:horizontal{{height:4px; background:#dde3e9; border-radius:2px;}}"
+                f"QSlider::sub-page:horizontal{{background:{NAVY}; border-radius:2px;}}"
+                f"QSlider::handle:horizontal{{background:#ffffff; border:2px solid {NAVY};"
+                "width:14px; height:14px; margin:-6px 0; border-radius:7px;}"
+                "QSlider::handle:horizontal:hover{background:#eef3f8;}")
+
     # ----------------------------------------------------------- slider rows
     def _lin_slider_row(self, label, lo, hi, val, cb):
         w = QtWidgets.QWidget()
@@ -554,6 +600,7 @@ class Engine(QtWidgets.QMainWindow):
         sl = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         sl.setRange(lo, hi)
         sl.setValue(val)
+        sl.setStyleSheet(self._slider_style())
         g.addLayout(top)
         g.addWidget(sl)
         guard = {"busy": False}
@@ -604,6 +651,7 @@ class Engine(QtWidgets.QMainWindow):
         top.addWidget(sp)
         sl = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         sl.setRange(0, STEPS)
+        sl.setStyleSheet(self._slider_style())
 
         def to_val(pos):
             v = 10.0 ** (lg_lo + (lg_hi - lg_lo) * pos / STEPS)
@@ -1422,7 +1470,9 @@ class _CalibrationDialog(QtWidgets.QDialog):
 
         top = QtWidgets.QHBoxLayout()
         self.ch_combo = QtWidgets.QComboBox(); self.ch_combo.addItems(["measurement", "reference"])
+        self.ch_combo.setStyleSheet(engine._combo_style())
         self.preset = QtWidgets.QComboBox(); self.preset.addItems(list(self.PRESETS))
+        self.preset.setStyleSheet(engine._combo_style())
         self.preset.currentTextChanged.connect(self._fill)
         top.addWidget(QtWidgets.QLabel("channel")); top.addWidget(self.ch_combo, 1)
         top.addWidget(QtWidgets.QLabel("source")); top.addWidget(self.preset, 1)
