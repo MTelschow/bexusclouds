@@ -23,6 +23,7 @@ import numpy as np
 from .driver import DeviceInfo, DriverError, SpectrometerDriver
 
 _IS_WINDOWS = sys.platform == "win32"
+_IS_MACOS = sys.platform == "darwin"
 _DLL_NAME = "libe9u_LSMD_x64.dll"
 _SO_NAME = "libe9u_LSMD.so"
 _LIB_NAME = _DLL_NAME if _IS_WINDOWS else _SO_NAME
@@ -79,6 +80,15 @@ def _resolve_lib_dir() -> str | None:
 
 def _load_vendor_lib():
     """Load the vendor library for this platform. Raises DriverError."""
+    if _IS_MACOS:
+        # EURECA ships Windows and Linux builds only - there is nothing to point
+        # CLOUDS_E9U_LIB_DIR at, so say that instead of sending the operator off
+        # to build the Linux .so. A remote detector still works from here.
+        raise DriverError(
+            "no native detector driver for macOS - EURECA ships a Windows DLL "
+            "and a Linux .so only.\n"
+            "Use --net <pi-ip> for the detector on the Pi, or --mock."
+        )
     lib_dir = _resolve_lib_dir()
     if _IS_WINDOWS:
         path = os.path.join(lib_dir, _DLL_NAME)

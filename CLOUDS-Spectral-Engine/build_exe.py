@@ -63,9 +63,41 @@ def main() -> None:
 
     exe = f"{NAME}.exe" if sys.platform == "win32" else NAME
     print(f"\nBuilt dist/{exe}")
-    if sys.platform != "win32":
+    if sys.platform == "darwin":
+        launcher = _write_pi_launcher()
+        print(f"Wrote dist/{os.path.basename(launcher)} - double-click that, "
+              "not the bare executable.")
+    elif sys.platform != "win32":
         print("No native detector driver ships for this OS - "
              "run with --net <pi-ip> or --mock.")
+
+
+# Finder passes no arguments, so a double-clicked executable falls to the "std"
+# kind and dies on the missing vendor library - macOS gets no native driver at
+# all (EURECA ships a Windows DLL and a Linux .so). Ship the same escape hatch
+# Windows has in run_clouds_spectral_pi.bat: a double-clickable launcher that
+# supplies --net and defaults to the bench Pi (docs: CLAUDE.md, "Bench setup").
+_PI_LAUNCHER = """#!/bin/sh
+# CLOUDS Spectral Engine - live panel, detector on the flight Pi.
+#
+# macOS has no native vendor driver, so the panel must be pointed at the Pi.
+# The Pi must be serving frames, either of:
+#   python3 -m clouds_fsw.main --no-uart --bench-stream   (flight app + live view)
+#   python3 -m spectro.net_server                         (live view only, full rate)
+#
+# Usage: double-click, or ./"$(basename "$0")" [HOST[:PORT]]
+cd "$(dirname "$0")" || exit 1
+exec ./{name} --net "${{1:-{host}}}"
+"""
+_BENCH_PI_HOST = "192.168.100.10"
+
+
+def _write_pi_launcher() -> str:
+    path = os.path.join(HERE, "dist", f"{NAME} (Pi).command")
+    with open(path, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(_PI_LAUNCHER.format(name=NAME, host=_BENCH_PI_HOST))
+    os.chmod(path, 0o755)
+    return path
 
 
 if __name__ == "__main__":
