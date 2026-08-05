@@ -163,6 +163,7 @@ class Engine(QtWidgets.QMainWindow):
         self.running = False
         self._driver_lock = threading.RLock()   # serializes driver I/O vs. the live-tick worker
         self._acq_worker = None
+        self._resume_on_reconnect = False   # was live when the link dropped -> resume on reconnect
 
         # acquisition state
         self.exposure_ms = 10.0
@@ -822,10 +823,12 @@ class Engine(QtWidgets.QMainWindow):
         reference capture) failed outside the live-tick worker. PyQt5 aborts
         the process on an unhandled exception in a slot, so this must never
         propagate - drop the link cleanly and let the operator reconnect."""
+        self._resume_on_reconnect = self.running
         self._disconnect_ui(f"link lost ({exc}) - press Connect to retry"[:160])
 
     def _toggle_connect(self):
         if self.connected:
+            self._resume_on_reconnect = False   # deliberate disconnect - don't auto-resume later
             self._disconnect_ui("disconnected")
         else:
             self._connect()
@@ -844,7 +847,15 @@ class Engine(QtWidgets.QMainWindow):
             self.lbl_device.setText(
                 f"{model}  SN {serial}\n{inst.get('detector', '')}  "
                 f"{self.info.pixels}px  {port}".strip())
-            self._set_hint("connected - press Run for live, or Single")
+            if self._resume_on_reconnect:
+                # was live when the link died (Ethernet or USB pull, either can
+                # crash/drop the far end) - resume without waiting for the
+                # operator to notice and press Run again.
+                self._resume_on_reconnect = False
+                self._start()
+                self._set_hint("reconnected - live resumed")
+            else:
+                self._set_hint("connected - press Run for live, or Single")
             # No eager _auto_expose() snap here: it hunts over several blocking
             # driver round-trips (settle grabs + a 7-frame average per probe,
             # up to 8 iterations) - fine for a manual toggle, but over --net or
