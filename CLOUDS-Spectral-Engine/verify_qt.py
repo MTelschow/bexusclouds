@@ -200,7 +200,7 @@ win.sp_exp.setValue(10); win._start(); win.timer.stop(); app.processEvents()
 win.chk_track.setChecked(True); app.processEvents()
 _settle(8)
 _frac = win._last_peak / _sat
-check("tracking: converges into band on a static scene", 0.50 <= _frac <= 0.82, f"frac={_frac:.3f}")
+check("tracking: converges into band on a static scene", 0.56 <= _frac <= 0.84, f"frac={_frac:.3f}")
 # dead-beat / no hunting: same scene, exposure must not churn
 _e0 = win.exposure_ms; _ch = 0
 for _ in range(20):
@@ -212,7 +212,7 @@ check("tracking: no hunting on a steady scene", _ch <= 1, f"{_ch} exposure chang
 win.driver._shape = _orig_shape / 10.0
 _settle(10)
 _frac = win._last_peak / _sat
-check("tracking: recovers from 10x dimming", 0.45 <= _frac <= 0.85 and win.exposure_ms > _e0,
+check("tracking: recovers from 10x dimming", 0.50 <= _frac <= 0.85 and win.exposure_ms > _e0,
       f"frac={_frac:.3f}, exp={win.exposure_ms} ms")
 # worst case: parked high, then a big brightening into deep saturation -> escape fast
 win.driver._shape = _orig_shape * 0.02
@@ -226,7 +226,7 @@ for _i in range(10):
 _settle(8)
 _frac = win._last_peak / _sat
 check("tracking: escapes deep saturation in <=4 ticks + lands in band",
-      _esc is not None and _esc <= 4 and 0.45 <= _frac <= 0.85, f"escaped@{_esc}, frac={_frac:.3f}")
+      _esc is not None and _esc <= 4 and 0.50 <= _frac <= 0.85, f"escaped@{_esc}, frac={_frac:.3f}")
 win.driver._shape = _orig_shape; _settle(8)
 # glitch immunity: a 1-px spike (high peak, NO multi-pixel saturation) must not trigger a cut
 win._oob_count = 0; _e_before = win.exposure_ms

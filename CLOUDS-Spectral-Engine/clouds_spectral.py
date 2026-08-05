@@ -393,19 +393,21 @@ class Engine(QtWidgets.QMainWindow):
         self.btn_single.clicked.connect(self._single_shot)
         self.btn_auto = QtWidgets.QPushButton("Auto")
         self.btn_auto.setStyleSheet(self._flat_btn())
-        self.btn_auto.setToolTip("Auto-set the integration time to ~75% of full scale\n"
+        self.btn_auto.setToolTip("Auto-set the integration time to ~70% of full scale\n"
                                  "(brightest of both channels, without saturating).")
         self.btn_auto.clicked.connect(self._auto_expose)
         run.addWidget(self.btn_run)
         run.addWidget(self.btn_single)
         run.addWidget(self.btn_auto)
         v.addLayout(run)
-        self.chk_track = QtWidgets.QCheckBox("track exposure  (continuous auto)")
-        self.chk_track.setToolTip("While live, keep adjusting the integration time every frame so the\n"
-                                  "brightest channel stays near 65% of full scale - for scenes whose\n"
-                                  "brightness changes, e.g. sweeping the fibre around the room.\n"
+        self.chk_track = QtWidgets.QCheckBox("auto integration time  (continuous)")
+        self.chk_track.setToolTip("On by default. While live, keeps adjusting the integration time every\n"
+                                  "frame from the recent measurements so the brightest channel's peak\n"
+                                  "stays between 60-80% of full scale - for scenes whose brightness\n"
+                                  "changes, e.g. sweeping the fibre around the room.\n"
                                   "Dragging the integration slider hands control back to you.")
         self.chk_track.toggled.connect(self._on_track)
+        self.chk_track.setChecked(True)             # auto integration time is on by default
         v.addWidget(self.chk_track)
 
         # --- Dark frame ---
@@ -653,8 +655,8 @@ class Engine(QtWidgets.QMainWindow):
             if not self.running:
                 self._start()               # tracking only does anything live
             self._auto_expose()             # snap from cold once, then the servo tracks smoothly
-        self._set_hint("auto-exposure tracking ON - holding ~65% full scale"
-                       if on else "auto-exposure tracking off")
+        self._set_hint("auto integration time ON - holding 60-80% full scale"
+                       if on else "auto integration time off")
 
     def _on_navg(self, v):
         self.navg = int(v)
@@ -695,10 +697,14 @@ class Engine(QtWidgets.QMainWindow):
         if not self.connected:
             self._set_hint("connect first")
             return
-        self._apply_exposure_if_changed()
-        n = max(16, self.navg)
-        with self._driver_lock:
-            frame = P.average_frames([self.driver.grab() for _ in range(n)], method="median", clean=self.clean)
+        try:
+            self._apply_exposure_if_changed()
+            n = max(16, self.navg)
+            with self._driver_lock:
+                frame = P.average_frames([self.driver.grab() for _ in range(n)], method="median", clean=self.clean)
+        except (DriverError, OSError) as e:
+            self._on_driver_error(e)
+            return
         m = self.cal.by_role("measurement")
         r = self._ref()
         use_dark = self.dark if (self.subtract_dark_flag and self.dark is not None) else None
@@ -749,18 +755,30 @@ class Engine(QtWidgets.QMainWindow):
         self._render_plot()
 
     # ------------------------------------------------------------ connection
+    def _disconnect_ui(self, hint: str) -> None:
+        """Tear down to 'not connected', for a manual Disconnect click or a
+        driver error that leaves the link unusable."""
+        self._stop()
+        try:
+            self.driver.close()
+        except Exception:
+            pass
+        self.connected = False
+        self.info = None
+        self.btn_connect.setText("Connect")
+        self.lbl_device.setText("not connected")
+        self._set_hint(hint)
+
+    def _on_driver_error(self, exc) -> None:
+        """A synchronous driver call (single-shot / auto-expose / dark or
+        reference capture) failed outside the live-tick worker. PyQt5 aborts
+        the process on an unhandled exception in a slot, so this must never
+        propagate - drop the link cleanly and let the operator reconnect."""
+        self._disconnect_ui(f"link lost ({exc}) - press Connect to retry"[:160])
+
     def _toggle_connect(self):
         if self.connected:
-            self._stop()
-            try:
-                self.driver.close()
-            except Exception:
-                pass
-            self.connected = False
-            self.info = None
-            self.btn_connect.setText("Connect")
-            self.lbl_device.setText("not connected")
-            self._set_hint("disconnected")
+            self._disconnect_ui("disconnected")
         else:
             self._connect()
 
@@ -779,6 +797,8 @@ class Engine(QtWidgets.QMainWindow):
                 f"{model}  SN {serial}\n{inst.get('detector', '')}  "
                 f"{self.info.pixels}px  {port}".strip())
             self._set_hint("connected - press Run for live, or Single")
+            if self._track:                 # auto integration time is on by default: snap now
+                self._auto_expose()
         except DriverError as e:
             self.connected = False
             self.lbl_device.setText("connection failed")
@@ -837,7 +857,8 @@ class Engine(QtWidgets.QMainWindow):
         if was_running:
             self._stop()                         # so the captured frame stays on screen
         self._tick_once()
-        self._set_hint("single frame captured" + (" - live stopped" if was_running else ""))
+        if self.connected:                       # _tick_once may have dropped the link
+            self._set_hint("single frame captured" + (" - live stopped" if was_running else ""))
 
     def _auto_expose(self, target=0.70, lo_ms=0.02, hi_ms=1000.0, iters=8):
         """Hunt the integration time so the brightest channel peaks near `target` of
@@ -862,18 +883,22 @@ class Engine(QtWidgets.QMainWindow):
             return max(P.robust_peak(ch.slice(frame)) for ch in self.cal.channels)
 
         exp, pk = min(max(self.exposure_ms, lo_ms), hi_ms), 0.0
-        for _ in range(iters):
-            pk = probe(exp)
-            if sat * 0.55 <= pk <= sat * 0.92:                  # candidate -> confirm it holds
-                pk = min(pk, probe(exp))                        # a flicker won't survive the min
-                if sat * 0.55 <= pk <= sat * 0.92:              # same band -> accept; else keep hunting
+        try:
+            for _ in range(iters):
+                pk = probe(exp)
+                if sat * 0.60 <= pk <= sat * 0.80:                  # candidate -> confirm it holds
+                    pk = min(pk, probe(exp))                        # a flicker won't survive the min
+                    if sat * 0.60 <= pk <= sat * 0.80:              # same band -> accept; else keep hunting
+                        break
+                new = exp * 0.5 if pk >= sat * 0.97 else exp * min(max(tgt / max(pk, 1.0), 0.2), 8.0)
+                new = min(max(new, lo_ms), hi_ms)
+                if abs(new - exp) < 1e-4:                           # clamped at a rail -> best we can do
+                    exp = new
                     break
-            new = exp * 0.5 if pk >= sat * 0.97 else exp * min(max(tgt / max(pk, 1.0), 0.2), 8.0)
-            new = min(max(new, lo_ms), hi_ms)
-            if abs(new - exp) < 1e-4:                           # clamped at a rail -> best we can do
                 exp = new
-                break
-            exp = new
+        except (DriverError, OSError) as e:
+            self._on_driver_error(e)
+            return
         self.exposure_ms = round(exp, 3)
         self.sp_exp.blockSignals(True); self.sp_exp.setValue(self.exposure_ms); self.sp_exp.blockSignals(False)
         self._applied_us = None
@@ -890,14 +915,14 @@ class Engine(QtWidgets.QMainWindow):
         scene corrects in ~1 step and the loop is provably non-oscillatory; a symmetric
         deadband stops a steady scene from jittering; the step is slew-limited so the
         trace does not flick; true clipping uses a saturated-fraction-scaled, slew-exempt
-        cut because clipped data is unrecoverable. Favours robustness over hitting 65%."""
+        cut because clipped data is unrecoverable. Favours robustness over hitting 70%."""
         if not self._track:                         # toggled off between the call and here
             return
         sat = self.cal.saturation_count
         frac = self._last_peak / sat if sat else 0.0
         satf = self._last_sat                       # multi-pixel saturated fraction, [0,1]
         self._track_msg = ""
-        BAND_LO, BAND_HI, TARGET = 0.54, 0.78, 0.65     # band symmetric in log around 0.65
+        BAND_LO, BAND_HI, TARGET = 0.60, 0.80, 0.70     # band symmetric in log around 0.70
 
         def apply(new):
             new = min(max(new, lo_ms), hi_ms)
@@ -999,7 +1024,12 @@ class Engine(QtWidgets.QMainWindow):
         if not self.connected:
             return
         self._begin_tick()
-        self._finish_tick(self._acquire_frame())
+        try:
+            payload = self._acquire_frame()
+        except (DriverError, OSError) as e:
+            self._on_driver_error(e)
+            return
+        self._finish_tick(payload)
 
     def _tick_live(self):
         """QTimer-driven live loop: the actual grab() runs off the GUI thread
@@ -1011,7 +1041,7 @@ class Engine(QtWidgets.QMainWindow):
         self._begin_tick()
         w = _AcquisitionWorker(self._acquire_frame, self)
         w.done.connect(self._finish_tick)
-        w.failed.connect(lambda msg: self._set_hint(f"live update failed: {msg[:80]}"))
+        w.failed.connect(self._on_driver_error)
         w.finished.connect(self._on_worker_finished)
         self._acq_worker = w
         w.start()
@@ -1063,10 +1093,14 @@ class Engine(QtWidgets.QMainWindow):
         if not self.connected:
             self._set_hint("connect first")
             return
-        self._apply_exposure_if_changed()
-        n = max(8, self.navg)
-        with self._driver_lock:
-            self.dark = P.average_frames([self.driver.grab() for _ in range(n)], clean=self.clean)
+        try:
+            self._apply_exposure_if_changed()
+            n = max(8, self.navg)
+            with self._driver_lock:
+                self.dark = P.average_frames([self.driver.grab() for _ in range(n)], clean=self.clean)
+        except (DriverError, OSError) as e:
+            self._on_driver_error(e)
+            return
         self.chk_dark.setChecked(True)
         self._set_hint(f"dark captured ({n} frames @ {self.exposure_ms:g} ms)")
         if not self.running:

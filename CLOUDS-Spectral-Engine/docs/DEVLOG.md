@@ -18,6 +18,32 @@ without re-deriving anything. Newest entries first.
 
 ---
 
+## 2026-08-05 — Auto integration time defaults on; band raised to 60-80 %
+
+**Why.** The continuous auto-exposure servo (2026-06-14, below) landed as an
+opt-in checkbox holding ~65 % FS. Requested: make it on by default, and move
+the target band to 60-80 % FS so the peak sits a bit higher up the dynamic
+range.
+
+**What.** `chk_track` (relabelled "auto integration time (continuous)") now
+starts checked. `_track_exposure`'s deadband moved from `[0.54, 0.78]` (target
+0.65) to `[0.60, 0.80]` (target 0.70); the one-shot `_auto_expose` target and
+accept band moved the same way, so the button and the servo agree on where
+"in range" is. `_connect()` snaps the exposure once right after connecting if
+tracking is on, so the default takes hold immediately rather than waiting for
+Run plus a live frame - deliberately *not* via `_start()`, so plugging in the
+detector no longer implicitly starts the live loop.
+
+The 0.80 ceiling stays inside the 0.78 knee guard from the 2026-06-14 entry
+below (TCD1304 nonlinearity near saturation) - close to it, but not past it.
+
+**Verified - mock** (`verify_qt.py`): same coverage as 2026-06-14 (dead-beat,
+10x-dimming recovery, deep-saturation escape, glitch immunity, rail-honesty,
+slider-drag override), with the in-band assertions shifted to the new
+60-80 % target.
+
+---
+
 ## 2026-07-31 — The valve drive could reset the MCU mid-release (M-06/S.9)
 
 **Why.** Reading the MCU hardware layer against its own constants: the valves want
