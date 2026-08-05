@@ -33,6 +33,7 @@ from spectro import processing as P
 HERE = os.path.dirname(os.path.abspath(__file__))
 NAVY = "#01386a"
 VERSION = "0.1.0"
+RECONNECT_INTERVAL_MS = 3000   # auto-retry cadence after a driver/link error
 
 # Default frame averaging. Tuned for the CURRENT bench cable: a ~5 m passive USB run
 # corrupts ~7% of pixels/frame to a fixed glitch code, and the median only fully
@@ -164,6 +165,10 @@ class Engine(QtWidgets.QMainWindow):
         self._driver_lock = threading.RLock()   # serializes driver I/O vs. the live-tick worker
         self._acq_worker = None
         self._resume_on_reconnect = False   # was live when the link dropped -> resume on reconnect
+        self._reconnect_worker = None
+        self._reconnect_timer = QtCore.QTimer(self)
+        self._reconnect_timer.setInterval(RECONNECT_INTERVAL_MS)
+        self._reconnect_timer.timeout.connect(self._try_reconnect)
 
         # acquisition state
         self.exposure_ms = 10.0
@@ -824,43 +829,53 @@ class Engine(QtWidgets.QMainWindow):
         the process on an unhandled exception in a slot, so this must never
         propagate - drop the link cleanly and let the operator reconnect."""
         self._resume_on_reconnect = self.running
-        self._disconnect_ui(f"link lost ({exc}) - press Connect to retry"[:160])
+        self._disconnect_ui(f"link lost ({exc}) - retrying every "
+                            f"{RECONNECT_INTERVAL_MS // 1000}s ..."[:160])
+        self._reconnect_timer.start()
 
     def _toggle_connect(self):
         if self.connected:
             self._resume_on_reconnect = False   # deliberate disconnect - don't auto-resume later
+            self._reconnect_timer.stop()
             self._disconnect_ui("disconnected")
         else:
             self._connect()
 
+    def _on_connected(self, info) -> None:
+        """Shared by a manual Connect click and a successful background retry."""
+        self._reconnect_timer.stop()
+        self.info = info
+        self.connected = True
+        self._applied_us = None
+        self.btn_connect.setText("Disconnect")
+        inst = self.cal.instrument
+        model = (self.info.model if (self.info.model and "-" in self.info.model)
+                 else inst.get("board", self.info.model or "e9u_LSMD"))
+        serial = self.info.serial or inst.get("serials", {}).get("eureca", "?")
+        port = self.info.com_port or ("MOCK" if self.info.mock else "")
+        self.lbl_device.setText(
+            f"{model}  SN {serial}\n{inst.get('detector', '')}  "
+            f"{self.info.pixels}px  {port}".strip())
+        if self._resume_on_reconnect:
+            # was live when the link died (Ethernet or USB pull, either can
+            # crash/drop the far end) - resume without waiting for the
+            # operator to notice and press Run again.
+            self._resume_on_reconnect = False
+            self._start()
+            self._set_hint("reconnected - live resumed")
+        else:
+            self._set_hint("connected - press Run for live, or Single")
+        # No eager _auto_expose() snap here: it hunts over several blocking
+        # driver round-trips (settle grabs + a 7-frame average per probe,
+        # up to 8 iterations) - fine for a manual toggle, but over --net or
+        # slow hardware it would stall startup for seconds. The continuous
+        # servo (_track_exposure) converges gradually once live instead.
+
     def _connect(self):
+        self._reconnect_timer.stop()   # a manual click takes over from any auto-retry in flight
         try:
-            self.info = self.driver.connect()
-            self.connected = True
-            self._applied_us = None
-            self.btn_connect.setText("Disconnect")
-            inst = self.cal.instrument
-            model = (self.info.model if (self.info.model and "-" in self.info.model)
-                     else inst.get("board", self.info.model or "e9u_LSMD"))
-            serial = self.info.serial or inst.get("serials", {}).get("eureca", "?")
-            port = self.info.com_port or ("MOCK" if self.info.mock else "")
-            self.lbl_device.setText(
-                f"{model}  SN {serial}\n{inst.get('detector', '')}  "
-                f"{self.info.pixels}px  {port}".strip())
-            if self._resume_on_reconnect:
-                # was live when the link died (Ethernet or USB pull, either can
-                # crash/drop the far end) - resume without waiting for the
-                # operator to notice and press Run again.
-                self._resume_on_reconnect = False
-                self._start()
-                self._set_hint("reconnected - live resumed")
-            else:
-                self._set_hint("connected - press Run for live, or Single")
-            # No eager _auto_expose() snap here: it hunts over several blocking
-            # driver round-trips (settle grabs + a 7-frame average per probe,
-            # up to 8 iterations) - fine for a manual toggle, but over --net or
-            # slow hardware it would stall startup for seconds. The continuous
-            # servo (_track_exposure) converges gradually once live instead.
+            with self._driver_lock:
+                info = self.driver.connect()
         except DriverError as e:
             self.connected = False
             self.lbl_device.setText("connection failed")
@@ -869,6 +884,36 @@ class Engine(QtWidgets.QMainWindow):
                 self.driver.close()        # release a half-opened device
             except Exception:
                 pass
+            return
+        self._on_connected(info)
+
+    # -- background auto-retry (started by _on_driver_error) -----------------
+
+    def _try_reconnect(self):
+        if self.connected or self._reconnect_worker is not None:
+            return   # already up, or a previous attempt is still in flight
+
+        def attempt():
+            with self._driver_lock:
+                return self.driver.connect()
+
+        w = _AcquisitionWorker(attempt, self)
+        w.done.connect(self._on_reconnect_done)
+        w.failed.connect(self._on_reconnect_failed)
+        w.finished.connect(self._on_reconnect_worker_finished)
+        self._reconnect_worker = w
+        w.start()
+
+    def _on_reconnect_worker_finished(self):
+        w, self._reconnect_worker = self._reconnect_worker, None
+        w.deleteLater()
+
+    def _on_reconnect_done(self, info):
+        self._on_connected(info)
+
+    def _on_reconnect_failed(self, msg):
+        self._set_hint(f"link down, retrying every {RECONNECT_INTERVAL_MS // 1000}s "
+                       f"({str(msg)[:80]})")
 
     def closeEvent(self, ev):
         """Tear down cleanly when the window closes: stop the live timer, let
@@ -877,8 +922,11 @@ class Engine(QtWidgets.QMainWindow):
         try:
             self._stop()
             self.timer.stop()
+            self._reconnect_timer.stop()
             if self._acq_worker is not None:
                 self._acq_worker.wait()
+            if self._reconnect_worker is not None:
+                self._reconnect_worker.wait()
             if self.connected:
                 self.driver.close()
         except Exception:
