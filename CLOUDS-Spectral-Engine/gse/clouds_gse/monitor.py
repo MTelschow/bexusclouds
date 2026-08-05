@@ -63,10 +63,23 @@ class ConsoleMonitor:
             self._dispatch(line)
 
     def _dispatch(self, line: str) -> None:
+        parts = line.split()
+        if parts[0] == "status":       # works in --listen-only too, unlike commands below
+            age = self._rx.hk_age_s()
+            if self._cmd is None:
+                cmd_link = "no command link (--listen-only)"
+            elif self._cmd.connected:
+                rtt = self._cmd.last_rtt_s
+                cmd_link = f"cmd up ({rtt * 1000:.0f} ms)" if rtt is not None else "cmd up"
+            else:
+                cmd_link = "cmd DOWN - retrying"
+            self._print(f"hk age: {age if age is None else f'{age:.1f} s'}  "
+                        f"rx: {self._rx.gaps.received} lost: {self._rx.gaps.lost}  "
+                        f"pi: {self._rx.last_pistatus}  |  {cmd_link}")
+            return
         if self._cmd is None:
             self._print("no command link (started with --listen-only)")
             return
-        parts = line.split()
         try:
             if parts[0] == "release" and len(parts) == 2:
                 r = self._cmd.release(int(parts[1]))
@@ -77,12 +90,6 @@ class ConsoleMonitor:
             elif parts[0] == "flight-mode":
                 self._cmd.flight_mode = not self._cmd.flight_mode
                 self._print(f"flight mode: {'ON' if self._cmd.flight_mode else 'off'}")
-                return
-            elif parts[0] == "status":
-                age = self._rx.hk_age_s()
-                self._print(f"hk age: {age if age is None else f'{age:.1f} s'}  "
-                            f"rx: {self._rx.gaps.received} lost: {self._rx.gaps.lost}  "
-                            f"pi: {self._rx.last_pistatus}")
                 return
             else:
                 r = self._cmd.send(Command[parts[0].upper()])

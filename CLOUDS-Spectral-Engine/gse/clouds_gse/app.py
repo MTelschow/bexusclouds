@@ -152,9 +152,16 @@ class GseWindow(QtWidgets.QMainWindow):
                 + ("background: #7a2c20;" if stale else "background: #1f6f43;"))
             for name, fmt in _HK_FIELDS:
                 self._hk_labels[name].setText(fmt(h))
+        if self._cmd is None:
+            cmd_link = "no command link (--listen-only)"
+        elif self._cmd.connected:
+            rtt = self._cmd.last_rtt_s
+            cmd_link = f"cmd up ({rtt * 1000:.0f} ms)" if rtt is not None else "cmd up"
+        else:
+            cmd_link = "cmd DOWN - retrying"
         self._link_label.setText(
             f"rx {self._rx.gaps.received}  lost {self._rx.gaps.lost}  "
-            f"hk age {'-' if age is None else f'{age:.1f} s'}")
+            f"hk age {'-' if age is None else f'{age:.1f} s'}  |  {cmd_link}")
         while self._event_list.count() < len(self._rx.events):
             ev = self._rx.events[self._event_list.count()]
             self._event_list.addItem(

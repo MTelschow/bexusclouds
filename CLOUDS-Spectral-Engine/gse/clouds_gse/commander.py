@@ -32,18 +32,21 @@ class Commander:
     def __init__(self, host: str, port: int, flight_mode: bool = False,
                  timeout: float = 3.0, log=None):
         self.flight_mode = flight_mode
+        self._host = host
+        self._port = port
         self._timeout = timeout
         self._log = log or (lambda *_: None)
         self._seq = SeqCounter()
-        self._lock = threading.Lock()
-        self._sock = socket.create_connection((host, port), timeout=timeout)
-        self._sock.settimeout(timeout)
+        self._lock = threading.RLock()   # reentrant: _transact -> _disconnect, both lock
+        self._sock: socket.socket | None = None
         self._buf = bytearray()
         self._hb_stop = threading.Event()
         self._hb_thread: threading.Thread | None = None
         self.acks_ok = 0
         self.acks_failed = 0
         self.last_rtt_s: float | None = None
+        self.connected = False
+        self._connect_once()   # best-effort - a down Pi must not stop the GSE from starting
 
     # -- public API ----------------------------------------------------------
 
@@ -84,22 +87,59 @@ class Commander:
         self._hb_stop.set()
         if self._hb_thread:
             self._hb_thread.join(timeout=2.0)
-        try:
-            self._sock.close()
-        except OSError:
-            pass
+        with self._lock:
+            self._disconnect()
 
     # -- internals -----------------------------------------------------------
 
+    def _connect_once(self) -> None:
+        """One connect attempt. Never raises - a down Pi must not stop the GSE
+        from starting, and the heartbeat calls this on the same retry cadence
+        whenever the link is down."""
+        with self._lock:
+            if self.connected:
+                return
+            try:
+                sock = socket.create_connection((self._host, self._port),
+                                                timeout=self._timeout)
+            except OSError as e:
+                self._log(f"command link: cannot reach "
+                          f"{self._host}:{self._port} ({e})")
+                return
+            sock.settimeout(self._timeout)
+            self._sock = sock
+            self._buf = bytearray()
+            self.connected = True
+            self._log(f"command link: connected to {self._host}:{self._port}")
+
+    def _disconnect(self) -> None:
+        with self._lock:
+            if self._sock is not None:
+                try:
+                    self._sock.close()
+                except OSError:
+                    pass
+                self._sock = None
+            if self.connected:
+                self.connected = False
+                self._log("command link: lost - retrying")
+
     def _heartbeat(self) -> None:
+        """PING every HEARTBEAT_INTERVAL_S while connected; the same cadence
+        drives reconnect attempts while the link is down."""
         while not self._hb_stop.wait(HEARTBEAT_INTERVAL_S):
+            if not self.connected:
+                self._connect_once()
+                continue
             try:
                 self.ping()
             except (CommandError, OSError):
-                pass   # keep trying; the operator sees hk_age_s rise
+                pass   # _transact already disconnected us; next tick retries
 
     def _transact(self, cmd: Command, key: int = 0, value: int = 0) -> AckResult:
         with self._lock:   # one in-flight command at a time
+            if not self.connected:
+                raise CommandError("not connected to the Pi command server")
             seq = self._seq.next()
             f = Frame(type=PacketType.CMD,
                       payload=frames.pack_cmd(int(cmd), key, value),
@@ -110,6 +150,7 @@ class Commander:
                 ack = self._wait_ack(seq)
             except OSError as e:
                 self.acks_failed += 1
+                self._disconnect()
                 raise CommandError(f"link failure sending {cmd.name}: {e}") \
                     from e
             self.last_rtt_s = time.time() - t0

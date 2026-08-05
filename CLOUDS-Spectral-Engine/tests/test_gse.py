@@ -133,6 +133,39 @@ class TestCommander:
         with pytest.raises(CommandError):
             commander.ping()
 
+    def test_starts_disconnected_when_pi_unreachable(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind(("127.0.0.1", 0))
+        port = s.getsockname()[1]
+        s.close()                      # freed again - nothing listens on it
+        commander = Commander("127.0.0.1", port, timeout=0.2)
+        try:
+            assert not commander.connected
+            with pytest.raises(CommandError, match="not connected"):
+                commander.ping()
+        finally:
+            commander.close()
+
+    def test_transact_fails_fast_when_disconnected(self, cmd_link):
+        commander, _ = cmd_link
+        commander._disconnect()
+        with pytest.raises(CommandError, match="not connected"):
+            commander.ping()
+
+    def test_reconnects_after_link_drop(self, cmd_link):
+        """What the heartbeat does on its next tick after a dropped link -
+        _transact() marks it down, _connect_once() (same call it retries
+        with) brings the same server back within reach."""
+        commander, _ = cmd_link
+        assert commander.connected
+        commander._sock.close()        # simulate the TCP link dying underfoot
+        with pytest.raises(CommandError):
+            commander.ping()
+        assert not commander.connected
+        commander._connect_once()
+        assert commander.connected
+        assert commander.ping() == AckResult.OK
+
 
 class TestSessionLog:
     def test_hk_events_quicklook_logged_and_exported(self, tmp_path):
