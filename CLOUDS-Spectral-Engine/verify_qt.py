@@ -193,7 +193,10 @@ def _settle(n=12):
 
 
 # snap-then-track: toggle on while live -> snaps into band and holds it
-win.sp_exp.setValue(10); win._start(); app.processEvents()
+# timer stopped so only these explicit _tick_once() calls drive frames - live
+# ticks now run on a worker thread and would otherwise land asynchronously,
+# out of step with this section's tick-by-tick accounting (_esc, _ch, ...).
+win.sp_exp.setValue(10); win._start(); win.timer.stop(); app.processEvents()
 win.chk_track.setChecked(True); app.processEvents()
 _settle(8)
 _frac = win._last_peak / _sat

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import os
 import sys
+import threading
 
 import numpy as np
 import matplotlib
@@ -105,6 +106,31 @@ class _OverlayFrame(QtWidgets.QFrame):
         p.end()
 
 
+class _AcquisitionWorker(QtCore.QThread):
+    """Runs one tick's blocking driver I/O off the GUI thread.
+
+    Against the local/exclusive driver, ``grab()`` returns in milliseconds and
+    this is overkill. Against ``--net`` in bench-stream mode it blocks for up
+    to a second per call, paced to the FSW's cadence (bench_stream.py's
+    ``wait_for_new``); calling that straight from the 60 ms QTimer slot froze
+    the whole window between frames.
+    """
+    done = QtCore.pyqtSignal(object)
+    failed = QtCore.pyqtSignal(str)
+
+    def __init__(self, fn, parent=None):
+        super().__init__(parent)
+        self._fn = fn
+
+    def run(self):
+        try:
+            result = self._fn()
+        except Exception as exc:
+            self.failed.emit(str(exc))
+            return
+        self.done.emit(result)
+
+
 def _fig_to_pixmap(fig):
     canvas = FigureCanvasAgg(fig)
     canvas.draw()
@@ -133,10 +159,16 @@ class Engine(QtWidgets.QMainWindow):
         self.connected = False
         self.info = None
         self.running = False
+        self._driver_lock = threading.RLock()   # serializes driver I/O vs. the live-tick worker
+        self._acq_worker = None
 
         # acquisition state
         self.exposure_ms = 10.0
-        self.navg = NAVG_DEFAULT    # median over N frames rejects USB glitches; see NAVG_DEFAULT
+        # NAVG_DEFAULT's median rejects a physical bench-cable glitch that has no
+        # counterpart over the network - on "net" each grab() already paces to the
+        # FSW's own cadence (bench_stream.py), so multiplying it by navg only adds
+        # multi-second delay for no noise benefit.
+        self.navg = 1 if self.kind == "net" else NAVG_DEFAULT
         self.clean = True           # glitch filter (median + spike despike); off = raw sensor data
         self.axis = "nm"            # "nm" | "pixel"
         self.view = "counts"        # "counts" | "transmission" | "absorbance"
@@ -173,7 +205,7 @@ class Engine(QtWidgets.QMainWindow):
 
         self.timer = QtCore.QTimer(self)
         self.timer.setInterval(60)
-        self.timer.timeout.connect(self._tick_once)
+        self.timer.timeout.connect(self._tick_live)
 
         central = QtWidgets.QWidget()
         self.setCentralWidget(central)
@@ -665,7 +697,8 @@ class Engine(QtWidgets.QMainWindow):
             return
         self._apply_exposure_if_changed()
         n = max(16, self.navg)
-        frame = P.average_frames([self.driver.grab() for _ in range(n)], method="median", clean=self.clean)
+        with self._driver_lock:
+            frame = P.average_frames([self.driver.grab() for _ in range(n)], method="median", clean=self.clean)
         m = self.cal.by_role("measurement")
         r = self._ref()
         use_dark = self.dark if (self.subtract_dark_flag and self.dark is not None) else None
@@ -756,11 +789,14 @@ class Engine(QtWidgets.QMainWindow):
                 pass
 
     def closeEvent(self, ev):
-        """Tear down cleanly when the window closes: stop the live timer and release
-        the camera, so a queued tick can't touch a closing USB device."""
+        """Tear down cleanly when the window closes: stop the live timer, let
+        any in-flight tick finish, and release the camera so a queued tick
+        can't touch a closing USB device."""
         try:
             self._stop()
             self.timer.stop()
+            if self._acq_worker is not None:
+                self._acq_worker.wait()
             if self.connected:
                 self.driver.close()
         except Exception:
@@ -818,10 +854,11 @@ class Engine(QtWidgets.QMainWindow):
         tgt = sat * target
 
         def probe(exp_ms):
-            self.driver.set_times_us(int(round(exp_ms * 1000)))
-            for _ in range(2):
-                self.driver.grab()                              # let the new timing settle
-            frame = P.average_frames([self.driver.grab() for _ in range(7)], method="median")
+            with self._driver_lock:
+                self.driver.set_times_us(int(round(exp_ms * 1000)))
+                for _ in range(2):
+                    self.driver.grab()                              # let the new timing settle
+                frame = P.average_frames([self.driver.grab() for _ in range(7)], method="median")
             return max(P.robust_peak(ch.slice(frame)) for ch in self.cal.channels)
 
         exp, pk = min(max(self.exposure_ms, lo_ms), hi_ms), 0.0
@@ -898,33 +935,37 @@ class Engine(QtWidgets.QMainWindow):
                 self._track_msg = "(scene too bright @ floor)"
 
     def _apply_exposure_if_changed(self):
-        us = int(round(self.exposure_ms * 1000))
-        if us != self._applied_us:
-            self.driver.set_times_us(us)
-            self._applied_us = us
-            for _ in range(2):          # let the new timing settle
-                self.driver.grab()
+        with self._driver_lock:
+            us = int(round(self.exposure_ms * 1000))
+            if us != self._applied_us:
+                self.driver.set_times_us(us)
+                self._applied_us = us
+                for _ in range(2):          # let the new timing settle
+                    self.driver.grab()
 
-    def _tick_once(self):
-        if not self.connected:
-            return
-        import time as _time
-        self._frame_n += 1
-        now = _time.monotonic()
-        if self._t_prev is not None and now > self._t_prev:
-            self._fps = 1.0 / (now - self._t_prev)
-        self._t_prev = now
-        self._apply_exposure_if_changed()
-        frames = [self.driver.grab() for _ in range(max(1, self.navg))]
-        self._last_glitch = P.glitch_fraction(frames)
-        self._dark_value = self.driver.dark_value()
-        fc = self.driver.frame_counter()
+    def _acquire_frame(self):
+        """Blocking driver I/O for one tick. Runs on the GUI thread for a
+        single-shot capture, or inside _AcquisitionWorker for the live loop -
+        the lock keeps the two from touching the driver at once."""
+        with self._driver_lock:
+            self._apply_exposure_if_changed()
+            frames = [self.driver.grab() for _ in range(max(1, self.navg))]
+            glitch = P.glitch_fraction(frames)
+            dark_value = self.driver.dark_value()
+            fc = self.driver.frame_counter()
+            last_frame = P.average_frames(frames, method="median", clean=self.clean)
+        return len(frames), glitch, dark_value, fc, last_frame
+
+    def _finish_tick(self, payload):
+        n_frames, glitch, dark_value, fc, last_frame = payload
+        self._last_glitch = glitch
+        self._dark_value = dark_value
         if fc is not None and self._last_fc is not None:
             adv = fc - self._last_fc
-            if 0 <= adv < len(frames):
-                self._dropped += len(frames) - adv          # got stale/duplicate frames
+            if 0 <= adv < n_frames:
+                self._dropped += n_frames - adv          # got stale/duplicate frames
         self._last_fc = fc
-        self.last_frame = P.average_frames(frames, method="median", clean=self.clean)
+        self.last_frame = last_frame
         self._process()
         self._render_plot()
         self._update_stats()
@@ -944,6 +985,40 @@ class Engine(QtWidgets.QMainWindow):
                 self.chk_log.blockSignals(True); self.chk_log.setChecked(False); self.chk_log.blockSignals(False)
         if self._track and self.running:
             self._track_exposure()          # nudge integration time for the NEXT frame
+
+    def _begin_tick(self):
+        import time as _time
+        self._frame_n += 1
+        now = _time.monotonic()
+        if self._t_prev is not None and now > self._t_prev:
+            self._fps = 1.0 / (now - self._t_prev)
+        self._t_prev = now
+
+    def _tick_once(self):
+        """Synchronous single-frame capture for button-triggered actions."""
+        if not self.connected:
+            return
+        self._begin_tick()
+        self._finish_tick(self._acquire_frame())
+
+    def _tick_live(self):
+        """QTimer-driven live loop: the actual grab() runs off the GUI thread
+        so a slow (net) link stalls only the acquisition, never the window."""
+        if not self.connected:
+            return
+        if self._acq_worker is not None:
+            return                              # previous tick's grab still in flight
+        self._begin_tick()
+        w = _AcquisitionWorker(self._acquire_frame, self)
+        w.done.connect(self._finish_tick)
+        w.failed.connect(lambda msg: self._set_hint(f"live update failed: {msg[:80]}"))
+        w.finished.connect(self._on_worker_finished)
+        self._acq_worker = w
+        w.start()
+
+    def _on_worker_finished(self):
+        w, self._acq_worker = self._acq_worker, None
+        w.deleteLater()
 
     def _ref(self):
         """The reference channel, or None on a single-channel instrument."""
@@ -990,7 +1065,8 @@ class Engine(QtWidgets.QMainWindow):
             return
         self._apply_exposure_if_changed()
         n = max(8, self.navg)
-        self.dark = P.average_frames([self.driver.grab() for _ in range(n)], clean=self.clean)
+        with self._driver_lock:
+            self.dark = P.average_frames([self.driver.grab() for _ in range(n)], clean=self.clean)
         self.chk_dark.setChecked(True)
         self._set_hint(f"dark captured ({n} frames @ {self.exposure_ms:g} ms)")
         if not self.running:
