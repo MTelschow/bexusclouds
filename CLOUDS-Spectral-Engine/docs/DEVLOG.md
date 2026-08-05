@@ -29,13 +29,22 @@ range.
 starts checked. `_track_exposure`'s deadband moved from `[0.54, 0.78]` (target
 0.65) to `[0.60, 0.80]` (target 0.70); the one-shot `_auto_expose` target and
 accept band moved the same way, so the button and the servo agree on where
-"in range" is. `_connect()` snaps the exposure once right after connecting if
-tracking is on, so the default takes hold immediately rather than waiting for
-Run plus a live frame - deliberately *not* via `_start()`, so plugging in the
-detector no longer implicitly starts the live loop.
+"in range" is.
 
 The 0.80 ceiling stays inside the 0.78 knee guard from the 2026-06-14 entry
 below (TCD1304 nonlinearity near saturation) - close to it, but not past it.
+
+**Regression caught and reverted the same day: no eager snap on connect.**
+First version also called `_auto_expose()` from `_connect()` when tracking is
+on, to get in range immediately instead of waiting for the servo to converge
+over a few live frames. `_auto_expose` hunts over several *blocking* driver
+round-trips (2 settle grabs + a 7-frame average per probe, up to 8 iterations,
+confirmed twice) - fine for the ~1 ms USB round-trip the design was verified
+against, but `main()` calls `_connect()` unconditionally on startup, and over
+`--net` (TCP to the Pi's `net_server`/`--bench-stream`) each of those round-trips
+pays real network latency - 100+ round-trips stalled the window opening for
+seconds. Removed; the continuous servo now converges gradually once the user
+presses Run instead, no upfront hunt on connect.
 
 **Verified - mock** (`verify_qt.py`): same coverage as 2026-06-14 (dead-beat,
 10x-dimming recovery, deep-saturation escape, glitch immunity, rail-honesty,

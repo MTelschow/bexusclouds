@@ -845,8 +845,11 @@ class Engine(QtWidgets.QMainWindow):
                 f"{model}  SN {serial}\n{inst.get('detector', '')}  "
                 f"{self.info.pixels}px  {port}".strip())
             self._set_hint("connected - press Run for live, or Single")
-            if self._track:                 # auto integration time is on by default: snap now
-                self._auto_expose()
+            # No eager _auto_expose() snap here: it hunts over several blocking
+            # driver round-trips (settle grabs + a 7-frame average per probe,
+            # up to 8 iterations) - fine for a manual toggle, but over --net or
+            # slow hardware it would stall startup for seconds. The continuous
+            # servo (_track_exposure) converges gradually once live instead.
         except DriverError as e:
             self.connected = False
             self.lbl_device.setText("connection failed")
