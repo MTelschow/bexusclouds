@@ -32,6 +32,10 @@ from spectro import processing as P
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 NAVY = "#01386a"
+# Readout font stack. Platform-native mono first: naming a font Qt cannot resolve
+# (Consolas on macOS/Linux) makes it scan every installed family to build the alias
+# table - ~100 ms at startup, logged as "qt.qpa.fonts: Populating font family aliases".
+MONO = "Menlo,DejaVu Sans Mono,Consolas,monospace"
 VERSION = "0.1.0"
 RECONNECT_INTERVAL_MS = 3000   # auto-retry cadence after a driver/link error
 
@@ -295,7 +299,7 @@ class Engine(QtWidgets.QMainWindow):
         self.stats = QtWidgets.QLabel("")
         self.stats.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse)
         self.stats.setStyleSheet(
-            f"color:{NAVY}; font-family:Consolas,monospace; font-size:12px;"
+            f"color:{NAVY}; font-family:{MONO}; font-size:12px;"
             "font-weight:bold; border:0; background:transparent;")
         sb.addWidget(self.stats)
         self.stats_box.move(16, 16)
@@ -311,7 +315,7 @@ class Engine(QtWidgets.QMainWindow):
         cb.addWidget(ccap)
         self.cursor_lbl = QtWidgets.QLabel("hover the spectrum")
         self.cursor_lbl.setStyleSheet(
-            f"color:{NAVY}; font-family:Consolas,monospace; font-size:12px;"
+            f"color:{NAVY}; font-family:{MONO}; font-size:12px;"
             "font-weight:bold; border:0; background:transparent;")
         cb.addWidget(self.cursor_lbl)
         self.cursor_box.adjustSize()
@@ -1567,7 +1571,7 @@ class _CalibrationDialog(QtWidgets.QDialog):
         self.status.setWordWrap(True); self.status.setStyleSheet("color:#5a6b7a; font-size:11px;")
         lay.addWidget(self.status)
         self.result = QtWidgets.QLabel(""); self.result.setStyleSheet(
-            f"color:{NAVY}; font-family:Consolas,monospace; font-size:11px;")
+            f"color:{NAVY}; font-family:{MONO}; font-size:11px;")
         lay.addWidget(self.result)
 
         bb = QtWidgets.QHBoxLayout()
