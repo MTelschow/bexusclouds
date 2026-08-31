@@ -33,10 +33,18 @@ python3 -m clouds_fsw.main --no-uart --bench-stream  # + serve the live panel
 python -m clouds_gse.main --gui --experiment 192.168.100.10
 
 # checks — run all three before committing
-python -m pytest tests/                 # 130+ tests, no hardware needed
+python -m pytest tests/                 # 150+ tests, no hardware needed
 python verify.py                        # driver + calibration self-checks
 python -u verify_qt.py                  # offscreen UI; must end "VERIFY OK"
 flight/mcu/test/run_native.sh           # firmware core (C, host compiler)
+```
+
+```sh
+# RP2350 firmware (details + macOS toolchain trap in flight/mcu/README.md)
+export PICO_SDK_PATH=~/pico-sdk PICO_TOOLCHAIN_PATH=~/arm-gnu-toolchain
+cmake -S flight/mcu -B flight/mcu/build -DPICO_PLATFORM=rp2350 -DPICO_BOARD=pico2
+cmake --build flight/mcu/build -j8
+picotool load -f -x flight/mcu/build/clouds_fsw_mcu.uf2   # -f: no BOOTSEL needed
 ```
 
 ## Which GUI — read this before "opening the GUI"
@@ -95,6 +103,35 @@ vendor library auto-detects the camera; no COM port or tty is hardcoded.
   `Dark_Pixel: 0 x 16` *before* `Pixel: 1 x 2048` — parse with care.
 - `saturation_count` is **65520**, i.e. the 16-bit scale (12-bit × 16), not 4095.
 
+### RP2350 carrier - measured, not from the drawings
+
+`board.h` calls itself preliminary and it means it: three of its pin
+assignments were wrong on the real board. Everything below was measured, with
+the method in `docs/DEVLOG.md` (2026-08-31). **Measure before trusting that
+header.** Two boards are in play; keep them apart by USB serial - bare Pico 2
+`182A9FD0C5146E6F`, CLOUDS carrier `21DD2AE08840C863`.
+
+| What | Where | State |
+|---|---|---|
+| i2c0 | **SDA GP28, SCL GP29** (not GP12/13, which are unconnected) | BME280 `0x76` is the only usable sensor |
+| INA226 ×3 | `0x40` 24 V, `0x44` 5 V, `0x45` 3.3 V | live, but **no field in the 44-byte HK** |
+| BNO055 IMU | `0x28` | answers with valid chip id / SW rev; **sub-sensor IDs read 0x00**, unusable |
+| Membrane solenoid | **GP26** (not GP8, unconnected) | **2 Hz**, loop-toggled via `core/sqwave` |
+| STLM20 ×2 | none | **not populated**; the old `ADC_TEMP1` collided with GP26 |
+| Keller 23SY ×2 | none | **absent at every address** |
+| SD / SPI0 | `board.h` pins measure unconnected | no card answers `CMD0`; **M-11 blocked** |
+
+So `p_ch_pa`, `rh2_cpct`, `temp1/2_cc` and the IMU vectors have **no source**.
+They are declared through `error_flags` (`HKE_*` in `core/frame.h`, `HkErrors`
+in `clouds_link/hk.py`, kept in step by a mirror test) rather than filled with
+invented numbers. The SED baselines no IMU at all while risk MS002 is "IMU
+failure" - hardware and document disagree.
+
+**S.3 does not hold yet.** Persistence is still a RAM stub, so brownout resume
+does not survive a real reset: the `fired` bit that prevents a second CaCO₃
+release is lost on power loss. Largest open flight risk, blocked on the
+carrier schematic.
+
 ## Traps that have cost real time
 
 **Data scaling differs by platform.** The Windows DLL returns each sample
@@ -118,6 +155,43 @@ Correct end state: one tty at `0666`, interface `:1.0` unbound.
 
 **A charge-only USB cable** enumerates as Code 43 / `Port Reset Failed` and the
 camera is invisible. Use a data cable.
+
+**Your instrument invents its own findings - rule the instrument out first.**
+This happened twice in one day. `gpio_get()` on a pin still in
+`GPIO_FUNC_I2C` returns the *controller's* drive state, not the board's, and
+reported a stuck SCL that did not exist; sample idle levels as plain SIO
+inputs before applying the I2C function and after `i2c_deinit`. Reading
+`0xFE`/`0xFF` on the BNO055, whose page-0 map ends at `0x6A`, *caused* the
+`SYS_ERR 0x05` ("register map address out of range") that the next pass then
+read back as evidence of a boot failure.
+
+**An I2C ACK is not an identity, and a completed transfer is not a valid
+reading.** Guessing parts from default addresses got four of five wrong here.
+Validate the checksum the part specifies (Sensirion CRC-8 over `0x0000` is
+`0x81`, not `0xff`) and convert to physical units - a plausible lab
+temperature and pressure is the proof. All-`0xff` payloads mean nobody is
+driving the bus.
+
+**A failed sensor read must never report a low pressure.** `autonomy_step()`
+detects launch from a *drop* below `p_ground - PARAM_LAUNCH_DP_PA`, so 0 Pa
+after an I2C glitch mimics a 100 kPa fall, trips launch detection on the bench
+and fires valves. Hold the last good value, flag `HKE_P_AMB_STALE`, and cold
+start at sea level: high is safe, low is not.
+
+**PWM cannot go below ~9 Hz** (`clk_sys / (256 × 65536)`), and the membrane
+runs at 2 Hz. Sub-floor drives are toggled from `hw_actuators_service()` via
+`core/sqwave`, never clamped up to the floor - clamping runs the actuator at
+the wrong frequency while reporting success. Actuator waveforms are
+loop-released on purpose: an IRQ- or peripheral-driven output keeps energizing
+the solenoid through a hung loop.
+
+**stdio UART would collide with the HK downlink.** The SDK default stdio UART
+is `uart0` on GP0/GP1 - the exact UART and pins `hw/uart_io.c` uses for framed
+HK. `pico_enable_stdio_uart` must stay **0** or a `printf` corrupts telemetry.
+USB stdio is on instead, which also brings the picotool reset interface, so
+reflashing needs no BOOTSEL - but `pico_enable_stdio_usb` alone is inert
+without a `stdio_init_all()` call: the driver is compiled and then discarded,
+which looks exactly like success.
 
 **PyQt5 aborts the process** on an unhandled exception in a slot.
 `clouds_spectral.py` calls `set_times_us()` / `grab()` from a timer slot without
