@@ -36,6 +36,19 @@ class McuFlags(IntEnum):
     HOLD = 1 << 4
 
 
+class HkErrors(IntEnum):
+    """Mirror of the HKE_* bits in flight/mcu/src/core/frame.h.
+
+    A set bit means the matching field is not a live measurement, so ground
+    can distinguish a held or absent reading from a real one.
+    """
+    BME280_FAIL = 1 << 0    # BME280 absent or read failed
+    P_AMB_STALE = 1 << 1    # p_amb_pa is a held last-good value
+    NO_CHAMBER_P = 1 << 2   # no chamber pressure sensor fitted
+    NO_RH2 = 1 << 3         # no second humidity channel fitted
+    IMU_FAIL = 1 << 4       # IMU absent or reporting a fault
+
+
 @dataclass
 class Housekeeping:
     state: int = 0

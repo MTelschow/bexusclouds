@@ -67,6 +67,15 @@ typedef struct {
 #define MCUF_SEAL_VERIFIED (1u << 3)
 #define MCUF_HOLD (1u << 4)
 
+/* Sensor error bits (hk_t.error_flags) - mirror of clouds_link/hk.py
+ * HkErrors. A set bit means the matching HK field is NOT a live measurement,
+ * so ground can tell a stale reading from a real one. */
+#define HKE_BME280_FAIL (1u << 0)   /* BME280 absent or read failed */
+#define HKE_P_AMB_STALE (1u << 1)   /* p_amb_pa is a held last-good value */
+#define HKE_NO_CHAMBER_P (1u << 2)  /* no chamber pressure sensor fitted */
+#define HKE_NO_RH2 (1u << 3)        /* no second humidity channel fitted */
+#define HKE_IMU_FAIL (1u << 4)      /* IMU absent or reporting a fault */
+
 size_t frame_encode(uint8_t type, uint16_t seq, uint32_t t_s, uint16_t t_ms,
                     const uint8_t *payload, uint16_t plen,
                     uint8_t *out, size_t cap);

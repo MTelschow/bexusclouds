@@ -18,7 +18,7 @@ without re-deriving anything. Newest entries first.
 
 ---
 
-## 2026-08-31 - The sensor I2C bus is on GP28/GP29, not GP12/GP13 (M-09)
+## 2026-08-31 - i2c0 is on GP28/GP29 and carries the power tree (M-09); M-11 blocked on the SD pinout
 
 **Why.** M-09 (BME280 / Keller 23SY / IMU drivers) is still a `TODO` in
 `hw_read_sensors`, and `board.h` carries the disclaimer "preliminary - track
@@ -47,21 +47,41 @@ survey against the board schematic, not in isolation.
 and never probed), address counted as present when the read returns >= 0.
 Five devices answer:
 
-| 7-bit | write / read | consistent with | role in the spec |
+Five devices answer: `0x28`, `0x40`, `0x44`, `0x45`, `0x76`.
+
+**Measurement 3 - what those five actually are.** Guessing parts from default
+addresses got every one of them except the BME280 wrong, so the identities
+below come from ID registers and from readings in physical units. The first
+guess had `0x44`/`0x45` as the two RH channels and `0x40`/`0x28` as the two
+Keller 23SY - all four wrong:
+
+| 7-bit | identified as | evidence | HK field |
 |---|---|---|---|
-| `0x28` | `0x50` / `0x51` | Honeywell HSC/SSC, or a Keller at a non-default address | second Keller 23SY |
-| `0x40` | `0x80` / `0x81` | **Keller 23SY** default (also INA219, Si7021, HDC1080) | first Keller 23SY |
-| `0x44` | `0x88` / `0x89` | SHT3x/SHT4x temp+RH, default address | RH channel 1 |
-| `0x45` | `0x8a` / `0x8b` | same family, ADDR pin high | RH channel 2, "reserved per spec section 7" |
-| `0x76` | `0xec` / `0xed` | **BME280/BMP280**, primary address | the BME280 `board.h` expects |
+| `0x76` | **BME280** | `chip_id`(0xD0)=`0x60`; calib `dig_T1=28323 dig_P1=37257 dig_H1=75`; compensated 29.17 degC / 99396 Pa / 41.15 %RH | `bme_temp_cc`, `rh1_cpct`, `p_amb_pa` |
+| `0x40` | **INA226** | `man_id`(0xFE)=`0x5449` "TI", `die_id`(0xFF)=`0x2260`; bus reads **24.003 V** | none (see below) |
+| `0x44` | **INA226** | same IDs; bus reads **5.092 V** | none |
+| `0x45` | **INA226** | same IDs; bus reads **3.298 V** | none |
+| `0x28` | **BNO055 IMU, faulted** | `CHIP_ID`=`0xA0` at the BNO055's own default address, `SW_REV`=`0x0311`, `BL_REV`=`0x15` - but `ACC_ID`/`MAG_ID`/`GYR_ID` all read `0x00` and `SYS_STAT`=`0x01` (system error), `SYS_ERR`=`0x05` | none; `HKE_IMU_FAIL` |
 
-An address is not an identity - several parts share each of these. Reading ID
-registers (BME280 `0xD0` must return `0x60`; SHT3x has a readable serial) is
-the confirmation step, and belongs with the M-09 driver work.
+So the bus carries **the power tree, not the humidity sensors**: three INA226
+watching 24 V, 5 V and 3.3 V. `hk_t` has no voltage or current field and HK is
+44 B against a 67 B ceiling, so they are not sampled by `hw_read_sensors`;
+adding them is a protocol change, not a driver change.
 
-**No IMU answered.** `board.h:34` promises "BME280 + IMU" on this bus, but
-nothing responded at any usual IMU address (`0x68`, `0x69`, `0x6A`, `0x6B`).
-Either it is unpopulated or it is not on i2c0. M-09 must not assume it.
+**There is no chamber pressure sensor and no second RH channel on this bus,
+and no Keller 23SY at any address.** The IMU is fitted and answers, but its
+internal sensor dies do not, so it is unusable as it stands. `p_ch_pa`,
+`rh2_cpct`, `accel_mg` and `gyro_ddps` therefore have no source; they are
+flagged through `error_flags` rather than filled with invented numbers.
+
+**Trap: an ACK is not an identity, and a completed transfer is not a valid
+reading.** The first probe declared "CONFIRMED" whenever a write and a read
+both returned >= 0, which is true of any device that acknowledges its address.
+It reported SHT3x parts at `0x44`/`0x45` that do not exist and a working Keller
+protocol at `0x40`/`0x28` that never replied - the payloads were all-`0xff`,
+i.e. nobody driving the bus. Validate the checksum the part specifies (Sensirion
+CRC-8 over `0x0000` is `0x81`, not `0xff`) and convert to physical units: a
+plausible lab temperature and pressure is the proof, not a return code.
 
 **Trap: never read a pin level while it is in `GPIO_FUNC_I2C`.** The first
 version of the scan called `gpio_get()` on the I2C pins to report bus idle
@@ -75,12 +95,43 @@ above. Use `i2c_read_timeout_us`, not `i2c_read_blocking`, or a genuinely stuck
 clock hangs the scan instead of reporting it.
 
 **Consequence for the code.** `PIN_I2C_SDA` / `PIN_I2C_SCL` in
-`flight/mcu/src/hw/board.h` moved from 12 / 13 to **28 / 29**, with the measured
-addresses recorded alongside them. Nothing was broken before the change -
-`hw_init()` never calls `i2c_init()` and no test asserts those constants - but
-M-09 built on 12/13 would have found an empty bus. Note this spends ADC2/ADC3;
-only ADC0/ADC1 (GP26/GP27, the two STLM20s) are used, so there is no conflict,
-and the survey saw both of those pins externally driven as expected.
+`flight/mcu/src/hw/board.h` moved from 12 / 13 to **28 / 29**. Nothing was
+broken before the change - `hw_init()` never called `i2c_init()` and no test
+asserts those constants - but M-09 built on 12/13 would have found an empty
+bus. Note this spends ADC2/ADC3; only ADC0/ADC1 (GP26/GP27, the two STLM20s)
+are used, so there is no conflict, and the survey saw both of those pins
+externally driven as expected.
+
+**M-09, the half that exists.** `src/hw/bme280.c` drives the BME280 in normal
+(continuous) mode, so a sample is always waiting and reading it costs one
+register burst with no delay - that is what lets the sweep stay inside the 2 s
+watchdog without a single sleep in `src/hw/` (the no-sleep test now covers the
+whole directory, not just `hw.c`). Compensation is the datasheet fixed-point
+reference, and the driver was run on the board before being committed:
+`bme_temp_cc=2915  rh1_cpct=4152  p_amb_pa=99411`, stable over repeated reads.
+
+**Why a failed sensor read holds the pressure instead of zeroing it.** This is
+the sharp edge of M-09. `autonomy_step()` detects launch from a *drop* below
+`p_ground_pa - PARAM_LAUNCH_DP_PA`, so reporting 0 Pa after an I2C glitch would
+mimic a 100 kPa fall, trip launch detection on the bench and fire valves. The
+hardware layer keeps the last good value, flags it `HKE_P_AMB_STALE`, and starts
+from sea-level pressure on a cold start - high is safe, low is not, because only
+a fall can trigger anything. `tests/test_fsw_mcu_actuators.py::
+TestSensorFailureIsSafe` pins all three properties at source level, and
+`error_flags` finally has defined bits (`HKE_*` in `frame.h`, `HkErrors` in
+`clouds_link/hk.py`, kept in step by a mirror test per X-01).
+
+**M-11 is blocked on the same class of problem, and must not be guessed at.**
+`board.h` maps SPI0 to `SCK 18, MOSI 19, MISO 16, CS_A 17, CS_B 20`, but the
+passive survey read GP16, GP17 and GP18 as unconnected, and an SD probe on
+exactly those pins got `CMD0` = `0xff` on both chip selects - nothing driving
+MISO. An empty socket with pull-ups would still hold MISO high, so the evidence
+points at the pin map rather than at missing cards. Writing FatFs against a map
+that has now been wrong once already would repeat this entry's whole mistake, so
+persistence stays the RAM stub and **S.3 brownout resume still does not survive
+a real reset**: the `fired` bit that prevents a second CaCO3 release is lost on
+power loss. That is the largest open flight risk and it needs the carrier
+schematic, not more probing.
 
 **Hardware.** Two distinct RP2350 boards are in play, worth keeping apart by
 USB serial: the bare Pico 2 `182A9FD0C5146E6F` (carries `clouds_fsw_mcu.uf2`)

@@ -24,16 +24,24 @@
 /* Membrane push-pull solenoid (HS-1564B) via inverter stage */
 #define PIN_MEMBRANE_PWM 8
 
-/* SPI0: two redundant SD cards (separate chip selects) */
+/* SPI0: two redundant SD cards (separate chip selects).
+ * UNVERIFIED - these pins are almost certainly wrong for the current carrier.
+ * GP16/GP17/GP18 measure as unconnected and an SD probe on exactly these pins
+ * got CMD0 = 0xff on both chip selects (DEVLOG 2026-08-31). Confirm against
+ * the schematic before building M-11 on them; the I2C pins below were wrong
+ * in the same way. */
 #define PIN_SD_SCK 18
 #define PIN_SD_MOSI 19
 #define PIN_SD_MISO 16
 #define PIN_SD_CS_A 17
 #define PIN_SD_CS_B 20
 
-/* I2C0: BME280 (0x76) + 2x RH (0x44/0x45) + 2x Keller 23SY (0x40/0x28);
- * ADC: STLM20 x2. Pins measured on the carrier, not assumed - GP12/GP13 are
- * unconnected there and no IMU answers this bus (DEVLOG 2026-08-31). */
+/* I2C0 as measured on the carrier, not assumed: BME280 0x76 (the only source
+ * of ambient T/RH/p), INA226 x3 on 0x40/0x44/0x45 watching the 24 V, 5 V and
+ * 3.3 V rails, and a BNO055 IMU at 0x28 that answers but reports a system
+ * error. GP12/GP13 are unconnected here. No chamber pressure sensor and no
+ * second RH channel exist on this bus. ADC: STLM20 x2 on GP26/GP27.
+ * Identities and method: DEVLOG 2026-08-31. */
 #define PIN_I2C_SDA 28
 #define PIN_I2C_SCL 29
 #define ADC_TEMP1 0 /* GPIO26 */

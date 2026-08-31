@@ -24,6 +24,7 @@ add_executable(clouds_fsw_mcu
     src/core/sequencer.c
     src/core/pulse.c
     src/hw/hw.c
+    src/hw/bme280.c
     src/hw/uart_io.c
 )
 
@@ -32,6 +33,7 @@ target_compile_options(clouds_fsw_mcu PRIVATE -Wall -Wextra)
 target_link_libraries(clouds_fsw_mcu
     pico_stdlib
     hardware_adc
+    hardware_i2c
     hardware_pwm
     hardware_uart
     hardware_watchdog

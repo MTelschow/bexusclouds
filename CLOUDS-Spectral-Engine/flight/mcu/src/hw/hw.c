@@ -11,6 +11,7 @@
 
 #include "hardware/adc.h"
 #include "hardware/gpio.h"
+#include "hardware/i2c.h"
 #include "hardware/pwm.h"
 #include "hardware/watchdog.h"
 #include "pico/stdlib.h"
@@ -18,6 +19,7 @@
 #include "../core/config.h"
 #include "../core/crc16.h"
 #include "../core/pulse.h"
+#include "bme280.h"
 #include "board.h"
 
 /* ---- time base (S.4) ---------------------------------------------------- */
@@ -188,9 +190,35 @@ const seq_ops_t hw_seq_ops = {
 };
 
 /* ---- sensors (M-09) ------------------------------------------------------- */
+/* What is actually on i2c0 of the carrier, measured (DEVLOG 2026-08-31):
+ *   0x76  BME280            -> ambient temp, RH and pressure. Confirmed.
+ *   0x40  INA226  24 V bus  -> power monitoring; no field in hk_t (HK is 44 B
+ *   0x44  INA226  5 V rail     against a 67 B ceiling), so not sampled here.
+ *   0x45  INA226  3.3 V rail
+ *   0x28  BNO055 IMU        -> present but reports SYS_STAT=1 / SYS_ERR=5 and
+ *                              its accel/mag/gyro IDs read 0x00, i.e. fitted
+ *                              and not usable. Reported via HKE_IMU_FAIL.
+ * There is NO chamber pressure sensor and NO second humidity channel on this
+ * bus, so p_ch_pa and rh2_cpct have no source; both are flagged rather than
+ * invented. Keller 23SY parts are not present at any address. */
+
+/* Why p_amb_pa is held rather than zeroed on a failed read: autonomy_step()
+ * detects launch from a *drop* below p_ground - PARAM_LAUNCH_DP_PA. Reporting
+ * 0 Pa on an I2C glitch would look like a 100 kPa fall and trip launch
+ * detection on the bench, firing valves. Holding the last good value fails in
+ * the safe direction (no drop), and HKE_P_AMB_STALE tells ground it is held.
+ * The cold-start value is sea-level pressure for the same reason: high is
+ * safe, low is not. */
+#define P_AMB_COLD_START_PA 101325u
+
+static uint32_t last_p_amb_pa = P_AMB_COLD_START_PA;
 
 void hw_read_sensors(hk_t *hk)
 {
+    int16_t bme_temp_cc;
+    uint16_t rh_cpct;
+    uint32_t p_pa;
+
     /* STLM20: Vout = -11.69 mV/degC * T + 1.8663 V (datasheet) */
     adc_select_input(ADC_TEMP1);
     uint16_t raw1 = adc_read();
@@ -202,13 +230,29 @@ void hw_read_sensors(hk_t *hk)
     hk->temp1_cc = (int16_t)((186630 - mv1 * 100) * 10 / 1169);
     hk->temp2_cc = (int16_t)((186630 - mv2 * 100) * 10 / 1169);
 
-    /* TODO (M-09): BME280 over I2C0 (temp/RH/pressure), Keller 23SY x2,
-     * IMU accel/gyro. Second RH channel reserved per spec section 7. */
-    hk->bme_temp_cc = 0;
-    hk->rh1_cpct = 0;
+    hk->error_flags = 0;
+
+    if (bme280_read(&bme_temp_cc, &rh_cpct, &p_pa)) {
+        hk->bme_temp_cc = bme_temp_cc;
+        hk->rh1_cpct = rh_cpct;
+        hk->p_amb_pa = p_pa;
+        last_p_amb_pa = p_pa;
+    } else {
+        /* Hold, never drop - see the note above. */
+        hk->bme_temp_cc = 0;
+        hk->rh1_cpct = 0;
+        hk->p_amb_pa = last_p_amb_pa;
+        hk->error_flags |= HKE_BME280_FAIL | HKE_P_AMB_STALE;
+    }
+
+    /* No sensor exists for these. p_ch_pa mirrors ambient so that a future
+     * M-15 divergence check reads "not sealed" (the conservative direction)
+     * instead of the huge fake divergence a 0 would produce; M-15 must test
+     * HKE_NO_CHAMBER_P before trusting it. */
+    hk->p_ch_pa = hk->p_amb_pa;
     hk->rh2_cpct = 0;
-    hk->p_amb_pa = 101325;
-    hk->p_ch_pa = 101325;
+    hk->error_flags |= HKE_NO_CHAMBER_P | HKE_NO_RH2 | HKE_IMU_FAIL;
+
     memset(hk->accel_mg, 0, sizeof hk->accel_mg);
     memset(hk->gyro_ddps, 0, sizeof hk->gyro_ddps);
 }
@@ -230,4 +274,16 @@ void hw_init(void)
     adc_init();
     adc_gpio_init(26 + ADC_TEMP1);
     adc_gpio_init(26 + ADC_TEMP2);
+
+    /* i2c0 at 100 kHz: the speed the bus was surveyed and the devices
+     * identified at. Internal pull-ups are belt-and-braces; the carrier has
+     * real ones on both lines (measured pu=1 pd=1 on GP28/GP29). */
+    i2c_init(i2c0, 100 * 1000);
+    gpio_set_function(PIN_I2C_SDA, GPIO_FUNC_I2C);
+    gpio_set_function(PIN_I2C_SCL, GPIO_FUNC_I2C);
+    gpio_pull_up(PIN_I2C_SDA);
+    gpio_pull_up(PIN_I2C_SCL);
+    /* Failure is not fatal: hw_read_sensors() falls back and raises
+     * HKE_BME280_FAIL, and the sequencer is required to survive it. */
+    (void)bme280_init();
 }

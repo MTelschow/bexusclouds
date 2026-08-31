@@ -45,13 +45,39 @@ for `src/hw/`, which the native build cannot compile.
 export PICO_SDK_PATH=~/pico-sdk        # SDK >= 2.0
 cmake -B build -DPICO_PLATFORM=rp2350 -DPICO_BOARD=pico2
 cmake --build build                    # -> clouds_fsw_mcu.uf2
+picotool load -f -x build/clouds_fsw_mcu.uf2   # -f forces BOOTSEL over USB
 ```
+
+**macOS: do not use Homebrew's `arm-none-eabi-gcc`.** It ships without newlib,
+so every link dies on `cannot find -lg` / `cannot find -lc` - the first failure
+is the SDK's own `bs2_default.elf`, which makes it look like an SDK problem.
+Use the Arm GNU toolchain instead and point the SDK at it:
+
+```sh
+brew install picotool                  # plus libusb, for flashing
+# Arm GNU Toolchain (bundles newlib). The cask installs a .pkg needing sudo;
+# `pkgutil --expand-full <pkg> <dir>` extracts the same payload without root.
+export PICO_TOOLCHAIN_PATH=~/arm-gnu-toolchain
+```
+
+The firmware is **UART-stdio only** (`pico_enable_stdio_usb` is not set), so a
+flashed board presents no USB serial device: HK comes out of UART0, GP0 TX /
+GP1 RX, 115200 8N1, and a reflash needs `picotool load -f` while some other
+image with a USB reset interface is running, or BOOTSEL held during power-up.
 
 ## Open hardware integration points (marked `TODO` in `src/hw/`)
 
 - **M-11 SD stack**: FatFs over SPI0, both cards; persistence is a RAM
   stub until then — flight code MUST replace it (S.3 depends on it).
-- **M-09 sensors**: BME280 / Keller 23SY / IMU drivers (STLM20 ADC done).
+  **Blocked**: `board.h`'s SPI0 pins are unverified and measure as
+  unconnected, and an SD probe on them gets no response on either chip
+  select. Needs the carrier schematic before any code (DEVLOG 2026-08-31).
+- **M-09 sensors**: STLM20 ADC and the **BME280 are done** (`src/hw/bme280.c`,
+  ambient T/RH/pressure, verified on the board). Still open: there is no
+  chamber pressure sensor and no second RH channel on i2c0, and the BNO055 at
+  0x28 answers but reports a system error, so `p_ch_pa`, `rh2_cpct` and the
+  IMU vectors have no source and are flagged via `error_flags`. The three
+  INA226 rail monitors on the bus have no field in the 44-byte HK payload.
 - **M-15 seal check**: chamber-vs-ambient divergence once plumbing exists.
 - **M-17 self-tests**: sensor plausibility, SD write test, continuity.
 - **M-06 actuation verify**: current sense / pressure response after a

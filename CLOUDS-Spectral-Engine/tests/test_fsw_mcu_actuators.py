@@ -10,6 +10,7 @@ persisted first, the resume path would fire a second time.
 The timing behaviour itself is tested natively in
 `flight/mcu/test/test_core/test_main.c`.
 """
+import glob
 import os
 import re
 
@@ -43,12 +44,17 @@ class TestNoBlockingActuation:
         assert _define(board, "VALVE_PULSE_MS") > _define(board,
                                                           "WATCHDOG_TIMEOUT_MS")
 
-    def test_hw_layer_never_sleeps(self):
-        hw = _read("src", "hw", "hw.c")
-        offenders = BLOCKING_CALL.findall(hw)
+    @pytest.mark.parametrize("src", sorted(
+        os.path.basename(p) for p in glob.glob(os.path.join(MCU, "src", "hw",
+                                                            "*.c"))))
+    def test_hw_layer_never_sleeps(self, src):
+        """Every file in src/hw/, not just hw.c: the 1 Hz sweep runs under the
+        same 2 s watchdog whether the delay hides in an actuator path or in a
+        sensor driver."""
+        offenders = BLOCKING_CALL.findall(_read("src", "hw", src))
         assert not offenders, (
-            "blocking delay in the hw layer: %s - use pulse_request() so the "
-            "drive is released by the main loop" % offenders)
+            "blocking delay in src/hw/%s: %s - schedule the work across loop "
+            "passes instead of sleeping" % (src, offenders))
 
     def test_drives_go_through_the_scheduler(self):
         hw = _read("src", "hw", "hw.c")
@@ -65,3 +71,47 @@ class TestNoBlockingActuation:
         loop = main.split("for (;;)", 1)[1]
         assert "hw_actuators_service(" in loop
         assert "hw_watchdog_kick(" in loop
+
+
+class TestSensorFailureIsSafe:
+    """M-09: a failed sensor read must not look like flight.
+
+    `autonomy_step` detects launch from a *drop* below
+    `p_ground_pa - PARAM_LAUNCH_DP_PA`, so reporting 0 Pa when the BME280
+    read fails would mimic a 100 kPa fall and trip launch detection on the
+    bench - firing valves. The hardware layer must hold the last good value
+    instead, and say so via HKE_P_AMB_STALE.
+    """
+
+    def test_failed_read_holds_pressure_and_flags_it(self):
+        hw = _read("src", "hw", "hw.c")
+        body = hw.split("void hw_read_sensors", 1)[1]
+        fallback = body.split("} else {", 1)[1].split("}", 1)[0]
+        assert "last_p_amb_pa" in fallback, (
+            "the failure path must hold the last good ambient pressure")
+        assert "HKE_P_AMB_STALE" in fallback, (
+            "a held pressure must be flagged so ground can see it is stale")
+        assert not re.search(r"p_amb_pa\s*=\s*0\b", fallback), (
+            "never report 0 Pa on failure: it reads as a launch")
+
+    def test_cold_start_pressure_is_not_low(self):
+        """Before any successful read the held value must be high: launch
+        detection needs a fall, so a high default cannot trigger it."""
+        hw = _read("src", "hw", "hw.c")
+        assert _define(hw, "P_AMB_COLD_START_PA") >= 100000
+
+
+class TestErrorFlagsMirror:
+    """X-01: the HKE_* bits are one schema across MCU, Pi and GSE."""
+
+    def test_c_and_python_error_bits_agree(self):
+        from clouds_link.hk import HkErrors
+
+        frame_h = _read("src", "core", "frame.h")
+        c_bits = dict(
+            (m.group(1), int(m.group(2)))
+            for m in re.finditer(r"#define HKE_(\w+) \(1u << (\d+)\)", frame_h))
+        py_bits = dict((e.name, e.value.bit_length() - 1) for e in HkErrors)
+        assert c_bits == py_bits, (
+            "frame.h HKE_* and clouds_link.hk.HkErrors disagree: %s vs %s"
+            % (c_bits, py_bits))

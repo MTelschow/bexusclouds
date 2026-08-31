@@ -18,9 +18,9 @@ Code: `flight/mcu/` (M-xx), `flight/pi/` (P-xx), `gse/` (G-xx), `clouds_link/` +
 | M-06 | Valve control via interlocked GPIO/MOSFET pairs; actuation verify (current sense / pressure response) | P0 | F.4 | ◐ |
 | M-07 | Membrane PWM control (freq/duty configurable), duty-cycled to hold dispersion ≥ 3 min | P0 | F.3, P.6, P.7 | ◐ |
 | M-08 | Fired-valve flags persisted **before** actuation; brownout-safe resume of sequence + mission clock | P0 | S.3 | ◐ |
-| M-09 | 1 Hz sensor acquisition: 2× STLM20, BME280, 2× Keller 23SY, IMU | P0 | F.5, F.6, P.8–P.13 | ◐ |
+| M-09 | 1 Hz sensor acquisition: 2× STLM20, BME280, 2× Keller 23SY, IMU | P0 | F.5, F.6, P.8–P.13 | ◐ STLM20 + BME280 live; no Keller/RH2 on the bus, IMU faulted (DEVLOG 2026-08-31) |
 | M-10 | Sanity/range flags on every reading (store raw, flag implausible, never discard) | P1 | S. spec §2.2 | ☐ |
-| M-11 | Redundant HK + actuator-event logging to 2× SD over SPI, 10-min file rotation, CRC-16 per record | P0 | O.3, S.5, S.6 | ☐ |
+| M-11 | Redundant HK + actuator-event logging to 2× SD over SPI, 10-min file rotation, CRC-16 per record | P0 | O.3, S.5, S.6 | ☐ blocked: SPI0 pin map unverified, no card responds (DEVLOG 2026-08-31) |
 | M-12 | UART link to Pi: COBS framing, CRC-16, HK @ 1 Hz up, commands + time sync down | P0 | S.4 | ✔ |
 | M-13 | Hardware watchdog (2 s) + Pi-liveness monitor (continue alone if Pi silent > 60 s) | P0 | S.7, S.9 | ◐ |
 | M-14 | SAFE state: actuators de-energized, valves closed once, buffers flushed, logging continues | P0 | fail-safe concept | ✔ |
