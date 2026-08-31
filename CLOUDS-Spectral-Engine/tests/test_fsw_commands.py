@@ -24,6 +24,7 @@ class Harness:
             ("127.0.0.1", self.server.port), timeout=2.0)
         self.sock.settimeout(2.0)
         self._seq = SeqCounter()
+        self._buf = b""   # survives across recv_ack calls, see below
 
     def _fwd(self, cmd, key, value):
         self.forwarded.append((cmd, key, value))
@@ -38,12 +39,23 @@ class Harness:
         return self.recv_ack()
 
     def recv_ack(self):
-        buf = b""
+        """One ACK, keeping any surplus bytes for the next call.
+
+        The buffer must outlive the call and `used` must be honoured: the
+        server is free to put two ACKs in one TCP segment, and an earlier
+        version of this helper parsed the first, dropped the rest and then
+        blocked forever waiting for an ACK it had already thrown away. That
+        made TestStreamFraming flaky exactly where it coalesced.
+        """
         while True:
-            buf += self.sock.recv(4096)
-            frame, used = _try_parse(buf)
+            frame, used = _try_parse(self._buf)
             if frame is not None:
+                self._buf = self._buf[used:]
                 return frames.unpack_ack(frame.payload)
+            chunk = self.sock.recv(4096)
+            if not chunk:
+                raise AssertionError("server closed the connection mid-ACK")
+            self._buf += chunk
 
     def close(self):
         self.sock.close()
