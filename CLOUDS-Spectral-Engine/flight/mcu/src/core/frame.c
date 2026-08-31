@@ -112,6 +112,14 @@ bool cmd_unpack(const frame_view_t *view, uint8_t *cmd, uint8_t *key,
     return true;
 }
 
+void ack_pack(uint16_t cmd_seq, uint8_t cmd, uint8_t result,
+              uint8_t out[ACK_SIZE])
+{
+    put_u16(out, cmd_seq);
+    out[2] = cmd;
+    out[3] = result;
+}
+
 bool timesync_unpack(const frame_view_t *view, uint32_t *t_s, uint16_t *t_ms)
 {
     if (view->type != PKT_TIMESYNC || view->plen < 6)

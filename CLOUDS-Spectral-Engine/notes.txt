@@ -1,0 +1,3 @@
+What exactly are GP14 and GP16 on the SD wiring? → CS pair, bus unknown
+· Safe to toggle the candidate bus pins on the carrier right now (GP8,10,11,12,15,19,20,22)? → SD2 sens: GPIO15, SD1 sens: GPIO5, miso: GPIO4, SCK: GPIO6, mosi: GPIO7
+

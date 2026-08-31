@@ -21,6 +21,7 @@ import threading
 import time
 
 from clouds_link import frames
+from clouds_link.commands import FLIGHT_ONLY, MCU_CONFIRMED, Command
 from clouds_link.frames import EventSeverity, PacketType
 from spectro.calibration import Calibration
 from spectro.driver import open_driver
@@ -28,14 +29,16 @@ from spectro.driver import open_driver
 from .bench_stream import BenchStream
 from .command_server import CommandServer, CommandState
 from .config import FswConfig
+from .mcu_link import McuLink
 from .spectro_source import SpectroSource
 from .storage import CommLog, FrameStore
 from .telemetry import Downlink, QuicklookSender
-from .uart_link import PipeTransport, SerialTransport, UartLink
+from .uart_link import PipeTransport, SerialTransport
 from .watchdog import SystemdWatchdog
 
 _EV_MCU_SILENT = 0x10
 _EV_SPECTRO = 0x11
+_EV_INTERLOCK = 0x12
 
 
 class FlightApp:
@@ -54,14 +57,19 @@ class FlightApp:
 
         if transport is None:
             transport = SerialTransport(cfg.uart_port, cfg.uart_baud)
-        self.uart = UartLink(transport, on_frame=self._on_mcu_frame)
-        self._uart_seq = frames.SeqCounter()
+        self.mcu = McuLink(transport, on_frame=self._on_mcu_frame,
+                           ack_timeout_s=cfg.mcu_ack_timeout_s,
+                           silent_s=cfg.mcu_silent_alarm_s,
+                           log=self.comm_log.log)
 
         self.cmd_state = CommandState()
         self.cmd_server = CommandServer(
             cfg.cmd_bind, cfg.cmd_port, forward=self._forward_to_mcu,
             state=self.cmd_state, on_status_req=self._send_pistatus,
-            log=self.comm_log.log)
+            log=self.comm_log.log, interlock=self._interlocked)
+        if cfg.allow_ground_release:
+            self.comm_log.log("pi", "WARNING: allow_ground_release is set - "
+                                    "the S.10 ground interlock is disabled")
 
         self.source = SpectroSource(
             driver_factory=lambda: open_driver(mock=cfg.mock,
@@ -104,11 +112,46 @@ class FlightApp:
             ev = frames.unpack_event(frame.payload)
             self.comm_log.log("mcu", f"event {ev['code']}: {ev['text']}")
 
-    def _forward_to_mcu(self, cmd: int, key: int, value: int) -> None:
-        f = frames.Frame(type=PacketType.CMD,
-                         payload=frames.pack_cmd(cmd, key, value),
-                         seq=self._uart_seq.next()).stamp()
-        self.uart.send(f)
+    def _forward_to_mcu(self, cmd: int, key: int, value: int) -> int:
+        """Hand a command to the MCU and report what the MCU said (S.8).
+
+        Everything in MCU_CONFIRMED waits for the RP2350's own ACK, so a
+        command the MCU refused - wrong state, unarmed, bad parameter - never
+        reaches ground as an OK. PING is the exception: it is answered by the
+        Pi itself and must not stall behind a silent MCU.
+        """
+        name = Command(cmd).name if cmd in Command._value2member_map_ \
+            else hex(cmd)
+        result = self.mcu.send_command(cmd, key, value,
+                                       await_ack=cmd in MCU_CONFIRMED)
+        # An unknown result code must reach ground as itself, not as an
+        # exception the command server turns into a blanket REJECTED.
+        try:
+            shown = frames.AckResult(result).name
+        except ValueError:
+            shown = f"unknown({result})"
+        self.comm_log.log("mcu", f"cmd={name} key={key} value={value} -> "
+                                 f"{shown}")
+        return result
+
+    def _interlocked(self, cmd: int, key: int) -> bool:
+        """Ground interlock (S.10), defence in depth behind the GSE's own.
+
+        The MCU already refuses a release before ASCENT, and the GSE refuses
+        to send one outside flight mode - but the GSE runs on a laptop and
+        anything can open the command port, so the Pi checks the state the
+        MCU actually reports before letting a release through.
+        """
+        if cmd not in {int(c) for c in FLIGHT_ONLY}:
+            return False
+        if self.cfg.allow_ground_release:
+            self.comm_log.log("up", "ground interlock overridden by config")
+            return False
+        if self.mcu.in_flight:
+            return False
+        self._send_event(_EV_INTERLOCK, EventSeverity.WARNING,
+                         "interlock refused RELEASE: not in flight")
+        return True
 
     def _on_spectro_status(self, ok: bool) -> None:
         sev = EventSeverity.INFO if ok else EventSeverity.WARNING
@@ -129,18 +172,17 @@ class FlightApp:
             free_mb = 0
         self.down.send(PacketType.PISTATUS, frames.pack_pistatus(
             free_mb, self.store.count,
-            self.uart.alive(self.cfg.mcu_silent_alarm_s),
+            self.mcu.alive(),
             self.source.connected, _cpu_temp_cc()))
 
     def _send_timesync(self) -> None:
-        f = frames.Frame(type=PacketType.TIMESYNC,
-                         payload=frames.pack_timesync(time.time()),
-                         seq=self._uart_seq.next()).stamp()
-        self.uart.send(f)
+        """S.4 - and the beat the MCU's own Pi-liveness monitor watches, so
+        this is what keeps MCUF_PI_OK set (M-13)."""
+        self.mcu.send_timesync()
 
     def _check_mcu_liveness(self) -> None:
-        alive = self.uart.alive(self.cfg.mcu_silent_alarm_s)
-        if not alive and self.uart.last_rx > 0 and not self._mcu_alarmed:
+        alive = self.mcu.alive()
+        if not alive and self.mcu.last_rx > 0 and not self._mcu_alarmed:
             self._mcu_alarmed = True   # alarm only, never take over (S.7)
             self._send_event(_EV_MCU_SILENT, EventSeverity.ERROR,
                              "MCU silent on UART")
@@ -151,7 +193,7 @@ class FlightApp:
     # -- lifecycle -----------------------------------------------------------
 
     def start(self) -> None:
-        self.uart.start()
+        self.mcu.start()
         self.cmd_server.start()
         self.source.start()
         if self.bench is not None:
@@ -198,7 +240,7 @@ class FlightApp:
             self.bench.stop()
         self.source.stop()
         self.cmd_server.stop()
-        self.uart.stop()
+        self.mcu.stop()
         self.store.close()
         self.comm_log.close()
         self.down.close()

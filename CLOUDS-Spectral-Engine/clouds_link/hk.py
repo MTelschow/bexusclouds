@@ -92,6 +92,22 @@ class Housekeeping:
                    uptime_s=v[19], mission_t_s=v[20])
 
     @property
+    def link_text(self) -> str:
+        """Compact rendering of ``flags`` for HK displays.
+
+        The link and interlock story lives entirely in these bits - whether
+        ground commands are getting through (``LINK_OK``), whether the MCU
+        has given up on them (``AUTONOMOUS``), and whether the Pi is talking
+        to the MCU at all (``PI_OK``, M-13). An operator who cannot see them
+        cannot tell a quiet flight from a broken link.
+        """
+        short = {McuFlags.AUTONOMOUS_LATCHED: "AUTONOMOUS",
+                 McuFlags.LINK_OK: "GND", McuFlags.PI_OK: "PI",
+                 McuFlags.SEAL_VERIFIED: "SEALED", McuFlags.HOLD: "HOLD"}
+        set_bits = [name for flag, name in short.items() if self.flags & flag]
+        return " ".join(set_bits) if set_bits else "-"
+
+    @property
     def state_name(self) -> str:
         try:
             return SeqState(self.state).name
@@ -102,6 +118,7 @@ class Housekeeping:
         """Flat dict for CSV/JSON session logging (GSE feature G-05)."""
         d = asdict(self)
         d["state_name"] = self.state_name
+        d["link_text"] = self.link_text
         ax, ay, az = d.pop("accel_mg")
         gx, gy, gz = d.pop("gyro_ddps")
         d.update(accel_x_mg=ax, accel_y_mg=ay, accel_z_mg=az,

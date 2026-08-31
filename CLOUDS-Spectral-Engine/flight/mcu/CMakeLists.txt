@@ -20,6 +20,7 @@ add_executable(clouds_fsw_mcu
     src/core/cobs.c
     src/core/frame.c
     src/core/config.c
+    src/core/link.c
     src/core/autonomy.c
     src/core/sequencer.c
     src/core/pulse.c

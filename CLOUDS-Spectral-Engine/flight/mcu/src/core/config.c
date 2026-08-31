@@ -16,6 +16,10 @@ static const int32_t limits[PARAM_COUNT_][3] = {
                                           core/sqwave.h */
     [PARAM_MEMBRANE_DUTY] = {60, 5, 100},
     [PARAM_SEAL_RETRY] = {3, 0, 10},
+    /* M-13: the Pi's own beat is TIMESYNC every 10 s, so 60 s is six missed
+     * beats before it is called lost. Losing it changes nothing the sequence
+     * does (S.7) - it only clears MCUF_PI_OK and raises one event. */
+    [PARAM_PI_SILENT_S] = {60, 5, 600},
 };
 
 void cfg_defaults(cfg_t *cfg)

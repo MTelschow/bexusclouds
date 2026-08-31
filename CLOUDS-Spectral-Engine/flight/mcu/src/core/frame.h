@@ -26,6 +26,17 @@ enum packet_type {
     PKT_TIMESYNC = 0x12,
 };
 
+/* ACK results - mirror of clouds_link/frames.py AckResult. The MCU answers
+ * every command frame with one of these, so ground learns what the *MCU*
+ * decided rather than only that the Pi managed to write to the UART. */
+enum ack_result {
+    ACK_OK = 0,
+    ACK_REJECTED = 1,   /* well-formed, but not allowed in this state */
+    ACK_INVALID = 2,    /* unparseable, unknown command, or out-of-range value */
+    ACK_NOT_ARMED = 3,  /* arm/execute violated (S.8) */
+    ACK_INTERLOCK = 4,  /* ground interlock (S.10) - enforced on the Pi */
+};
+
 enum command {
     CMD_NONE = 0xFF, /* internal sentinel, never on the wire */
     CMD_PING = 0x00,
@@ -87,6 +98,10 @@ void hk_pack(const hk_t *hk, uint8_t out[HK_SIZE]);
 /* CMD payload: cmd u8, key u8, value i32 LE (6 bytes). */
 bool cmd_unpack(const frame_view_t *view, uint8_t *cmd, uint8_t *key,
                 int32_t *value);
+/* ACK payload: cmd_seq u16, cmd u8, result u8 LE (4 bytes). */
+#define ACK_SIZE 4
+void ack_pack(uint16_t cmd_seq, uint8_t cmd, uint8_t result,
+              uint8_t out[ACK_SIZE]);
 /* TIMESYNC payload: t_s u32, t_ms u16 LE. */
 bool timesync_unpack(const frame_view_t *view, uint32_t *t_s, uint16_t *t_ms);
 /* EVENT payload builder: code u8, severity u8, text. Returns plen. */

@@ -101,6 +101,21 @@ static void ops_close_eq_valves(void *ctx)
     pulse_request(&pulses, PIN_EQ2_CLOSE, PIN_EQ2_OPEN);
 }
 
+/* CaCO3 dispersion motor (M-07). GP17/GP18 are a driver pair; the reverse
+ * sense has not been verified, so only the forward line is ever driven and
+ * GP18 rides along as its interlock - forced low before GP17 goes high, so
+ * the pair cannot be energized together whatever the wiring turns out to be.
+ *
+ * Scheduled, not slept: the drive is 5 s and the watchdog bites at 2 s. It
+ * shares the one-at-a-time queue with the pinch valve fired in the same
+ * step, so the motor runs after that valve rather than alongside it, which
+ * keeps peak actuator current at one drive. */
+static void ops_disperse(void *ctx)
+{
+    (void)ctx;
+    pulse_request(&pulses, PIN_DISPERSE_FWD, PIN_DISPERSE_REV);
+}
+
 static bool ops_busy(void *ctx)
 {
     (void)ctx;
@@ -236,6 +251,7 @@ const seq_ops_t hw_seq_ops = {
     .persist = ops_persist,
     .fire_pinch = ops_fire_pinch,
     .close_eq_valves = ops_close_eq_valves,
+    .disperse = ops_disperse,
     .membrane = ops_membrane,
     .busy = ops_busy,
     .seal_ok = ops_seal_ok,
@@ -317,10 +333,17 @@ void hw_init(void)
 {
     /* The membrane pin is in this list deliberately: it must be an SIO output
      * driven low before anything else, so the solenoid is off by the MCU's own
-     * action. Its PWM function is applied only while a drive is running. */
-    const uint out_pins[] = {PIN_PINCH_1,   PIN_PINCH_2, PIN_EQ1_OPEN,
-                             PIN_EQ1_CLOSE, PIN_EQ2_OPEN, PIN_EQ2_CLOSE,
-                             PIN_MEMBRANE_PWM};
+     * action. Its PWM function is applied only while a drive is running.
+     * The dispersion-motor pair is in it for a stronger reason: unlike the
+     * membrane's driver input, GP17/GP18 have no measured external pull, so
+     * before hw_init they are floating inputs and the motor's state at boot is
+     * whatever its driver makes of that. Driving both low is what makes it
+     * off. */
+    const uint out_pins[] = {PIN_PINCH_1,      PIN_PINCH_2,
+                             PIN_EQ1_OPEN,     PIN_EQ1_CLOSE,
+                             PIN_EQ2_OPEN,     PIN_EQ2_CLOSE,
+                             PIN_MEMBRANE_PWM, PIN_DISPERSE_FWD,
+                             PIN_DISPERSE_REV};
 
     for (unsigned i = 0; i < sizeof out_pins / sizeof out_pins[0]; i++) {
         gpio_init(out_pins[i]);

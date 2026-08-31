@@ -52,6 +52,12 @@ static void fire(sequencer_t *s, uint8_t n, uint64_t t_ms)
     s->fired |= bit;
     persist_now(s); /* durable BEFORE the irreversible action */
     s->ops->fire_pinch(s->ops->ctx, n);
+    /* Dispersion runs with the release, not instead of it: the motor moves
+     * the CaCO3 the pinch valve just let out, and the membrane keeps
+     * oscillating alongside. Both are scheduled drives, so this returns at
+     * once. */
+    if (s->ops->disperse != NULL)
+        s->ops->disperse(s->ops->ctx);
     s->ops->membrane(s->ops->ctx,
                      (uint8_t)cfg_get(s->cfg, PARAM_MEMBRANE_DUTY));
     s->ops->event(s->ops->ctx, EV_RELEASE_FIRED, n == 1 ? "valve 1"
@@ -206,49 +212,61 @@ void seq_step(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
     }
 }
 
-void seq_command(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
-                 uint8_t cmd, uint8_t key, int32_t value, cfg_t *cfg)
+void seq_note_ground_cmd(sequencer_t *s, uint64_t t_ms)
+{
+    autonomy_cmd_seen(&s->autonomy, t_ms);
+}
+
+uint8_t seq_command(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
+                    uint8_t cmd, uint8_t key, int32_t value, cfg_t *cfg)
 {
     autonomy_cmd_seen(&s->autonomy, t_ms); /* any traffic = link alive */
 
     switch (cmd) {
     case CMD_PING:
-        break;
+        return ACK_OK;
     case CMD_HOLD:
         s->hold = true;
-        break;
+        return ACK_OK;
     case CMD_RESUME:
         s->hold = false;
-        break;
+        return ACK_OK;
     case CMD_ABORT:
         s->ops->event(s->ops->ctx, EV_ABORTED, "ground abort");
         s->hold = false;
         if (s->state != ST_SAFE)
             enter(s, ST_TERMINATION, t_ms);
-        break;
+        return ACK_OK;
     case CMD_START: /* accelerator only: skip waiting for launch detect */
-        if (s->state == ST_STANDBY) {
-            s->hold = false;
-            if (s->mission_start_s == 0)
-                s->mission_start_s = wall_s;
-            enter(s, ST_ASCENT, t_ms);
-        }
-        break;
+        if (s->state != ST_STANDBY)
+            return ACK_REJECTED;
+        s->hold = false;
+        if (s->mission_start_s == 0)
+            s->mission_start_s = wall_s;
+        enter(s, ST_ASCENT, t_ms);
+        return ACK_OK;
     case CMD_RELEASE: /* accelerator: jump the sequence forward */
         if (key == 1 && s->state >= ST_ASCENT && s->state < ST_RELEASE_1 &&
             !(s->fired & 1u)) {
             s->hold = false;
             enter(s, ST_RELEASE_1, t_ms);
-        } else if (key == 2 && s->state >= ST_ASCENT &&
-                   s->state < ST_RELEASE_2 && !(s->fired & 2u)) {
+            return ACK_OK;
+        }
+        if (key == 2 && s->state >= ST_ASCENT && s->state < ST_RELEASE_2 &&
+            !(s->fired & 2u)) {
             s->hold = false;
             enter(s, ST_RELEASE_2, t_ms);
+            return ACK_OK;
         }
-        break;
+        /* Wrong valve number, already fired, or not in flight yet - on the
+         * pad this is the state check that keeps a stray RELEASE harmless.
+         * Ground needs to hear that it did nothing. */
+        return key == 1 || key == 2 ? ACK_REJECTED : ACK_INVALID;
     case CMD_SET_PARAM:
-        (void)cfg_set(cfg, key, value);
-        break;
+        return cfg_set(cfg, key, value) ? ACK_OK : ACK_INVALID;
+    case CMD_STATUS_REQ:
+        return ACK_OK; /* answered by the Pi's PISTATUS, nothing to do here */
     default:
-        break;
+        return ACK_INVALID;
     }
 }

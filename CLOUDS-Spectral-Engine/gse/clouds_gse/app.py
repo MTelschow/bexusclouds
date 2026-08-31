@@ -29,6 +29,7 @@ _HK_FIELDS = [
     ("RH1 / RH2", lambda h: f"{h.rh1_cpct / 100:.1f} / {h.rh2_cpct / 100:.1f} %"),
     ("Membrane", lambda h: f"{h.membrane_duty} %"),
     ("Valves", lambda h: f"{h.valve_status:04b}"),
+    ("Link", lambda h: h.link_text),
     ("Errors", lambda h: f"{h.error_flags:#06x}"),
 ]
 

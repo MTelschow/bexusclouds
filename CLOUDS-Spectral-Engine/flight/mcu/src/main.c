@@ -13,16 +13,27 @@
 
 #include "core/config.h"
 #include "core/frame.h"
+#include "core/link.h"
 #include "core/sequencer.h"
 #include "hw/hw.h"
 #include "hw/uart_io.h"
 
 #define HK_PERIOD_MS 1000u
+/* Frames handled per loop pass. Every command is answered with a blocking
+ * ACK write (~2 ms at 115200), so an unbounded drain lets a flood of uplink
+ * frames - a stuck Pi, a noisy line - hold the loop past the 2 s watchdog.
+ * Eight per 10 ms pass is 800/s, far above any real command rate, and the
+ * rest simply wait in the UART FIFO for the next pass. */
+#define MAX_FRAMES_PER_PASS 8u
 
 static cfg_t cfg;
 static sequencer_t seq;
+static link_t pi_link;
+/* One sequence counter per packet type - a shared one makes every interleaved
+ * packet of another type look lost to the GSE gap tracker. */
 static uint16_t hk_seq_no;
 static uint16_t ev_seq_no;
+static uint16_t ack_seq_no;
 
 static void send_event(uint8_t code, const char *msg)
 {
@@ -33,6 +44,17 @@ static void send_event(uint8_t code, const char *msg)
     if (plen)
         uart_io_send(PKT_EVENT, ev_seq_no++, wall, 0, payload, plen);
     hw_log_event(code, msg, wall);
+}
+
+/* Every command frame is answered, whoever decided the outcome: the arm gate,
+ * the sequencer, or a failed parse. Without this the Pi can only tell ground
+ * that it managed to write to the UART. */
+static void send_ack(uint16_t cmd_seq, uint8_t cmd, uint8_t result)
+{
+    uint8_t payload[ACK_SIZE];
+
+    ack_pack(cmd_seq, cmd, result, payload);
+    uart_io_send(PKT_ACK, ack_seq_no++, hw_wall_s(), 0, payload, ACK_SIZE);
 }
 
 static void send_hk(uint64_t t_ms)
@@ -52,6 +74,7 @@ static void send_hk(uint64_t t_ms)
                                   !seq.autonomy.autonomous_latched
                               ? MCUF_LINK_OK
                               : 0) |
+                         (pi_link.pi_ok ? MCUF_PI_OK : 0) |
                          (seq.seal_verified ? MCUF_SEAL_VERIFIED : 0) |
                          (seq.hold ? MCUF_HOLD : 0));
     hk.uptime_s = (uint32_t)(t_ms / 1000u);
@@ -65,22 +88,53 @@ static void send_hk(uint64_t t_ms)
     seq_step(&seq, t_ms, wall, hk.p_amb_pa, hk.p_ch_pa);
 }
 
+static void handle_command(uint64_t t_ms, const frame_view_t *view)
+{
+    uint8_t cmd, key, result;
+    int32_t value;
+
+    if (!cmd_unpack(view, &cmd, &key, &value)) {
+        send_ack(view->seq, CMD_NONE, ACK_INVALID);
+        return;
+    }
+    /* Any valid command means the ground link lives, including ARM, which
+     * the gate answers itself and never passes to the sequencer (O.2). */
+    seq_note_ground_cmd(&seq, t_ms);
+    result = link_gate(&pi_link, t_ms, cmd, key); /* S.8, defence in depth */
+    if (result == LINK_PASS)
+        result = seq_command(&seq, t_ms, hw_wall_s(), cmd, key, value, &cfg);
+    send_ack(view->seq, cmd, result);
+}
+
 static void poll_commands(uint64_t t_ms)
 {
     frame_view_t view;
-    uint8_t cmd, key;
-    int32_t value;
     uint32_t ts_s;
     uint16_t ts_ms;
+    unsigned handled = 0;
 
-    while (uart_io_poll(&view)) {
-        if (view.type == PKT_CMD && cmd_unpack(&view, &cmd, &key, &value)) {
-            seq_command(&seq, t_ms, hw_wall_s(), cmd, key, value, &cfg);
-        } else if (view.type == PKT_TIMESYNC &&
-                   timesync_unpack(&view, &ts_s, &ts_ms)) {
+    while (handled++ < MAX_FRAMES_PER_PASS && uart_io_poll(&view)) {
+        /* Any valid frame proves the Pi is alive - liveness is about the peer
+         * on the UART, not about what it happened to send (M-13). */
+        link_rx(&pi_link, t_ms);
+        if (view.type == PKT_CMD)
+            handle_command(t_ms, &view);
+        else if (view.type == PKT_TIMESYNC &&
+                 timesync_unpack(&view, &ts_s, &ts_ms))
             hw_timesync(ts_s, ts_ms); /* S.4 */
-        }
     }
+}
+
+/* The Pi is a peer, never a dependency (S.7): losing it clears MCUF_PI_OK and
+ * raises one event, and changes nothing about the sequence. */
+static void check_pi_link(uint64_t t_ms)
+{
+    if (!link_step(&pi_link, &cfg, t_ms))
+        return;
+    if (pi_link.pi_ok)
+        send_event(EV_PI_LINK_OK, "pi link up");
+    else
+        send_event(EV_PI_LINK_LOST, "pi silent");
 }
 
 /* Sequencer events go to both the SD log and the downlink. */
@@ -111,6 +165,7 @@ int main(void)
     ops.event = event_shim;
 
     cfg_defaults(&cfg);
+    link_init(&pi_link, hw_monotonic_ms());
     ops.ctx = &cfg; /* ops_membrane reads PARAM_MEMBRANE_HZ from here */
     have_restore = hw_restore_persist(&restored); /* S.3 brownout resume */
     seq_init(&seq, &cfg, &ops, have_restore ? &restored : NULL,
@@ -124,6 +179,7 @@ int main(void)
         hw_watchdog_kick();
         poll_commands(now);
         if (now >= next_hk_ms) {
+            check_pi_link(now); /* before send_hk: MCUF_PI_OK must be current */
             send_hk(now);
             next_hk_ms = now + HK_PERIOD_MS;
         }

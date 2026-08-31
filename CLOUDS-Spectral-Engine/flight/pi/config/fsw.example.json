@@ -6,6 +6,7 @@
 
   "uart_port": "/dev/ttyAMA0",
   "uart_baud": 115200,
+  "mcu_ack_timeout_s": 1.0,
 
   "data_dir": "/data/clouds",
   "rotate_s": 600,
@@ -24,5 +25,6 @@
   "budget_kbit_s": 2.0,
 
   "mcu_silent_alarm_s": 10.0,
+  "allow_ground_release": false,
   "calibration_path": "/opt/clouds/calibration.json"
 }

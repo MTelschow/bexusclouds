@@ -7,6 +7,34 @@ uplink with arm/execute (S.8), UART link + time sync to the RP2350 (S.4).
 **Never sequences the experiment** — losing the Pi degrades the mission,
 it cannot block the release (S.7).
 
+## The link to the RP2350 (P-05, P-06, S.8, S.10)
+
+Three rules decide what an ACK to ground is allowed to mean:
+
+1. **A command is not done until the MCU says so.** Everything in
+   `MCU_CONFIRMED` waits for the RP2350's own ACK, matched by the command's
+   sequence number, and that result is what ground gets. No ACK inside
+   `mcu_ack_timeout_s` is a `REJECTED`, not an OK — a UART write is not
+   evidence of anything.
+2. **`ARM` reaches the MCU too.** It keeps its own arm latch (defence in
+   depth against a corrupted `CMD_RELEASE`), so an ARM the Pi swallowed
+   would make every release `NOT_ARMED` at the far end. The Pi arms locally
+   only once the MCU has confirmed, so "armed" never means one end.
+3. **`PING` is answered here.** The heartbeat is addressed to the Pi; a
+   silent MCU is reported through `PISTATUS.uart_ok` and the MCU-silent
+   event, not by failing the operator's heartbeat.
+
+The **ground interlock (S.10) is re-checked here**, behind the GSE's own:
+`RELEASE` needs fresh housekeeping showing the MCU between ASCENT and
+MEASURE_2, or it is refused `INTERLOCK` before the arm latch is consumed.
+No HK, stale HK and STANDBY all mean "on the ground". `allow_ground_release`
+in the config overrides it for a bench rehearsal and says so in the comms log
+at startup — leave it false in flight.
+
+In the other direction the Pi's `TIMESYNC` every 10 s is also the beat the
+MCU's Pi-liveness monitor watches (M-13): stop it for 60 s and `MCUF_PI_OK`
+clears in the housekeeping the GSE shows as `link=`.
+
 ## Layout
 
 | Path | Role |
@@ -17,6 +45,7 @@ it cannot block the release (S.7).
 | `clouds_fsw/telemetry.py` | HK relay (byte-identical), quick-look binning, budget meter |
 | `clouds_fsw/command_server.py` | TCP uplink: ACK, arm/execute enforcement (authoritative) |
 | `clouds_fsw/uart_link.py` | COBS framing over pyserial / in-memory pipe (tests) |
+| `clouds_fsw/mcu_link.py` | the CLOUDS conversation on top of it: command ACK correlation, HK cache, time sync |
 | `clouds_fsw/watchdog.py` | systemd sd_notify (S.9) |
 | `clouds_fsw/bench_stream.py` | **bench only** (`--bench-stream`, off in flight): serves already-acquired frames so the live panel runs alongside the downlink |
 | `systemd/clouds-fsw.service` | unit file: `Type=notify`, `WatchdogSec=15`, restart always |

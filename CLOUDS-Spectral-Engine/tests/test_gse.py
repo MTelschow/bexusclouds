@@ -114,7 +114,10 @@ class TestCommander:
         commander, forwarded = cmd_link
         commander.flight_mode = True
         assert commander.release(2) == AckResult.OK
-        assert forwarded == [(Command.RELEASE, 2, 0)]   # ARM handled Pi-side
+        # Both halves reach the MCU: it keeps its own arm latch (core/link),
+        # so an ARM the Pi swallowed would leave the RELEASE unarmed there.
+        assert forwarded == [(Command.ARM, int(Command.RELEASE), 0),
+                             (Command.RELEASE, 2, 0)]
 
     def test_hold_allowed_on_ground(self, cmd_link):
         commander, forwarded = cmd_link

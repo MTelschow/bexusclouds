@@ -25,11 +25,17 @@ from clouds_gse.session_log import SessionLog
 
 
 class FakeMcu:
-    """Far end of the UART pipe: emits HK at 10 Hz, records commands."""
+    """Far end of the UART pipe: emits HK at 10 Hz, records commands, and
+    answers each one with an ACK the way the RP2350 does (its own verdict,
+    naming the command's sequence number). ``state`` is what its housekeeping
+    reports, which is what the Pi's ground interlock reads."""
 
-    def __init__(self, transport):
+    def __init__(self, transport, state=hk.SeqState.STANDBY):
         self._t = transport
         self._seq = SeqCounter()
+        self._ack_seq = SeqCounter()
+        self.state = state
+        self.ack_result = AckResult.OK
         self.commands = []
         self.timesyncs = []
         self._stop = threading.Event()
@@ -44,13 +50,15 @@ class FakeMcu:
     def stop(self):
         self._stop.set()
 
+    def _send(self, frame):
+        self._t.write(cobs.encode(frame.encode()) + b"\x00")
+
     def _emit(self):
         while not self._stop.is_set():
-            h = hk.Housekeeping(state=hk.SeqState.STANDBY, p_amb_pa=101_000,
+            h = hk.Housekeeping(state=self.state, p_amb_pa=101_000,
                                 uptime_s=int(time.time()) & 0xFFFF)
-            f = Frame(type=PacketType.HK, payload=h.pack(),
-                      seq=self._seq.next()).stamp()
-            self._t.write(cobs.encode(f.encode()) + b"\x00")
+            self._send(Frame(type=PacketType.HK, payload=h.pack(),
+                             seq=self._seq.next()).stamp())
             time.sleep(0.1)
 
     def _listen(self):
@@ -69,7 +77,12 @@ class FakeMcu:
                 except (cobs.CobsError, frames.FrameError):
                     continue
                 if frame.type == PacketType.CMD:
-                    self.commands.append(frames.unpack_cmd(frame.payload))
+                    cmd, key, value = frames.unpack_cmd(frame.payload)
+                    self.commands.append((cmd, key, value))
+                    self._send(Frame(type=PacketType.ACK,
+                                     payload=frames.pack_ack(frame.seq, cmd,
+                                                             self.ack_result),
+                                     seq=self._ack_seq.next()).stamp())
                 elif frame.type == PacketType.TIMESYNC:
                     self.timesyncs.append(
                         frames.unpack_timesync(frame.payload))
@@ -98,6 +111,9 @@ def stack(tmp_path):
                     data_dir=str(tmp_path / "data"), rotate_s=3600,
                     sample_interval_s=0.05, quicklook_interval_s=0.3,
                     pistatus_interval_s=0.3, timesync_interval_s=0.3,
+                    # accelerated link timers: 10 s of silence and a 1 s ACK
+                    # wait are flight numbers, and would idle the suite
+                    mcu_silent_alarm_s=1.0, mcu_ack_timeout_s=0.5,
                     mock=True)
     app = FlightApp(cfg, transport=near)
     app_thread = threading.Thread(target=app.run, daemon=True)
@@ -137,11 +153,20 @@ class TestEndToEnd:
         assert _wait(lambda: ground_rx.last_pistatus["spectro_ok"])
         assert ground_rx.last_pistatus["uart_ok"]
 
-        # 4. ground command path: PING then ARM+RELEASE reach the MCU
+        # 4. ground command path. A release on the pad is refused by the Pi's
+        # own interlock (S.10) - the MCU is reporting STANDBY.
         assert commander.ping() == AckResult.OK
+        assert (Command.PING, 0, 0) in mcu.commands
+        assert commander.release(1) == AckResult.INTERLOCK
+        assert (Command.RELEASE, 1, 0) not in mcu.commands
+
+        # ...and goes through once the MCU says it is flying. ARM reaches the
+        # MCU too, so its own arm latch is in step with the Pi's.
+        mcu.state = hk.SeqState.ASCENT
+        assert _wait(lambda: app.mcu.in_flight)
         assert commander.release(1) == AckResult.OK
         assert _wait(lambda: (Command.RELEASE, 1, 0) in mcu.commands)
-        assert (Command.PING, 0, 0) in mcu.commands
+        assert (Command.ARM, int(Command.RELEASE), 0) in mcu.commands
 
         # 5. timesync flows to the MCU (S.4)
         assert _wait(lambda: len(mcu.timesyncs) >= 2)
@@ -164,6 +189,30 @@ class TestEndToEnd:
         logs = glob.glob(str(tmp_path / "data" / "comms_*.log"))
         content = "".join(open(p, encoding="utf-8").read() for p in logs)
         assert "cmd=RELEASE" in content
+
+    def test_ground_hears_the_mcu_verdict_not_the_pi_optimism(self, stack):
+        """A command the MCU refuses must not reach ground as OK (S.8)."""
+        app, mcu, _rx, commander, _tmp = stack
+        mcu.state = hk.SeqState.ASCENT
+        assert _wait(lambda: app.mcu.in_flight)
+
+        mcu.ack_result = AckResult.REJECTED
+        assert commander.send(Command.HOLD) == AckResult.REJECTED
+
+        mcu.ack_result = AckResult.OK
+        assert commander.send(Command.HOLD) == AckResult.OK
+
+    def test_silent_mcu_rejects_commands_and_keeps_the_heartbeat(self, stack):
+        """The Pi answers its own heartbeat while reporting the MCU gone."""
+        app, mcu, ground_rx, commander, _tmp = stack
+        assert _wait(lambda: app.mcu.alive())
+        mcu.stop()
+        assert _wait(lambda: not app.mcu.alive(), timeout=15.0)
+
+        assert commander.send(Command.HOLD) == AckResult.REJECTED  # no ACK
+        assert commander.ping() == AckResult.OK                    # Pi is up
+        assert _wait(lambda: ground_rx.last_pistatus is not None
+                     and not ground_rx.last_pistatus["uart_ok"])
 
     def test_session_log_from_live_downlink(self, stack):
         app, _mcu, ground_rx, _commander, tmp_path = stack

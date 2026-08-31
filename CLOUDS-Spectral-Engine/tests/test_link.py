@@ -122,6 +122,16 @@ class TestHousekeeping:
         row = g.to_row()
         assert row["accel_z_mg"] == 980 and row["state_name"] == "MEASURE_1"
 
+    def test_link_flags_are_rendered_for_displays(self):
+        """The whole link story is in `flags`, so it must be readable: an
+        operator has to be able to tell a quiet flight from a dead link."""
+        h = hk.Housekeeping(flags=hk.McuFlags.LINK_OK | hk.McuFlags.PI_OK)
+        assert h.link_text == "GND PI"
+        assert hk.Housekeeping(flags=0).link_text == "-"
+        latched = hk.Housekeeping(flags=hk.McuFlags.AUTONOMOUS_LATCHED)
+        assert latched.link_text == "AUTONOMOUS"
+        assert latched.to_row()["link_text"] == "AUTONOMOUS"
+
 
 class TestPayloads:
     def test_quicklook_roundtrip(self):

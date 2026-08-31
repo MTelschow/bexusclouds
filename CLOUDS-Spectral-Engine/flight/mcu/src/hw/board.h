@@ -29,23 +29,31 @@
  * is de-energized whenever the MCU is not driving it. DEVLOG 2026-08-31. */
 #define PIN_MEMBRANE_PWM 26
 
+/* CaCO3 dispersion motor (M-07): a two-line driver pair, GP17 forward and
+ * GP18 reverse, measured on the carrier. Driving GP17 high with GP18 low ran
+ * the motor; the reverse sense is UNVERIFIED, so only the forward drive is
+ * used. Not in the SED - undocumented hardware, see DEVLOG 2026-08-31.
+ * Driven through core/pulse like the valves, with the opposite line held low
+ * as its interlock, so the pair can never be energized together and no drive
+ * can outlive the watchdog. */
+#define PIN_DISPERSE_FWD 17
+#define PIN_DISPERSE_REV 18
+
 /* SPI0: two redundant SD cards (separate chip selects).
- * UNVERIFIED - these pins are almost certainly wrong for the current carrier.
- * GP16/GP17/GP18 measure as unconnected and an SD probe on exactly these pins
- * got CMD0 = 0xff on both chip selects (DEVLOG 2026-08-31). Confirm against
- * the schematic before building M-11 on them; the I2C pins below were wrong
- * in the same way. */
-#define PIN_SD_SCK 18
-#define PIN_SD_MOSI 19
-#define PIN_SD_MISO 16
-#define PIN_SD_CS_A 17
-#define PIN_SD_CS_B 20
+ * PINOUT UNKNOWN - no defines here on purpose. The old map named
+ * GP16/17/18/19/20, an SD probe on exactly those pins got CMD0 = 0xff on both
+ * chip selects (DEVLOG 2026-08-31), and GP17/GP18 have since been measured
+ * driving the dispersion motor above. An spi_init() on the old numbers would
+ * run that motor, so M-11 must get its pins from the schematic, not from a
+ * guess. The passive survey cannot help: a high-impedance driver input reads
+ * pu=1 pd=0, exactly like an unconnected pin. */
 
 /* I2C0 as measured on the carrier, not assumed: BME280 0x76 (the only source
  * of ambient T/RH/p), INA226 x3 on 0x40/0x44/0x45 watching the 24 V, 5 V and
  * 3.3 V rails, and a BNO055 IMU at 0x28 whose sub-sensor IDs read 0x00, so it
  * answers but cannot be used. GP12/GP13 are unconnected here. No chamber pressure sensor and no
- * second RH channel exist on this bus. ADC: STLM20 x2 on GP26/GP27.
+ * second RH channel exist on this bus. The STLM20 pair the old map put on the
+ * ADC is not populated - see the note below.
  * Identities and method: DEVLOG 2026-08-31. */
 #define PIN_I2C_SDA 28
 #define PIN_I2C_SCL 29

@@ -18,6 +18,250 @@ without re-deriving anything. Newest entries first.
 
 ---
 
+## 2026-08-31 (link work, after the motor bring-up) - The Pi <-> MCU conversation: confirmed commands, an arm gate on both ends, Pi liveness (M-13)
+
+**Why.** The two processors were wired together and could talk, but the
+conversation made two claims neither end had earned.
+
+The first was on the Pi. `CommandServer` answered ground `OK` the moment
+`self.uart.send()` returned, so "the release was accepted" and "the release
+was written into a UART with nothing on the other end" were the same message
+on the console. The MCU had no way to disagree: it never sent an `ACK`,
+`PKT_ACK` existed in the schema and no code produced one, and `seq_command()`
+returned `void`. A `CMD_RELEASE` arriving in STANDBY, or naming a valve
+already fired, was silently ignored - correct behaviour, invisible to the
+operator, and indistinguishable from success.
+
+The second was on the MCU. It acted on any `CMD_RELEASE` that passed CRC-16,
+because the Pi was "authoritative for arm/execute". One enforcer, on the far
+side of a wire, for the one irreversible action in the experiment.
+
+And `MCUF_PI_OK` was a flag in the schema that nothing ever set: M-13 asked
+for a Pi-liveness monitor and there was none, so a dead Pi and a live one
+produced identical housekeeping.
+
+**What changed.**
+
+`flight/mcu/src/core/link.c` (new, pure, native-tested) holds both halves of
+what the MCU needs to know about its peer:
+
+- *Liveness.* Any valid frame refreshes the link; `PARAM_PI_SILENT_S`
+  (default 60 s, against the Pi's 10 s `TIMESYNC` beat) clears `MCUF_PI_OK`
+  and raises exactly one `EV_PI_LINK_LOST`. A cold boot with the UART
+  unplugged emits nothing: never-seen is not the same as lost.
+- *Arm gate.* `ARM` is answered by the gate itself, `RELEASE` needs one
+  inside `LINK_ARM_WINDOW_MS` (10 s, mirroring `ARM_WINDOW_S`), and one arm
+  authorises exactly one execute.
+
+`seq_command()` now returns an `enum ack_result`, `main.c` answers every
+command frame with that verdict, and the Pi's `mcu_link.py` correlates the
+`ACK` back to the command's sequence number and hands the result to ground.
+The Pi also forwards `ARM` now - it did not before, and with a latch on the
+MCU a swallowed `ARM` would have made every release `NOT_ARMED` there.
+
+The ground interlock (S.10) gained a second enforcer for the same reason the
+arm latch did: `G-04` lives on a laptop and anything can open TCP 4001. The
+Pi refuses `RELEASE` unless *fresh* housekeeping shows the MCU between
+ASCENT and MEASURE_2 - no HK, stale HK and STANDBY all resolve to "on the
+ground" - and refuses it *before* consuming the arm latch, so a refusal does
+not quietly cost the operator their ARM.
+
+**What the link is still not allowed to do.** Nothing here may gate the
+sequence (S.7). That is not a comment, it is two tests:
+`core/link.c` is grepped for any route into the sequencer (`seq_`, `->ops`,
+`fire_`, `membrane`, `enter(`), and `main.c` for an `if (pi_ok)` in front of
+the HK/step call. Losing the Pi clears a flag and emits an event; the
+experiment carries on.
+
+**One thing the ACK broke that had to be fixed with it.** Every command now
+costs a blocking ACK write (~2 ms at 115200) inside a `while (uart_io_poll())`
+that had no bound. A flood of uplink frames - a stuck Pi, a noisy line - could
+therefore hold the loop past the 2 s watchdog, which the old drain could not
+do as cheaply. `MAX_FRAMES_PER_PASS` (8 per 10 ms pass, 800/s, far above any
+real command rate) bounds it; the rest wait in the FIFO for the next pass.
+
+**Evidence.**
+
+```
+flight/mcu/test/run_native.sh        50 tests, 0 failures   (was 39)
+python -m pytest tests/             198 passed
+python verify.py                    VERIFY OK
+python -u verify_qt.py              VERIFY OK
+cmake --build flight/mcu/build      clean, -Wall -Wextra
+picotool load -f -x ...uf2          carrier 21DD2AE08840C863, running clouds_fsw_mcu
+```
+
+The new coverage is the interesting part, not the count: the ACK/verdict path
+end to end (`tests/test_e2e.py` now fails a command the fake MCU rejects, and
+proves a release is refused `INTERLOCK` on the pad and accepted once the MCU
+reports ASCENT), ACK correlation by sequence number with two commands in
+flight and the answers returned out of order, a stop() that releases a caller
+blocked on an ACK, and four schema mirrors between C and Python (ACK results,
+`SET_PARAM` keys, command codes, the arm window) so a renumbered enum fails a
+test instead of turning a refusal into an OK on the ground display.
+
+**Not yet proven on hardware.** The Pi was off the network for this work
+(`192.168.100.10` unreachable, `arp` incomplete on a link that was up), so
+everything above is desk-verified plus firmware running on the carrier. What
+the bench still owes: HK arriving over the real GP0/GP1 wire, an
+`ARM`+`RELEASE` round trip returning the MCU's own ACK, `MCUF_PI_OK`
+appearing in the GSE `link=` field, and pulling the UART to watch it clear
+after 60 s. `flight/pi/README.md` has the commands.
+
+## 2026-08-31 (latest) - Motor and membrane solenoid driven together (M-07)
+
+**Why.** The dispersion motor and the membrane solenoid now fire in the same
+release step, and `core/pulse` deliberately serialises its own drives to keep
+peak actuator current at one solenoid. The membrane is not in that queue - it
+is loop-toggled `core/sqwave` edges - so motor + solenoid is the one pairing
+the current budget never covered. Two questions: do both drives actually run
+at once or does one starve the other, and what does the power tree do about it.
+
+**Method.** A throwaway image linking the real `src/` (no copies, no edits):
+`hw_init()`, then `hw_seq_ops.membrane()` and `hw_seq_ops.disperse()` with
+`ops.ctx = &cfg` exactly as `main.c` wires them, serviced by
+`hw_actuators_service()` on the flight loop's 10 ms cadence with the real 2 s
+watchdog enabled. Pads sampled every 1 ms - 10x finer than the cadence that
+makes the edges - and the 24 V / 5 V / 3.3 V INA226s (0x40/0x44/0x45) polled
+every 25 ms. The pinch valves were not fired: they are one-shot, and the
+release ordering is already covered natively.
+
+**They run concurrently, and the membrane does not lose time.**
+
+```
+GP17 held 5001 ms                       (VALVE_PULSE_MS = 5000)
+GP18 edges while GP17 drove: 0          (interlock held)
+GP26+GP17 both energized: 3000 ms       (= 60 % duty x 5 s, exactly)
+
+membrane alone       high 300000 us  low 200000 us  period 500000 us -> 2.00 Hz
+membrane with motor  high 300077 us  low 200000 us  period 500083 us -> 1.99 Hz
+```
+
+The 83 us the period grows under load is 0.017 % of a 500 ms cycle, far inside
+the ~10 ms loop quantisation the 2 Hz drive already accepts. A 5 s scheduled
+pulse and a 2 Hz loop-toggled waveform coexist in one `hw_actuators_service()`
+without either starving the other. The 2 s watchdog survived the 5 s drive
+across three consecutive flashes, and GP17/GP18/GP26 all read 0 afterwards.
+
+**Confirmed visually on the bench: both actuators moved during the joint
+drive.** That observation is doing real work here. Every number above comes
+from `gpio_get()` on a driven output, which reports the pad level and so proves
+the *drive* wins - it cannot prove a solenoid or a motor is attached to that
+pad and turning. GP8 read back its driven level perfectly while nothing was
+connected to it. Electrical evidence plus a witness that the mechanism moved is
+what closes M-07's drive half; either alone is what the GP8 bug looked like.
+
+**The power tree does not notice the motor.** 880 samples over 22 s, with each
+phase driven separately:
+
+| phase | 24 V bus | 24 V shunt | 5 V | 3V3 |
+|---|---|---|---|---|
+| idle | 23995..23997 mV | 1245..1402 uV | 5092 mV | 3296 mV |
+| motor alone | 23988..23998 mV | 1247..1775 uV | 5092 mV | 3296 mV |
+| membrane alone | **23907**..23997 mV | 1255..1667 uV | 5092 mV | 3296 mV |
+| both | **23905**..23997 mV | 1172..1752 uV | 5092 mV | 3296 mV |
+
+The only phase-correlated signature on the 24 V rail is a ~90 mV dip that
+belongs to the **membrane**, and "both" is indistinguishable from the membrane
+alone. So the pairing costs nothing measurable, but the reason is not that the
+motor is cheap: **the motor's supply is not on any rail the carrier monitors.**
+Its 5 V and 3.3 V shunt readings vary as widely with everything off as they do
+mid-drive (USB/stdio activity), so nothing there is attributable to it either.
+The motor is externally fed, and its current remains **unmeasured** - a bench
+PSU reading or a clamp is still owed before it can enter the power budget.
+
+**Correction, and the trap it belongs to.** A first pass sampled the rail once
+per phase and reported **6046 mV** on the 24 V bus with both actuators
+energized - a 75 % collapse. It is not real. 880 samples across every phase
+never went below 23.5 V, and the INA226's manufacturer and die IDs
+(`0x5449` / `0x2260`) were read back correct *during* each drive, so the part
+was answering properly throughout. The 6046 mV was one bad I2C transfer, and
+the reason it got as far as being written down is that a single unvalidated
+sample was allowed to stand as a measurement. `ina_read()` returning 0 on a
+failed transfer only catches the transfers that fail outright, not the ones
+that return plausible garbage. This is the same rule as the phantom stuck SCL
+and the BNO055 `SYS_ERR`: rule the instrument out first, and never from one
+sample.
+
+---
+
+## 2026-08-31 (latest) - A CaCO3 dispersion motor exists on GP17/GP18 (M-07)
+
+**Why.** Reported from the bench: a motor is now wired to the carrier and turns
+under this firmware image -
+
+```c
+gpio_init(17); gpio_set_dir(17, GPIO_OUT);
+gpio_init(18); gpio_set_dir(18, GPIO_OUT);
+while (true) { gpio_put(17, 1); gpio_put(18, 0); sleep_ms(5000); }
+```
+
+GP17 high with GP18 low ran it. That is a two-line driver pair, the same shape
+as the valve open/close lines, and its job is CaCO3 dispersion alongside the
+membrane solenoid.
+
+**The motor is not in the SED.** `pdftotext` over
+`BX38_CLOUDS_SED_v1-0_14Jan2026.pdf` finds no motor, pump or stirrer anywhere
+in the document, and `docs/` had no mention either. So this is hardware the
+carrier grew after the design document, and the firmware treats it as
+optional: `seq_ops_t.disperse` may be NULL and the release sequence still runs
+(`test_release_works_without_a_dispersion_motor`).
+
+**Three things GP17/GP18 broke.**
+
+1. `board.h` gave GP17 to `PIN_SD_CS_A` and GP18 to `PIN_SD_SCK`. Those numbers
+   are now known to drive a motor, so an `spi_init()` on the old map would run
+   it while probing for a card. The SD defines are **deleted**, not corrected:
+   M-11 has to take its pinout from the schematic. The earlier SD probe getting
+   `CMD0 = 0xff` on both chip selects reads differently now - it was talking to
+   a motor driver, not to an absent card.
+2. Neither pin was in `hw_init`'s output list, so before this change both
+   floated as inputs at boot and the motor's state was whatever its driver made
+   of two floating inputs. The membrane pin was safe in that window because its
+   driver input carries a measured external pull-down (GP26 reads pu=0 pd=0);
+   GP17/GP18 have no such measurement. Both are now driven low in `hw_init`
+   with the valves.
+3. **The passive pin survey cannot prove a pin unconnected.** GP16/17/18 all
+   read `pu=1 pd=0` and were written up as "physically unconnected". A
+   high-impedance driver input reads exactly the same way. `pu=1 pd=0` means
+   "nothing holds this line", which is weaker than "nothing is attached" - the
+   same class of error as trusting `gpio_get()` through `GPIO_FUNC_I2C`.
+
+**How it is driven.** `ops_disperse()` hands one `pulse_request(PIN_DISPERSE_FWD,
+PIN_DISPERSE_REV)` to `core/pulse`, so the drive is the same 5 s scheduled,
+loop-released pulse the valves get and cannot outlive the 2 s watchdog. Only
+the forward line is ever driven: the reverse sense was never tested, so GP18
+serves as the interlock - forced low before GP17 goes high - which is safe
+whichever way that half is actually wired. `PULSE_SLOTS` went 6 → 8 so the two
+new lines cannot displace a valve request; a dropped request is an actuation
+that silently never happens.
+
+`fire()` calls it on each release, after `fire_pinch` and alongside the
+membrane. The scheduler runs one drive at a time, so a release is a 5 s pinch
+pulse followed by a 5 s motor pulse, with the membrane oscillating across both
+on its own loop-toggled path. Peak actuator current stays at one drive
+(`test_release_serialises_the_pinch_valve_and_the_motor`).
+
+**Why it is wired into `fire()` at all.** The alternative - defining the pins
+and leaving the sequencer alone - is exactly the GP8 membrane bug: firmware
+that builds, flashes and does nothing in flight. A drive nothing calls is
+indistinguishable from working code until the flight.
+
+**Open, and deliberately not guessed:**
+
+- The reverse direction is untested. If the motor needs to run both ways, that
+  is a second `pulse_request` and a measurement first.
+- Whether the motor replaces or supplements the membrane for dispersion is a
+  hardware question. Both run today; if the motor replaces it, drop the
+  `membrane()` call from `fire()` rather than leaving two mechanisms firing.
+- 5 s comes from the valve drive time, not from a motor datasheet. The bench
+  image above held GP17 energized indefinitely, which is a stall risk on a
+  motor that reaches an end stop - the flight path never does that.
+- The part is undocumented: no datasheet, no SED entry, no current figure, so
+  it is absent from the power budget.
+
+---
+
 ## 2026-08-31 (later still) - The membrane runs at 2 Hz, which PWM cannot do (M-07)
 
 **Why.** The operating frequency was specified as **2 Hz**. That is below the

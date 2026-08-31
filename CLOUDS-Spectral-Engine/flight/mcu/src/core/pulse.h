@@ -22,9 +22,10 @@
 
 #define PULSE_PIN_NONE 0xFFu
 
-/* One slot per drivable output on the board (2 pinch + 4 valve lines).
- * Requests coalesce per pin, so the queue cannot exceed that. */
-#define PULSE_SLOTS 6
+/* One slot per drivable output on the board (2 pinch + 4 valve lines +
+ * 2 dispersion-motor lines). Requests coalesce per pin, so the queue cannot
+ * exceed that. */
+#define PULSE_SLOTS 8
 
 /* Sink for a single pin edge (gpio_put on the Pico, a recorder in tests). */
 typedef void (*pulse_drive_fn)(void *ctx, uint8_t pin, bool level);

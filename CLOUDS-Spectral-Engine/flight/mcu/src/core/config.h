@@ -18,6 +18,7 @@ enum param {
     PARAM_MEMBRANE_HZ = 9,
     PARAM_MEMBRANE_DUTY = 10,    /* percent                               */
     PARAM_SEAL_RETRY = 11,
+    PARAM_PI_SILENT_S = 12,      /* Pi declared lost after this (M-13)     */
     PARAM_COUNT_ /* keep last */
 };
 

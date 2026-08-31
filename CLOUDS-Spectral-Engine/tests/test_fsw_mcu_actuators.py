@@ -59,7 +59,7 @@ class TestNoBlockingActuation:
     def test_drives_go_through_the_scheduler(self):
         hw = _read("src", "hw", "hw.c")
         # every actuator op schedules; none touches gpio_put directly
-        for op in ("ops_fire_pinch", "ops_close_eq_valves"):
+        for op in ("ops_fire_pinch", "ops_close_eq_valves", "ops_disperse"):
             body = hw.split("static void %s" % op, 1)[1].split("\n}", 1)[0]
             assert "pulse_request(" in body, "%s does not schedule" % op
             assert "gpio_put(" not in body, "%s drives a pin directly" % op
@@ -115,6 +115,98 @@ class TestErrorFlagsMirror:
         assert c_bits == py_bits, (
             "frame.h HKE_* and clouds_link.hk.HkErrors disagree: %s vs %s"
             % (c_bits, py_bits))
+
+
+class TestLinkSchemaMirror:
+    """X-01: the Pi/GSE and the firmware must agree on the link vocabulary.
+
+    These are the values a wrong edit breaks silently - a renumbered ACK
+    result turns a refusal into an OK on the ground display, and a
+    SET_PARAM key that means different things at each end writes the wrong
+    threshold into a flight parameter.
+    """
+
+    def test_ack_results_agree(self):
+        from clouds_link.frames import AckResult
+
+        frame_h = _read("src", "core", "frame.h")
+        block = re.search(r"enum ack_result \{(.*?)\};", frame_h, re.S)
+        assert block, "enum ack_result is missing"
+        c_vals = dict((m.group(1), int(m.group(2))) for m in
+                      re.finditer(r"ACK_(\w+)\s*=\s*(\d+)", block.group(1)))
+        py_vals = dict((e.name, int(e.value)) for e in AckResult)
+        assert c_vals == py_vals, (
+            "frame.h enum ack_result and clouds_link.frames.AckResult "
+            "disagree: %s vs %s" % (c_vals, py_vals))
+
+    def test_set_param_keys_agree(self):
+        from clouds_link.commands import Param
+
+        config_h = _read("src", "core", "config.h")
+        c_vals = dict((m.group(1), int(m.group(2))) for m in
+                      re.finditer(r"PARAM_(\w+)\s*=\s*(\d+)", config_h))
+        py_vals = dict((e.name, int(e.value)) for e in Param)
+        assert c_vals == py_vals, (
+            "config.h enum param and clouds_link.commands.Param disagree: "
+            "%s vs %s" % (c_vals, py_vals))
+
+    def test_command_codes_agree(self):
+        from clouds_link.commands import Command
+
+        frame_h = _read("src", "core", "frame.h")
+        block = re.search(r"enum command \{(.*?)\};", frame_h, re.S)
+        c_vals = dict((m.group(1), int(m.group(2), 16)) for m in
+                      re.finditer(r"CMD_(\w+)\s*=\s*(0x[0-9A-Fa-f]+)",
+                                  block.group(1)))
+        c_vals.pop("NONE", None)          # internal sentinel, never on the wire
+        py_vals = dict((e.name, int(e.value)) for e in Command)
+        assert c_vals == py_vals
+
+    def test_arm_window_matches_the_pi(self):
+        from clouds_link.commands import ARM_WINDOW_S
+
+        link_h = _read("src", "core", "link.h")
+        m = re.search(r"#define\s+LINK_ARM_WINDOW_MS\s+(\d+)", link_h)
+        assert m, "LINK_ARM_WINDOW_MS is not defined"
+        assert int(m.group(1)) == int(ARM_WINDOW_S * 1000), (
+            "the MCU arm window must match ARM_WINDOW_S, or a release armed "
+            "on the Pi can be NOT_ARMED on the MCU")
+
+    def test_pi_silence_threshold_is_the_documented_60_s(self):
+        """M-13: continue alone if the Pi is silent > 60 s. The Pi's own beat
+        is TIMESYNC every 10 s, so the default must stay several beats wide."""
+        config_c = _read("src", "core", "config.c")
+        m = re.search(r"\[PARAM_PI_SILENT_S\] = \{(\d+),", config_c)
+        assert m and int(m.group(1)) == 60
+
+
+class TestPiLinkIsNeverAGate:
+    """S.7: losing the Pi may not delay or prevent any state transition, so
+    the liveness monitor must only ever touch flags and events."""
+
+    def test_link_step_does_not_reach_the_sequencer(self):
+        link_c = _read("src", "core", "link.c")
+        for forbidden in ("seq_", "->ops", "fire_", "membrane", "enter("):
+            assert forbidden not in link_c, (
+                "core/link.c must not be able to act on the sequence: found "
+                "%r" % forbidden)
+
+    def test_uplink_drain_is_bounded(self):
+        """Every command is answered with a blocking ACK write, so draining
+        the UART without a bound lets a flood of frames hold the loop past
+        the 2 s watchdog."""
+        main_c = _read("src", "main.c")
+        assert re.search(r"#define\s+MAX_FRAMES_PER_PASS\s+\d+u?", main_c)
+        assert re.search(r"while\s*\([^)]*MAX_FRAMES_PER_PASS[^)]*"
+                         r"uart_io_poll", main_c), (
+            "the poll loop must be bounded, not a bare while(uart_io_poll())")
+
+    def test_main_loop_does_not_condition_the_sequence_on_the_pi(self):
+        main_c = _read("src", "main.c")
+        # the HK step (which calls seq_step) must not sit behind a pi_ok test
+        assert not re.search(r"if\s*\([^)]*pi_ok[^)]*\)\s*\{?\s*send_hk",
+                             main_c)
+        assert "MCUF_PI_OK" in main_c    # reported, though
 
 
 class TestMembraneDrive:
@@ -186,6 +278,68 @@ class TestMembraneDrive:
         assert "sqwave_stop" in helper, (
             "the helper must stop the waveform, or the loop keeps toggling")
         assert "pwm_set_enabled" in helper
+
+
+class TestDispersionMotor:
+    """The CaCO3 dispersion motor on GP17/GP18, measured on the carrier.
+
+    Driving GP17 high with GP18 low ran the motor. It is not in the SED, and
+    the reverse sense was never verified, so the firmware drives only the
+    forward line and holds the other low. GP17/GP18 used to be named as SD
+    pins; those defines are gone, because an spi_init() on them would run the
+    motor.
+    """
+
+    def test_pins_are_the_measured_pair(self, board):
+        assert _define(board, "PIN_DISPERSE_FWD") == 17
+        assert _define(board, "PIN_DISPERSE_REV") == 18
+
+    def test_no_other_pin_claims_the_motor_lines(self, board):
+        """The SD block owned GP17/GP18 on paper while the motor owns them in
+        copper. Any define landing back on those numbers is that collision."""
+        motor = {17, 18}
+        for m in re.finditer(r"^#define\s+(PIN_\w+)\s+(\d+)", board, re.M):
+            name, pin = m.group(1), int(m.group(2))
+            if name.startswith("PIN_DISPERSE"):
+                continue
+            assert pin not in motor, (
+                "%s maps to GP%d, which drives the dispersion motor" % (name,
+                                                                        pin))
+
+    def test_both_lines_are_de_energized_at_boot(self):
+        """Unlike the membrane's driver input, these pins have no measured
+        external pull: before hw_init they float and the motor's state is
+        whatever its driver makes of that."""
+        hw = _read("src", "hw", "hw.c")
+        body = hw.split("void hw_init", 1)[1]
+        out_pins = body.split("out_pins[] = {", 1)[1].split("}", 1)[0]
+        for pin in ("PIN_DISPERSE_FWD", "PIN_DISPERSE_REV"):
+            assert pin in out_pins, "%s must be driven low at boot" % pin
+
+    def test_drive_is_scheduled_forward_only_and_interlocked(self):
+        hw = _read("src", "hw", "hw.c")
+        body = hw.split("static void ops_disperse", 1)[1].split("\n}", 1)[0]
+        assert re.search(
+            r"pulse_request\(&pulses,\s*PIN_DISPERSE_FWD,\s*PIN_DISPERSE_REV\)",
+            body), ("the forward line must be driven with the reverse line as "
+                    "its interlock, so the pair is never energized together")
+
+    def test_the_queue_has_a_slot_for_both_new_lines(self):
+        """A dropped request is an actuation that silently never happens."""
+        pulse_h = _read("src", "core", "pulse.h")
+        assert _define(pulse_h, "PULSE_SLOTS") >= 8
+
+    def test_the_sequencer_disperses_on_every_release(self):
+        """Same failure mode as the GP8 membrane bug: a drive nothing calls
+        looks like working firmware and does nothing in flight."""
+        seq = _read("src", "core", "sequencer.c")
+        body = seq.split("static void fire(", 1)[1].split("\n}", 1)[0]
+        assert "disperse" in body, (
+            "fire() must run the dispersion motor, or the motor never turns "
+            "in flight")
+        assert "!= NULL" in body, (
+            "disperse is optional - a board without the motor must still "
+            "sequence")
 
 
 class TestUnsourcedSensorsAreFlagged:

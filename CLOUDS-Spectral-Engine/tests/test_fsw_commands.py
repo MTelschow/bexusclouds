@@ -12,13 +12,16 @@ from clouds_fsw.command_server import CommandServer, CommandState
 
 
 class Harness:
-    def __init__(self):
+    def __init__(self, interlocked=False):
         self.forwarded = []
         self.status_reqs = 0
+        self.interlock_calls = []
+        self.interlocked = interlocked
+        self.forward_result = None      # None = "sent, nothing to report"
         self.state = CommandState()
         self.server = CommandServer(
             "127.0.0.1", 0, forward=self._fwd, state=self.state,
-            on_status_req=self._status)
+            on_status_req=self._status, interlock=self._interlock)
         self.server.start()
         self.sock = socket.create_connection(
             ("127.0.0.1", self.server.port), timeout=2.0)
@@ -28,6 +31,11 @@ class Harness:
 
     def _fwd(self, cmd, key, value):
         self.forwarded.append((cmd, key, value))
+        return self.forward_result
+
+    def _interlock(self, cmd, key):
+        self.interlock_calls.append((cmd, key))
+        return self.interlocked
 
     def _status(self):
         self.status_reqs += 1
@@ -80,14 +88,18 @@ class TestArmExecute:
         assert r == AckResult.OK
         _, _, r = harness.send(Command.RELEASE, key=2)
         assert r == AckResult.OK
-        assert harness.forwarded == [(Command.RELEASE, 2, 0)]
+        # ARM goes to the MCU too: it keeps its own latch (S.8 defence in
+        # depth), so a swallowed ARM would make every RELEASE NOT_ARMED there.
+        assert harness.forwarded == [(Command.ARM, int(Command.RELEASE), 0),
+                                     (Command.RELEASE, 2, 0)]
 
     def test_arm_is_one_shot(self, harness):
         harness.send(Command.ARM, key=int(Command.RELEASE))
         harness.send(Command.RELEASE, key=1)
         _, _, r = harness.send(Command.RELEASE, key=2)   # second without arm
         assert r == AckResult.NOT_ARMED
-        assert len(harness.forwarded) == 1
+        assert [f[0] for f in harness.forwarded] == [Command.ARM,
+                                                     Command.RELEASE]
 
     def test_arm_window_expires(self, harness):
         harness.state.arm(int(Command.RELEASE), now=1000.0)
@@ -97,6 +109,64 @@ class TestArmExecute:
     def test_arm_of_non_actuator_rejected(self, harness):
         _, _, r = harness.send(Command.ARM, key=int(Command.HOLD))
         assert r == AckResult.INVALID
+
+
+class TestGroundInterlock:
+    """S.10 on the Pi: the GSE's own check runs on a laptop, and anything can
+    open this port. Blocked before the arm latch is consumed, so a refusal
+    does not silently cost the operator their ARM."""
+
+    def test_release_blocked_while_not_in_flight(self, harness):
+        harness.interlocked = True
+        harness.send(Command.ARM, key=int(Command.RELEASE))
+        _, cmd, r = harness.send(Command.RELEASE, key=1)
+        assert (cmd, r) == (Command.RELEASE, AckResult.INTERLOCK)
+        assert [f[0] for f in harness.forwarded] == [Command.ARM]
+
+    def test_a_blocked_release_keeps_the_arm(self, harness):
+        harness.interlocked = True
+        harness.send(Command.ARM, key=int(Command.RELEASE))
+        assert harness.send(Command.RELEASE, key=1)[2] == AckResult.INTERLOCK
+        harness.interlocked = False          # launch detected meanwhile
+        assert harness.send(Command.RELEASE, key=1)[2] == AckResult.OK
+
+    def test_only_flight_only_commands_are_checked(self, harness):
+        harness.interlocked = True
+        for c in (Command.PING, Command.HOLD, Command.RESUME, Command.ABORT,
+                  Command.START):
+            assert harness.send(c)[2] == AckResult.OK
+        assert harness.interlock_calls == []
+
+
+class TestMcuVerdict:
+    """The ACK a client gets carries what the MCU said, not the Pi's
+    optimism: ``forward`` returns the RP2350's AckResult (S.8)."""
+
+    def test_forward_result_reaches_the_client(self, harness):
+        harness.forward_result = AckResult.REJECTED
+        assert harness.send(Command.HOLD)[2] == AckResult.REJECTED
+        harness.forward_result = AckResult.NOT_ARMED
+        assert harness.send(Command.ABORT)[2] == AckResult.NOT_ARMED
+
+    def test_none_means_nothing_to_report(self, harness):
+        harness.forward_result = None
+        assert harness.send(Command.HOLD)[2] == AckResult.OK
+
+    def test_arm_refused_by_the_mcu_leaves_nothing_armed(self, harness):
+        harness.forward_result = AckResult.REJECTED
+        assert harness.send(Command.ARM,
+                            key=int(Command.RELEASE))[2] == AckResult.REJECTED
+        harness.forward_result = None
+        # the Pi must not hold a latch the MCU never took
+        assert harness.send(Command.RELEASE, key=1)[2] == AckResult.NOT_ARMED
+
+    def test_ping_is_answered_even_when_the_mcu_is_gone(self, harness):
+        def boom(*_):
+            raise OSError("uart gone")
+        harness.server._forward = boom
+        # PING is addressed to the Pi (S.8 heartbeat); a silent MCU is
+        # reported through PISTATUS.uart_ok, not by failing the heartbeat.
+        assert harness.send(Command.PING)[2] == AckResult.OK
 
 
 class TestPlainCommands:

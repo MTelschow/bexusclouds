@@ -14,19 +14,19 @@ Code: `flight/mcu/` (M-xx), `flight/pi/` (P-xx), `gse/` (G-xx), `clouds_link/` +
 | M-02 | Launch detection: sustained ambient Δp, 60 s debounce | P0 | S.1 | ✔ |
 | M-03 | Float detection: p < 55 hPa ∧ low |dp/dt| 5 min, + T_float timer fallback | P0 | S.1 | ✔ |
 | M-04 | Link-loss latch (10 min without heartbeat → autonomous, no further input required) | P0 | O.2, S.2 | ✔ |
-| M-05 | Ground override handling: HOLD / RESUME / ABORT / RELEASE n as accelerators only | P1 | S.2 | ✔ |
+| M-05 | Ground override handling: HOLD / RESUME / ABORT / RELEASE n as accelerators only | P1 | S.2 | ✔ every command is answered with an `ACK` carrying the MCU's own verdict (`core/link.c` gate → `seq_command()` result), so a release refused for state, arm or parameter reaches ground as a refusal instead of an OK |
 | M-06 | Valve control via interlocked GPIO/MOSFET pairs; actuation verify (current sense / pressure response) | P0 | F.4 | ◐ |
-| M-07 | Membrane PWM control (freq/duty configurable), duty-cycled to hold dispersion ≥ 3 min | P0 | F.3, P.6, P.7 | ◐ drive done: GP26, **2 Hz** default, loop-toggled via `core/sqwave` because 2 Hz is below the ~9 Hz PWM floor; measured 300/200 ms on the board. Duty-cycling to hold ≥ 3 min (P.7) is still sequencer-side (DEVLOG 2026-08-31) |
+| M-07 | Membrane PWM control (freq/duty configurable), duty-cycled to hold dispersion ≥ 3 min | P0 | F.3, P.6, P.7 | ◐ drive done: GP26, **2 Hz** default, loop-toggled via `core/sqwave` because 2 Hz is below the ~9 Hz PWM floor; measured 300/200 ms on the board. Duty-cycling to hold ≥ 3 min (P.7) is still sequencer-side. A **CaCO3 dispersion motor** on GP17/GP18 (not in the SED) also runs on each release: one 5 s scheduled pulse, forward line only, reverse line as interlock. Both actuators **measured and seen running together** - membrane holds 1.99 Hz under the motor drive, 24 V rail flat. Motor current still unmeasured (DEVLOG 2026-08-31) |
 | M-08 | Fired-valve flags persisted **before** actuation; brownout-safe resume of sequence + mission clock | P0 | S.3 | ◐ |
 | M-09 | 1 Hz sensor acquisition: 2× STLM20, BME280, 2× Keller 23SY, IMU | P0 | F.5, F.6, P.8–P.13 | ◐ BME280 live; STLM20 pair not populated, no Keller/RH2 on the bus, IMU faulted — all flagged via `error_flags` (DEVLOG 2026-08-31) |
 | M-10 | Sanity/range flags on every reading (store raw, flag implausible, never discard) | P1 | S. spec §2.2 | ☐ |
 | M-11 | Redundant HK + actuator-event logging to 2× SD over SPI, 10-min file rotation, CRC-16 per record | P0 | O.3, S.5, S.6 | ☐ blocked: SPI0 pin map unverified, no card responds (DEVLOG 2026-08-31) |
 | M-12 | UART link to Pi: COBS framing, CRC-16, HK @ 1 Hz up, commands + time sync down | P0 | S.4 | ✔ |
-| M-13 | Hardware watchdog (2 s) + Pi-liveness monitor (continue alone if Pi silent > 60 s) | P0 | S.7, S.9 | ◐ |
+| M-13 | Hardware watchdog (2 s) + Pi-liveness monitor (continue alone if Pi silent > 60 s) | P0 | S.7, S.9 | ✔ `core/link.c`: any valid frame refreshes the link, `PARAM_PI_SILENT_S` (default 60 s, the Pi beats every 10 s with TIMESYNC) clears `MCUF_PI_OK` and raises one event. Reporting only — a source-level test asserts `core/link.c` cannot reach the sequencer (S.7) |
 | M-14 | SAFE state: actuators de-energized, valves closed once, buffers flushed, logging continues | P0 | fail-safe concept | ✔ |
 | M-15 | Chamber-seal verification (chamber vs ambient pressure divergence, retry ×3, proceed flagged) | P1 | seal step | ◐ |
 | M-16 | Config block on SD (thresholds, timers, PWM params) loaded at boot, settable via SET_PARAM | P1 | pre-flight tuning | ◐ |
-| M-17 | Self-tests at INIT: sensor plausibility, SD write test, actuator continuity, UART echo | P1 | process flow | ◐ |
+| M-17 | Self-tests at INIT: sensor plausibility, SD write test, actuator continuity, UART echo | P1 | process flow | ◐ the UART half stays open by design: INIT must not wait for the Pi (S.7), so the link is proven by `MCUF_PI_OK` in flight rather than by an echo at boot |
 
 ## FSW-PI — Raspberry Pi 5 flight application (Python 3, systemd)
 
@@ -36,8 +36,8 @@ Code: `flight/mcu/` (M-xx), `flight/pi/` (P-xx), `gse/` (G-xx), `clouds_link/` +
 | P-02 | Pixel→wavelength calibration + dark handling (reuse `spectro/calibration.py`, `processing.py`) | P0 | F.2 | ✔ |
 | P-03 | Frame storage: ring buffer → block writes, timestamped files, 10-min rotation, CRC-16 | P0 | O.3, S.5 | ✔ |
 | P-04 | UDP telemetry: HK relay @ 1 Hz + 8×-binned quick-look spectrum @ 1 Hz + events, 1.814 of 2 kbit/s avg (needs HK payload ≤ 67 B — see SOFTWARE_SPEC.md) | P0 | O.4 | ✔ |
-| P-05 | TCP command server: ACK, arm/execute for actuator commands, forward to MCU over UART | P0 | S.8 | ✔ |
-| P-06 | UART master: command forwarding, HK ingest, time sync every 10 s (RTC/NTP master) | P0 | S.4 | ✔ |
+| P-05 | TCP command server: ACK, arm/execute for actuator commands, forward to MCU over UART | P0 | S.8 | ✔ the ACK to ground carries the **MCU's** result for everything in `MCU_CONFIRMED` (a missing ACK inside `mcu_ack_timeout_s` is a rejection); `ARM` is forwarded too, so the MCU's own arm latch stays in step; `PING` is answered by the Pi, since the heartbeat is addressed to it |
+| P-06 | UART master: command forwarding, HK ingest, time sync every 10 s (RTC/NTP master) | P0 | S.4 | ✔ `clouds_fsw/mcu_link.py`: ACK correlation by sequence number, HK decoded on the way past for the interlock, TIMESYNC doubling as the beat the MCU's M-13 monitor watches |
 | P-07 | Communications log (all up/downlink traffic) to Pi SD | P1 | SED storage split | ✔ |
 | P-08 | systemd unit: auto-start, restart-on-crash, RuntimeWatchdogSec=15, MCU-liveness alarm | P0 | S.9 | ✔ |
 | P-09 | Auto-exposure guard: clip/saturation flagging (reuse ground-software logic); fixed exposure default for flight | P1 | F.1 | ✔ |
@@ -51,7 +51,7 @@ Code: `flight/mcu/` (M-xx), `flight/pi/` (P-xx), `gse/` (G-xx), `clouds_link/` +
 | G-01 | Live HK display: temperatures, humidity, pressures, IMU, state, actuator status | P0 | §4.12.1 | ✔ |
 | G-02 | Live quick-look spectrum display (reuse this repo's dual-trace view / `spectro/` processing) | P0 | §4.12.1 | ✔ |
 | G-03 | Command console with arm/execute UI + full command set | P0 | §4.12.1 | ✔ |
-| G-04 | Ground interlock: particle-release commands blocked while on ground | P0 | S.10 | ✔ |
+| G-04 | Ground interlock: particle-release commands blocked while on ground | P0 | S.10 | ✔ and re-checked on the Pi (`FLIGHT_ONLY`): the GSE's own check runs on a laptop and anything can open TCP 4001, so `RELEASE` needs fresh HK showing ASCENT..MEASURE_2 or it is refused `INTERLOCK` — `allow_ground_release` overrides it for bench rehearsals, loudly |
 | G-05 | Session logging + CSV/JSON export | P1 | §4.12.1 | ✔ |
 | G-06 | Calibration interface (offsets, reference comparisons) for T-01/T-03 | P1 | §4.12.1 | ☐ |
 | G-07 | Link-quality panel (packet seq gaps, heartbeat RTT) | P2 | ops insight | ✔ |

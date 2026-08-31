@@ -33,6 +33,21 @@ ARMED_COMMANDS = frozenset({Command.RELEASE})
 #: operator has explicitly enabled flight mode.
 GROUND_INTERLOCKED = frozenset({Command.RELEASE, Command.START})
 
+#: Commands the *Pi* refuses unless the MCU's housekeeping says the
+#: experiment is flying - the ground interlock as defence in depth, since the
+#: GSE's own check (G-04) lives on a laptop and anything can open TCP 4001.
+#: START is deliberately absent: it is the on-pad accelerator that creates the
+#: in-flight state in the first place, so interlocking it would be circular.
+FLIGHT_ONLY = frozenset({Command.RELEASE})
+
+#: Commands whose ACK to ground carries the *MCU's* own verdict: the Pi waits
+#: for the MCU's ACK over UART and relays its result. PING is deliberately
+#: absent - it is the heartbeat addressed to the Pi (S.8), which must answer
+#: it even while the RP2350 is silent; PISTATUS.uart_ok reports that instead.
+MCU_CONFIRMED = frozenset({Command.START, Command.HOLD, Command.RESUME,
+                           Command.ABORT, Command.RELEASE, Command.SET_PARAM,
+                           Command.ARM})
+
 
 class Param(IntEnum):
     """SET_PARAM keys - mirror of config.h on the MCU. Values are i32."""
@@ -47,3 +62,4 @@ class Param(IntEnum):
     MEMBRANE_HZ = 9           # solenoid drive frequency, Hz (default 2)
     MEMBRANE_DUTY = 10        # percent (default 60)
     SEAL_RETRY = 11           # seal verification retries (default 3)
+    PI_SILENT_S = 12          # MCU declares the Pi lost after this (default 60)

@@ -1,4 +1,4 @@
-"""TCP command uplink (S.8): framed commands, mandatory ACK, arm/execute.
+"""TCP command uplink (S.8, S.10): framed commands, mandatory ACK, arm/execute.
 
 Frames are self-delimiting on the TCP stream (header carries the payload
 length). The server is authoritative for the arm/execute rule: RELEASE
@@ -7,6 +7,14 @@ AckResult.NOT_ARMED and never reaches the MCU. Every valid command
 (including PING) is forwarded to the MCU - the MCU's own link-loss latch
 (O.2) keys off command traffic, so a dead Pi and a dead E-Link look the
 same to it, which is exactly the fail-safe intent.
+
+Two things the ACK a client gets back is *not*: it is not proof the command
+was executed unless ``forward`` says so (it returns the MCU's own verdict for
+the commands in MCU_CONFIRMED), and it is not granted just because the GSE
+allowed the command. The GSE interlock (G-04) runs on a laptop and anything
+can open this port, so a ``interlock`` predicate re-checks FLIGHT_ONLY
+commands here against what the MCU reports - refused with
+AckResult.INTERLOCK, before the arm latch is consumed.
 """
 from __future__ import annotations
 
@@ -15,7 +23,8 @@ import threading
 import time
 
 from clouds_link import frames
-from clouds_link.commands import ARM_WINDOW_S, ARMED_COMMANDS, Command
+from clouds_link.commands import (ARM_WINDOW_S, ARMED_COMMANDS, FLIGHT_ONLY,
+                                  Command)
 
 
 class CommandState:
@@ -76,13 +85,17 @@ class _Handler(socketserver.BaseRequestHandler):
 
 
 class CommandServer:
-    """``forward(cmd, key, value)`` sends the command on to the MCU;
-    ``on_status_req()`` triggers an immediate PISTATUS downlink."""
+    """``forward(cmd, key, value)`` sends the command on to the MCU and
+    returns its AckResult (None = "sent, nothing to report" -> OK);
+    ``on_status_req()`` triggers an immediate PISTATUS downlink;
+    ``interlock(cmd, key)`` returns True to block a FLIGHT_ONLY command
+    (S.10). With no ``interlock`` given nothing is blocked here."""
 
     def __init__(self, bind: str, port: int, forward, state: CommandState,
-                 on_status_req=None, log=None):
+                 on_status_req=None, log=None, interlock=None):
         self._forward = forward
         self._on_status_req = on_status_req
+        self._interlock = interlock
         self._log = log or (lambda *_: None)
         self.state = state
         self.stopping = threading.Event()
@@ -130,14 +143,38 @@ class CommandServer:
 
         if cmd == Command.PING:
             self.state.heartbeat()
-            self._forward(cmd, key, value)   # MCU link-ok keys off traffic
+            # Answered by the Pi itself: the heartbeat is addressed here, and
+            # a silent MCU is reported through PISTATUS.uart_ok, not by
+            # failing the operator's heartbeat.
+            try:
+                self._forward(cmd, key, value)  # MCU link-ok keys off traffic
+            except Exception:  # noqa: BLE001 - MCU link down, Pi is still up
+                self._log("up", "PING not forwarded: MCU link down")
             return self._ack(frame.seq, cmd, frames.AckResult.OK)
 
         if cmd == Command.ARM:
             if key not in {int(c) for c in ARMED_COMMANDS}:
                 return self._ack(frame.seq, cmd, frames.AckResult.INVALID)
-            self.state.arm(key)
-            return self._ack(frame.seq, cmd, frames.AckResult.OK)
+            # The MCU keeps its own arm latch (core/link), so the ARM has to
+            # reach it or the RELEASE that follows is refused there. Arm
+            # locally only once the MCU has confirmed, so "armed" never means
+            # one end of the link.
+            try:
+                result = self._forward(cmd, key, value)
+            except Exception:  # noqa: BLE001 - MCU link down
+                return self._ack(frame.seq, cmd, frames.AckResult.REJECTED)
+            if result is None:
+                result = frames.AckResult.OK
+            if result == frames.AckResult.OK:
+                self.state.arm(key)
+            return self._ack(frame.seq, cmd, result)
+
+        # Interlock before the arm latch: a command refused on the ground
+        # must not burn the operator's ARM as a side effect.
+        if cmd in {int(c) for c in FLIGHT_ONLY} and self._interlock is not None \
+                and self._interlock(cmd, key):
+            self._log("up", f"INTERLOCK refused {name} (not in flight)")
+            return self._ack(frame.seq, cmd, frames.AckResult.INTERLOCK)
 
         if cmd in {int(c) for c in ARMED_COMMANDS}:
             if not self.state.consume_arm(cmd):
@@ -148,10 +185,12 @@ class CommandServer:
             return self._ack(frame.seq, cmd, frames.AckResult.OK)
 
         try:
-            self._forward(cmd, key, value)
+            result = self._forward(cmd, key, value)
         except Exception:  # noqa: BLE001 - MCU link down
             return self._ack(frame.seq, cmd, frames.AckResult.REJECTED)
-        return self._ack(frame.seq, cmd, frames.AckResult.OK)
+        if result is None:
+            result = frames.AckResult.OK
+        return self._ack(frame.seq, cmd, result)
 
     def _ack(self, cmd_seq: int, cmd: int, result: int) -> frames.Frame:
         f = frames.Frame(type=frames.PacketType.ACK,

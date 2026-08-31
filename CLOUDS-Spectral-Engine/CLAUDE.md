@@ -84,7 +84,13 @@ That is correct behaviour, but it looks broken if you wanted the instrument.
   COBS, 14-byte frame header, HK, commands.
 - **The Pi never sequences the experiment** (S.7). Losing it degrades the
   mission; it cannot block the release. The MCU is autonomous; the Pi's command
-  server is authoritative for arm/execute and the ground interlock.
+  server is authoritative for arm/execute and the ground interlock — and both
+  are re-checked on the MCU (`core/link.c`) and against MCU housekeeping
+  (`FLIGHT_ONLY`), because each of those enforcers can be bypassed on its own.
+- **Every command is confirmed end to end.** The MCU answers each `CMD` with an
+  `ACK` carrying its own verdict; the Pi correlates it by sequence number and
+  relays that to ground. A UART write is not evidence a command was executed,
+  and a missing ACK is a rejection.
 
 Env vars: `CLOUDS_SPECTRO_KIND`, `CLOUDS_SPECTRO_HOST`, `CLOUDS_CALIBRATION`,
 `CLOUDS_E9U_DLL_DIR` / `CLOUDS_E9U_LIB_DIR`, `CLOUDS_E9U_COUNT_SHIFT`.
@@ -105,8 +111,9 @@ vendor library auto-detects the camera; no COM port or tty is hardcoded.
 
 ### RP2350 carrier - measured, not from the drawings
 
-`board.h` calls itself preliminary and it means it: three of its pin
-assignments were wrong on the real board. Everything below was measured, with
+`board.h` calls itself preliminary and it means it: five of its pin
+assignments were wrong on the real board, and the wrong ones included two that
+drive an actuator. Everything below was measured, with
 the method in `docs/DEVLOG.md` (2026-08-31). **Measure before trusting that
 header.** Two boards are in play; keep them apart by USB serial - bare Pico 2
 `182A9FD0C5146E6F`, CLOUDS carrier `21DD2AE08840C863`.
@@ -117,9 +124,10 @@ header.** Two boards are in play; keep them apart by USB serial - bare Pico 2
 | INA226 ×3 | `0x40` 24 V, `0x44` 5 V, `0x45` 3.3 V | live, but **no field in the 44-byte HK** |
 | BNO055 IMU | `0x28` | answers with valid chip id / SW rev; **sub-sensor IDs read 0x00**, unusable |
 | Membrane solenoid | **GP26** (not GP8, unconnected) | **2 Hz**, loop-toggled via `core/sqwave` |
+| CaCO₃ dispersion motor | **GP17 fwd / GP18 rev** | one 5 s scheduled pulse per release; runs concurrently with the membrane, measured; **not in the SED**, reverse sense untested, **current unmeasured - not on any monitored rail** |
 | STLM20 ×2 | none | **not populated**; the old `ADC_TEMP1` collided with GP26 |
 | Keller 23SY ×2 | none | **absent at every address** |
-| SD / SPI0 | `board.h` pins measure unconnected | no card answers `CMD0`; **M-11 blocked** |
+| SD / SPI0 | **pinout unknown**; the old map's GP17/GP18 drive the motor | no card answered `CMD0` there; defines deleted, **M-11 blocked on the schematic** |
 
 So `p_ch_pa`, `rh2_cpct`, `temp1/2_cc` and the IMU vectors have **no source**.
 They are declared through `error_flags` (`HKE_*` in `core/frame.h`, `HkErrors`
@@ -155,6 +163,21 @@ Correct end state: one tty at `0666`, interface `:1.0` unbound.
 
 **A charge-only USB cable** enumerates as Code 43 / `Port Reset Failed` and the
 camera is invisible. Use a data cable.
+
+**One sample is not a measurement.** A single INA226 read reported the 24 V bus
+at 6046 mV under load - a 75 % collapse that does not exist; 880 samples never
+left 23.9..24.0 V. A failed I2C transfer is easy to catch, a transfer that
+returns plausible garbage is not, so read the part's identity registers
+*during* the event (INA226 mfg `0x5449`, die `0x2260`) and profile continuously
+before believing an excursion.
+
+**`pu=1 pd=0` does not mean unconnected.** The passive pin survey read that on
+GP16/17/18 and they were written up as physically unconnected; GP17/GP18 then
+turned out to drive the dispersion motor. A high-impedance driver input reads
+exactly like a bare pin. The survey proves "nothing holds this line", which is
+weaker than "nothing is attached" - and an actuator pin with no measured
+external pull is floating until `hw_init` drives it, so its boot state is
+whatever its driver makes of that.
 
 **Your instrument invents its own findings - rule the instrument out first.**
 This happened twice in one day. `gpio_get()` on a pin still in
@@ -201,6 +224,13 @@ method fail where the UI cannot handle it.
 **`socketserver.shutdown()` blocks forever if `serve_forever()` never ran.**
 Guard `stop()` on "was it started", or an error path unwinding before `start()`
 hangs the app instead of exiting.
+
+**A command ACK is only worth what enforced it.** Before `core/link.c` the
+MCU acted on any `CMD_RELEASE` that passed CRC-16, and the Pi answered ground
+`OK` as soon as it had written to the UART - so a release the MCU ignored
+(wrong state, already fired) and one it never received looked identical to a
+success on the console. The rule now: each end answers with what *it* decided,
+and the Pi waits for the MCU's answer before speaking for it.
 
 **Sequence numbers are per packet type**, on both the MCU (`hk_seq_no`,
 `ev_seq_no`) and the Pi (`Downlink._next_seq`). A single shared counter makes

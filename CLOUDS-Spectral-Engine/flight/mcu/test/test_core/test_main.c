@@ -18,6 +18,7 @@
 #include "../../src/core/sqwave.h"
 #include "../../src/core/crc16.h"
 #include "../../src/core/frame.h"
+#include "../../src/core/link.h"
 #include "../../src/core/pulse.h"
 #include "../../src/core/sequencer.h"
 #include "../../src/hw/board.h" /* pin map + timing constants only, no SDK */
@@ -280,6 +281,80 @@ static void test_repeat_requests_coalesce(void)
     TEST_ASSERT_EQUAL_UINT8(1, p.count); /* the driving pin is not re-queued */
 }
 
+static void test_disperse_motor_drive_is_interlocked_and_timed(void)
+{
+    pulse_sched_t p;
+    uint64_t held_ms;
+
+    rec_reset();
+    pulse_init(&p);
+    /* exactly what hw.c's ops_disperse() queues. Only the forward line is
+     * driven - the reverse sense is unverified - and the reverse line is its
+     * interlock, so the pair can never be energized together. */
+    pulse_request(&p, PIN_DISPERSE_FWD, PIN_DISPERSE_REV);
+
+    for (SIM_MS = 0; SIM_MS <= 2 * VALVE_PULSE_MS; SIM_MS += LOOP_MS)
+        pulse_service(&p, SIM_MS, VALVE_PULSE_MS, rec_drive, NULL);
+
+    TEST_ASSERT_EQUAL_INT(1, E.max_high); /* never both lines at once */
+    TEST_ASSERT_EQUAL_INT(3, E.n);
+    TEST_ASSERT_EQUAL_UINT8(PIN_DISPERSE_REV, E.pin[0]);
+    TEST_ASSERT_FALSE(E.level[0]); /* reverse forced low first */
+    TEST_ASSERT_EQUAL_UINT8(PIN_DISPERSE_FWD, E.pin[1]);
+    TEST_ASSERT_TRUE(E.level[1]);
+    TEST_ASSERT_EQUAL_UINT8(PIN_DISPERSE_FWD, E.pin[2]);
+    TEST_ASSERT_FALSE(E.level[2]); /* and released, not left running */
+    held_ms = E.at_ms[2] - E.at_ms[1];
+    TEST_ASSERT_TRUE(held_ms >= VALVE_PULSE_MS);
+    TEST_ASSERT_TRUE(held_ms < VALVE_PULSE_MS + LOOP_MS);
+    TEST_ASSERT_EQUAL_INT(0, E.n_high);
+}
+
+static void test_release_serialises_the_pinch_valve_and_the_motor(void)
+{
+    pulse_sched_t p;
+    int fwd_high = -1, pinch_low = -1;
+
+    rec_reset();
+    pulse_init(&p);
+    /* what fire() schedules for one release: the pinch valve, then the
+     * dispersion motor. One drive at a time, so the motor waits its turn. */
+    pulse_request(&p, PIN_PINCH_1, PULSE_PIN_NONE);
+    pulse_request(&p, PIN_DISPERSE_FWD, PIN_DISPERSE_REV);
+
+    for (SIM_MS = 0; SIM_MS <= 3 * VALVE_PULSE_MS; SIM_MS += LOOP_MS)
+        pulse_service(&p, SIM_MS, VALVE_PULSE_MS, rec_drive, NULL);
+
+    TEST_ASSERT_EQUAL_INT(1, E.max_high); /* peak current stays one drive */
+    for (int i = 0; i < E.n; i++) {
+        if (E.pin[i] == PIN_DISPERSE_FWD && E.level[i] && fwd_high < 0)
+            fwd_high = i;
+        if (E.pin[i] == PIN_PINCH_1 && !E.level[i])
+            pinch_low = i;
+    }
+    TEST_ASSERT_TRUE(pinch_low >= 0);
+    TEST_ASSERT_TRUE(fwd_high >= 0);
+    /* the motor starts only after the valve had its full drive */
+    TEST_ASSERT_TRUE(fwd_high > pinch_low);
+    TEST_ASSERT_TRUE(E.at_ms[fwd_high] >= VALVE_PULSE_MS);
+    TEST_ASSERT_EQUAL_INT(0, E.n_high);
+}
+
+static void test_queue_holds_every_drivable_line(void)
+{
+    pulse_sched_t p;
+    const uint8_t lines[] = {PIN_PINCH_1,   PIN_PINCH_2,  PIN_EQ1_OPEN,
+                            PIN_EQ1_CLOSE, PIN_EQ2_OPEN, PIN_EQ2_CLOSE,
+                            PIN_DISPERSE_FWD, PIN_DISPERSE_REV};
+
+    /* PULSE_SLOTS must cover every output on the board: a dropped request is
+     * an actuation that silently never happens. */
+    pulse_init(&p);
+    for (unsigned i = 0; i < sizeof lines / sizeof lines[0]; i++)
+        TEST_ASSERT_TRUE(pulse_request(&p, lines[i], PULSE_PIN_NONE));
+    TEST_ASSERT_EQUAL_UINT16(0, p.dropped);
+}
+
 /* ---- mock ops + simulated flight harness (X-03) ------------------------ */
 
 typedef struct {
@@ -290,6 +365,7 @@ typedef struct {
     int fire_log_n;
     int fires[3];
     int membrane_duty;
+    int disperse_calls;
     int eq_close_calls;
     int seal_calls;
     uint64_t first_seal_ms;
@@ -331,6 +407,12 @@ static void m_close_eq(void *ctx)
     M.eq_close_calls++;
 }
 
+static void m_disperse(void *ctx)
+{
+    (void)ctx;
+    M.disperse_calls++;
+}
+
 static void m_membrane(void *ctx, uint8_t duty)
 {
     (void)ctx;
@@ -362,6 +444,7 @@ static const seq_ops_t mock_ops = {
     .persist = m_persist,
     .fire_pinch = m_fire,
     .close_eq_valves = m_close_eq,
+    .disperse = m_disperse,
     .membrane = m_membrane,
     .seal_ok = m_seal_ok,
     .self_test = m_self_test,
@@ -387,6 +470,12 @@ static void m_fire_pulsed(void *ctx, uint8_t n)
     pulse_request(&MP, n == 1 ? PIN_PINCH_1 : PIN_PINCH_2, PULSE_PIN_NONE);
 }
 
+static void m_disperse_pulsed(void *ctx)
+{
+    m_disperse(ctx);
+    pulse_request(&MP, PIN_DISPERSE_FWD, PIN_DISPERSE_REV);
+}
+
 static bool m_busy(void *ctx)
 {
     (void)ctx;
@@ -397,6 +486,7 @@ static const seq_ops_t mock_ops_pulsed = {
     .persist = m_persist,
     .fire_pinch = m_fire_pulsed,
     .close_eq_valves = m_close_eq_pulsed,
+    .disperse = m_disperse_pulsed,
     .membrane = m_membrane,
     .busy = m_busy,
     .seal_ok = m_seal_ok,
@@ -457,10 +547,32 @@ static void test_full_autonomous_flight(void)
     TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
     TEST_ASSERT_EQUAL_INT(1, M.fires[1]); /* exactly one fire each (O.2) */
     TEST_ASSERT_EQUAL_INT(1, M.fires[2]);
+    /* the dispersion motor runs once per release, not once per flight */
+    TEST_ASSERT_EQUAL_INT(2, M.disperse_calls);
     TEST_ASSERT_EQUAL_INT(0, M.membrane_duty); /* off in SAFE */
     TEST_ASSERT_TRUE(M.eq_close_calls >= 2);   /* seal + termination */
     TEST_ASSERT_TRUE(s.seal_verified);
     /* zero ground commands were sent: full autonomy (O.2, T-07) */
+}
+
+static void test_release_works_without_a_dispersion_motor(void)
+{
+    cfg_t cfg;
+    sequencer_t s;
+    seq_ops_t no_motor = mock_ops;
+
+    /* the motor is not in the SED and a board may not have it; a NULL op
+     * must not stop the release sequence. */
+    no_motor.disperse = NULL;
+    mock_reset();
+    cfg_defaults(&cfg);
+    seq_init(&s, &cfg, &no_motor, NULL, 0, 0);
+    run_sim(&s, &cfg, 0, 6000 + 300 + 2 * 480 + 60);
+
+    TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
+    TEST_ASSERT_EQUAL_INT(1, M.fires[1]);
+    TEST_ASSERT_EQUAL_INT(1, M.fires[2]);
+    TEST_ASSERT_EQUAL_INT(0, M.disperse_calls);
 }
 
 static void test_persist_before_fire_ordering(void)
@@ -883,6 +995,199 @@ static void test_cfg_default_matches_cfg_defaults(void)
     TEST_ASSERT_EQUAL_INT32(0, cfg_default(PARAM_COUNT_));
 }
 
+
+/* ---- core/link: Pi liveness + the MCU's own arm gate (M-13, S.7, S.8) ----- */
+/* The Pi is a peer, not a dependency: everything here is reporting and
+ * command safety. Nothing in link_step() may reach into the sequence. */
+
+static void test_pi_liveness_needs_a_first_frame(void)
+{
+    cfg_t cfg;
+    link_t l;
+
+    cfg_defaults(&cfg);
+    link_init(&l, 0);
+    /* Never heard from: not "ok" and not a transition to report either -
+     * a cold boot with the UART unplugged must not emit a link-lost event. */
+    TEST_ASSERT_FALSE(link_step(&l, &cfg, 1000));
+    TEST_ASSERT_FALSE(l.pi_ok);
+
+    link_rx(&l, 1000);
+    TEST_ASSERT_TRUE(link_step(&l, &cfg, 1000)); /* one transition: up */
+    TEST_ASSERT_TRUE(l.pi_ok);
+    TEST_ASSERT_FALSE(link_step(&l, &cfg, 2000)); /* steady, no repeat event */
+}
+
+static void test_pi_declared_lost_after_the_configured_silence(void)
+{
+    cfg_t cfg;
+    link_t l;
+
+    cfg_defaults(&cfg);
+    link_init(&l, 0);
+    link_rx(&l, 0);
+    (void)link_step(&l, &cfg, 0);
+
+    /* default PARAM_PI_SILENT_S = 60 */
+    TEST_ASSERT_FALSE(link_step(&l, &cfg, 60000));
+    TEST_ASSERT_TRUE(l.pi_ok);
+    TEST_ASSERT_TRUE(link_step(&l, &cfg, 60001));
+    TEST_ASSERT_FALSE(l.pi_ok);
+
+    link_rx(&l, 70000); /* Pi comes back */
+    TEST_ASSERT_TRUE(link_step(&l, &cfg, 70000));
+    TEST_ASSERT_TRUE(l.pi_ok);
+}
+
+static void test_pi_silence_threshold_is_settable(void)
+{
+    cfg_t cfg;
+    link_t l;
+
+    cfg_defaults(&cfg);
+    TEST_ASSERT_TRUE(cfg_set(&cfg, PARAM_PI_SILENT_S, 5));
+    link_init(&l, 0);
+    link_rx(&l, 0);
+    (void)link_step(&l, &cfg, 0);
+    TEST_ASSERT_TRUE(link_step(&l, &cfg, 5001));
+    TEST_ASSERT_FALSE(l.pi_ok);
+}
+
+static void test_release_needs_an_arm_on_the_mcu_too(void)
+{
+    link_t l;
+
+    link_init(&l, 0);
+    /* The Pi enforces S.8 first, but a corrupted CMD_RELEASE that survives
+     * CRC must not fire a valve on the strength of the wire alone. */
+    TEST_ASSERT_EQUAL_UINT8(ACK_NOT_ARMED, link_gate(&l, 1000, CMD_RELEASE, 1));
+
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, link_gate(&l, 2000, CMD_ARM, CMD_RELEASE));
+    TEST_ASSERT_EQUAL_UINT8(LINK_PASS, link_gate(&l, 2500, CMD_RELEASE, 1));
+    /* one ARM authorises exactly one execute */
+    TEST_ASSERT_EQUAL_UINT8(ACK_NOT_ARMED, link_gate(&l, 2600, CMD_RELEASE, 2));
+}
+
+static void test_arm_window_expires_on_the_mcu(void)
+{
+    link_t l;
+
+    link_init(&l, 0);
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, link_gate(&l, 1000, CMD_ARM, CMD_RELEASE));
+    TEST_ASSERT_EQUAL_UINT8(LINK_PASS,
+                            link_gate(&l, 1000 + LINK_ARM_WINDOW_MS,
+                                      CMD_RELEASE, 1));
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, link_gate(&l, 5000, CMD_ARM, CMD_RELEASE));
+    TEST_ASSERT_EQUAL_UINT8(ACK_NOT_ARMED,
+                            link_gate(&l, 5001 + LINK_ARM_WINDOW_MS,
+                                      CMD_RELEASE, 1));
+}
+
+static void test_only_actuator_commands_are_armable(void)
+{
+    link_t l;
+
+    link_init(&l, 0);
+    TEST_ASSERT_EQUAL_UINT8(ACK_INVALID, link_gate(&l, 1000, CMD_ARM, CMD_HOLD));
+    /* a rejected ARM must not leave a latch behind */
+    TEST_ASSERT_EQUAL_UINT8(ACK_NOT_ARMED, link_gate(&l, 1100, CMD_RELEASE, 1));
+}
+
+static void test_unarmed_commands_pass_the_gate_untouched(void)
+{
+    link_t l;
+
+    link_init(&l, 0);
+    TEST_ASSERT_EQUAL_UINT8(LINK_PASS, link_gate(&l, 1000, CMD_PING, 0));
+    TEST_ASSERT_EQUAL_UINT8(LINK_PASS, link_gate(&l, 1000, CMD_ABORT, 0));
+    TEST_ASSERT_EQUAL_UINT8(LINK_PASS, link_gate(&l, 1000, CMD_HOLD, 0));
+    TEST_ASSERT_EQUAL_UINT8(LINK_PASS, link_gate(&l, 1000, CMD_START, 0));
+}
+
+/* ---- command results: ground hears the MCU's verdict --------------------- */
+
+static void test_command_results_report_what_happened(void)
+{
+    cfg_t cfg;
+    sequencer_t s;
+
+    mock_reset();
+    cfg_defaults(&cfg);
+    seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
+    seq_step(&s, 1000, 1, 101325, 101325); /* INIT -> STANDBY */
+
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK,
+                            seq_command(&s, 2000, 2, CMD_PING, 0, 0, &cfg));
+    /* On the pad: STANDBY is before ASCENT, so a release does nothing and
+     * ground must be told so rather than getting a bare OK. */
+    TEST_ASSERT_EQUAL_UINT8(ACK_REJECTED,
+                            seq_command(&s, 2100, 2, CMD_RELEASE, 1, 0, &cfg));
+    TEST_ASSERT_EQUAL_INT(0, M.fires[1]);
+    TEST_ASSERT_EQUAL_UINT8(ACK_INVALID,
+                            seq_command(&s, 2200, 2, CMD_RELEASE, 7, 0, &cfg));
+    TEST_ASSERT_EQUAL_UINT8(ACK_INVALID,
+                            seq_command(&s, 2300, 2, 0x7F, 0, 0, &cfg));
+    TEST_ASSERT_EQUAL_UINT8(ACK_INVALID,
+                            seq_command(&s, 2400, 2, CMD_SET_PARAM,
+                                        PARAM_T_MEASURE_S, -5, &cfg));
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK,
+                            seq_command(&s, 2500, 2, CMD_SET_PARAM,
+                                        PARAM_T_MEASURE_S, 300, &cfg));
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK,
+                            seq_command(&s, 2600, 2, CMD_START, 0, 0, &cfg));
+    TEST_ASSERT_EQUAL_UINT8(ACK_REJECTED, /* already left STANDBY */
+                            seq_command(&s, 2700, 2, CMD_START, 0, 0, &cfg));
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK,
+                            seq_command(&s, 2800, 2, CMD_RELEASE, 1, 0, &cfg));
+}
+
+static void test_release_already_fired_is_rejected_not_silent(void)
+{
+    cfg_t cfg;
+    sequencer_t s;
+
+    mock_reset();
+    cfg_defaults(&cfg);
+    seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
+    run_sim(&s, &cfg, 0, 1000); /* ASCENT */
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 1000000ull, 1000,
+                                                CMD_RELEASE, 1, 0, &cfg));
+    seq_step(&s, 1001000ull, 1001, profile_pa(1001), profile_pa(1001));
+    TEST_ASSERT_EQUAL_INT(1, M.fires[1]);
+    TEST_ASSERT_EQUAL_UINT8(ACK_REJECTED, seq_command(&s, 1002000ull, 1002,
+                                                      CMD_RELEASE, 1, 0, &cfg));
+    seq_step(&s, 1003000ull, 1003, profile_pa(1003), profile_pa(1003));
+    TEST_ASSERT_EQUAL_INT(1, M.fires[1]); /* still exactly one fire */
+}
+
+static void test_ground_link_latch_refreshes_without_the_sequencer(void)
+{
+    cfg_t cfg;
+    sequencer_t s;
+
+    mock_reset();
+    cfg_defaults(&cfg);
+    seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
+    for (uint32_t t = 1; t < 700; t++)
+        seq_step(&s, (uint64_t)t * 1000u, t, 101325, 101325);
+    TEST_ASSERT_TRUE(s.autonomy.autonomous_latched);
+    /* An ARM is answered by core/link and never reaches seq_command, but it
+     * is still ground traffic - the latch must clear on it (O.2). */
+    seq_note_ground_cmd(&s, 700000ull);
+    TEST_ASSERT_FALSE(s.autonomy.autonomous_latched);
+}
+
+static void test_ack_payload_layout(void)
+{
+    uint8_t out[ACK_SIZE];
+
+    ack_pack(0x1234, CMD_RELEASE, ACK_NOT_ARMED, out);
+    TEST_ASSERT_EQUAL_UINT8(0x34, out[0]); /* cmd_seq LE */
+    TEST_ASSERT_EQUAL_UINT8(0x12, out[1]);
+    TEST_ASSERT_EQUAL_UINT8(CMD_RELEASE, out[2]);
+    TEST_ASSERT_EQUAL_UINT8(3, out[3]);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -898,7 +1203,11 @@ int main(void)
     RUN_TEST(test_pulse_outlasts_the_watchdog_without_blocking);
     RUN_TEST(test_eq_close_serialises_with_interlock);
     RUN_TEST(test_repeat_requests_coalesce);
+    RUN_TEST(test_disperse_motor_drive_is_interlocked_and_timed);
+    RUN_TEST(test_release_serialises_the_pinch_valve_and_the_motor);
+    RUN_TEST(test_queue_holds_every_drivable_line);
     RUN_TEST(test_full_autonomous_flight);
+    RUN_TEST(test_release_works_without_a_dispersion_motor);
     RUN_TEST(test_persist_before_fire_ordering);
     RUN_TEST(test_resume_after_reset_does_not_refire);
     RUN_TEST(test_resume_mid_release_treats_fired_as_done);
@@ -920,6 +1229,17 @@ int main(void)
     RUN_TEST(test_membrane_duty_extremes_still_oscillate);
     RUN_TEST(test_membrane_frequency_across_the_config_range);
     RUN_TEST(test_frequencies_below_the_hardware_floor_are_known);
+    RUN_TEST(test_pi_liveness_needs_a_first_frame);
+    RUN_TEST(test_pi_declared_lost_after_the_configured_silence);
+    RUN_TEST(test_pi_silence_threshold_is_settable);
+    RUN_TEST(test_release_needs_an_arm_on_the_mcu_too);
+    RUN_TEST(test_arm_window_expires_on_the_mcu);
+    RUN_TEST(test_only_actuator_commands_are_armable);
+    RUN_TEST(test_unarmed_commands_pass_the_gate_untouched);
+    RUN_TEST(test_command_results_report_what_happened);
+    RUN_TEST(test_release_already_fired_is_rejected_not_silent);
+    RUN_TEST(test_ground_link_latch_refreshes_without_the_sequencer);
+    RUN_TEST(test_ack_payload_layout);
     RUN_TEST(test_cfg_default_matches_cfg_defaults);
     return UNITY_END();
 }
