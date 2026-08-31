@@ -77,6 +77,23 @@ void tearDown(void);
 #define TEST_ASSERT_EQUAL_HEX16(a, b) UNITY_MIN_EQ(a, b, "%llx")
 #define TEST_ASSERT_EQUAL_size_t(a, b) UNITY_MIN_EQ(a, b, "%lld")
 
+/* Same argument order and semantics as real Unity, so `pio test -e native`
+ * and this shim agree. */
+#define TEST_ASSERT_UINT32_WITHIN(delta, expected, actual) \
+    do { \
+        unsigned long long e_ = (unsigned long long)(expected); \
+        unsigned long long a_ = (unsigned long long)(actual); \
+        unsigned long long d_ = (unsigned long long)(delta); \
+        unsigned long long diff_ = e_ > a_ ? e_ - a_ : a_ - e_; \
+        if (diff_ > d_) { \
+            printf("FAIL %s (%s:%d): expected %llu +/- %llu, got %llu" \
+                   "  [" #actual "]\n", \
+                   unity_min_current, __FILE__, __LINE__, e_, d_, a_); \
+            unity_min_failures++; \
+            return; \
+        } \
+    } while (0)
+
 #define TEST_ASSERT_EQUAL_MEMORY(a, b, n) \
     do { \
         if (memcmp((a), (b), (n)) != 0) \

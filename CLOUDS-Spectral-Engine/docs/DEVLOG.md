@@ -18,6 +18,77 @@ without re-deriving anything. Newest entries first.
 
 ---
 
+## 2026-08-31 (later) - The membrane solenoid is on GP26 and was being driven at 150 kHz (M-07)
+
+**Why.** A throwaway 0.5 Hz blink was asked for on GP26 purely as a pin smoke
+test. `board.h` claimed GP26 was `ADC_TEMP1`, STLM20 #1's analog output, so the
+test was run under a warning about fighting that sensor's output stage. The
+solenoid moved instead: **GP26 drives the membrane push-pull solenoid.** That
+one observation invalidated three things in the pin map at once.
+
+**What the blink measured.** 1 s high / 1 s low, then 250 ms / 250 ms, with
+`gpio_get()` read back on the driven output - which returns the actual pad
+level, so it reports whether the drive wins:
+
+| Requested | Measured period | Pad high | Pad low |
+|---|---|---|---|
+| 0.5 Hz | 2.000 s | 1 | 0 |
+| 2 Hz | 0.500 s (f=1.999 Hz) | 1 | 0 |
+
+The ~0.05 % slow reading at 2 Hz is real `sleep_ms` plus printf overhead in a
+software-timed loop, not measurement error.
+
+**Three corrections to the pin map.**
+
+1. `PIN_MEMBRANE_PWM` was **8**; GP8 measures as unconnected (`pu=1 pd=0`).
+   The membrane is GP26. **M-07 would have silently done nothing in flight**:
+   the sequencer would start the drive, the pin would toggle, and no solenoid
+   would be attached to it.
+2. `ADC_TEMP1` claimed GP26 and so collided with the solenoid. The STLM20 pair
+   is **not populated**, so `hw_read_sensors` no longer samples the ADC at all
+   and raises `HKE_NO_TEMP` instead. A floating input yields a confident wrong
+   temperature, which is worse than reporting none.
+3. `hw_init` now drives the membrane pin low as a plain SIO output alongside
+   the valves, and the PWM function is applied only while a drive runs. The
+   old code applied `GPIO_FUNC_PWM` at init and relied, unknowingly, on the
+   external pull-down measured on that driver input (`pu=0 pd=0`) to keep the
+   solenoid off. That pull-down is real and was the only reason the boot state
+   was safe; it is now safe by the firmware's own action as well.
+
+**The 150 kHz bug.** `PARAM_MEMBRANE_HZ` defaults to 50 Hz (range 1-400) and
+the SED says "start membrane PWM (frequency/duty from config)", but
+`ops_membrane` set `wrap=999` with the **default clock divider**: on a 150 MHz
+RP2350 that is **150 kHz**, 3000x too fast. A push-pull solenoid at 150 kHz
+never oscillates, it only sees a DC average - so even on the right pin the
+membrane would not have dispersed anything. The code's own `TODO` admitted the
+divider was never plumbed. `PARAM_MEMBRANE_HZ` now reaches the driver through
+`seq_ops_t.ctx`, which `main.c` points at `cfg`.
+
+**The arithmetic lives in `core/pwmdiv.c`, not in `hw/`.** The bug was a wrong
+output frequency, and `hw/` is the one directory the native suite cannot
+compile, so the solver is portable and unit-tested: the default really produces
+50 Hz, every reachable value in the configured range lands within 1 %, and
+`cfg_default()` is checked against `cfg_defaults()` so the fallback frequency
+cannot drift from the table. Reintroducing the old `div=1, wrap=999` as a
+mutant makes those tests report `expected 50 +/- 1, got 150000`.
+
+**A range the hardware cannot honour.** The RP2xxx divider tops out at
+255+15/16 and the counter at 16 bits, so the slowest achievable frequency is
+`clk_sys / (256 * 65536)`, about **8.95 Hz** at 150 MHz. `PARAM_MEMBRANE_HZ`
+permits 1 Hz. Requests below the floor are clamped to it, deliberately, rather
+than silently becoming some other frequency - `pwmdiv_min_hz()` reports the
+floor so the clamp is visible. If the membrane genuinely needs single-Hz
+oscillation, that has to be driven from the main loop the way `core/pulse`
+drives the valves, not from a PWM slice; the blink that started all this is
+proof the mechanism works at 0.5 Hz.
+
+**Still unknown: where the STLM20s go when they are fitted.** GP27 also reads
+externally driven, but with GP26 now accounted for, the old `ADC_TEMP*`
+mapping has no measured support at all. `temp1_cc` and `temp2_cc` stay zero
+with `HKE_NO_TEMP` set until the schematic says otherwise.
+
+---
+
 ## 2026-08-31 - i2c0 is on GP28/GP29 and carries the power tree (M-09); M-11 blocked on the SD pinout
 
 **Why.** M-09 (BME280 / Keller 23SY / IMU drivers) is still a `TODO` in

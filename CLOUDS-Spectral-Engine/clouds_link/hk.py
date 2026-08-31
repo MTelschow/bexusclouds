@@ -47,6 +47,7 @@ class HkErrors(IntEnum):
     NO_CHAMBER_P = 1 << 2   # no chamber pressure sensor fitted
     NO_RH2 = 1 << 3         # no second humidity channel fitted
     IMU_FAIL = 1 << 4       # IMU absent or reporting a fault
+    NO_TEMP = 1 << 5        # STLM20 pair not fitted, temps unsourced
 
 
 @dataclass

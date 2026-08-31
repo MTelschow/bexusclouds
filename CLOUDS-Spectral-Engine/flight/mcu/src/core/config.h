@@ -28,5 +28,9 @@ typedef struct {
 void cfg_defaults(cfg_t *cfg);
 bool cfg_set(cfg_t *cfg, uint8_t key, int32_t value); /* range-checked */
 int32_t cfg_get(const cfg_t *cfg, uint8_t key);
+/* Compiled-in default for a key, without needing a cfg_t. Lets a fallback
+ * path use the same number as cfg_defaults() instead of duplicating it.
+ * Returns 0 for an unknown key. */
+int32_t cfg_default(uint8_t key);
 
 #endif

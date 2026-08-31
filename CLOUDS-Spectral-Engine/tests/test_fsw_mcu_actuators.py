@@ -115,3 +115,70 @@ class TestErrorFlagsMirror:
         assert c_bits == py_bits, (
             "frame.h HKE_* and clouds_link.hk.HkErrors disagree: %s vs %s"
             % (c_bits, py_bits))
+
+
+class TestMembraneDrive:
+    """M-07: the membrane must actually oscillate, and be off when idle.
+
+    GP26 was measured driving the push-pull solenoid (a 0.5 Hz then 2 Hz
+    square wave visibly actuated it); board.h previously named GP8, which is
+    unconnected. The drive also used to run at the default divider with
+    wrap=999, i.e. 150 kHz, where a solenoid only sees a DC average. The
+    numeric side is tested natively in test_core/test_main.c; these guard the
+    wiring the native build cannot compile.
+    """
+
+    def test_membrane_pin_is_the_measured_one(self, board):
+        assert _define(board, "PIN_MEMBRANE_PWM") == 26
+
+    def test_membrane_pin_is_de_energized_at_boot(self):
+        """It must be an SIO output driven low by hw_init, not left to the
+        external pull-down on the driver input."""
+        hw = _read("src", "hw", "hw.c")
+        body = hw.split("void hw_init", 1)[1]
+        out_pins = body.split("out_pins[] = {", 1)[1].split("}", 1)[0]
+        assert "PIN_MEMBRANE_PWM" in out_pins, (
+            "the membrane pin must be driven low with the other actuators")
+
+    def test_membrane_frequency_comes_from_config(self):
+        hw = _read("src", "hw", "hw.c")
+        body = hw.split("static void ops_membrane", 1)[1].split("\n}", 1)[0]
+        assert "PARAM_MEMBRANE_HZ" in body, (
+            "frequency must come from config, not be left to the default "
+            "divider - that is the 150 kHz bug")
+        assert "pwmdiv_solve" in body or "membrane_program" in body
+        assert not re.search(r"pwm_set_wrap\s*\(\s*\w+\s*,\s*999\s*\)", hw), (
+            "wrap=999 with an unset divider is the 150 kHz regression")
+
+    def test_membrane_off_releases_the_pin_low(self):
+        hw = _read("src", "hw", "hw.c")
+        body = hw.split("static void ops_membrane", 1)[1].split("\n}", 1)[0]
+        zero = body.split("duty_pct == 0", 1)[1].split("return;", 1)[0]
+        assert "gpio_put" in zero and "0" in zero, (
+            "duty 0 must actively drive the pin low")
+
+
+class TestUnsourcedSensorsAreFlagged:
+    """A missing sensor must report nothing plus a flag, never a fabricated
+    reading from a floating input."""
+
+    def test_no_adc_sampling_while_stlm20_is_unpopulated(self):
+        hw = _read("src", "hw", "hw.c")
+        assert "adc_read()" not in hw, (
+            "sampling an unconnected pin yields a confident wrong temperature")
+        assert "adc_gpio_init" not in hw
+
+    def test_temperatures_are_flagged_unsourced(self):
+        hw = _read("src", "hw", "hw.c")
+        body = hw.split("void hw_read_sensors", 1)[1]
+        assert "HKE_NO_TEMP" in body
+
+    def test_membrane_pin_does_not_collide_with_an_adc_channel(self, board):
+        """GP26 cannot be both the solenoid and ADC_TEMP1."""
+        pin = _define(board, "PIN_MEMBRANE_PWM")
+        for name in ("ADC_TEMP1", "ADC_TEMP2"):
+            m = re.search(r"^#define\s+%s\s+(\d+)" % name, board, re.M)
+            if m:
+                assert 26 + int(m.group(1)) != pin, (
+                    "%s maps to GP%d, which is the membrane pin"
+                    % (name, 26 + int(m.group(1))))

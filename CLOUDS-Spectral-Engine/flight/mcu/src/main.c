@@ -104,6 +104,7 @@ int main(void)
     ops.event = event_shim;
 
     cfg_defaults(&cfg);
+    ops.ctx = &cfg; /* ops_membrane reads PARAM_MEMBRANE_HZ from here */
     have_restore = hw_restore_persist(&restored); /* S.3 brownout resume */
     seq_init(&seq, &cfg, &ops, have_restore ? &restored : NULL,
              hw_monotonic_ms(), hw_wall_s());

@@ -9,7 +9,7 @@
 
 #include <string.h>
 
-#include "hardware/adc.h"
+#include "hardware/clocks.h"
 #include "hardware/gpio.h"
 #include "hardware/i2c.h"
 #include "hardware/pwm.h"
@@ -19,6 +19,7 @@
 #include "../core/config.h"
 #include "../core/crc16.h"
 #include "../core/pulse.h"
+#include "../core/pwmdiv.h"
 #include "bme280.h"
 #include "board.h"
 
@@ -99,19 +100,51 @@ static bool ops_busy(void *ctx)
     return pulse_busy(&pulses);
 }
 
+/* Program the slice for `hz` and set the duty against the period that
+ * required. The arithmetic is core/pwmdiv so it can be unit-tested. */
+static void membrane_program(uint slice, uint32_t hz, uint8_t duty_pct)
+{
+    uint32_t sys = clock_get_hz(clk_sys);
+    uint32_t div16, period;
+
+    pwmdiv_solve(sys, hz, &div16, &period);
+    pwm_set_clkdiv_int_frac(slice, (uint8_t)(div16 / 16u),
+                            (uint8_t)(div16 % 16u));
+    pwm_set_wrap(slice, (uint16_t)(period - 1u));
+    pwm_set_gpio_level(PIN_MEMBRANE_PWM,
+                       (uint16_t)((uint64_t)period * duty_pct / 100u));
+}
+
+/* Membrane dispersion (M-07). Frequency comes from PARAM_MEMBRANE_HZ via
+ * ops->ctx; without a cfg the compiled-in default is used rather than the
+ * 150 kHz that an unset divider produces - at that rate a push-pull solenoid
+ * only sees a DC average and never oscillates.
+ *
+ * The pin is left as a plain SIO output driven low whenever the drive is off,
+ * so the solenoid is de-energized by the MCU and not merely by the external
+ * pull-down on its driver input. */
 static void ops_membrane(void *ctx, uint8_t duty_pct)
 {
+    const cfg_t *c = (const cfg_t *)ctx;
     uint slice = pwm_gpio_to_slice_num(PIN_MEMBRANE_PWM);
+    uint32_t hz, floor_hz;
 
-    (void)ctx;
     if (duty_pct == 0) {
         pwm_set_enabled(slice, false);
+        gpio_set_function(PIN_MEMBRANE_PWM, GPIO_FUNC_SIO);
+        gpio_set_dir(PIN_MEMBRANE_PWM, GPIO_OUT);
         gpio_put(PIN_MEMBRANE_PWM, 0);
         return;
     }
-    /* TODO: set divider from PARAM_MEMBRANE_HZ once cfg is plumbed here */
-    pwm_set_wrap(slice, 999);
-    pwm_set_gpio_level(PIN_MEMBRANE_PWM, (uint16_t)(duty_pct * 10u));
+
+    hz = (uint32_t)(c ? cfg_get(c, PARAM_MEMBRANE_HZ)
+                     : cfg_default(PARAM_MEMBRANE_HZ));
+    floor_hz = pwmdiv_min_hz(clock_get_hz(clk_sys));
+    if (hz < floor_hz)
+        hz = floor_hz; /* PARAM_MEMBRANE_HZ allows 1 Hz; hardware cannot */
+
+    membrane_program(slice, hz, duty_pct);
+    gpio_set_function(PIN_MEMBRANE_PWM, GPIO_FUNC_PWM);
     pwm_set_enabled(slice, true);
 }
 
@@ -220,18 +253,17 @@ void hw_read_sensors(hk_t *hk)
     uint16_t rh_cpct;
     uint32_t p_pa;
 
-    /* STLM20: Vout = -11.69 mV/degC * T + 1.8663 V (datasheet) */
-    adc_select_input(ADC_TEMP1);
-    uint16_t raw1 = adc_read();
-    adc_select_input(ADC_TEMP2);
-    uint16_t raw2 = adc_read();
-    /* 12-bit ADC, 3.3 V ref: mV = raw * 3300 / 4096 */
-    int32_t mv1 = (int32_t)raw1 * 3300 / 4096;
-    int32_t mv2 = (int32_t)raw2 * 3300 / 4096;
-    hk->temp1_cc = (int16_t)((186630 - mv1 * 100) * 10 / 1169);
-    hk->temp2_cc = (int16_t)((186630 - mv2 * 100) * 10 / 1169);
-
     hk->error_flags = 0;
+
+    /* The STLM20 pair is not fitted (board.h), and the pin the old map used
+     * for ADC_TEMP1 is the membrane solenoid. Sampling an unconnected input
+     * would produce a confident wrong temperature, so report none and say so.
+     * Restore the datasheet conversion
+     *     Vout = -11.69 mV/degC * T + 1.8663 V
+     * when the parts and their real ADC channels exist. */
+    hk->temp1_cc = 0;
+    hk->temp2_cc = 0;
+    hk->error_flags |= HKE_NO_TEMP;
 
     if (bme280_read(&bme_temp_cc, &rh_cpct, &p_pa)) {
         hk->bme_temp_cc = bme_temp_cc;
@@ -262,8 +294,12 @@ void hw_read_sensors(hk_t *hk)
 
 void hw_init(void)
 {
-    const uint out_pins[] = {PIN_PINCH_1, PIN_PINCH_2, PIN_EQ1_OPEN,
-                             PIN_EQ1_CLOSE, PIN_EQ2_OPEN, PIN_EQ2_CLOSE};
+    /* The membrane pin is in this list deliberately: it must be an SIO output
+     * driven low before anything else, so the solenoid is off by the MCU's own
+     * action. Its PWM function is applied only while a drive is running. */
+    const uint out_pins[] = {PIN_PINCH_1,   PIN_PINCH_2, PIN_EQ1_OPEN,
+                             PIN_EQ1_CLOSE, PIN_EQ2_OPEN, PIN_EQ2_CLOSE,
+                             PIN_MEMBRANE_PWM};
 
     for (unsigned i = 0; i < sizeof out_pins / sizeof out_pins[0]; i++) {
         gpio_init(out_pins[i]);
@@ -271,10 +307,8 @@ void hw_init(void)
         gpio_put(out_pins[i], 0); /* everything de-energized at boot */
     }
     pulse_init(&pulses);
-    gpio_set_function(PIN_MEMBRANE_PWM, GPIO_FUNC_PWM);
-    adc_init();
-    adc_gpio_init(26 + ADC_TEMP1);
-    adc_gpio_init(26 + ADC_TEMP2);
+    /* No adc_init(): the STLM20 pair is unpopulated, and the pin the old map
+     * gave to ADC_TEMP1 is the membrane solenoid. */
 
     /* i2c0 at 100 kHz: the speed the bus was surveyed and the devices
      * identified at. Internal pull-ups are belt-and-braces; the carrier has

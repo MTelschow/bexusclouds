@@ -23,6 +23,7 @@ add_executable(clouds_fsw_mcu
     src/core/autonomy.c
     src/core/sequencer.c
     src/core/pulse.c
+    src/core/pwmdiv.c
     src/hw/hw.c
     src/hw/bme280.c
     src/hw/uart_io.c

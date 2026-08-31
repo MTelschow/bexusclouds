@@ -75,6 +75,7 @@ typedef struct {
 #define HKE_NO_CHAMBER_P (1u << 2)  /* no chamber pressure sensor fitted */
 #define HKE_NO_RH2 (1u << 3)        /* no second humidity channel fitted */
 #define HKE_IMU_FAIL (1u << 4)      /* IMU absent or reporting a fault */
+#define HKE_NO_TEMP (1u << 5)       /* STLM20 pair not fitted: temps unsourced */
 
 size_t frame_encode(uint8_t type, uint16_t seq, uint32_t t_s, uint16_t t_ms,
                     const uint8_t *payload, uint16_t plen,

@@ -23,6 +23,13 @@ void cfg_defaults(cfg_t *cfg)
     cfg->v[0] = 0;
 }
 
+int32_t cfg_default(uint8_t key)
+{
+    if (key == 0 || key >= PARAM_COUNT_)
+        return 0;
+    return limits[key][0];
+}
+
 bool cfg_set(cfg_t *cfg, uint8_t key, int32_t value)
 {
     if (key == 0 || key >= PARAM_COUNT_)

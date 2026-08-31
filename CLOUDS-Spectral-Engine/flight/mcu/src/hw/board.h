@@ -21,8 +21,13 @@
 #define PIN_EQ2_CLOSE 7
 #define VALVE_PULSE_MS 5000 /* drive time per operation (datasheet) */
 
-/* Membrane push-pull solenoid (HS-1564B) via inverter stage */
-#define PIN_MEMBRANE_PWM 8
+/* Membrane push-pull solenoid (HS-1564B) via inverter stage.
+ * GP26, measured: a 0.5 Hz then 2 Hz square wave on GP26 visibly actuated the
+ * solenoid, and the pad read back its driven level both ways, so the drive
+ * wins. GP8, which this used to name, measures as unconnected. The driver
+ * input carries an external pull-down (GP26 reads pu=0 pd=0), so the solenoid
+ * is de-energized whenever the MCU is not driving it. DEVLOG 2026-08-31. */
+#define PIN_MEMBRANE_PWM 26
 
 /* SPI0: two redundant SD cards (separate chip selects).
  * UNVERIFIED - these pins are almost certainly wrong for the current carrier.
@@ -44,8 +49,13 @@
  * Identities and method: DEVLOG 2026-08-31. */
 #define PIN_I2C_SDA 28
 #define PIN_I2C_SCL 29
-#define ADC_TEMP1 0 /* GPIO26 */
-#define ADC_TEMP2 1 /* GPIO27 */
+
+/* STLM20 x2: NOT POPULATED on this carrier, and GP26 - which the old map gave
+ * to ADC_TEMP1 - is the membrane solenoid, so the two cannot coexist. The ADC
+ * is left uninitialised rather than sampling floating pins into HK: a floating
+ * input yields a confident wrong temperature, which is worse than none. When
+ * the parts are fitted, define their real ADC channels here and drop
+ * HKE_NO_TEMP from hw_read_sensors(). */
 
 #define WATCHDOG_TIMEOUT_MS 2000 /* S.9 */
 

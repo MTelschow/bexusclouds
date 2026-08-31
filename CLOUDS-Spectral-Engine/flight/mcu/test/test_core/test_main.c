@@ -14,6 +14,7 @@
 #include "../../src/core/autonomy.h"
 #include "../../src/core/cobs.h"
 #include "../../src/core/config.h"
+#include "../../src/core/pwmdiv.h"
 #include "../../src/core/crc16.h"
 #include "../../src/core/frame.h"
 #include "../../src/core/pulse.h"
@@ -733,6 +734,74 @@ static void test_set_param_range_checked(void)
     TEST_ASSERT_EQUAL_INT32(300, cfg_get(&cfg, PARAM_T_MEASURE_S));
 }
 
+
+/* ---- M-07 membrane drive frequency (core/pwmdiv) ------------------------- */
+/* The bug this guards: ops_membrane once set wrap=999 with the default
+ * divider, i.e. 150 kHz on a 150 MHz part instead of the configured 50 Hz.
+ * A push-pull solenoid at 150 kHz never oscillates, it just sees a DC
+ * average, so the membrane would have done nothing in flight. */
+
+#define SYS_150M 150000000u
+
+static void test_membrane_default_frequency_is_actually_produced(void)
+{
+    uint32_t div16, period, actual;
+
+    pwmdiv_solve(SYS_150M, (uint32_t)cfg_default(PARAM_MEMBRANE_HZ), &div16,
+                 &period);
+    actual = pwmdiv_actual_hz(SYS_150M, div16, period);
+
+    /* within 1 % of the 50 Hz default, and nowhere near 150 kHz */
+    TEST_ASSERT_UINT32_WITHIN(1, 50, actual);
+    TEST_ASSERT_TRUE(period <= PWMDIV_MAX_WRAP);
+    TEST_ASSERT_TRUE(div16 >= PWMDIV_MIN_DIV16 && div16 <= PWMDIV_MAX_DIV16);
+}
+
+static void test_membrane_frequency_across_the_config_range(void)
+{
+    /* Every settable value that the hardware can reach must come out right. */
+    const uint32_t hz[] = {9, 10, 25, 50, 100, 200, 400};
+
+    for (unsigned i = 0; i < sizeof hz / sizeof hz[0]; i++) {
+        uint32_t div16, period, actual;
+
+        pwmdiv_solve(SYS_150M, hz[i], &div16, &period);
+        actual = pwmdiv_actual_hz(SYS_150M, div16, period);
+        /* 1 % tolerance: the divider is 1/16-quantised */
+        TEST_ASSERT_UINT32_WITHIN(hz[i] / 100u + 1u, hz[i], actual);
+        TEST_ASSERT_TRUE(period <= PWMDIV_MAX_WRAP);
+    }
+}
+
+static void test_frequencies_below_the_hardware_floor_are_known(void)
+{
+    /* PARAM_MEMBRANE_HZ allows 1 Hz but the hardware bottoms out near 9 Hz.
+     * The floor must be reported honestly so the caller can clamp instead of
+     * silently emitting some other frequency. */
+    uint32_t floor_hz = pwmdiv_min_hz(SYS_150M);
+    uint32_t div16, period, actual;
+
+    TEST_ASSERT_TRUE(floor_hz > 1);
+    TEST_ASSERT_TRUE(floor_hz < 20);
+    TEST_ASSERT_TRUE((int32_t)floor_hz > cfg_default(PARAM_MEMBRANE_HZ) - 50);
+
+    /* at the floor itself the hardware must still be accurate */
+    pwmdiv_solve(SYS_150M, floor_hz, &div16, &period);
+    actual = pwmdiv_actual_hz(SYS_150M, div16, period);
+    TEST_ASSERT_UINT32_WITHIN(1, floor_hz, actual);
+}
+
+static void test_cfg_default_matches_cfg_defaults(void)
+{
+    cfg_t c;
+
+    cfg_defaults(&c);
+    for (int k = 1; k < PARAM_COUNT_; k++)
+        TEST_ASSERT_EQUAL_INT32(cfg_get(&c, (uint8_t)k), cfg_default((uint8_t)k));
+    TEST_ASSERT_EQUAL_INT32(0, cfg_default(0));
+    TEST_ASSERT_EQUAL_INT32(0, cfg_default(PARAM_COUNT_));
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -763,5 +832,9 @@ int main(void)
     RUN_TEST(test_full_flight_with_timed_drives);
     RUN_TEST(test_linkloss_latch_and_recovery);
     RUN_TEST(test_set_param_range_checked);
+    RUN_TEST(test_membrane_default_frequency_is_actually_produced);
+    RUN_TEST(test_membrane_frequency_across_the_config_range);
+    RUN_TEST(test_frequencies_below_the_hardware_floor_are_known);
+    RUN_TEST(test_cfg_default_matches_cfg_defaults);
     return UNITY_END();
 }

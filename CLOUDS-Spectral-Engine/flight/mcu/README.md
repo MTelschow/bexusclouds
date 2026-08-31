@@ -72,13 +72,20 @@ image with a USB reset interface is running, or BOOTSEL held during power-up.
   **Blocked**: `board.h`'s SPI0 pins are unverified and measure as
   unconnected, and an SD probe on them gets no response on either chip
   select. Needs the carrier schematic before any code (DEVLOG 2026-08-31).
-- **M-09 sensors**: STLM20 ADC and the **BME280 are done** (`src/hw/bme280.c`,
-  ambient T/RH/pressure, verified on the board). Still open: there is no
-  chamber pressure sensor and no second RH channel on i2c0, and the BNO055 at
-  0x28 answers with a valid chip id but its accel/mag/gyro IDs read 0x00, so
-  `p_ch_pa`, `rh2_cpct` and the IMU vectors have no source and are flagged via
-  `error_flags`. The SED baselines no IMU at all, so there is nothing to verify
-  that integration against (DEVLOG 2026-08-31). The three
+- **M-09 sensors**: the **BME280 is done** (`src/hw/bme280.c`, ambient
+  T/RH/pressure, verified on the board). Everything else on this carrier has
+  no source and is flagged through `error_flags`: the **STLM20 pair is not
+  populated** (and GP26, the pin the old map gave `ADC_TEMP1`, is the membrane
+  solenoid), there is no chamber pressure sensor and no second RH channel on
+  i2c0, and the BNO055 at 0x28 answers with a valid chip id while its
+  accel/mag/gyro IDs read 0x00. The SED baselines no IMU at all, so there is
+  nothing to verify that integration against (DEVLOG 2026-08-31).
+- **M-07 membrane**: pin and frequency are fixed - GP26, measured, with
+  `PARAM_MEMBRANE_HZ` reaching the driver through `seq_ops_t.ctx`. Note the
+  PWM hardware floor is ~8.95 Hz at 150 MHz while the parameter allows 1 Hz;
+  requests below the floor are clamped. Single-Hz oscillation would need
+  loop-driven toggling like `core/pulse`, not a PWM slice. The duty-cycling
+  that holds dispersion for >= 3 min (P.7) is still the sequencer's side. The three
   INA226 rail monitors on the bus have no field in the 44-byte HK payload.
 - **M-15 seal check**: chamber-vs-ambient divergence once plumbing exists.
 - **M-17 self-tests**: sensor plausibility, SD write test, continuity.
