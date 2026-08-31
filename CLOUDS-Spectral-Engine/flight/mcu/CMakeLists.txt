@@ -41,4 +41,25 @@ target_link_libraries(clouds_fsw_mcu
     # TODO (M-11): add hardware_spi + FatFs once the SD stack lands
 )
 
+# stdio on USB, and UART stdio OFF - deliberately, both of them.
+#
+# USB on: it brings the picotool reset interface, so `picotool load -f` can
+# reboot running firmware into BOOTSEL and reflashing no longer needs the
+# button held during power-up. This only works because main() calls
+# stdio_init_all(); the CMake line alone compiles the driver and the linker
+# then discards it, which looks like success and changes nothing.
+#
+# UART stdio OFF is the safety-critical half. The SDK default stdio UART is
+# uart0 on GP0/GP1 (PICO_DEFAULT_UART=0, TX pin 0, RX pin 1) - the exact UART
+# and pins hw/uart_io.c uses for the HK downlink. With UART stdio enabled, any
+# printf would inject raw text between framed HK packets and corrupt the
+# telemetry stream. Keep it 0 so stdout can only ever reach USB.
+#
+# Cost: TinyUSB's flash and RAM plus its servicing timer, and a USB peripheral
+# enumerating on the payload. This is a bring-up convenience - for a flight
+# build where that is unacceptable, set USB to 0 and use reset_usb_boot() on a
+# ground command, or SWD.
+pico_enable_stdio_uart(clouds_fsw_mcu 0)
+pico_enable_stdio_usb(clouds_fsw_mcu 1)
+
 pico_add_extra_outputs(clouds_fsw_mcu)

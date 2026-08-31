@@ -97,6 +97,13 @@ int main(void)
     uint64_t next_hk_ms = 0;
     static seq_ops_t ops;
 
+    /* Registers the USB stdio driver, which is what carries the picotool
+     * reset interface; without this call the driver is compiled and then
+     * discarded by the linker. UART stdio is off (see CMakeLists) so nothing
+     * here can write into the HK stream on GP0/GP1. Does not wait for a host
+     * to connect. */
+    stdio_init_all();
+
     hw_init();
     uart_io_init();
 
