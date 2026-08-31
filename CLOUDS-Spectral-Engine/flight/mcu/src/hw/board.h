@@ -31,9 +31,11 @@
 #define PIN_SD_CS_A 17
 #define PIN_SD_CS_B 20
 
-/* I2C0: BME280 + IMU; ADC: STLM20 x2; Keller 23SY per datasheet */
-#define PIN_I2C_SDA 12
-#define PIN_I2C_SCL 13
+/* I2C0: BME280 (0x76) + 2x RH (0x44/0x45) + 2x Keller 23SY (0x40/0x28);
+ * ADC: STLM20 x2. Pins measured on the carrier, not assumed - GP12/GP13 are
+ * unconnected there and no IMU answers this bus (DEVLOG 2026-08-31). */
+#define PIN_I2C_SDA 28
+#define PIN_I2C_SCL 29
 #define ADC_TEMP1 0 /* GPIO26 */
 #define ADC_TEMP2 1 /* GPIO27 */
 

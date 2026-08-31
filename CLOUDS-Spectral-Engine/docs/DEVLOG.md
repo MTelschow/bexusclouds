@@ -18,6 +18,80 @@ without re-deriving anything. Newest entries first.
 
 ---
 
+## 2026-08-31 - The sensor I2C bus is on GP28/GP29, not GP12/GP13 (M-09)
+
+**Why.** M-09 (BME280 / Keller 23SY / IMU drivers) is still a `TODO` in
+`hw_read_sensors`, and `board.h` carries the disclaimer "preliminary - track
+the PCB". Before writing any sensor driver against that pin map it was worth
+asking the board itself where the bus is and what sits on it, rather than
+trusting a header that says not to.
+
+**Measurement 1 - passive pin survey.** A throwaway RP2350 image configured
+GPIO 0..29 as *inputs only*, never driving a pin, and read each one three
+times: internal pull-up, internal pull-down, no pull. The valve drivers were
+populated and powered at the time, so nothing may be driven - `pu=1 pd=0`
+means nothing is attached and the internal pull-up wins, `pu=1 pd=1` means an
+external pull-up holds the line up regardless, `pu=0` means something holds
+it down.
+
+`PIN_I2C_SDA 12` and `PIN_I2C_SCL 13` both came back `pu=1 pd=0`: **physically
+unconnected on this carrier.** Two pin pairs showed an external pull-up on
+*both* members, which is the I2C signature - GP6+GP7 (i2c1) and GP20+GP21
+(i2c0) - and GP28+GP29 (i2c0) did too. GP28/GP29 is the real bus, confirmed by
+the scan below. GP23/24/25 low and GP29 high also reflect the Pico 2's own
+onboard functions (power-mode, VBUS sense, LED, VSYS divider), so read that
+survey against the board schematic, not in isolation.
+
+**Measurement 2 - address scan.** `i2c0` at 100 kHz on SDA=GP28, SCL=GP29,
+1-byte read per address over 0x08..0x77 (0x00-0x07 and 0x78-0x7f are reserved
+and never probed), address counted as present when the read returns >= 0.
+Five devices answer:
+
+| 7-bit | write / read | consistent with | role in the spec |
+|---|---|---|---|
+| `0x28` | `0x50` / `0x51` | Honeywell HSC/SSC, or a Keller at a non-default address | second Keller 23SY |
+| `0x40` | `0x80` / `0x81` | **Keller 23SY** default (also INA219, Si7021, HDC1080) | first Keller 23SY |
+| `0x44` | `0x88` / `0x89` | SHT3x/SHT4x temp+RH, default address | RH channel 1 |
+| `0x45` | `0x8a` / `0x8b` | same family, ADDR pin high | RH channel 2, "reserved per spec section 7" |
+| `0x76` | `0xec` / `0xed` | **BME280/BMP280**, primary address | the BME280 `board.h` expects |
+
+An address is not an identity - several parts share each of these. Reading ID
+registers (BME280 `0xD0` must return `0x60`; SHT3x has a readable serial) is
+the confirmation step, and belongs with the M-09 driver work.
+
+**No IMU answered.** `board.h:34` promises "BME280 + IMU" on this bus, but
+nothing responded at any usual IMU address (`0x68`, `0x69`, `0x6A`, `0x6B`).
+Either it is unpopulated or it is not on i2c0. M-09 must not assume it.
+
+**Trap: never read a pin level while it is in `GPIO_FUNC_I2C`.** The first
+version of the scan called `gpio_get()` on the I2C pins to report bus idle
+state and printed `SCL idle=0`, which reads exactly like a shorted clock line
+and sent the investigation after a hardware fault that did not exist. In that
+pin function `gpio_get()` returns the *controller's* drive state, and the
+controller was still holding SCL down after the aborted probe transfers. Sample
+idle levels before applying the I2C function and again after `i2c_deinit`, as
+plain SIO inputs - that is what produced the trustworthy `pu=1 pd=1` readings
+above. Use `i2c_read_timeout_us`, not `i2c_read_blocking`, or a genuinely stuck
+clock hangs the scan instead of reporting it.
+
+**Consequence for the code.** `PIN_I2C_SDA` / `PIN_I2C_SCL` in
+`flight/mcu/src/hw/board.h` moved from 12 / 13 to **28 / 29**, with the measured
+addresses recorded alongside them. Nothing was broken before the change -
+`hw_init()` never calls `i2c_init()` and no test asserts those constants - but
+M-09 built on 12/13 would have found an empty bus. Note this spends ADC2/ADC3;
+only ADC0/ADC1 (GP26/GP27, the two STLM20s) are used, so there is no conflict,
+and the survey saw both of those pins externally driven as expected.
+
+**Hardware.** Two distinct RP2350 boards are in play, worth keeping apart by
+USB serial: the bare Pico 2 `182A9FD0C5146E6F` (carries `clouds_fsw_mcu.uf2`)
+and the CLOUDS carrier `21DD2AE08840C863`, which was running an unrelated
+`first_test` v0.1 image. Its flash was saved with `picotool save` before the
+scan images were loaded and restored afterwards; `picotool save` / `load -f -x`
+makes a scan on someone else's board non-destructive, so there is no reason to
+skip that step.
+
+---
+
 ## 2026-08-05 — Auto integration time defaults on; band raised to 60-80 %
 
 **Why.** The continuous auto-exposure servo (2026-06-14, below) landed as an
