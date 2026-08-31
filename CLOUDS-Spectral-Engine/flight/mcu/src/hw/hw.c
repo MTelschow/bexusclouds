@@ -195,8 +195,9 @@ const seq_ops_t hw_seq_ops = {
  *   0x40  INA226  24 V bus  -> power monitoring; no field in hk_t (HK is 44 B
  *   0x44  INA226  5 V rail     against a 67 B ceiling), so not sampled here.
  *   0x45  INA226  3.3 V rail
- *   0x28  BNO055 IMU        -> present but reports SYS_STAT=1 / SYS_ERR=5 and
- *                              its accel/mag/gyro IDs read 0x00, i.e. fitted
+ *   0x28  BNO055 IMU        -> chip id, SW rev and bootloader rev all match a
+ *                              genuine part, but its accel/mag/gyro IDs read
+ *                              0x00 instead of 0xFB/0x32/0x0F: fitted, talking,
  *                              and not usable. Reported via HKE_IMU_FAIL.
  * There is NO chamber pressure sensor and NO second humidity channel on this
  * bus, so p_ch_pa and rh2_cpct have no source; both are flagged rather than

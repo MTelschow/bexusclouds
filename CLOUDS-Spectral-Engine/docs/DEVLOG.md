@@ -61,7 +61,7 @@ Keller 23SY - all four wrong:
 | `0x40` | **INA226** | `man_id`(0xFE)=`0x5449` "TI", `die_id`(0xFF)=`0x2260`; bus reads **24.003 V** | none (see below) |
 | `0x44` | **INA226** | same IDs; bus reads **5.092 V** | none |
 | `0x45` | **INA226** | same IDs; bus reads **3.298 V** | none |
-| `0x28` | **BNO055 IMU, faulted** | `CHIP_ID`=`0xA0` at the BNO055's own default address, `SW_REV`=`0x0311`, `BL_REV`=`0x15` - but `ACC_ID`/`MAG_ID`/`GYR_ID` all read `0x00` and `SYS_STAT`=`0x01` (system error), `SYS_ERR`=`0x05` | none; `HKE_IMU_FAIL` |
+| `0x28` | **BNO055 IMU, faulted** | three constants match a genuine part: `CHIP_ID`=`0xA0` at the BNO055's own default address, `SW_REV`=`0x0311` (3.17, the shipped fusion firmware), `BL_REV`=`0x15`. But `ACC_ID`/`MAG_ID`/`GYR_ID` all read `0x00` where a working part gives `0xFB`/`0x32`/`0x0F` | none; `HKE_IMU_FAIL` |
 
 So the bus carries **the power tree, not the humidity sensors**: three INA226
 watching 24 V, 5 V and 3.3 V. `hk_t` has no voltage or current field and HK is
@@ -70,7 +70,39 @@ adding them is a protocol change, not a driver change.
 
 **There is no chamber pressure sensor and no second RH channel on this bus,
 and no Keller 23SY at any address.** The IMU is fitted and answers, but its
-internal sensor dies do not, so it is unusable as it stands. `p_ch_pa`,
+internal sensor dies do not, so it is unusable as it stands. Those three
+sub-sensor IDs are the whole case: they are fixed constants readable in any
+mode, and `CHIP_ID` read correctly in the same byte-wise loop, so the I2C path
+works and the fault sits inside the package between the M0 and its accel, mag
+and gyro dies.
+
+**Do not cite `SYS_STAT`/`SYS_ERR` here as evidence - the probe caused them.**
+An early draft of this entry offered `SYS_STAT=0x01` (system error) and
+`SYS_ERR=0x05` as proof the part had failed to boot. The BNO055's page-0
+register map ends at `0x6A`, and the probe had just read `0xFE`/`0xFF` at this
+address while checking for a TI manufacturer ID. `SYS_ERR 0x05` is precisely
+*"register map address out of range"*: the next pass read back the error the
+previous pass provoked. Second instance in one day of an instrument
+manufacturing its own finding (see the `GPIO_FUNC_I2C` trap above) - when a
+diagnostic reports a fault, rule out the diagnostic first.
+
+**Untested hypotheses for the dead dies**, in the order worth checking, all
+needing the schematic: a missing or non-oscillating external 32.768 kHz crystal
+with `CLK_SEL` asserted (the classic cause of exactly this signature),
+VDD/VDDIO power sequencing, or a counterfeit part - remarked BNO055s are common
+and known to report `CHIP_ID` while the sub-IDs misbehave. A proper retest must
+assert `nRESET`, wait the full ~650 ms boot, read the ID block once, and never
+touch a register above `0x6A`. `OPR_MODE` also read `0x10`, outside the valid
+`0x00`-`0x0C` range, which is unexplained.
+
+**The SED does not baseline an IMU at all.** Section 4.7a lists only the e9u
+spectrometer, `STLM20W87F` x2, `BME280` x1 and `Keller 23SY` x2 - no IMU part
+number, no schematic detail - while the prose promises one and risk **MS002 is
+"IMU failure (failure to detect float phase)"**. So this is off-baseline
+hardware with nothing to verify an integration against. MS002's own mitigation
+is "experiment activation without IMU detection", which the float-timer fallback
+and pressure criterion in `core/autonomy.c` already implement: a dead IMU
+degrades the mission, it does not block the release. `p_ch_pa`,
 `rh2_cpct`, `accel_mg` and `gyro_ddps` therefore have no source; they are
 flagged through `error_flags` rather than filled with invented numbers.
 

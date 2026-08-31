@@ -75,8 +75,10 @@ image with a USB reset interface is running, or BOOTSEL held during power-up.
 - **M-09 sensors**: STLM20 ADC and the **BME280 are done** (`src/hw/bme280.c`,
   ambient T/RH/pressure, verified on the board). Still open: there is no
   chamber pressure sensor and no second RH channel on i2c0, and the BNO055 at
-  0x28 answers but reports a system error, so `p_ch_pa`, `rh2_cpct` and the
-  IMU vectors have no source and are flagged via `error_flags`. The three
+  0x28 answers with a valid chip id but its accel/mag/gyro IDs read 0x00, so
+  `p_ch_pa`, `rh2_cpct` and the IMU vectors have no source and are flagged via
+  `error_flags`. The SED baselines no IMU at all, so there is nothing to verify
+  that integration against (DEVLOG 2026-08-31). The three
   INA226 rail monitors on the bus have no field in the 44-byte HK payload.
 - **M-15 seal check**: chamber-vs-ambient divergence once plumbing exists.
 - **M-17 self-tests**: sensor plausibility, SD write test, continuity.

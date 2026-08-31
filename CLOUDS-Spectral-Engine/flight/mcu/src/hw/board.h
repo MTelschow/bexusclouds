@@ -38,8 +38,8 @@
 
 /* I2C0 as measured on the carrier, not assumed: BME280 0x76 (the only source
  * of ambient T/RH/p), INA226 x3 on 0x40/0x44/0x45 watching the 24 V, 5 V and
- * 3.3 V rails, and a BNO055 IMU at 0x28 that answers but reports a system
- * error. GP12/GP13 are unconnected here. No chamber pressure sensor and no
+ * 3.3 V rails, and a BNO055 IMU at 0x28 whose sub-sensor IDs read 0x00, so it
+ * answers but cannot be used. GP12/GP13 are unconnected here. No chamber pressure sensor and no
  * second RH channel exist on this bus. ADC: STLM20 x2 on GP26/GP27.
  * Identities and method: DEVLOG 2026-08-31. */
 #define PIN_I2C_SDA 28
