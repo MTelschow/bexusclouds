@@ -11,7 +11,9 @@ static const int32_t limits[PARAM_COUNT_][3] = {
     [PARAM_T_FLOAT_S] = {7200, 600, 21600},
     [PARAM_LINKLOSS_S] = {600, 60, 3600},
     [PARAM_T_MEASURE_S] = {480, 60, 3600},
-    [PARAM_MEMBRANE_HZ] = {50, 1, 400},
+    [PARAM_MEMBRANE_HZ] = {2, 1, 400}, /* 2 Hz: below the ~9 Hz PWM floor, so
+                                          the drive is loop-toggled, see
+                                          core/sqwave.h */
     [PARAM_MEMBRANE_DUTY] = {60, 5, 100},
     [PARAM_SEAL_RETRY] = {3, 0, 10},
 };

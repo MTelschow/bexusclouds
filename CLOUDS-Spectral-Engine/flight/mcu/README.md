@@ -80,12 +80,14 @@ image with a USB reset interface is running, or BOOTSEL held during power-up.
   i2c0, and the BNO055 at 0x28 answers with a valid chip id while its
   accel/mag/gyro IDs read 0x00. The SED baselines no IMU at all, so there is
   nothing to verify that integration against (DEVLOG 2026-08-31).
-- **M-07 membrane**: pin and frequency are fixed - GP26, measured, with
-  `PARAM_MEMBRANE_HZ` reaching the driver through `seq_ops_t.ctx`. Note the
-  PWM hardware floor is ~8.95 Hz at 150 MHz while the parameter allows 1 Hz;
-  requests below the floor are clamped. Single-Hz oscillation would need
-  loop-driven toggling like `core/pulse`, not a PWM slice. The duty-cycling
-  that holds dispersion for >= 3 min (P.7) is still the sequencer's side. The three
+- **M-07 membrane**: the drive is done. GP26, measured, with
+  `PARAM_MEMBRANE_HZ` reaching the driver through `seq_ops_t.ctx`, default
+  **2 Hz**. Because 2 Hz is below the ~9 Hz PWM floor, edges are toggled from
+  `hw_actuators_service()` via `core/sqwave` - loop-released for the same
+  reason the valve pulses are, so a hung loop cannot leave the solenoid
+  energized. At or above the floor it still uses a PWM slice. Verified on the
+  board at 300 ms high / 200 ms low. The duty-cycling that holds dispersion
+  for >= 3 min (P.7) is still the sequencer's side. The three
   INA226 rail monitors on the bus have no field in the 44-byte HK payload.
 - **M-15 seal check**: chamber-vs-ambient divergence once plumbing exists.
 - **M-17 self-tests**: sensor plausibility, SD write test, continuity.

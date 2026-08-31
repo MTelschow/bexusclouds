@@ -20,6 +20,7 @@
 #include "../core/crc16.h"
 #include "../core/pulse.h"
 #include "../core/pwmdiv.h"
+#include "../core/sqwave.h"
 #include "bme280.h"
 #include "board.h"
 
@@ -67,6 +68,7 @@ void hw_watchdog_kick(void)
  * hw_actuators_service(); nothing in this file sleeps. */
 
 static pulse_sched_t pulses;
+static sqwave_t membrane_wave; /* used below the PWM frequency floor */
 
 static void drive_pin(void *ctx, uint8_t pin, bool level)
 {
@@ -77,6 +79,11 @@ static void drive_pin(void *ctx, uint8_t pin, bool level)
 void hw_actuators_service(uint64_t now_ms)
 {
     pulse_service(&pulses, now_ms, VALVE_PULSE_MS, drive_pin, NULL);
+    /* The membrane's low-frequency edges are released here too, for the same
+     * reason the valve pulses are: a hung loop must not be able to leave a
+     * solenoid energized. Only touch the pin when an edge actually falls due. */
+    if (sqwave_service(&membrane_wave, now_ms))
+        gpio_put(PIN_MEMBRANE_PWM, sqwave_level(&membrane_wave));
 }
 
 static void ops_fire_pinch(void *ctx, uint8_t n)
@@ -123,26 +130,40 @@ static void membrane_program(uint slice, uint32_t hz, uint8_t duty_pct)
  * The pin is left as a plain SIO output driven low whenever the drive is off,
  * so the solenoid is de-energized by the MCU and not merely by the external
  * pull-down on its driver input. */
+static void membrane_release_pin_low(uint slice)
+{
+    pwm_set_enabled(slice, false);
+    sqwave_stop(&membrane_wave);
+    gpio_set_function(PIN_MEMBRANE_PWM, GPIO_FUNC_SIO);
+    gpio_set_dir(PIN_MEMBRANE_PWM, GPIO_OUT);
+    gpio_put(PIN_MEMBRANE_PWM, 0);
+}
+
 static void ops_membrane(void *ctx, uint8_t duty_pct)
 {
     const cfg_t *c = (const cfg_t *)ctx;
     uint slice = pwm_gpio_to_slice_num(PIN_MEMBRANE_PWM);
-    uint32_t hz, floor_hz;
+    uint32_t hz;
 
     if (duty_pct == 0) {
-        pwm_set_enabled(slice, false);
-        gpio_set_function(PIN_MEMBRANE_PWM, GPIO_FUNC_SIO);
-        gpio_set_dir(PIN_MEMBRANE_PWM, GPIO_OUT);
-        gpio_put(PIN_MEMBRANE_PWM, 0);
+        membrane_release_pin_low(slice);
         return;
     }
 
     hz = (uint32_t)(c ? cfg_get(c, PARAM_MEMBRANE_HZ)
                      : cfg_default(PARAM_MEMBRANE_HZ));
-    floor_hz = pwmdiv_min_hz(clock_get_hz(clk_sys));
-    if (hz < floor_hz)
-        hz = floor_hz; /* PARAM_MEMBRANE_HZ allows 1 Hz; hardware cannot */
 
+    if (hz < pwmdiv_min_hz(clock_get_hz(clk_sys))) {
+        /* Below the PWM floor - which is where the membrane actually runs, at
+         * 2 Hz. Toggle from the main loop instead; core/sqwave explains why
+         * that is the safe mechanism for an actuator. */
+        membrane_release_pin_low(slice);
+        sqwave_start(&membrane_wave, hz, duty_pct, hw_monotonic_ms());
+        gpio_put(PIN_MEMBRANE_PWM, sqwave_level(&membrane_wave));
+        return;
+    }
+
+    sqwave_stop(&membrane_wave);
     membrane_program(slice, hz, duty_pct);
     gpio_set_function(PIN_MEMBRANE_PWM, GPIO_FUNC_PWM);
     pwm_set_enabled(slice, true);
@@ -307,6 +328,7 @@ void hw_init(void)
         gpio_put(out_pins[i], 0); /* everything de-energized at boot */
     }
     pulse_init(&pulses);
+    sqwave_init(&membrane_wave);
     /* No adc_init(): the STLM20 pair is unpopulated, and the pin the old map
      * gave to ADC_TEMP1 is the membrane solenoid. */
 

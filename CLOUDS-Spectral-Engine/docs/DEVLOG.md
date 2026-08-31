@@ -18,6 +18,60 @@ without re-deriving anything. Newest entries first.
 
 ---
 
+## 2026-08-31 (later still) - The membrane runs at 2 Hz, which PWM cannot do (M-07)
+
+**Why.** The operating frequency was specified as **2 Hz**. That is below the
+PWM hardware floor established earlier the same day - `clk_sys / (256 * 65536)`,
+about **9 Hz** at 150 MHz - so the hardware PWM path simply cannot produce it.
+The previous entry left this as the open question; the answer is that the drive
+has to be released by the main loop.
+
+**What.** `core/sqwave.c` generates the square wave and `hw_actuators_service()`
+advances it, exactly as `core/pulse` releases the valve drives.
+`PARAM_MEMBRANE_HZ` default is now **2**. `ops_membrane` picks the mechanism by
+comparing the configured frequency against `pwmdiv_min_hz()`: below the floor it
+toggles from the loop, at or above it programs the PWM slice. Both off-paths run
+through one `membrane_release_pin_low()` helper that stops the waveform,
+disables the slice, and drives the pad low.
+
+**Why loop-driven and not an interrupt or a free-running peripheral.** A
+repeating waveform that outlives a hung main loop would keep energizing the
+solenoid. Loop-released edges stop when the loop stops: the 2 s watchdog resets
+the part and `hw_init()` drives the pin low. This is the same reasoning that
+keeps the 5 s valve pulse out of a blocking sleep (S.8, S.9), and it is why the
+faster PWM option is deliberately not used at the frequency the membrane
+actually runs at.
+
+The cost is that edges quantise to the loop period, ~10 ms, which at 2 Hz is
+2 % of a 500 ms cycle. A late service pass stretches its cycle rather than
+firing a burst of catch-up edges, because the pass that ran late is the one
+where the loop had real work to do.
+
+**Measured on the carrier**, through `hw_seq_ops.membrane()` with
+`hw_actuators_service()` on the flight loop's 10 ms cadence, reading the pad:
+
+```
+PARAM_MEMBRANE_HZ=2 DUTY=60%  -> loop-toggled (sqwave) path
+edges=11  high avg=300 ms (n=6)  low avg=200 ms (n=5)
+period=500 ms -> 2.00 Hz
+after off: pin=0
+```
+
+300 ms high / 200 ms low is exactly 2 Hz at the configured 60 % duty.
+
+**A sub-floor frequency is toggled, never clamped.** An earlier version clamped
+a request below the PWM floor up to the floor, which would have silently run the
+membrane at 9 Hz instead of the specified 2 Hz - a wrong frequency reported as
+success. `tests/test_fsw_mcu_actuators.py` now fails if that clamp returns, and
+the native suite fails if the default rises above the floor, because that would
+silently change which mechanism drives the solenoid.
+
+`PARAM_MEMBRANE_HZ` keeps its 1-400 range: the two mechanisms together cover it,
+loop-toggling below ~9 Hz and PWM above. Only the mechanism selection changes
+with the value, and the native tests check both sides of the boundary.
+
+---
+
 ## 2026-08-31 (later) - The membrane solenoid is on GP26 and was being driven at 150 kHz (M-07)
 
 **Why.** A throwaway 0.5 Hz blink was asked for on GP26 purely as a pin smoke

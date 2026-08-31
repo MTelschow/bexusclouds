@@ -16,7 +16,7 @@ Code: `flight/mcu/` (M-xx), `flight/pi/` (P-xx), `gse/` (G-xx), `clouds_link/` +
 | M-04 | Link-loss latch (10 min without heartbeat → autonomous, no further input required) | P0 | O.2, S.2 | ✔ |
 | M-05 | Ground override handling: HOLD / RESUME / ABORT / RELEASE n as accelerators only | P1 | S.2 | ✔ |
 | M-06 | Valve control via interlocked GPIO/MOSFET pairs; actuation verify (current sense / pressure response) | P0 | F.4 | ◐ |
-| M-07 | Membrane PWM control (freq/duty configurable), duty-cycled to hold dispersion ≥ 3 min | P0 | F.3, P.6, P.7 | ◐ pin corrected to GP26 and freq now really from config (was 150 kHz on an unconnected pin); PWM floor ~8.95 Hz so 1–8 Hz unreachable (DEVLOG 2026-08-31) |
+| M-07 | Membrane PWM control (freq/duty configurable), duty-cycled to hold dispersion ≥ 3 min | P0 | F.3, P.6, P.7 | ◐ drive done: GP26, **2 Hz** default, loop-toggled via `core/sqwave` because 2 Hz is below the ~9 Hz PWM floor; measured 300/200 ms on the board. Duty-cycling to hold ≥ 3 min (P.7) is still sequencer-side (DEVLOG 2026-08-31) |
 | M-08 | Fired-valve flags persisted **before** actuation; brownout-safe resume of sequence + mission clock | P0 | S.3 | ◐ |
 | M-09 | 1 Hz sensor acquisition: 2× STLM20, BME280, 2× Keller 23SY, IMU | P0 | F.5, F.6, P.8–P.13 | ◐ BME280 live; STLM20 pair not populated, no Keller/RH2 on the bus, IMU faulted — all flagged via `error_flags` (DEVLOG 2026-08-31) |
 | M-10 | Sanity/range flags on every reading (store raw, flag implausible, never discard) | P1 | S. spec §2.2 | ☐ |

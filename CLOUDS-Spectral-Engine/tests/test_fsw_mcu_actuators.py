@@ -140,6 +140,25 @@ class TestMembraneDrive:
         assert "PIN_MEMBRANE_PWM" in out_pins, (
             "the membrane pin must be driven low with the other actuators")
 
+    def test_membrane_edges_are_released_by_the_loop(self):
+        """At 2 Hz the drive is a repeating waveform, so the same rule as the
+        valve pulses applies: edges come from hw_actuators_service, never from
+        an interrupt or a free-running peripheral, so a hung loop cannot leave
+        the solenoid energized."""
+        hw = _read("src", "hw", "hw.c")
+        body = hw.split("void hw_actuators_service", 1)[1].split("\n}", 1)[0]
+        assert "sqwave_service" in body, (
+            "the membrane waveform must be advanced from the loop")
+
+    def test_membrane_below_pwm_floor_uses_the_loop_not_a_clamp(self):
+        """The default is 2 Hz, under the PWM floor. Clamping it up to the
+        floor would silently run the membrane at the wrong frequency."""
+        hw = _read("src", "hw", "hw.c")
+        body = hw.split("static void ops_membrane", 1)[1].split("\nstatic ", 1)[0]
+        assert "pwmdiv_min_hz" in body and "sqwave_start" in body
+        assert not re.search(r"hz\s*=\s*floor_hz", body), (
+            "a sub-floor frequency must be toggled, not clamped")
+
     def test_membrane_frequency_comes_from_config(self):
         hw = _read("src", "hw", "hw.c")
         body = hw.split("static void ops_membrane", 1)[1].split("\n}", 1)[0]
@@ -151,11 +170,22 @@ class TestMembraneDrive:
             "wrap=999 with an unset divider is the 150 kHz regression")
 
     def test_membrane_off_releases_the_pin_low(self):
+        """duty 0 must actively drive the pin low and stop the waveform, not
+        merely disable the PWM slice and leave the pad to the external
+        pull-down. Both off-paths go through the same helper."""
         hw = _read("src", "hw", "hw.c")
-        body = hw.split("static void ops_membrane", 1)[1].split("\n}", 1)[0]
+        body = hw.split("static void ops_membrane", 1)[1].split("\nstatic ", 1)[0]
         zero = body.split("duty_pct == 0", 1)[1].split("return;", 1)[0]
-        assert "gpio_put" in zero and "0" in zero, (
-            "duty 0 must actively drive the pin low")
+        assert "membrane_release_pin_low" in zero, (
+            "duty 0 must go through the release helper")
+
+        helper = hw.split("static void membrane_release_pin_low", 1)[1] \
+                   .split("\n}", 1)[0]
+        assert re.search(r"gpio_put\s*\(\s*PIN_MEMBRANE_PWM\s*,\s*0\s*\)",
+                         helper), "the helper must drive the pin low"
+        assert "sqwave_stop" in helper, (
+            "the helper must stop the waveform, or the loop keeps toggling")
+        assert "pwm_set_enabled" in helper
 
 
 class TestUnsourcedSensorsAreFlagged:

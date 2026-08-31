@@ -15,6 +15,7 @@
 #include "../../src/core/cobs.h"
 #include "../../src/core/config.h"
 #include "../../src/core/pwmdiv.h"
+#include "../../src/core/sqwave.h"
 #include "../../src/core/crc16.h"
 #include "../../src/core/frame.h"
 #include "../../src/core/pulse.h"
@@ -743,18 +744,99 @@ static void test_set_param_range_checked(void)
 
 #define SYS_150M 150000000u
 
-static void test_membrane_default_frequency_is_actually_produced(void)
+static void test_membrane_default_is_below_the_pwm_floor(void)
 {
-    uint32_t div16, period, actual;
+    /* The membrane runs at 2 Hz, under the ~9 Hz PWM floor. This is the whole
+     * reason core/sqwave exists: if the default ever rises above the floor,
+     * the drive silently changes mechanism. */
+    TEST_ASSERT_TRUE(cfg_default(PARAM_MEMBRANE_HZ) <
+                     (int32_t)pwmdiv_min_hz(SYS_150M));
+    TEST_ASSERT_EQUAL_INT32(2, cfg_default(PARAM_MEMBRANE_HZ));
+}
 
-    pwmdiv_solve(SYS_150M, (uint32_t)cfg_default(PARAM_MEMBRANE_HZ), &div16,
-                 &period);
-    actual = pwmdiv_actual_hz(SYS_150M, div16, period);
+static void test_membrane_default_square_wave_timing(void)
+{
+    /* 2 Hz at the configured 60 % duty is 300 ms high, 200 ms low. */
+    sqwave_t w;
+    uint64_t t = 1000;
+    int highs = 0, lows = 0;
+    uint64_t last_edge = 0;
 
-    /* within 1 % of the 50 Hz default, and nowhere near 150 kHz */
-    TEST_ASSERT_UINT32_WITHIN(1, 50, actual);
-    TEST_ASSERT_TRUE(period <= PWMDIV_MAX_WRAP);
-    TEST_ASSERT_TRUE(div16 >= PWMDIV_MIN_DIV16 && div16 <= PWMDIV_MAX_DIV16);
+    sqwave_init(&w);
+    sqwave_start(&w, (uint32_t)cfg_default(PARAM_MEMBRANE_HZ),
+                 (uint8_t)cfg_default(PARAM_MEMBRANE_DUTY), t);
+    TEST_ASSERT_TRUE(sqwave_level(&w));   /* starts energized */
+    TEST_ASSERT_EQUAL_UINT32(300, w.on_ms);
+    TEST_ASSERT_EQUAL_UINT32(200, w.off_ms);
+
+    /* run 3 s at the real 10 ms loop cadence and measure the phases */
+    last_edge = t;
+    for (int i = 0; i < 300; i++) {
+        t += 10;
+        if (sqwave_service(&w, t)) {
+            uint32_t held = (uint32_t)(t - last_edge);
+            last_edge = t;
+            if (sqwave_level(&w)) {
+                /* just went high, so the previous phase was the low one */
+                TEST_ASSERT_UINT32_WITHIN(10, 200, held);
+                lows++;
+            } else {
+                TEST_ASSERT_UINT32_WITHIN(10, 300, held);
+                highs++;
+            }
+        }
+    }
+    TEST_ASSERT_TRUE(highs >= 5);
+    TEST_ASSERT_TRUE(lows >= 5);
+}
+
+static void test_membrane_stop_leaves_the_output_low(void)
+{
+    sqwave_t w;
+
+    sqwave_init(&w);
+    TEST_ASSERT_FALSE(sqwave_level(&w));
+    sqwave_start(&w, 2, 60, 0);
+    TEST_ASSERT_TRUE(sqwave_level(&w));
+    sqwave_stop(&w);
+    TEST_ASSERT_FALSE(sqwave_level(&w));
+    TEST_ASSERT_FALSE(sqwave_active(&w));
+    /* servicing a stopped wave must never re-energize it */
+    for (uint64_t t = 0; t < 5000; t += 10)
+        TEST_ASSERT_FALSE(sqwave_service(&w, t));
+    TEST_ASSERT_FALSE(sqwave_level(&w));
+}
+
+static void test_membrane_late_service_does_not_burst_edges(void)
+{
+    /* A pass that arrives long after an edge was due must produce one edge,
+     * not a catch-up burst: the late pass is the one where the loop had real
+     * work to do. */
+    sqwave_t w;
+
+    sqwave_init(&w);
+    sqwave_start(&w, 2, 60, 0);
+    TEST_ASSERT_TRUE(sqwave_service(&w, 5000)); /* 4.7 s late */
+    TEST_ASSERT_FALSE(sqwave_level(&w));
+    TEST_ASSERT_FALSE(sqwave_service(&w, 5000)); /* no second edge */
+    TEST_ASSERT_FALSE(sqwave_service(&w, 5100));
+    TEST_ASSERT_TRUE(sqwave_service(&w, 5200)); /* off_ms later */
+}
+
+static void test_membrane_duty_extremes_still_oscillate(void)
+{
+    /* duty 0 means "off" and must be expressed by stopping, not by starting
+     * a wave that never rises - so a started wave always has both phases. */
+    sqwave_t w;
+    const uint8_t duties[] = {1, 50, 99, 100};
+
+    for (unsigned i = 0; i < sizeof duties / sizeof duties[0]; i++) {
+        sqwave_init(&w);
+        sqwave_start(&w, 2, duties[i], 0);
+        TEST_ASSERT_TRUE(w.on_ms >= 1);
+        TEST_ASSERT_TRUE(w.off_ms >= 1);
+        TEST_ASSERT_EQUAL_UINT32(500, w.on_ms + w.off_ms);
+    }
 }
 
 static void test_membrane_frequency_across_the_config_range(void)
@@ -783,7 +865,6 @@ static void test_frequencies_below_the_hardware_floor_are_known(void)
 
     TEST_ASSERT_TRUE(floor_hz > 1);
     TEST_ASSERT_TRUE(floor_hz < 20);
-    TEST_ASSERT_TRUE((int32_t)floor_hz > cfg_default(PARAM_MEMBRANE_HZ) - 50);
 
     /* at the floor itself the hardware must still be accurate */
     pwmdiv_solve(SYS_150M, floor_hz, &div16, &period);
@@ -832,7 +913,11 @@ int main(void)
     RUN_TEST(test_full_flight_with_timed_drives);
     RUN_TEST(test_linkloss_latch_and_recovery);
     RUN_TEST(test_set_param_range_checked);
-    RUN_TEST(test_membrane_default_frequency_is_actually_produced);
+    RUN_TEST(test_membrane_default_is_below_the_pwm_floor);
+    RUN_TEST(test_membrane_default_square_wave_timing);
+    RUN_TEST(test_membrane_stop_leaves_the_output_low);
+    RUN_TEST(test_membrane_late_service_does_not_burst_edges);
+    RUN_TEST(test_membrane_duty_extremes_still_oscillate);
     RUN_TEST(test_membrane_frequency_across_the_config_range);
     RUN_TEST(test_frequencies_below_the_hardware_floor_are_known);
     RUN_TEST(test_cfg_default_matches_cfg_defaults);

@@ -44,6 +44,6 @@ class Param(IntEnum):
     T_FLOAT_S = 6             # timer fallback after launch (default 7200)
     LINKLOSS_S = 7            # autonomous latch (default 600)
     T_MEASURE_S = 8           # per measurement phase (default 480, P.6+P.7)
-    MEMBRANE_HZ = 9           # solenoid PWM frequency (default 50)
+    MEMBRANE_HZ = 9           # solenoid drive frequency, Hz (default 2)
     MEMBRANE_DUTY = 10        # percent (default 60)
     SEAL_RETRY = 11           # seal verification retries (default 3)
