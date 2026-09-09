@@ -17,6 +17,8 @@ output/
 
 # captured session data
 data/sessions/
+# GSE/operator-interface session logs (the app's default --log-dir)
+gse_sessions/
 
 # vendor Linux library build trees (built from the tarball by install.sh)
 drivers/e9u_LSMD_LIB_Linux/e9u_lsmd_camera_library-*/

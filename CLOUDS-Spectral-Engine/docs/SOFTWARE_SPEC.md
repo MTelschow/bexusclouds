@@ -67,7 +67,7 @@ spectra, storage of spectra, and all external communication.
 | Pi ↔ RP2350 | UART, COBS-framed, CRC-16. Down: HK @ 1 Hz, state changes, actuator events. Up: forwarded commands, time sync every 10 s |
 | Spectrometer ↔ Pi | USB (FTDI FT2232H, VID 0403/PID 6010) → `/dev/ttyUSB*`, vendor library `libe9u_LSMD.so` (built from `drivers/e9u_LSMD_LIB_Linux/`, same API as the Windows DLL) — driven by this repo's `spectro/eureca_driver.py`; needs the vendor udev rules |
 | SD ↔ RP2350 | SPI, 2 cards, redundant HK + actuator log |
-| Sensors ↔ RP2350 | BME280 I²C; STLM20 analog/ADC; Keller 23SY per datasheet; IMU I²C/SPI |
+| Sensors ↔ RP2350 | BME280 I²C; STLM20 analog/ADC; IMU I²C/SPI; INA226 ×3 I²C (rail voltage + shunt voltage). The Keller 23SY pair is **off the design** - F.6's chamber humidity and the seal check's chamber pressure have no part, see §7 |
 | Actuators ↔ RP2350 | 4× valve via GPIO→MOSFET (HW interlock on open/close pairs); membrane solenoid via PWM → inverter stage, 12 V |
 
 ## 4. Data & performance budget
@@ -80,7 +80,7 @@ Capable of 450 fps; required rate 1 Hz → huge margin.
 | Stream | Rate | 5 h volume | Destination |
 |---|---|---|---|
 | Full spectra + header | 1 Hz | ~75 MB | Pi SD |
-| HK (2× temp, BME280, 2× pressure, IMU, actuator status) | 1 Hz, ≤ 256 B | ≤ 4.6 MB | 2× RP2350 SD (redundant) |
+| HK (2× temp, BME280, ambient pressure, IMU, 3× rail V + I, actuator status) | 1 Hz, ≤ 256 B | ≤ 4.6 MB | 2× RP2350 SD (redundant) |
 | Event/error log | sporadic | ≪ 1 MB | all 3 cards |
 
 Downlink subset (O.4): HK packet 1 Hz + 8×-binned quick-look spectrum **1 Hz**
@@ -91,12 +91,17 @@ Sizes below are the **encoded frame sizes of the implementation** (14 B header
 
 | Packet | Framed size | Cadence | Rate |
 |---|---|---|---|
-| HK (relayed, payload `hk.SIZE` = 44 B) | 60 B | 1 Hz | 0.480 kbit/s |
+| HK (relayed, payload `hk.SIZE` = 54 B) | 70 B | 1 Hz | 0.560 kbit/s |
 | Quick-look, both channels (29 + 31 bins) | 164 B | 1 Hz | 1.312 kbit/s |
 | PISTATUS | 28 B | 10 s | 0.022 kbit/s |
-| **Total** | | | **1.814 kbit/s** of 2 kbit/s |
+| **Total** | | | **1.894 kbit/s** of 2 kbit/s |
 
-~9 % margin, leaving ~24 B/s for sporadic events.
+~5 % margin, leaving ~13 B/s for sporadic events. The INA226 rail voltages
+cost the 6 B that took HK from 44 to 50 B; their shunt voltages cost nothing
+further, having taken over the 6 B that `p_ch_pa` and `rh2_cpct` held before
+the Keller pair left the design. The 4 B after that are the fourth rail slot,
+24 V, whose monitor is not fitted yet: reserving it keeps fitting the part
+out of the wire format (DEVLOG 2026-09-09).
 
 This supersedes the earlier "quick-look every 30 s (~1.1 kB burst ≈ 0.3 kbit/s
 avg)". That 1.1 kB assumed ~256 bins per channel — i.e. the whole detector
@@ -107,7 +112,7 @@ link required; at the true size a quick-look accompanies every 1 Hz sample and
 still fits.
 
 **Constraint this introduces:** at 1 Hz quick-look the budget leaves ~83 B for
-a framed HK packet, i.e. an **HK payload of ≤ 67 B** (implementation: 44 B). HK
+a framed HK packet, i.e. an **HK payload of ≤ 67 B** (implementation: 54 B). HK
 was originally allowed ~180 B here; at that size 1 Hz quick-look would total
 ~2.9 kbit/s and bust the 2 kbit/s continuous limit. If HK grows past ~67 B,
 either bin the quick-look harder or reduce its cadence.
@@ -149,8 +154,13 @@ simulated sensor inputs.
 ## 7. Open points (owner ≠ software, but software-visible)
 
 - F.7 camera: undecided; CSI interface + downlink thumbnail budget reserved.
-- Second humidity sensor (F.6): parts list has one BME280; HK format
-  reserves two RH channels.
+- Second humidity sensor (F.6): **unsourced**. The parts list has one BME280,
+  and the Keller 23SY pair that was to give chamber humidity and chamber
+  pressure is off the design (absent at every address on the carrier). The HK
+  format no longer reserves a second RH channel or a chamber pressure - a
+  field no part can fill is read as a measurement by anything that displays
+  it. F.6's two-location requirement and the M-15 seal check both need a part
+  chosen before either has software to write.
 - GSE technology (Python vs LabVIEW): decision post-PDR.
 - P.1/P.2 (intensity accuracy / spectral resolution): TBD in SED; spec
   inherits whatever CDR fixes.

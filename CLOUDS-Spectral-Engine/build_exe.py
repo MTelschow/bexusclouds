@@ -43,7 +43,7 @@ def main() -> None:
         ("calibration_single.json", "."),
     ]
     args = [
-        os.path.join(HERE, "clouds_spectral.py"),
+        os.path.join(HERE, "clouds_ui", "__main__.py"),
         "--name", NAME,
         "--onefile",
         "--noconfirm",

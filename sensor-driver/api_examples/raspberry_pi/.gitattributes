@@ -1,0 +1,2 @@
+# .gitattributes
+Applications/SDK/api_examples/raspberry_pi/run_bmv080_example.sh eol=lf

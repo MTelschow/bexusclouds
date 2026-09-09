@@ -1,0 +1,763 @@
+/**
+ * Copyright (C) Bosch Sensortec GmbH. All Rights Reserved. Confidential.
+ *
+ * Disclaimer
+ *
+ * Common:
+ * Bosch Sensortec products are developed for the consumer goods industry. They may only be used
+ * within the parameters of the respective valid product data sheet. Bosch Sensortec products are
+ * provided with the express understanding that there is no warranty of fitness for a particular purpose.
+ * They are not fit for use in life-sustaining, safety or security sensitive systems or any system or device
+ * that may lead to bodily harm or property damage if the system or device malfunctions. In addition,
+ * Bosch Sensortec products are not fit for use in products which interact with motor vehicle systems.
+ * The resale and/or use of products are at the purchaser's own risk and his own responsibility. The
+ * examination of fitness for the intended use is the sole responsibility of the Purchaser.
+ *
+ * The purchaser shall indemnify Bosch Sensortec from all third party claims, including any claims for
+ * incidental, or consequential damages, arising from any product use not covered by the parameters of
+ * the respective valid product data sheet or not approved by Bosch Sensortec and reimburse Bosch
+ * Sensortec for all costs in connection with such claims.
+ *
+ * The purchaser must monitor the market for the purchased products, particularly with regard to
+ * product safety and inform Bosch Sensortec without delay of all security relevant incidents.
+ *
+ * Engineering Samples are marked with an asterisk (*) or (e). Samples may vary from the valid
+ * technical specifications of the product series. They are therefore not intended or fit for resale to third
+ * parties or for use in end products. Their sole purpose is internal client testing. The testing of an
+ * engineering sample may in no way replace the testing of a product series. Bosch Sensortec
+ * assumes no liability for the use of engineering samples. By accepting the engineering samples, the
+ * Purchaser agrees to indemnify Bosch Sensortec from all claims arising from the use of engineering
+ * samples.
+ *
+ * Special:
+ * This software module (hereinafter called "Software") and any information on application-sheets
+ * (hereinafter called "Information") is provided free of charge for the sole purpose to support your
+ * application work. The Software and Information is subject to the following terms and conditions:
+ *
+ * The Software is specifically designed for the exclusive use for Bosch Sensortec products by
+ * personnel who have special experience and training. Do not use this Software if you do not have the
+ * proper experience or training.
+ *
+ * This Software package is provided `` as is `` and without any expressed or implied warranties,
+ * including without limitation, the implied warranties of merchantability and fitness for a particular
+ * purpose.
+ *
+ * Bosch Sensortec and their representatives and agents deny any liability for the functional impairment
+ * of this Software in terms of fitness, performance and safety. Bosch Sensortec and their
+ * representatives and agents shall not be liable for any direct or indirect damages or injury, except as
+ * otherwise stipulated in mandatory applicable law.
+ *
+ * The Information provided is believed to be accurate and reliable. Bosch Sensortec assumes no
+ * responsibility for the consequences of use of such Information nor for any infringement of patents or
+ * other rights of third parties which may result from its use. No license is granted by implication or
+ * otherwise under any patent or patent rights of Bosch. Specifications mentioned in the Information are
+ * subject to change without notice.
+ *
+ * It is not allowed to deliver the source code of the Software to any third party without permission of
+ * Bosch Sensortec.
+ *
+ */
+ 
+@viewport {
+	width: device-width;
+	zoom: 1.0;
+}
+
+@font-face {
+	font-family: Bosch Sans Regular;
+	src: url('../woff/BoschSans-Regular.woff2');
+	font-weight: normal;
+  }
+
+.loader {
+	padding: 3px;
+	margin-right: 13px;
+}
+
+.divspan {
+	display: block;
+}
+
+#logo {
+	position: absolute;
+	right: 10px;
+	height: 30px;
+}
+
+
+
+#VersionNumber {
+	color: white;
+}
+
+#versionLabel {
+	margin-left: .5em;
+}
+
+#mainmenu {
+	border-right: 0;
+	font-family: Bosch Sans Regular !important;
+}
+
+.currentVersion {
+	margin-top: 0;
+	color: white;
+}
+
+.mdc-drawer .mdc-list-item:nth-child(1) {
+	padding-top: 50px;
+	margin-top: 0;
+	color: white;
+}
+
+h2 {
+	font-size: 20px;
+	font-weight: 500;
+	margin-left: 5px;
+	margin-right: 5px;
+	margin-bottom: 5px;
+	font-family: Bosch Sans Regular !important;
+}
+
+h3 {
+	font-size: 15px;
+	font-weight: normal;
+	margin-left: 5px;
+	margin-right: 5px;
+	margin-bottom: 5px;
+	font-family: Bosch Sans Regular !important;
+}
+
+.mdc-list {
+	padding-top: 0;
+}
+
+html, body {
+	margin: 0;
+	height: 100%;
+	overflow-y: auto;
+	overflow-x: hidden;
+	font-family: Bosch Sans Regular !important;
+}
+
+.tab {
+	display: none;
+	height: 700px;
+}
+
+.mdc-drawer .mdc-list-item{
+    color:black;
+    margin-top: -10px;
+    margin-bottom: 20px;
+}
+
+#drawerHelp {
+    margin-top: 10px;
+}
+
+#divider{
+    margin-top: -10px;
+}
+
+#divider-new{
+    margin-top: -10px;
+	margin-bottom: 20px;
+}
+
+.mdc-drawer .mdc-list-item--activated .mdc-list-item__graphic {
+	color: rgba(51, 48, 56, 0.87);
+}
+
+#currentVersion{
+    position: absolute;
+    bottom: 20px;
+    margin-left: 20px;
+    color: #bfc0c2;
+	font-size:12px;
+}
+
+:root {
+	--mdc-theme-primary: #018786FF;
+}
+
+.mdc-select__dropdown-icon {
+	color: #018786FF;
+	font-family: Bosch Sans Regular !important;		
+}
+
+.mdc-select__native-control{
+	font-family: Bosch Sans Regular !important;	
+}
+
+.mdc-drawer .mdc-list-item--activated {
+	color: white;
+	background-color: #005691;
+}
+
+.mdc-drawer .mdc-list-item--activated img{
+	filter:invert(100%) sepia(100%) saturate(0%) hue-rotate(195deg) brightness(104%) contrast(101%);/*Inverted*/
+}
+
+.buttonIcon {
+    position: relative;
+    margin-left: -10px;
+    margin-right: 5px;
+    margin-top: -2px;
+	color: white;
+}
+
+.mdc-typography--subtitle1, .mdc-typography--body1, .mdc-typography--body2{
+	font-family: Bosch Sans Regular !important;
+}
+
+.mdc-typography--body3{
+	line-height: 50%;
+	font-size: 75%;
+	margin-top: -13px;
+	font-family: Bosch Sans Regular !important;
+}
+
+.mdc-typography--body4{
+	font-size: 70%;
+	font-family: Bosch Sans Regular !important;
+}
+
+.mdc-typography--subtitle2{
+	font-size: 85%;
+	font-family: Bosch Sans Regular !important;
+}
+
+#helpTitle{
+    margin-bottom: 10px;
+}
+
+#deleteButton {
+	margin-left: 5px;
+	margin-bottom: 30px;
+}
+
+#Versionfield {
+	position: absolute;
+	bottom: 0;
+	right: 8px;
+	color: grey;
+}
+
+#userContent {
+	max-width: 100%;
+	max-height: auto;
+	margin-top: 8px;
+	/* overflow-y: scroll;
+	overflow-x: hidden; */
+}
+
+#helpContent {
+	max-width: 100%;
+	max-height: auto;
+	/* overflow-y: scroll;
+	overflow-x: hidden; */
+	margin:15px;
+}
+
+#settingsContent {
+	max-width: 100%;
+	max-height: auto;
+	/* overflow-y: scroll;
+	overflow-x: hidden; */
+	margin:15px;
+}
+
+.mdc-slider {
+    right:10px;
+	left:0px;
+	width: auto; 
+}
+
+#lungsImage {
+	max-width: 523px; /* maximum with set to match the original image */
+	width: 75%;
+	height: 75%;
+	margin: 0 auto;
+	object-fit: scale-down;
+}
+
+.slider-example {
+	margin-bottom: 48px;
+}
+
+.demo-param-field-group + .demo-param-field-group {
+	margin-top: 16px;
+}
+
+.demo-param-field {
+	display: block;
+}
+
+.demo-param-input-label {
+	display: inline-block;
+	min-width: 2.5em;
+}
+
+.example-slider-wrapper {
+	padding: 0 16px;
+}
+
+.setValue {
+	margin-left: 5px;
+	margin-right: 5px;
+	margin-top: 0px;
+	font-size:13px;
+	color: #444;
+}
+
+.explanation {
+	margin-left: 5px;
+	margin-right: 5px;
+	margin-top: 0px;
+	font-size:15px;
+	color: #444;
+}
+
+#lungsImageContainer {
+	text-align: center;
+}
+
+.mdc-switch {
+	margin-left: 20px;
+	margin-right: 20px;
+}
+
+.mdc-select {
+	margin-left: 10px;
+	min-width: 300px;
+}
+
+.mdc-fab--disabled {
+	background-color: gray;
+}
+
+.hidden {
+	display: none
+}
+
+#perfModeSwitch {
+	float: right;
+}
+
+#obstructionSwitch, #obstructionSuppressionSwitch, #vibrationSuppressionSwitch {
+	float: right;
+}
+
+#coincidenceSwitch {
+	float: right;
+}
+
+#frequencySwitch {
+	float: right;
+}
+
+.mdc-select {
+	width: 95%;
+    margin-bottom: 15px;
+    left: -5px;
+}
+
+.chart {
+    position: relative;
+	top: 7px;
+	margin: auto;
+	width: 380px;
+	z-index: 0;
+}
+
+/* Center the group of boxes */
+.explanationBoxWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 24px 0;
+}
+
+/* Style for each explanation box */
+.explanationCommon {
+  width: 100%;
+  max-width: 523px; /* Match #lungsImage max-width */
+  margin: 12px 0;
+  padding: 16px;
+  border-radius: 10px;
+  color: #222;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  font-size: 1rem;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+/*
+.explanationCommon {
+	padding: 5px;
+	overflow: auto;
+}*/
+
+.explanationGreen {
+	/*margin-bottom: 5px;*/
+	background-color:  #008000;
+	color:black;
+}
+
+.explanationYellow {
+	/*margin-bottom: 5px;*/
+	background-color: #FFFF00;
+	color:black;
+}
+
+.explanationOrange {
+	/*margin-bottom: 5px;*/
+	background-color: #FFC90e;
+	color:black;
+}
+
+.explanationRed {
+	/*margin-bottom: 5px;*/
+	background-color: #ff0000;
+	color:white;
+}
+
+.explanationPurple {
+	/*margin-bottom: 5px;*/
+	background-color: #9400D3;
+	color:white;
+}
+
+.explanationBrown{
+	/*margin-bottom: 5px;*/
+	background-color: #7e0023;
+	color:white;
+}
+
+.explanationBlue-Korea {
+	/*margin-bottom: 5px;*/
+	background-color: rgb(0, 0, 255);
+	color:white;
+}
+
+.explanationGreen-Korea {
+	/*margin-bottom: 5px;*/
+	background-color: rgb(0, 255, 0);
+}
+
+.explanationYellow-Korea {
+	/*margin-bottom: 5px;*/
+	background-color: rgb(255, 255, 0);
+}
+
+.explanationRed-Korea {
+	/*margin-bottom: 5px;*/
+	background-color: rgb(255, 0, 0);
+	color:white;
+}
+
+ul {
+	margin-bottom: 0;
+	padding-left: 12px;
+}
+
+.versionUL {
+	margin-top: 0;
+	padding-left: 18px;
+}
+
+.infoDiv {
+	margin-bottom: 13px;
+	margin-left: 34px;
+}
+
+#versionContent {
+	/* overflow: auto; */
+	margin: 15px;
+	margin-top: 20px;
+}
+
+.versionTitle {
+	font-size: 16px;
+	font-weight: normal;
+	color: #000;
+}
+
+.versionTitle:after {
+  content: ' ';
+  display: block;
+}
+
+.versionSubTitle {
+	font-size: 16px;
+	font-weight: normal;
+	color: #000;
+}
+
+.versionSubTitle:after {
+  content: ' ';
+  display: block;
+}
+
+.versionLabel:after {
+	content: ' ';
+	display: block;
+	margin-bottom: 5px;
+}
+
+.mdc-theme--secondary-bg {
+background-color:white !important;
+}
+
+.mdc-top-app-bar
+button, .mdc-dialog, .mdc-dialog__title, .mdc-dialog__content{
+    color:black !important;
+}
+
+.mdc-top-app-bar__title{
+    color:black;
+	font-family: Bosch Sans Regular !important;
+	font-weight: 500;
+}
+
+.mdc-drawer__content{
+    margin-top:10%;
+}
+
+.app-title{
+    color: black; margin-top: 5px; margin-left: 17px; margin-bottom: 40px; 
+	font-family: Bosch Sans Regular !important;
+	font-weight: 400;
+}
+
+.mdc-drawer .mdc-list-item, .mdc-dialog__surface{
+    border-radius:0px !important;
+	font-family: Bosch Sans Regular !important;
+	font-weight: 400;
+	-moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+    font-size: .875rem;
+    line-height: 1.375rem;
+    letter-spacing: .0071428571em;
+    text-decoration: inherit;
+    text-transform: inherit;
+    height: calc(48px - 2 * 4px);
+    margin: 8px 8px;
+    padding: 0 8px;
+}
+
+body, .mdc-button, .mdc-fab--extended, .epoch, .mdc-dialog, .mdc-dialog__content, .mdc-dialog__title{
+	font-family: Bosch Sans Regular !important;
+	font-weight: 400;
+}
+
+.custom-adv-settings-button-margin {
+    margin-top: 25px;
+}
+
+.mdc-dialog__button{
+    color : #005691 !important;/*Bosch Dark blue color*/
+}
+
+.mdc-fab--extended{
+    box-shadow:none !important;
+}
+
+.mdc-list-item img{
+	margin-left:-10px;
+    filter:invert(0%) sepia(100%) saturate(10%) hue-rotate(207deg) brightness(97%) contrast(105%);/*Non-inverted*/
+}
+
+.mdc-list-divider{
+	margin-left: 0px;
+	margin-right: 0px;
+	margin-top: -10px;
+	margin-bottom: 20px;
+	border-top-width: 1px;
+	border-top-style: solid;
+	border-top-color: #bfc0c2;/*Bosch light gray*/
+	border-bottom-color: #bfc0c2;/*Bosch light gray*/
+	border: none;
+	height: 0.8px;
+}
+
+.mdc-slider:not(.mdc-slider--disabled) .mdc-slider__track-container{
+background-color:#bfc0c2;/*Bosch light gray*/
+}
+
+.mdc-slider:not(.mdc-slider--disabled) .mdc-slider__thumb{
+stroke:#005691;
+fill:#005691;
+}
+
+.mdc-slider:not(.mdc-slider--disabled) .mdc-slider__track{
+background-color:#005691;
+}
+
+.mdc-slider__pin-value-marker{
+	font-size: xx-small;
+}
+
+#appHeaderIcon
+{
+    margin-bottom:10px;
+    height:60px;
+}
+
+#optionImagePart
+{
+	width: 279px;
+	height: 186px;
+}
+
+div.obstructionHeader{
+	text-align: center;
+    margin-left: 25px;
+    margin-top: 15px;
+    font-size: large;
+}
+
+div.obstructionIcon{
+	display:inline;
+}
+
+#obstructionContent{
+    width: 360px;
+    margin: 20px 2px;
+    font-size: small;
+    color:#b2b3b5;/*color of gauge*/
+	position:relative;
+}
+
+#obstructionHelpIcon
+{
+    height:25px;
+    width:50px;
+    bottom:-6px;
+    left:-10px;
+    position:relative;
+    filter: invert(18%) sepia(30%) saturate(7220%) hue-rotate(189deg) brightness(99%) contrast(101%);
+}
+
+/* The popup form */
+.form-popup {
+     width: -webkit-fill-available;
+     position: fixed;
+     border: 2px solid #f1f1f1;
+     bottom: 0;
+     background-color: #f1f1f1;
+}
+
+/* Add styles to the form container */
+.form-container {
+  max-width: 250px;
+  height: 60px;
+  background-color: #f1f1f1;
+  padding: 2px;
+}
+
+.disabled-div {
+    pointer-events: none;
+    opacity: 0.4;
+    color:gray
+}
+
+/* Full-width input fields */
+.form-container input[type=text] {
+  width: 115%;
+  margin: 7px 0 7px 5px;
+  border: none;
+  background: white;
+  padding: 12px;
+  padding-right: 45px;
+  -webkit-touch-callout: none; // for iOS
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* When the inputs get focus, do something */
+.form-container input[type=text]:focus {
+  outline: none;
+  -webkit-touch-callout: none; // for iOS
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+
+/* Button used to open the contact form - fixed at the bottom of the page */
+.open-button {
+  background-color: #555;
+  color: white;
+  padding: 16px 20px;
+  border: none;
+  cursor: pointer;
+  opacity: 0.8;
+  position: fixed;
+  bottom: 23px;
+  right: 28px;
+  width: 150px;
+}
+
+#headerID {
+	visibility: hidden;
+}
+
+#obstructionContent{
+	visibility: hidden;
+}
+
+#gaugeContentWithObstrution, #chartContainer {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	align-content: flex-start;
+	height: 100%;
+}
+
+.gauge-large {
+    width: 600px;
+    height: 560px;
+}
+
+.chart-large {
+    /*width: 600px;
+    height: 500px;*/
+	width: 33%;
+	flex: 1 1 0;
+}
+
+#gaugeContent, #chartContent {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+	max-height: 100%;
+	margin-top: 20px;
+}
+
+@media (max-width: 950px) {
+	#gaugeContent, #chartContent {
+		flex-direction: column;
+	}
+
+	.gauge-large, .chart-large {
+		width: 70%;
+		height: auto;
+		max-height: 80%;
+	}
+}
+
+.disabled-link {
+pointer-events: none;
+opacity: 0.5;
+cursor: not-allowed;
+}
+
+/*Tag related CSS end*/

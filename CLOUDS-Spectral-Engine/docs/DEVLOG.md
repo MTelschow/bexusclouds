@@ -18,6 +18,373 @@ without re-deriving anything. Newest entries first.
 
 ---
 
+## 2026-09-09 (newest) - V_in is not the 24 V rail, and the shunt values were wrong (M-09, G-01)
+
+**What was asked.** Rename the monitored 24 V rail to `V_in`, leave a
+placeholder for the real 24 V rail, which has no monitor fitted yet, and
+correct the shunt resistances to **V_in 10 mΩ, 24 V 15 mΩ, 5 V 10 mΩ,
+3.3 V 50 mΩ**.
+
+**The 0x40 monitor was never on the 24 V rail.** It sits on `V_in`, the
+incoming gondola bus. The two are different nets, and the panel had been
+naming one after the other since M-09 - which is the same class of mistake as
+a field with no part behind it: the number is real, the label says it belongs
+to something else.
+
+**The placeholder is on the wire, not only on the panel.** `rail_mv[]` and
+`shunt_raw[]` grew to four entries and HK went 50 B → **54 B** (framed 70 B
+against the 83 B allowance, payload ceiling 67 B, so the 1 Hz quick-look is
+untouched). The alternative - a UI-only row - means the wire format changes on
+the day the part is fitted, across the MCU, the Pi, the GSE and every session
+already logged. Four bytes now is the cheaper of the two.
+
+**An unfitted part is not a failure.** The 24 V slot downlinks
+`RAIL_MV_INVALID`, but `ina226_fitted()` keeps it out of `HKE_RAIL_FAIL`: a
+flag set on every packet from now to launch is a flag nobody reads. The panel
+renders that rail as `not fitted`, distinct from `no monitor` (a part that
+should have answered and did not) and from `0.00 V` (a rail that is genuinely
+down). Three states, three different faults to chase.
+
+**The old shunt values make the earlier power numbers wrong.** The
+2026-09-09 rail-current entry below, and the power table in it, were derived
+with 10 / 10 / 15 mΩ. The 3.3 V rail is 50 mΩ, so its currents there are
+**3.33× too high**; V_in and 5 V are unchanged. This is exactly why the
+firmware sends the raw shunt register and not amps - the logged
+`shunt_raw` re-derives cleanly, which a firmware-computed amp value could
+not. The table has been left as it was recorded; re-derive from the logs
+rather than trusting its 3.3 V column.
+
+**Checks.** `226 passed`, `VERIFY OK` (the rail checks now cover `V_in`, the
+`not fitted` row, and a 50 mΩ 3.3 V current), and the firmware core's
+`56 tests, 0 failures` with the HK layout pinned at the new offsets -
+`rail_mv[]` at 30, `shunt_raw[]` at 38, `mission_t_s` at 50.
+
+---
+
+## 2026-09-09 - Rail current, and the Keller pair leaves the packet (M-09, G-01, M-15)
+
+**What was asked.** Drop the two Keller 23SY sensors, and show current as well
+as voltage for the three INA226 monitors.
+
+**What the Keller removal actually costs.** The pair was the only source for
+`p_ch_pa` (chamber pressure) and `rh2_cpct` (chamber humidity), and both were
+still in the 50-byte HK packet, flagged `NO_CHAMBER_P` / `NO_RH2` and rendered
+as `not fitted` rows on the panel. Two requirements lean on them: SED F.6 wants
+humidity in two locations, and M-15 verifies the chamber seal from a
+chamber-vs-ambient pressure divergence. Neither had a part any more, so both
+were being kept alive by a wire field nothing could fill.
+
+The fields went with the parts. A field that can only ever hold a zero is read
+as a measurement by everything downstream - it is the same failure this project
+has already been bitten by twice, one step earlier in the chain: `p_ch_pa` was
+deliberately mirroring ambient so a future M-15 would err towards "not sealed",
+which on a display is exactly what an intact seal looks like. `seq_step()` lost
+its `p_ch_pa` parameter too (it was already `(void)`-cast unused): a parameter
+no sensor can source invites a caller to pass something plausible. M-15 is now
+`☐ needs a sensor` in SOFTWARE_FEATURES rather than `◐` - the retry-and-flag
+logic around the check is written and tested, the reading is what is missing.
+
+**Where the amps come from.** The INA226 has a current register, and it is the
+wrong one to use. The part computes it from a calibration register that has to
+be programmed with the shunt resistance; a wrong value there produces
+confident, wrong amps that nothing on the ground can undo afterwards. The
+shunt-voltage register next to it is absolute - 2.5 uV/LSB, signed, no
+calibration involved - so that is what is downlinked, raw, and Ohm's law is
+applied on the ground where the resistances live
+(`clouds_link/hk.py RAIL_SHUNT_MOHM = 10, 10, 15 mOhm`, measured shunts for the
+24 V, 5 V and 3.3 V rails). If one of those numbers turns out wrong, a logged
+session can be re-derived from `shunt_raw`; an amp value computed in firmware
+could not be.
+
+**The packet did not grow.** `shunt_raw[3]` is i16 x 3 = 6 B, exactly what
+`p_ch_pa` + `rh2_cpct` gave back, so `hk.SIZE` is still 50 B and the downlink
+budget is untouched at 1.862 of 2.0 kbit/s. That is luck, not design, but it is
+the reason this change needed no cadence argument. The retired `HKE_*` bits 2
+and 3 were left unused rather than compacted, so an older session log still
+decodes and `error_text` shows anything unknown as a mask.
+
+**A rail is read as a pair.** Bus voltage and shunt voltage come from the same
+part over the same bus microseconds apart, so `hw_read_sensors()` requires both
+to succeed: on any failure the rail is `RAIL_MV_INVALID` with `shunt_raw` 0 and
+`HKE_RAIL_FAIL` set. A shunt reading kept next to an invalid voltage would be a
+current for a rail whose voltage is unknown, and the panel has no way to say
+that. Same reasoning as the existing sentinel: `0.000 A` is what an *idle* rail
+reads, so a dead monitor must not produce one.
+
+**On screen.** Each rail row is now `24.06 V   -0.129 A`, right-aligned in
+fixed width - the rows render in the monospaced face, so the three rails read
+as a column instead of three differently indented sentences. The sign is
+printed as it comes: a negative current means the rail is sourcing back into
+its supply, and hiding it hides that. Under the section is
+`current derived: shunt voltage over 10, 10, 15 mΩ`, because the shunts are the
+one number in that reading that was not measured - if one is wrong, every amp
+on the panel is wrong with it, and an operator has to be able to see which
+assumption to doubt.
+
+**Evidence.** 226 pytest, 56 native firmware tests, `verify_qt.py`
+`VERIFY OK` with four new rail checks: a live rail shows volts and amps, a
+rail that is genuinely down still reads `0.00 V   +0.000 A`, an unmonitored one
+reads `no monitor`, and a negative current keeps its sign.
+
+**On the carrier.** Flashed to `21DD2AE08840C863`, relayed by the bench Pi,
+30 consecutive HK packets decoded on the ground in `STANDBY`
+(`error_flags` = `IMU_FAIL NO_TEMP` - the two Keller bits are gone, as
+intended):
+
+| Rail | Bus | Current | min..max | sd | Power |
+|---|---|---|---|---|---|
+| 24 V | 24.063 V | 0.173 A | 0.170..0.177 | 1.8 mA | 4.16 W |
+| 5 V | 5.095 V | 0.737 A | 0.731..0.755 | 5.7 mA | 3.75 W |
+| 3.3 V | 3.297 V | 0.134 A | 0.133..0.135 | 0.4 mA | 0.44 W |
+
+Quiet and stable - 0.4 to 5.7 mA of spread over 30 s, against a quantisation
+of 0.25 mA (10 mOhm) and 0.17 mA (15 mOhm), so the numbers are resolution-
+limited rather than noisy.
+
+**The apparent over-unity was my arithmetic, and the rails answered it.**
+5 V + 3.3 V is 4.20 W against 4.16 W on the 24 V bus, which is impossible if
+all three are parallel loads on that bus - so they are not. Two measurements
+on the live packets settle the topology, without a meter:
+
+- **The 5 V rail is fed from the 24 V bus.** Over 60 samples the two currents
+  correlate at **+0.96**, and a least-squares fit gives
+  `dI24/dI5 = 0.2101` against `V5/V24 = 0.2117` - a marginal efficiency of
+  ~100 %, i.e. the slope is what a step in 5 V load *must* produce on the
+  24 V side. A rail fed from somewhere else (the USB cable this was flashed
+  over, say) could not track like that.
+- **The 3.3 V rail hangs off the 5 V rail, not the bus.** Its current is flat
+  to 0.39 mA sd and uncorrelated with either (-0.04 against 24 V), and its
+  0.44 W is therefore *already inside* the 5 V figure rather than additive.
+  Which makes the chain 24 V -> 5 V -> 3.3 V at **90 % total efficiency** -
+  a real converter number, where the additive reading gave 101 %.
+
+So the shunt values are consistent with the hardware: the slope pins the
+*ratio* of the 24 V and 5 V shunts to within ~1 %, and the resulting
+efficiency is physical. What it cannot see is a **common scale error** - both
+being 12 mOhm rather than 10 would shift every current by 20 % and leave
+every relationship above intact. That is the one thing still worth a bench
+meter, and it is cheap to fix after the fact: `shunt_raw` is logged raw, so a
+corrected resistance re-derives the sessions already recorded.
+
+**The actuators are not on these rails.** A load step - `MEMBRANE 60 % @
+2 Hz`, `OK`, `membrane_duty` reading back 60 for nine packets - moved no rail
+by more than the noise (24 V -0.2 mA, 5 V -2.8 mA, 3.3 V -0.2 mA). The
+membrane solenoid draws through its own inverter stage, as the dispersion
+motor does, so the three monitors watch the avionics and **not** the
+actuators. Worth knowing before anyone reads a flat 24 V current as evidence
+that a valve did not fire - `valve_status` is what says that, and it is why
+that field exists.
+
+---
+
+## 2026-09-09 (earlier) - The rail voltages are in housekeeping (M-09, G-01)
+
+**What was there.** Three INA226 monitors on i2c0 - `0x40` 24 V, `0x44` 5 V,
+`0x45` 3.3 V - measured during the August bring-up and then left alone,
+because `hk_t` had no field for them. `hw.c` said so in a comment: "no field
+in hk_t (HK is 44 B against a 67 B ceiling), so not sampled here." Ground
+therefore never saw a bus voltage, on a mission whose largest measured
+power-tree surprise so far was an INA226 reporting the 24 V bus at 6046 mV
+that was not real.
+
+**Bus voltage only, and that is a decision.** The bus-voltage register is
+absolute: 1.25 mV/LSB, no calibration needed. Current and power are not - the
+part computes them from its calibration register, which must be programmed
+with the shunt resistance, and the shunt value is on the carrier schematic
+that M-11 is still blocked on. A guessed shunt yields confident wrong amps,
+which is the exact failure this log already records twice. When the schematic
+lands, the honest addition is the shunt-voltage register (also absolute,
+2.5 uV/LSB, and i16 exactly) so the conversion happens on the ground where
+the resistance is known.
+
+**The sentinel is the interesting part.** `rail_mv[i] == RAIL_MV_INVALID`
+(`0xFFFF`) means no reading, and it is deliberately not 0, because **0 mV is a
+legitimate measurement**: the 24 V bus reads 0 whenever the carrier runs from
+USB with no supply attached. Collapsing "the monitor did not answer" and "the
+rail is down" into one value would throw away the distinction ground most
+needs when a rail looks wrong. 0xFFFF is 65.535 V, above the part's 36 V
+input rating, so it cannot collide with a real reading. `HKE_RAIL_FAIL`
+(bit 6) says *some* rail is unreadable - which one is in the field itself,
+because `error_flags` is one byte and six bits were already spent.
+
+Identity is checked before anything is believed: both the manufacturer
+(`0x5449`) and die (`0x2260`) registers must match at init, not merely an ACK
+at the expected address. Guessing parts from default addresses got four of
+five wrong on this board.
+
+**Budget.** `hk.SIZE` 44 -> 50 B, framed 66 B against the ~83 B the 2 kbit/s
+continuous limit allows beside a 1 Hz quick-look. Total 1.862 kbit/s of 2.0,
+margin 0.138. `TestDownlinkBudget` computes this from real encoded frames, so
+it checked the growth rather than being told about it. The 67 B payload
+ceiling now has 17 B of headroom, not 23.
+
+**Measured on the carrier**, first packets after the reflash:
+
+```
+HK len=50  rails: 24 V 24.06  5 V 5.09  3.3 V 3.30   raw=(24063, 5095, 3297)
+err=NO_CHAMBER_P NO_RH2 IMU_FAIL NO_TEMP        <- no RAIL_FAIL: all three answered
+```
+
+All three plausible, stable across samples, and the 24 V figure agrees with
+the 880-sample profile from August (23.9..24.0 V). Physical units that make
+sense are the proof the part is real, per the rule this log set.
+
+**In the panel.** One `Sensors` row per rail, named with its part and address
+(`Rail 24 V / INA226 0x40`), so a failing rail is identifiable at a glance
+rather than parsed out of one packed line. A rail with no monitor reads
+`no monitor`; a rail genuinely at zero reads `0.00 V`. Three `verify_qt.py`
+checks hold that apart, and one of them caught the fixture in the
+"fully sourced packet" check that had no rails set and was therefore asserting
+against the sentinel.
+
+**Evidence.** 218 pytest (was 213), 56 native, `verify_qt.py` VERIFY OK,
+clean `-Wall -Wextra` build, reflashed to carrier `21DD2AE08840C863`, and the
+17-check merged-UI hardware pass re-run green after the schema change.
+
+---
+
+## 2026-09-09 (later still) - The sensor readings are on screen, and the ones with no sensor say so (G-01)
+
+**What was wrong.** The panel showed `T1 / T2  0.0 / 0.0 C` and
+`p chamber  992.6 hPa`, and displayed neither of the two things it should
+have. `bme_temp_cc` - the **only working temperature on the carrier**, from
+the BME280 that is the only usable sensor on i2c0 - was in the 44-byte packet
+and had no row at all. Nor did `accel_mg`, `gyro_ddps` or `uptime_s`. So four
+downlinked fields were invisible while two dead ones were rendered as
+readings.
+
+The chamber pressure is the sharper half. `hw_read_sensors()` sets
+`p_ch_pa = p_amb_pa` on purpose, so that a future M-15 seal check reads
+"not sealed" rather than the huge fake divergence a 0 would produce. That is
+the right call in the firmware and the wrong number to put on a panel: a
+chamber pressure equal to ambient is exactly what a real intact seal looks
+like. The operator had `HKE_NO_CHAMBER_P` in the Errors row to cross-reference
+against, which is not the same as not being misled.
+
+**What it does now.** A `Sensors` section, one row per reading, each labelled
+with the part that produces it - `Ambient T / BME280`, `Chamber p / Keller
+23SY`, `T1 T2 / STLM20 x2`, `Accel / BNO055`. The part name is load-bearing:
+it is what tells an operator which numbers to believe. Each row also carries
+the `HkErrors` bit that means "no sensor behind this", and when it is set the
+row says `not fitted` / `not populated` / `unusable` instead of a number. The
+firmware's zero-fill is left alone; what changed is that a zero is no longer
+dressed up as data.
+
+`p_amb_pa` is the exception that proves the rule: it is *held* rather than
+zeroed on a failed read, because 0 Pa mimics a 100 kPa fall and trips launch
+detection. A held value is real data, just old, so it is shown - and labelled
+`(held, stale)`.
+
+**Live on the bench.** `Ambient p 992.5 hPa`, `Ambient T 34.2 C`,
+`Ambient RH 30.0 %`, everything else declared unsourced. Note the 34.2 C: the
+BME280 is on the carrier next to the RP2350 and the power tree, so it reads
+board temperature, not cabin air - about 12 C above the room. Worth knowing
+before it is used for anything but health.
+
+**Still not shown, because it is not in the protocol.** The three INA226 rail
+monitors (0x40 24 V, 0x44 5 V, 0x45 3.3 V) are live on i2c0 and have no field
+in the 44-byte packet, so `hw_read_sensors()` never reads them and ground
+never sees a bus voltage. Adding them is a schema change, not a UI one:
+3 rails x (u16 mV + i16 mA) is 12 B, taking `hk.SIZE` from 44 B to 56 B, still
+inside the 67 B ceiling the 1 Hz quick-look budget leaves. The panel says so
+in the section rather than leaving it as an absence, because "where are the
+bus voltages" is the first question the section invites.
+
+**Evidence.** 213 pytest, 56 native, `verify_qt.py` VERIFY OK with five new
+checks - that an unsourced row renders no digits, that the chamber row does
+not echo ambient, that the BME280 numbers do appear, that a held pressure is
+shown and marked, and that a fully sourced packet renders every row (so the
+unsourced path cannot pass by blanking everything).
+
+---
+
+## 2026-09-09 (later) - One operator interface: the two GUIs are one window (G-01..G-04)
+
+**Why.** There were two UIs and a documented warning telling you which to
+open, because opening the wrong one "looks like a broken system": the bench
+panel drove the detector directly at 2048 px, the GSE dashboard drew a 1 Hz
+quick-look mean-binned to ~30 points per channel. The warning existed because
+the two spectra are easy to mistake for each other, and a note in a README is
+a weak defence against that. An operator on console also had to run two
+applications to watch a trace and command the experiment.
+
+**What the merge does and does not change.** The two data paths are still
+completely separate and still enforced - the detector half talks only to
+`spectro.driver`, the flight half only to `clouds_gse.Receiver` /
+`Commander`, and neither file imports the other's. What changed is that they
+share a window, and that the thing which actually differs is now a control
+rather than a choice of program: `Spectrum source` is Detector or Downlink,
+**explicit, and never switched by the app**. Auto-detecting it was the
+tempting option and is the wrong one - a plot that silently becomes a
+different measurement when a link drops is precisely the misreading the old
+split was warning about. The plot carries a banner naming the source, its
+rate and its binning ("DOWNLINK 1 Hz mean-binned 8x - not an instrument
+view"), and the stats card says `LIVE` or `QUICK-LOOK`.
+
+Reaching the detector from the ground was never possible in flight anyway: it
+depends on the Pi's `--bench-stream`, which is off there. So `--flight` opens
+no driver and starts on the downlink, and the instrument sections stay built
+but folded - hiding them would quietly make the one UI two again.
+
+**Layout.** `docs/UI_STYLE.md`'s spectrum + one 410 px sidebar, kept: the
+sidebar now stacks Flight sections above Instrument ones and each is a
+collapsible `Section` (`clouds_ui/sections.py`), so what fits on a laptop is
+the two or three groups you are using. Folding is display only - a folded
+housekeeping grid keeps updating, because "not on screen" must never mean
+"not tracked". The old dashboard's stock-Qt widgets were restyled from one
+palette (`clouds_ui/style.py`); it used to be a light OS-default sidebar
+beside a dark plot, two half-themed halves in one window.
+
+**Two bugs the merge exposed.**
+
+The uniform-width fix for the command buttons, made earlier today, was wrong
+in a way that only showed up in a narrower sidebar. Pinning all three grid
+columns to the widest button's hint does produce equal widths - and 3 x
+"ARM + RELEASE 1" is ~470 px inside a 410 px scroll area whose horizontal
+scrollbar is off, so the far button was silently clipped and the rest of the
+sidebar went off the visible edge with it (the Stop button and the frequency
+spinbox too - one cause, three symptoms). Six columns with the short commands
+spanning 2 and the release pair spanning 3 spreads a long label across
+columns instead of widening one. `verify_qt.py` now asserts the sidebar is
+not clipped, which is the assertion that would have caught it.
+
+And the source banner quoted the bin factor, which does not exist until the
+first quick-look arrives - so it said "waiting for a quick-look" forever. Its
+own test caught that one.
+
+**Retired.** `clouds_spectral.py` (moved to `clouds_ui/window.py`, history
+preserved) and `clouds_gse.main --gui` (`gse/clouds_gse/app.py` deleted).
+`clouds_gse` keeps everything that is not a window - receiver, commander,
+session log, and the headless console REPL, which is still the right tool
+with no display and is what `clouds_ui` imports. `run_clouds_spectral.bat`
+keeps its filename so the desktop shortcut still works; it invokes
+`-m clouds_ui` now.
+
+**Evidence.**
+
+```
+python -m pytest tests/          213 passed
+python -u verify_qt.py           VERIFY OK  (flight half + source switch)
+flight/mcu/test/run_native.sh    56 tests, 0 failures
+python -m clouds_ui --mock --no-link          bench: 48 mock frames, sections fold
+python -m clouds_ui --flight --experiment ... against the real Pi + carrier
+```
+
+The hardware pass drove the real chain from the merged window: housekeeping
+and named errors rendering, `MEMBRANE` 45 % accepted and read back in HK,
+`DISPERSE` visible in `valve_status` for its 5 s, events named
+`[INFO] MANUAL_DRIVE`, `RELEASE` refused on the pad with no dialog, and the
+source switch leaving no stale downlink trace on the axis when moved to a
+detector that is not connected.
+
+**Worth noting.** The downlink quick-look clips flat at `saturation_count`
+above ~640 nm on the bench (`exposure_us` 100 ms, `auto_exposure` false). The
+old dashboard gave no sign of that; the merged stats card computes saturation
+for the downlink too and now says `43.3 %  CLIPPING`, which is how the
+clipping got noticed at all.
+
+---
+
 ## 2026-09-09 (bench, after the actuator work) - The Pi <-> MCU link runs on real hardware, and naming things exposed two dead fields
 
 **The link is proven.** Everything the 2026-08-31 entry listed as still owed

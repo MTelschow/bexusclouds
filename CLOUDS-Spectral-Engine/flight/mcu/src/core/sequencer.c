@@ -151,13 +151,12 @@ static uint64_t elapsed(const sequencer_t *s, uint64_t t_ms)
 }
 
 void seq_step(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
-              uint32_t p_amb_pa, uint32_t p_ch_pa)
+              uint32_t p_amb_pa)
 {
     bool was_latched = s->autonomy.autonomous_latched;
     bool was_launched = s->autonomy.launch_detected;
     bool was_float = s->autonomy.float_detected;
 
-    (void)p_ch_pa;
     autonomy_step(&s->autonomy, t_ms, p_amb_pa);
     if (!was_latched && s->autonomy.autonomous_latched)
         s->ops->event(s->ops->ctx, EV_AUTONOMOUS_LATCHED, "link lost");

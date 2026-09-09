@@ -108,9 +108,14 @@ typedef struct {
 /* restored = NULL for a cold start; non-NULL resumes after a reset. */
 void seq_init(sequencer_t *s, const cfg_t *cfg, const seq_ops_t *ops,
               const seq_persist_t *restored, uint64_t t_ms, uint32_t wall_s);
-/* Call at ~1 Hz with fresh sensor data. */
+/* Call at ~1 Hz with fresh sensor data. Ambient pressure is the only reading
+ * the sequence needs: it drives launch and float detection (core/autonomy).
+ * The chamber pressure this used to take went out with the Keller pair - it
+ * was already unused, and a parameter no sensor can fill invites a caller to
+ * pass something plausible instead. When M-15 gets a real seal check, it
+ * takes whatever source that check actually has. */
 void seq_step(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
-              uint32_t p_amb_pa, uint32_t p_ch_pa);
+              uint32_t p_amb_pa);
 /* Ground command, already arm-gated by core/link (and by the Pi before
  * that). Returns the enum ack_result to answer with: ACK_OK when it was
  * acted on, ACK_REJECTED when the command is not allowed in this state,

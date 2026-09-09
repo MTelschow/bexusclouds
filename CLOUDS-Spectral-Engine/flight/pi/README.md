@@ -66,8 +66,8 @@ cd flight/pi && PYTHONPATH=../..:. python -m clouds_fsw.main --mock
 # (SerialTransport opens uart_port eagerly, so plain startup would fail.)
 cd flight/pi && PYTHONPATH=../..:. python -m clouds_fsw.main --no-uart
 
-# ...and serve the live bench panel from the SAME process and detector, so the
-# GSE dashboard and clouds_spectral.py --net can run at once (bench only):
+# ...and serve the live bench panel from the SAME process and detector, so one
+# window can hold the flight downlink and `clouds_ui --net` at once (bench only):
 cd flight/pi && PYTHONPATH=../..:. python -m clouds_fsw.main --no-uart --bench-stream
 
 # on the Pi: deploy clouds_fsw/, clouds_link/, spectro/ to /opt/clouds,

@@ -22,8 +22,8 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")   # no PDF auto-open, no G
 import numpy as np
 from PyQt5 import QtCore, QtWidgets
 
-import clouds_spectral
-from clouds_spectral import P
+from clouds_ui import window as clouds_ui_window
+from clouds_ui.window import P
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PY = sys.executable
@@ -99,7 +99,7 @@ def converge(settle=18):
 
 
 app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
-eng = clouds_spectral.Engine(mock=False)
+eng = clouds_ui_window.CloudsWindow(mock=False)
 eng.show(); pump(4)
 
 # ---------- BLOCK 0: setup + record as-found ----------

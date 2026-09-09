@@ -26,7 +26,7 @@
     }
   ],
   "notes": [
-    "Loaded automatically by `python clouds_spectral.py --edu` (and by kind='edu' in the FSW), because the EDU board reads out 3648 px on ONE fibre - the Duo's calibration.json would slice a phantom reference channel out of it.",
+    "Loaded automatically by `python -m clouds_ui --edu` (and by kind='edu' in the FSW), because the EDU board reads out 3648 px on ONE fibre - the Duo's calibration.json would slice a phantom reference channel out of it.",
     "The pixel window and pixel count are hardware facts (e9u_LSMD_EDU_get_pixel_count reports 3648). The polynomial is NOT: it is a linear placeholder spreading the INSION bench's 350-850 nm evenly across the detector (b = 500 nm / 3647 px). Replace it with the factory data sheet for your EDU unit, or fit it with the Calibrate dialog against a known line source (see docs/CALIBRATION.md).",
     "Single channel = no reference: the Engine hides the reference trace, ratio (transmission/absorbance) views fall back to counts, and the cursor/stats show 'ref --'.",
     "An explicit CLOUDS_CALIBRATION env var, or the Calibrate dialog's Load..., overrides this file."

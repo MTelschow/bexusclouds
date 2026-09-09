@@ -90,13 +90,15 @@ void hk_pack(const hk_t *hk, uint8_t out[HK_SIZE])
     put_u16(p, (uint16_t)hk->temp2_cc), p += 2;
     put_u16(p, (uint16_t)hk->bme_temp_cc), p += 2;
     put_u16(p, hk->rh1_cpct), p += 2;
-    put_u16(p, hk->rh2_cpct), p += 2;
     put_u32(p, hk->p_amb_pa), p += 4;
-    put_u32(p, hk->p_ch_pa), p += 4;
     for (int i = 0; i < 3; i++)
         put_u16(p, (uint16_t)hk->accel_mg[i]), p += 2;
     for (int i = 0; i < 3; i++)
         put_u16(p, (uint16_t)hk->gyro_ddps[i]), p += 2;
+    for (int i = 0; i < RAIL_COUNT; i++)
+        put_u16(p, hk->rail_mv[i]), p += 2;
+    for (int i = 0; i < RAIL_COUNT; i++)
+        put_u16(p, (uint16_t)hk->shunt_raw[i]), p += 2;
     put_u32(p, hk->uptime_s), p += 4;
     put_u32(p, hk->mission_t_s);
 }

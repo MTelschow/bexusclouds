@@ -22,6 +22,7 @@
 #include "../core/pwmdiv.h"
 #include "../core/sqwave.h"
 #include "bme280.h"
+#include "ina226.h"
 #include "board.h"
 
 /* ---- time base (S.4) ---------------------------------------------------- */
@@ -208,11 +209,14 @@ static void ops_membrane(void *ctx, uint8_t duty_pct)
 static bool ops_seal_ok(void *ctx)
 {
     (void)ctx;
-    /* TODO (M-15): compare Keller chamber vs ambient divergence. The
-     * sequencer only calls this once the close pulses have finished (see
-     * ops_busy), so the reading is taken with the lines already at rest.
-     * Until the plumbing exists, report success so the sequence proceeds
-     * (matches spec: proceed flagged on failure). */
+    /* TODO (M-15): verify the seal. The chamber-vs-ambient pressure
+     * divergence this was to use is gone with the Keller pair, so the check
+     * needs a source that exists - a chamber sensor if one is fitted, or the
+     * equalisation valves' own position sense. The sequencer only calls this
+     * once the close pulses have finished (see ops_busy), so whatever the
+     * source, it is read with the lines already at rest. Until one exists,
+     * report success so the sequence proceeds (matches spec: proceed flagged
+     * on failure). */
     return true;
 }
 
@@ -283,16 +287,22 @@ const seq_ops_t hw_seq_ops = {
 /* ---- sensors (M-09) ------------------------------------------------------- */
 /* What is actually on i2c0 of the carrier, measured (DEVLOG 2026-08-31):
  *   0x76  BME280            -> ambient temp, RH and pressure. Confirmed.
- *   0x40  INA226  24 V bus  -> power monitoring; no field in hk_t (HK is 44 B
- *   0x44  INA226  5 V rail     against a 67 B ceiling), so not sampled here.
- *   0x45  INA226  3.3 V rail
+ *   0x40  INA226  V_in       -> bus voltage into hk_t.rail_mv[] and raw shunt
+ *   0x44  INA226  5 V rail     voltage into hk_t.shunt_raw[]. Identified by
+ *   0x45  INA226  3.3 V rail   their mfg/die IDs, not by address. Both
+ *                              registers are absolute; amps are computed on
+ *                              the ground from the shunt resistances
+ *                              (10 / 15 / 10 / 50 mOhm), see ina226.h.
+ *   --    INA226  24 V rail  -> not fitted yet. The rail keeps its slot in
+ *                              hk_t and downlinks RAIL_MV_INVALID; an absent
+ *                              part is not HKE_RAIL_FAIL.
  *   0x28  BNO055 IMU        -> chip id, SW rev and bootloader rev all match a
  *                              genuine part, but its accel/mag/gyro IDs read
  *                              0x00 instead of 0xFB/0x32/0x0F: fitted, talking,
  *                              and not usable. Reported via HKE_IMU_FAIL.
- * There is NO chamber pressure sensor and NO second humidity channel on this
- * bus, so p_ch_pa and rh2_cpct have no source; both are flagged rather than
- * invented. Keller 23SY parts are not present at any address. */
+ * There is no chamber pressure sensor and no second humidity channel: the
+ * Keller 23SY pair is off the design, and the HK fields they were to fill
+ * went with them rather than being downlinked as zeros. */
 
 /* Why p_amb_pa is held rather than zeroed on a failed read: autonomy_step()
  * detects launch from a *drop* below p_ground - PARAM_LAUNCH_DP_PA. Reporting
@@ -336,16 +346,40 @@ void hw_read_sensors(hk_t *hk)
         hk->error_flags |= HKE_BME280_FAIL | HKE_P_AMB_STALE;
     }
 
-    /* No sensor exists for these. p_ch_pa mirrors ambient so that a future
-     * M-15 divergence check reads "not sealed" (the conservative direction)
-     * instead of the huge fake divergence a 0 would produce; M-15 must test
-     * HKE_NO_CHAMBER_P before trusting it. */
-    hk->p_ch_pa = hk->p_amb_pa;
-    hk->rh2_cpct = 0;
-    hk->error_flags |= HKE_NO_CHAMBER_P | HKE_NO_RH2 | HKE_IMU_FAIL;
+    hk->error_flags |= HKE_IMU_FAIL;
 
     memset(hk->accel_mg, 0, sizeof hk->accel_mg);
     memset(hk->gyro_ddps, 0, sizeof hk->gyro_ddps);
+
+    /* Rail voltage and shunt voltage, per rail. A rail that does not answer
+     * reports RAIL_MV_INVALID and not 0: 0 mV is a legitimate reading for a
+     * rail whose supply is absent (V_in on a USB-powered bench), and
+     * the two are different faults. One flag covers "at least one rail is
+     * unreadable"; which one is in the field itself, because error_flags has
+     * only eight bits.
+     *
+     * The two registers stand or fall together. They come from the same part
+     * over the same bus microseconds apart, so a half-read entry would be a
+     * distinction without a use - and a shunt_raw kept alongside an invalid
+     * rail_mv is an amp reading for a rail whose voltage is unknown. */
+    for (unsigned i = 0; i < INA_RAIL_COUNT; i++) {
+        uint16_t mv;
+        int16_t shunt;
+
+        if (ina226_read_bus_mv((enum ina226_rail)i, &mv) &&
+            ina226_read_shunt_raw((enum ina226_rail)i, &shunt)) {
+            hk->rail_mv[i] = mv;
+            hk->shunt_raw[i] = shunt;
+        } else {
+            hk->rail_mv[i] = RAIL_MV_INVALID;
+            hk->shunt_raw[i] = 0;
+            /* A rail with no monitor in the design reads as no reading, not
+             * as a fault - HKE_RAIL_FAIL is for a part that should have
+             * answered, and a permanently set flag stops being read. */
+            if (ina226_fitted((enum ina226_rail)i))
+                hk->error_flags |= HKE_RAIL_FAIL;
+        }
+    }
 }
 
 /* ---- init ----------------------------------------------------------------- */
@@ -387,4 +421,5 @@ void hw_init(void)
     /* Failure is not fatal: hw_read_sensors() falls back and raises
      * HKE_BME280_FAIL, and the sequencer is required to survive it. */
     (void)bme280_init();
+    (void)ina226_init();
 }

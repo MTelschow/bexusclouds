@@ -16,12 +16,17 @@ Don't duplicate them here; update them when behaviour changes.
 `PYTHONPATH` must include the repo root, plus `gse/` and `flight/pi/` for their
 packages. On Windows also `$env:PYTHONIOENCODING='utf-8'` for `verify_qt.py`.
 
+`./run_clouds_ui.sh [flags]` is the launcher (repo venv + the three
+`PYTHONPATH` entries, args passed straight through); `run_clouds_spectral.bat`
+is its Windows counterpart. By hand:
+
 ```sh
-# bench panel (detector on this machine)
-python clouds_spectral.py               # real Duo
-python clouds_spectral.py --edu         # single-channel EDU board (Windows only)
-python clouds_spectral.py --mock        # synthetic, no hardware
-python clouds_spectral.py --net 192.168.100.10    # detector on the Pi
+# the operator interface - one window, instrument + flight (clouds_ui/)
+python -m clouds_ui                     # real Duo on this machine
+python -m clouds_ui --edu               # single-channel EDU board (Windows only)
+python -m clouds_ui --mock              # synthetic, no hardware
+python -m clouds_ui --net 192.168.100.10          # detector on the Pi
+python -m clouds_ui --flight            # downlink only: HK, quick-look, commanding
 
 # flight app (on the Pi, from /opt/clouds)
 python3 -m clouds_fsw.main --config /etc/clouds/fsw.json
@@ -29,8 +34,8 @@ python3 -m clouds_fsw.main --mock                  # mock spectrometer + UART st
 python3 -m clouds_fsw.main --no-uart               # real detector, no RP2350 wired
 python3 -m clouds_fsw.main --no-uart --bench-stream  # + serve the live panel
 
-# ground station
-python -m clouds_gse.main --gui --experiment 192.168.100.10
+# ground station, headless (no display, or scripted integration use)
+python -m clouds_gse.main --experiment 192.168.100.10
 
 # checks — run all three before committing
 python -m pytest tests/                 # 150+ tests, no hardware needed
@@ -47,28 +52,36 @@ cmake --build flight/mcu/build -j8
 picotool load -f -x flight/mcu/build/clouds_fsw_mcu.uf2   # -f: no BOOTSEL needed
 ```
 
-## Which GUI — read this before "opening the GUI"
+## One GUI, two data sources - read this before "opening the GUI"
 
-| Goal | Use | Rate |
+There is **one** operator interface, `python -m clouds_ui`. It used to be two
+(`clouds_spectral.py` and `clouds_gse.main --gui`) and they were split for a
+real reason, which has not gone away - it is now handled inside the one window
+instead of by making the operator run the right application:
+
+| Source | What it is | Rate |
 |---|---|---|
-| **look at the detector**, see it respond to light | `clouds_spectral.py --net <pi>` (`run_clouds_spectral_pi.bat`) | continuous |
-| flight **downlink**: HK, events, commanding, budget | `clouds_gse.main --gui` | quick-look 1 Hz, binned |
+| **Detector** | `spectro.driver` direct - every pixel in the channel window. The only path that can *change* the hardware (exposure). **Bench only.** | continuous |
+| **Downlink** | the 2 kbit/s telemetry - HK, events, commanding, and a quick-look mean-binned to 29+31 points per channel. The only path that exists in flight. | 1 Hz |
 
-The GSE dashboard is **not** a live instrument view: each quick-look is
-mean-binned to 29+31 points per channel (`quicklook_bin` 8) rather than the
-2048-px trace, and its HK grid stays empty without the RP2350.
-`quicklook_interval_s` is **1.0 s — the 2 kbit/s budget maximum** (1.814 kbit/s
-with HK), and it is the only knob that spends downlink budget:
-`sample_interval_s` and `exposure_us` are independent of it.
+`self.source` picks which one the spectrum draws, it is **the operator's
+explicit choice, and nothing in the app changes it**, because the failure this
+guards against is reading a binned 1 Hz quick-look as a live instrument view.
+The plot carries a banner naming the source and its rate, and the stats card
+says `LIVE` or `QUICK-LOOK`. Reaching the detector from the ground at all
+depends on the Pi's `--bench-stream`, which is **off in flight**.
+
+`quicklook_interval_s` is **1.0 s - the 2 kbit/s budget maximum** (1.894
+kbit/s with HK), and it is the only knob that spends downlink budget:
+`sample_interval_s` and `exposure_us` are independent of it. Each interval
+sends **two** packets, one per channel.
 
 **That 1 Hz depends on HK staying lean.** The budget leaves ~83 B for a framed
-HK packet, i.e. an **HK payload ceiling of 67 B**; `hk.SIZE` is 44 B today. The
+HK packet, i.e. an **HK payload ceiling of 67 B**; `hk.SIZE` is 54 B today. The
 spec originally allowed ~180 B, at which size 1 Hz quick-look totals
 ~2.9 kbit/s and busts the limit. Grow `Housekeeping` past 67 B and you must bin
-the quick-look harder or slow its cadence —
+the quick-look harder or slow its cadence -
 `tests/test_fsw_telemetry.py::TestDownlinkBudget` fails first, by design.
-That is correct behaviour, but it looks broken if you wanted the instrument.
-"The GUI" in this project means the **bench panel**.
 
 ## Architecture
 
@@ -121,19 +134,36 @@ header.** Two boards are in play; keep them apart by USB serial - bare Pico 2
 | What | Where | State |
 |---|---|---|
 | i2c0 | **SDA GP28, SCL GP29** (not GP12/13, which are unconnected) | BME280 `0x76` is the only usable sensor |
-| INA226 ×3 | `0x40` 24 V, `0x44` 5 V, `0x45` 3.3 V | live, but **no field in the 44-byte HK** |
+| INA226 ×3 | `0x40` **V_in**, `0x44` 5 V, `0x45` 3.3 V | live and **downlinked**: bus voltage in `hk.rail_mv[]` (mV, measured 24.06 / 5.09 / 3.30 V) and the raw shunt-voltage register in `hk.shunt_raw[]` (i16, 2.5 µV/LSB). **Amps are computed on the ground**, `hk.rail_a()` over `RAIL_SHUNT_MOHM = 10, 15, 10, 50 mΩ` - the part's calibration register is left alone, so a wrong shunt value can be corrected against a logged session instead of being baked into it |
+| INA226 24 V | **not fitted** | the rail holds slot 1 of `rail_mv[]` / `shunt_raw[]` and downlinks `RAIL_MV_INVALID`; the panel says `not fitted`, and `HKE_RAIL_FAIL` is **not** raised for it - an absent part is not a fault to chase (`ina226_fitted()`) |
 | BNO055 IMU | `0x28` | answers with valid chip id / SW rev; **sub-sensor IDs read 0x00**, unusable |
 | Membrane solenoid | **GP26** (not GP8, unconnected) | **2 Hz**, loop-toggled via `core/sqwave`; driven from the GSE panel end to end (`MEMBRANE` duty), duty read back in HK |
 | CaCO₃ dispersion motor | **GP17 fwd / GP18 rev** | one 5 s scheduled pulse per release or per `DISPERSE` command, commanded from the panel and seen in `valve_status` for ~5 s; runs concurrently with the membrane, measured; **not in the SED**, reverse sense untested, **current unmeasured - not on any monitored rail** |
 | STLM20 ×2 | none | **not populated**; the old `ADC_TEMP1` collided with GP26 |
-| Keller 23SY ×2 | none | **absent at every address** |
+| Keller 23SY ×2 | none | **off the design** - absent at every address, and the HK fields they fed (`p_ch_pa`, `rh2_cpct`) went with them |
 | SD / SPI0 | **pinout unknown**; the old map's GP17/GP18 drive the motor | no card answered `CMD0` there; defines deleted, **M-11 blocked on the schematic** |
 
-So `p_ch_pa`, `rh2_cpct`, `temp1/2_cc` and the IMU vectors have **no source**.
-They are declared through `error_flags` (`HKE_*` in `core/frame.h`, `HkErrors`
-in `clouds_link/hk.py`, kept in step by a mirror test) rather than filled with
-invented numbers. The SED baselines no IMU at all while risk MS002 is "IMU
-failure" - hardware and document disagree.
+HK is **54 B** (framed 70 B against an 83 B allowance, ceiling 67 B payload).
+The Keller pair's 6 B (`p_ch_pa` + `rh2_cpct`) became `shunt_raw[]`; the four
+extra bytes over that are the reserved 24 V rail, whose monitor is not fitted
+yet - a slot costs 4 B once, a wire-format change on fit day costs the MCU,
+the Pi and every logged session. An unreadable rail is
+`RAIL_MV_INVALID` (`0xFFFF`), never 0 - **0 mV is a real reading** for a rail
+whose supply is absent, and a dead monitor is a different fault from a dead
+rail. The sentinel invalidates that rail's `shunt_raw` too, so no current is
+ever shown against an unknown voltage.
+
+So `temp1/2_cc` and the IMU vectors have **no source**. They are declared
+through `error_flags` (`HKE_*` in `core/frame.h`, `HkErrors` in
+`clouds_link/hk.py`, kept in step by a mirror test) rather than filled with
+invented numbers; bits 2 and 3 are now free, having been the Keller pair's
+`NO_CHAMBER_P` / `NO_RH2`. The SED baselines no IMU at all while risk MS002 is
+"IMU failure" - hardware and document disagree.
+
+**M-15 has no sensor.** Seal verification was to compare chamber against
+ambient pressure, and the chamber half is gone with the Keller parts, so
+`ops_seal_ok()` needs a source that exists (a replacement chamber sensor, or
+valve position sense) before it is anything but `return true`.
 
 **S.3 does not hold yet.** Persistence is still a RAM stub, so brownout resume
 does not survive a real reset: the `fired` bit that prevents a second CaCO₃
@@ -217,9 +247,11 @@ without a `stdio_init_all()` call: the driver is compiled and then discarded,
 which looks exactly like success.
 
 **PyQt5 aborts the process** on an unhandled exception in a slot.
-`clouds_spectral.py` calls `set_times_us()` / `grab()` from a timer slot without
-a guard, so a driver that raises there kills the panel — never make a driver
-method fail where the UI cannot handle it.
+`clouds_ui/window.py` calls `set_times_us()` / `grab()` from a timer slot
+without a guard, so a driver that raises there kills the window — never make a
+driver method fail where the UI cannot handle it. The flight half's own timer
+slot (`_tick_flight`) is wrapped for exactly this reason: a downlink problem
+must not be able to take the instrument half down with it.
 
 **`socketserver.shutdown()` blocks forever if `serve_forever()` never ran.**
 Guard `stop()` on "was it started", or an error path unwinding before `start()`

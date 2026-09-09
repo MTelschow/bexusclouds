@@ -1,6 +1,6 @@
 """Serve a locally attached spectrometer over TCP (bench tool, runs on the Pi).
 
-The CLOUDS bench panel (``clouds_spectral.py``) was written against a
+The CLOUDS operator interface (``clouds_ui``) was written against a
 spectrometer on the same machine. With the detector on the flight Pi, run this
 there and point the panel at it:
 
@@ -8,7 +8,7 @@ there and point the panel at it:
     PYTHONPATH=/opt/clouds python3 -m spectro.net_server
 
     # PC  (Qt panel, full 2048-px live view)
-    python clouds_spectral.py --net 192.168.100.10
+    python -m clouds_ui --net 192.168.100.10
 
 Every ``SpectrometerDriver`` call becomes one request/response, so the panel's
 grab loop behaves as it does locally, only with a <1 ms cable in the middle.

@@ -1,8 +1,12 @@
 """GSE entry point.
 
 Console:  python -m clouds_gse.main --experiment 192.168.100.10
-GUI:      python -m clouds_gse.main --experiment 192.168.100.10 --gui
 Listen-only (no command link): python -m clouds_gse.main --listen-only
+
+There is no --gui here any more. The dashboard and the bench panel are one
+application now - `python -m clouds_ui --flight` - so that a spectrum on
+screen always says which source it came from. This module is the headless
+path (and the fallback when no display is available).
 
 The ground interlock (S.10) starts ENGAGED: RELEASE/START are refused
 locally until --flight-mode is given or the operator toggles it in the UI.
@@ -29,7 +33,6 @@ def main(argv=None) -> int:
     ap.add_argument("--flight-mode", action="store_true",
                     help="disable the ground interlock (S.10) at startup")
     ap.add_argument("--log-dir", default="./gse_sessions")
-    ap.add_argument("--gui", action="store_true", help="PyQt5 dashboard")
     args = ap.parse_args(argv)
 
     session = SessionLog(args.log_dir)
@@ -43,9 +46,6 @@ def main(argv=None) -> int:
         commander.start_heartbeat()
 
     try:
-        if args.gui:
-            from .app import run_gui  # noqa: PLC0415 - Qt only when asked
-            return run_gui(receiver, commander, session)
         monitor = ConsoleMonitor(receiver, commander, session)
         monitor.repl()
         return 0

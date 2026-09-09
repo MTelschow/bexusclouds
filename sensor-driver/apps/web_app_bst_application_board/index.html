@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>BMV080 PM Sensor</title>
+</head>
+
+<body>
+	<script>
+		// Chromium-based browser check
+		function isChromiumBased() {
+			const useragent = navigator.userAgent;
+			// Check for Chrome, Edge (Chromium), Brave, Opera, Vivaldi, etc.
+			return (
+				/Chrome/.test(useragent) &&
+				/(Edg|Chrome|Brave|OPR|Vivaldi)/.test(useragent) &&
+				!(/Firefox|Safari/.test(useragent) && !/Chrome/.test(useragent))
+			);
+		}
+
+		if (!isChromiumBased()) {
+			document.body.innerHTML = `
+				<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;">
+					<h1 style="color:#b00020;">Unsupported Browser</h1>
+					<p style="font-size:1.2em;">The BMV080 web application can only be used on Chromium-based browsers (such as Chrome, Edge, or Opera).</p>
+				</div>
+			`;
+			throw new Error("Non-Chromium browser detected.");
+		}
+	</script>
+	<link rel="stylesheet" href="css/material-design-icons.css">
+	<link rel="stylesheet" href="libs/material_components_web/material-components-web.css">
+	<link rel="stylesheet" href="bmv080/bmv080.css">
+	<link rel="stylesheet" href="css/loaders.min.css">
+
+	<aside class="mdc-drawer mdc-drawer--modal" id="mainmenu">
+		<div class="mdc-drawer__content">
+			<img id="appHeaderIcon" src="bmv080/img/iconPM.png" alt="app icon" />
+			<nav class="mdc-list">
+				<div id="appTitle" class="mdc-drawer__header-content
+						mdc-theme--text-primary-on-primary
+						mdc-theme--secondary-bg">
+					<div class="app-title">BMV080 PM Sensor</div>
+				</div>
+				<a id="drawerGauge" class="mdc-list-item" onClick="Controller.button('Gauge')"
+					tabindex="0" role="button">
+					<img src="bmv080/img/Odometer.png" alt="CurrentReading" height="20px" width="40px" />
+					<span class="mdc-list-item__text">Current Reading</span>
+				</a>
+				<a id="drawerRaw" class="mdc-list-item" onClick="Controller.button('Timeline')">
+					<img src="bmv080/img/chart-line-compress.png" alt="PastReadings" height="20px" width="40px" />
+					<span class="mdc-list-item__text">Past Readings</span>
+				</a>
+				<a id="drawerSettings" class="mdc-list-item" onClick="Controller.button('Settings')">
+					<img src="bmv080/img/Settings.png" alt="Settings" height="20px" width="40px" />
+					<span class="mdc-list-item__text">Settings</span>
+				</a>
+
+				<hr id="divider-new" class="mdc-list-divider">
+				<a id="drawerConnectSerial" class="mdc-list-item">
+					<img src="bmv080/img/usb.svg" alt="Connect" height="20px" width="38px" />
+					<span class="mdc-list-item__text" id="drawerConnectionSerialText">Connect Serial</span>
+				</a>
+				<a id="drawerConnectBLE" class="mdc-list-item">
+					<img src="bmv080/img/bluetooth-le.svg" alt="Connect" height="20px" width="38px" />
+					<span class="mdc-list-item__text" id="drawerConnectionBLEText">Connect BLE</span>
+				</a>
+				<a id="drawerCommand" class="mdc-list-item">
+					<img src="bmv080/img/sensor-air-quality.svg" alt="Streaming" height="20px" width="38px" />
+					<span class="mdc-list-item__text" id="drawerStreamingText">Start Streaming</span>
+				</a>
+				<a id="drawerExport" class="mdc-list-item">
+					<img src="bmv080/img/export.svg" alt="Export" height="20px" width="38px" />
+					<span class="mdc-list-item__text">Export Data</span>
+				</a>
+
+				<hr id="divider" class="mdc-list-divider">
+				<a id="drawerHelp" class="mdc-list-item" onClick="Controller.button('Help')">
+					<img src="bmv080/img/question-frame.png" alt="Help" height="20px" width="40px" />
+					<span class="mdc-list-item__text">Help</span>
+				</a>
+				<a id="drawerAbout" class="mdc-list-item" onClick="Controller.button('About')">
+					<img src="bmv080/img/info-i-circle.png" alt="About" height="20px" width="40px" />
+					<span class="mdc-list-item__text">About</span>
+				</a>
+
+
+			</nav>
+			<a id="currentVersion" onClick="Controller.button('Version')">
+				<span style="display:inline">Version</span>
+				<span id="settingsVersionValue"></span>
+			</a>
+		</div>
+	</aside>
+
+	<div class="mdc-drawer-scrim"></div>
+	<div class="mdc-drawer-app-content">
+
+		<header class="mdc-top-app-bar mdc-top-app-bar--fixed" id="app-bar" style="box-shadow : none">
+			<div class="mdc-top-app-bar__row mdc-top-app-bar__section--align-start mdc-theme--secondary-bg">
+				<section class="mdc-top-app-bar__section mdc-top-app-bar__section--align-start">
+					<button type="button" href="#" class="material-icons mdc-top-app-bar__navigation-icon">menu</button>
+					<span id="headline" class="mdc-top-app-bar__title">BMV080</span>
+				</section>
+			</div>
+			<img src="bmv080/img/Bosch_Supergraphic.png" alt="Brand Logo" height="10px " />
+		</header>
+
+		<main class="main-content" id="main-content">
+			<div id="topAppBar" class="mdc-top-app-bar--fixed-adjust">
+				<div id="userContent" class="tab"></div>
+
+				<div id="chartContainer" class="tab">
+					<div id="chartContent">
+						<div id="pmChartPM1" class="chart-large"></div>
+						<div id="pmChartPM25" class="chart-large"></div>
+						<div id="pmChartPM10" class="chart-large"></div>
+					</div>
+				</div>
+
+				<div id="gaugeContentWithObstrution" class="tab">
+					<div id="gaugeContent">
+						<div id="gaugePM1" class="gauge-large"></div>
+						<div id="gaugePM25" class="gauge-large"></div>
+						<div id="gaugePM10" class="gauge-large"></div>
+					</div>
+					<div id="headerID" class="obstructionHeader">Obstruction detected
+						<div id="obstructionButton" class="obstructionIcon" onclick="showObstructionInfo()"
+							style="color:#005691">
+							<img id="obstructionHelpIcon" src="bmv080/img/question-frame.png" alt="Help" />
+						</div>
+						<div id="obstructionContent">Measurement currently not possible as sensor is likely
+							obstructed by an object. Please check & remove obstructions for measurements to
+							continue.
+						</div>
+					</div>
+				</div>
+
+				<div id="settingsContent" class="tab">
+					<button onclick="toggleAdvancedSettings()" type="button" 
+						class="mdc-button custom-adv-settings-button-margin">Advanced Settings</button>
+					<div id="ObstructionDetectionSection">
+						<h2>Obstruction Notifier</h2>
+						<p class="explanation">Activate/deactivate obstruction notifier feature.</p>
+						<div id="obstructionDetection" class="mdc-select mdc-select--filled">
+    						<div class="mdc-select__anchor"
+    						    role="button"
+    						    aria-haspopup="listbox"
+    						    aria-expanded="false"
+    						    aria-labelledby="demo-label demo-selected-text-obstruction">
+    						<span class="mdc-select__ripple"></span>
+    						<span class="mdc-select__selected-text-container">
+    						  <span id="demo-selected-text-obstruction" class="mdc-select__selected-text">ON</span>
+    						</span>
+    						<span class="mdc-select__dropdown-icon">
+    						  <svg
+    						      class="mdc-select__dropdown-icon-graphic"
+    						      viewBox="7 10 10 5" focusable="false">
+    						    <polygon
+    						        class="mdc-select__dropdown-icon-inactive"
+    						        stroke="none"
+    						        fill-rule="evenodd"
+    						        points="7 10 12 15 17 10">
+    						    </polygon>
+    						    <polygon
+    						        class="mdc-select__dropdown-icon-active"
+    						        stroke="none"
+    						        fill-rule="evenodd"
+    						        points="7 15 12 10 17 15">
+    						    </polygon>
+    						  </svg>
+    						</span>
+    						<span class="mdc-line-ripple"></span>
+  						</div>
+  						<div id="obstructionConfig" class="mdc-select__menu mdc-menu mdc-menu-surface mdc-menu-surface--fullwidth">
+    						<ul class="mdc-deprecated-list" role="listbox" aria-label="Obstruction notification list">
+      						<li class="mdc-deprecated-list-item mdc-deprecated-list-item--selected" aria-selected="false" data-value="0" role="option">
+      						  <span class="mdc-deprecated-list-item__ripple"></span>
+      						  <span class="mdc-deprecated-list-item__text">
+      						    OFF
+      						  </span>
+      						</li>
+      						<li class="mdc-deprecated-list-item mdc-deprecated-list-item--selected" aria-selected="true" data-value="1" role="option">
+      						  <span class="mdc-deprecated-list-item__ripple"></span>
+      						  <span class="mdc-deprecated-list-item__text">
+      						    ON
+      						  </span>
+      						</li>
+						    </ul>
+						  </div>
+						</div>
+					</div>
+					<div id="MeasurementAlgorithmSection">
+						<h2>Measurement Algorithm</h2>
+						<p class="explanation">Selection of measurement algorithm.</p>
+						<div id="measurementAlgorithm" class="mdc-select mdc-select--filled">
+    						<div class="mdc-select__anchor"
+    						    role="button"
+    						    aria-haspopup="listbox"
+    						    aria-expanded="false"
+    						    aria-labelledby="demo-label demo-selected-text-measalgo">
+    						<span class="mdc-select__ripple"></span>
+    						<span class="mdc-select__selected-text-container">
+    						  <span id="demo-selected-text-measalgo" class="mdc-select__selected-text">High Precision</span>
+    						</span>
+    						<span class="mdc-select__dropdown-icon">
+    						  <svg
+    						      class="mdc-select__dropdown-icon-graphic"
+    						      viewBox="7 10 10 5" focusable="false">
+    						    <polygon
+    						        class="mdc-select__dropdown-icon-inactive"
+    						        stroke="none"
+    						        fill-rule="evenodd"
+    						        points="7 10 12 15 17 10">
+    						    </polygon>
+    						    <polygon
+    						        class="mdc-select__dropdown-icon-active"
+    						        stroke="none"
+    						        fill-rule="evenodd"
+    						        points="7 15 12 10 17 15">
+    						    </polygon>
+    						  </svg>
+    						</span>
+    						<span class="mdc-line-ripple"></span>
+  						</div>
+  						<div id="measurementAlgorithmConfig" class="mdc-select__menu mdc-menu mdc-menu-surface mdc-menu-surface--fullwidth">
+    						<ul class="mdc-deprecated-list" role="listbox" aria-label="Measurment algorithm list">
+      						<li class="mdc-deprecated-list-item" aria-selected="false" data-value="1" role="option">
+      						  <span class="mdc-deprecated-list-item__ripple"></span>
+      						  <span class="mdc-deprecated-list-item__text">
+      						    Fast Response Time
+      						  </span>
+      						</li>
+      						<li class="mdc-deprecated-list-item" aria-selected="false" data-value="2" role="option">
+      						  <span class="mdc-deprecated-list-item__ripple"></span>
+      						  <span class="mdc-deprecated-list-item__text">
+      						    Balanced
+      						  </span>
+      						</li>
+						    <li class="mdc-deprecated-list-item mdc-deprecated-list-item--selected" aria-selected="true" data-value="3" role="option">
+      						  <span class="mdc-deprecated-list-item__ripple"></span>
+      						  <span class="mdc-deprecated-list-item__text">
+      						    High Precision
+      						  </span>
+      						</li>
+      						</ul>
+						  </div>
+						</div>
+						<br><br><br>
+					</div>
+				</div>
+
+				<div id="versionContent" class="tab">
+					<div class="explanation">
+						<div id="versionInfoDiv" class="explanationCommon">
+
+							<div class="infoDiv">
+								<span class="versionTitle">Web App Version</span>
+								<span id="androidVersionLabel" class="versionLabel">N/A</span>
+							</div>
+							<hr>
+							<div class="infoDiv">
+								<span class="versionTitle">Sensor Driver</span>
+								<span id="sensorStackVersionLabel" class="versionLabel">Pending Measurement</span>
+							</div>
+							<hr>
+							<div id="infoAsicTrackerID" class="infoDiv">
+								<span class="versionTitle">Sensor ID</span>
+								<span id="asicTrackerIdChannel1Label" class="versionLabel">Pending Measurement</span>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div id="errorDialog" class="mdc-dialog" role="alertdialog" aria-modal="true"
+					aria-labelledby="error-title" aria-describedby="error-content">
+					<div class="mdc-dialog__container">
+						<div class="mdc-dialog__surface">
+							<!-- Title cannot contain leading whitespace due to mdc-typography-baseline-top() -->
+							<h2 class="mdc-dialog__title" id="error-title"><!--
+						-->Error<!--
+					--></h2>
+							<div class="mdc-dialog__content" id="error-content">
+								errorMessage
+							</div>
+							<footer class="mdc-dialog__actions">
+								<button type="button" class="mdc-button mdc-dialog__button" data-mdc-dialog-action="ok">
+									<span class="mdc-button__label">Ok</span>
+								</button>
+								<button type="button" class="mdc-button mdc-dialog__button abortButton"
+									data-mdc-dialog-action="abort">
+									<span class="mdc-button__label">Abort</span>
+								</button>
+							</footer>
+						</div>
+					</div>
+					<div class="mdc-dialog__scrim"></div>
+				</div>
+			</div>
+		</main>
+	</div>
+
+	<script src="libs/jquery-3.4.1.min.js"></script>
+	<script src="libs/material_components_web/material-components-web.js"></script>
+	<script src="libs/justgage-1.2.2/raphael-2.1.4.min.js"></script>
+	<script src="libs/justgage-1.2.2/justgage.js"></script>
+	<script src="libs/plotly/plotly-3.0.1.min.js"></script>
+
+	<script src="bmv080/licenses.js"></script>
+	<script src="bmv080/settings.js"></script>
+	<script src="bmv080/dutycycle_pallas.js"></script>
+	<script src="bmv080/gauge.js"></script>
+	<script src="bmv080/drawer.js"></script>
+	<script src="bmv080/plotly_time_chart_base.js"></script>
+	<script src="bmv080/plotly_time_chart_lines.js"></script>
+	<script src="bmv080/plotly_time_chart_markers.js"></script>
+	<script src="bmv080/timechart.js"></script>
+	<script src="bmv080/help_content.js"></script>
+
+	<script src="bmv080/device_connectivity.js"></script>
+	<script src="bmv080/udf/data_types.js"></script>
+	<script src="bmv080/udf/schema.js"></script>
+	<script src="bmv080/udf/udf_decoder.js"></script>
+	<script src="bmv080/udf_data_handling.js"></script>
+	<script src="bmv080/bmv080.js"></script>
+	<script src="bmv080/obstruction.js"></script>
+
+	<script>
+		
+		document.addEventListener('DOMContentLoaded', function() {
+			if (typeof settingsVersion !== 'undefined') {
+				document.getElementById('settingsVersionValue').textContent = ' ' + settingsVersion;
+			}
+		});
+	
+		document.getElementById("drawerConnectSerial").addEventListener('click', function () {
+			if (document.getElementById("drawerConnectionSerialText").innerHTML === "Connect Serial") {
+				Controller.connect(1, document.getElementById("drawerConnectionSerialText"));
+			}
+			else if (document.getElementById("drawerConnectionSerialText").innerHTML === "Disconnect Serial") {
+				Controller.disconnect(1, document.getElementById("drawerConnectionSerialText"));
+			}
+		});
+
+		document.getElementById("drawerConnectBLE").addEventListener('click', function () {
+			if (document.getElementById("drawerConnectionBLEText").innerHTML === "Connect BLE") {
+				Controller.connect(0, document.getElementById("drawerConnectionBLEText"));
+			}
+			else if (document.getElementById("drawerConnectionBLEText").innerHTML === "Disconnect BLE") {
+				Controller.disconnect(0, document.getElementById("drawerConnectionBLEText"));
+			}
+		});
+		document.getElementById("drawerCommand").addEventListener('click', function () {
+			if (!Controller.isConnected){
+				alert("Please connect a device first.");
+				return;
+			}
+			if (document.getElementById("drawerStreamingText").innerHTML === "Start Streaming") {
+				Controller.doStart();
+				Controller.state = "running";
+				Controller.sendSettings();
+				Controller.queueSendCommand("cfgse 239:1:1:0");
+				document.getElementById("drawerStreamingText").innerHTML = "Stop Streaming";
+				// ensure that the settings are disabled while a measurement is running
+				disableSettings();
+			} else if (document.getElementById("drawerStreamingText").innerHTML === "Stop Streaming") {
+				Controller.doStop();
+				document.getElementById("drawerStreamingText").innerHTML = "Start Streaming";
+				// ensure that the settings are enabled again after a measurement is stopped
+				enableSettings();
+			}
+		});
+
+		document.getElementById("drawerExport").addEventListener('click', function () {
+			exportData();
+		});
+		window.addEventListener('DOMContentLoaded', () => {
+			const chartIds = ['pmChartPM1', 'pmChartPM25', 'pmChartPM10']; // Replace with your actual chart IDs
+
+			chartIds.forEach(id => {
+				const chartEl = document.getElementById(id);
+				if (chartEl) {
+					const observer = new ResizeObserver(() => {
+						Plotly.Plots.resize(chartEl);
+					});
+					observer.observe(chartEl);
+				}
+			});
+		});
+
+	</script>
+</body>
+
+</html>

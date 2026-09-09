@@ -18,10 +18,14 @@ from .session_log import SessionLog
 
 def _fmt_hk(h) -> str:
     return (f"[{h.state_name:11s}] fired={h.fired:02b} "
-            f"p_amb={h.p_amb_pa / 100:8.1f} hPa p_ch={h.p_ch_pa / 100:8.1f} hPa "
+            f"p_amb={h.p_amb_pa / 100:8.1f} hPa "
             f"T1={h.temp1_cc / 100:6.1f} C RH1={h.rh1_cpct / 100:5.1f}% "
             f"duty={h.membrane_duty:3d}% drive={h.actuator_text} "
-            f"t+{h.mission_t_s}s link={h.link_text}")
+            f"t+{h.mission_t_s}s link={h.link_text}\n"
+            # Second line on purpose: four rails with volts and amps do not
+            # fit a terminal width alongside the state, and truncating the
+            # power picture is how a browning-out rail goes unnoticed.
+            f"{'':13s} rails {h.rail_text}")
 
 
 class ConsoleMonitor:

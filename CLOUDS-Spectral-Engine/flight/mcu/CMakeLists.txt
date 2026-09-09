@@ -28,6 +28,7 @@ add_executable(clouds_fsw_mcu
     src/core/sqwave.c
     src/hw/hw.c
     src/hw/bme280.c
+    src/hw/ina226.c
     src/hw/uart_io.c
 )
 

@@ -30,7 +30,14 @@ from spectro.calibration import Calibration, subtract_dark
 from spectro.driver import DriverError, open_driver, resolve_kind
 from spectro import processing as P
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+from . import style
+from .flight import FlightPanel
+from .sections import Section
+
+# Repo root, not this package: assets/, calibration*.json and the Calibrate
+# dialog's file pickers all live one level up now that the window moved into
+# clouds_ui/.
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 NAVY = "#01386a"
 # Readout font stack. Platform-native mono first: naming a font Qt cannot resolve
 # (Consolas on macOS/Linux) makes it scan every installed family to build the alias
@@ -146,8 +153,29 @@ def _fig_to_pixmap(fig):
 
 
 # ----------------------------------------------------------------------- engine
-class Engine(QtWidgets.QMainWindow):
-    def __init__(self, mock=False, kind=None, host=None):
+class CloudsWindow(QtWidgets.QMainWindow):
+    """The one operator interface: instrument on the left of the sidebar's
+    order of business, flight above it, one spectrum view serving both.
+
+    Two independent data paths meet here and are kept apart on purpose:
+
+    * the **detector** through ``spectro.driver`` - continuous, every pixel in
+      the channel window, and the only path that can *change* the hardware
+      (exposure). Bench only: reaching it from the ground depends on the Pi's
+      ``--bench-stream``, which is off in flight.
+    * the **downlink** through ``clouds_gse.Receiver`` - 1 Hz, mean-binned to
+      ~30 points per channel by the 2 kbit/s budget, plus housekeeping,
+      events and the command uplink. The only path that exists in flight.
+
+    Which one the spectrum shows is the operator's explicit choice
+    (``self.source``) and never changes by itself, because the failure this
+    guards against is reading a binned 1 Hz quick-look as a live instrument
+    view. The plot says which source it is drawing, always.
+    """
+
+    def __init__(self, mock=False, kind=None, host=None,
+                 receiver=None, commander=None, session=None,
+                 source="detector"):
         super().__init__()
         self.setWindowTitle("CLOUDS Spectral Engine")
         ico = os.path.join(HERE, "assets", "clouds.ico")
@@ -215,9 +243,28 @@ class Engine(QtWidgets.QMainWindow):
         self._oob_count = 0             # consecutive out-of-band ticks (servo persistence gate)
         self.logger = None
 
+        # --- flight half (downlink + uplink). All three may be None: the
+        # instrument-only bench case, where the flight sections are built but
+        # report "no telemetry" / "no command link" rather than being hidden.
+        # Hiding them would make the one UI silently become two again.
+        self.rx = receiver
+        self.commander = commander
+        self.session = session
+        #: "detector" | "downlink" - what the spectrum view is drawing.
+        self.source = source
+        self._src_bin = None        # quick-look bin factor, for the x axis
+        self._src_exp_ms = None     # exposure the downlinked frame was taken at
+
         self.timer = QtCore.QTimer(self)
         self.timer.setInterval(60)
         self.timer.timeout.connect(self._tick_live)
+        # Flight refresh is its own, slower timer: housekeeping arrives at
+        # 1 Hz, so polling it on the 60 ms acquisition tick would be 16x of
+        # nothing. Poll-based on purpose - the receiver's thread must never
+        # touch Qt (the old dashboard's rule, kept).
+        self.flight_timer = QtCore.QTimer(self)
+        self.flight_timer.setInterval(500)
+        self.flight_timer.timeout.connect(self._tick_flight)
 
         central = QtWidgets.QWidget()
         self.setCentralWidget(central)
@@ -226,9 +273,32 @@ class Engine(QtWidgets.QMainWindow):
         lay.setSpacing(0)
         lay.addWidget(self._build_view(), 1)
         lay.addWidget(self._build_panel(), 0)
+        self._update_source_banner()
         self._render_plot()
         self._update_stats()
-        self._set_hint("press Connect, then Run")
+        if self.rx is not None:
+            self.flight_timer.start()
+        self._set_hint("press Connect, then Run" if self.source == "detector"
+                       else "waiting for the downlink")
+
+    def fold_for(self, flight: bool) -> None:
+        """Open the half the operator asked for and fold the other away.
+
+        Both halves stay built and live either way - folding is display only -
+        so a bench session can open Commands without a restart, and a flight
+        session can still look at the instrument sections to read what the
+        settings were. What this decides is only what is on screen first.
+        """
+        flight_secs = set(self.flight.sections)
+        for sec in self._sections:
+            is_flight = sec in flight_secs
+            if sec.title_key in ("SPECTRUM SOURCE",):
+                continue                      # always visible: it steers the plot
+            sec.set_open(is_flight if flight else not is_flight)
+        # ...except the two that are long and rarely wanted at startup.
+        for sec in self._sections:
+            if sec.title_key in ("REFERENCE", "CALIBRATION", "EVENTS"):
+                sec.set_open(False)
 
     # ----------------------------------------------------------- branding bits
     def _load_futura(self):
@@ -292,7 +362,7 @@ class Engine(QtWidgets.QMainWindow):
         sb = QtWidgets.QVBoxLayout(self.stats_box)
         sb.setContentsMargins(12, 8, 12, 10)
         sb.setSpacing(4)
-        cap = QtWidgets.QLabel("LIVE")
+        cap = self.stats_cap = QtWidgets.QLabel("LIVE")
         cap.setStyleSheet("color:#8a97a3; font-size:9px; letter-spacing:2px;"
                           "border:0; background:transparent;")
         sb.addWidget(cap)
@@ -323,6 +393,11 @@ class Engine(QtWidgets.QMainWindow):
         self.plot.setMouseTracking(True)
         self.plot.installEventFilter(self)
 
+        # Which source the plot is drawing, stated in the plot. Top-centre so
+        # it is not something you have to go looking for in the sidebar.
+        self.src_banner = QtWidgets.QLabel(view)
+        self.src_banner.setAlignment(QtCore.Qt.AlignCenter)
+
         view.installEventFilter(self)
         return view
 
@@ -330,6 +405,7 @@ class Engine(QtWidgets.QMainWindow):
         if obj is getattr(self, "_view", None) and ev.type() == QtCore.QEvent.Resize:
             self.stats_box.adjustSize()
             self.stats_box.move(16, 16)
+            self._place_source_banner()
             self._render_plot()
         elif obj is getattr(self, "plot", None):
             if ev.type() == QtCore.QEvent.MouseMove:
@@ -344,11 +420,30 @@ class Engine(QtWidgets.QMainWindow):
 
     # ------------------------------------------------------------- the sidebar
     def _build_panel(self):
+        """One sidebar for both halves.
+
+        Flight sits above Instrument because that is the order of an
+        operator's attention in flight, and each group is a collapsible
+        `Section` so the whole thing fits a laptop screen: keep open the two
+        or three you are working with, fold the rest. Folding is display only
+        - a folded section keeps updating (see sections.Section).
+        """
         panel = QtWidgets.QWidget()
-        panel.setStyleSheet("background:#ffffff;")
-        v = QtWidgets.QVBoxLayout(panel)
-        v.setContentsMargins(20, 20, 20, 18)
-        v.setSpacing(12)
+        panel.setStyleSheet(f"background:{style.PANEL_BG};")
+        outer = QtWidgets.QVBoxLayout(panel)
+        outer.setContentsMargins(20, 20, 20, 18)
+        outer.setSpacing(12)
+        self._sections: list[Section] = []
+
+        def sec(title, open_=True):
+            """Start a new collapsible section and return its body layout, so
+            the group-building code below stays plain `v.addWidget` calls."""
+            s_ = Section(title, open_=open_)
+            self._sections.append(s_)
+            outer.addWidget(s_)
+            return s_.body
+
+        v = outer
 
         logo = QtWidgets.QLabel()
         logo.setStyleSheet("background:transparent;")
@@ -371,8 +466,34 @@ class Engine(QtWidgets.QMainWindow):
         rule.setStyleSheet("color:#dde3e9;")
         v.addWidget(rule)
 
+        # --- Source: what the spectrum view is drawing ---------------------
+        # Top of the sidebar because it governs the whole plot, and explicit
+        # because the two sources are different measurements of different
+        # fidelity that would otherwise look alike.
+        v = sec("Spectrum source")
+        self.rb_detector = QtWidgets.QRadioButton("Detector  -  continuous, "
+                                                  "full resolution")
+        self.rb_downlink = QtWidgets.QRadioButton("Downlink  -  1 Hz, binned")
+        for rb in (self.rb_detector, self.rb_downlink):
+            rb.setStyleSheet(style.radio_style())
+            v.addWidget(rb)
+        self.rb_detector.setChecked(self.source == "detector")
+        self.rb_downlink.setChecked(self.source == "downlink")
+        self.rb_detector.toggled.connect(
+            lambda on: self._on_source("detector") if on else None)
+        self.rb_downlink.toggled.connect(
+            lambda on: self._on_source("downlink") if on else None)
+        if self.rx is None:
+            self.rb_downlink.setEnabled(False)
+            self.rb_downlink.setToolTip("No downlink receiver in this session")
+
+        # --- Flight: housekeeping, commanding, actuators, events -----------
+        self.flight = FlightPanel(self.rx, self.commander, self.session)
+        self._sections.extend(self.flight.sections)
+        outer.addWidget(self.flight)
+
         # --- Device ---
-        v.addWidget(self._heading("Device"))
+        v = sec("Device")
         self.btn_connect = QtWidgets.QPushButton("Connect")
         self.btn_connect.setStyleSheet(self._primary_btn())
         self.btn_connect.clicked.connect(self._toggle_connect)
@@ -387,7 +508,7 @@ class Engine(QtWidgets.QMainWindow):
         v.addWidget(self.lbl_device)
 
         # --- Acquisition ---
-        v.addWidget(self._heading("Acquisition"))
+        v = sec("Acquisition")
         row, self.sl_exp, self.sp_exp = self._log_slider_row(
             "Integration  [ms]", 0.01, 1000, self.exposure_ms, self._on_exposure)
         v.addWidget(row)
@@ -429,7 +550,7 @@ class Engine(QtWidgets.QMainWindow):
         v.addWidget(self.chk_track)
 
         # --- Dark frame ---
-        v.addWidget(self._heading("Dark frame"))
+        v = sec("Dark frame")
         dk = QtWidgets.QHBoxLayout()
         self.btn_dark = QtWidgets.QPushButton("Capture dark")
         self.btn_dark.setStyleSheet(self._flat_btn())
@@ -453,7 +574,7 @@ class Engine(QtWidgets.QMainWindow):
         v.addWidget(self.offset_combo)
 
         # --- Reference (flat-field / 100% line) ---
-        v.addWidget(self._heading("Reference"))
+        v = sec("Reference", open_=False)
         rf = QtWidgets.QHBoxLayout()
         self.btn_ref = QtWidgets.QPushButton("Capture reference")
         self.btn_ref.setStyleSheet(self._flat_btn())
@@ -471,7 +592,7 @@ class Engine(QtWidgets.QMainWindow):
         v.addWidget(self.chk_flat)
 
         # --- View ---
-        v.addWidget(self._heading("View"))
+        v = sec("View")
         self.view_combo = QtWidgets.QComboBox()
         self.view_combo.setStyleSheet(self._combo_style())
         self.view_combo.addItems(["Counts  (both channels)",
@@ -518,14 +639,14 @@ class Engine(QtWidgets.QMainWindow):
         v.addLayout(zrow)
 
         # --- Calibration ---
-        v.addWidget(self._heading("Calibration"))
+        v = sec("Calibration", open_=False)
         self.btn_cal = QtWidgets.QPushButton("Calibrate wavelength...")
         self.btn_cal.setStyleSheet(self._flat_btn())
         self.btn_cal.clicked.connect(self._open_calibration)
         v.addWidget(self.btn_cal)
 
         # --- Export ---
-        v.addWidget(self._heading("Export"))
+        v = sec("Export")
         self.btn_export = QtWidgets.QPushButton("Export CSV + PDF")
         self.btn_export.setStyleSheet(self._flat_btn())
         self.btn_export.clicked.connect(self._export)
@@ -535,11 +656,12 @@ class Engine(QtWidgets.QMainWindow):
         self.chk_log.toggled.connect(self._on_log_toggle)
         v.addWidget(self.chk_log)
 
-        v.addStretch(1)
+        outer.addStretch(1)
         self.hint = QtWidgets.QLabel("")
         self.hint.setWordWrap(True)
-        self.hint.setStyleSheet("color:#b25e00; font-size:11px; font-style:italic;")
-        v.addWidget(self.hint)
+        self.hint.setStyleSheet(f"color:{style.HINT}; font-size:11px;"
+                                "font-style:italic;")
+        outer.addWidget(self.hint)
 
         scroll = QtWidgets.QScrollArea()
         scroll.setWidget(panel)
@@ -834,6 +956,7 @@ class Engine(QtWidgets.QMainWindow):
         self.lbl_device.setText("not connected")
         self.lbl_conn_error.setText(error)
         self._set_hint(hint)
+        self._update_source_banner()
 
     def _on_driver_error(self, exc) -> None:
         """A synchronous driver call (single-shot / auto-expose / dark or
@@ -870,6 +993,8 @@ class Engine(QtWidgets.QMainWindow):
         self.lbl_device.setText(
             f"{model}  SN {serial}\n{inst.get('detector', '')}  "
             f"{self.info.pixels}px  {port}".strip())
+        # The banner names the detector's state, so it follows it.
+        self._update_source_banner()
         if self._resume_on_reconnect:
             # was live when the link died (Ethernet or USB pull, either can
             # crash/drop the far end) - resume without waiting for the
@@ -939,12 +1064,29 @@ class Engine(QtWidgets.QMainWindow):
             self._stop()
             self.timer.stop()
             self._reconnect_timer.stop()
+            self.flight_timer.stop()
             if self._acq_worker is not None:
                 self._acq_worker.wait()
             if self._reconnect_worker is not None:
                 self._reconnect_worker.wait()
             if self.connected:
                 self.driver.close()
+        except Exception:
+            pass
+        # The flight half owns sockets and a session log; the summary is
+        # written here because it needs the receiver's gap counters, which die
+        # with the receiver.
+        try:
+            if self.session is not None:
+                gaps = self.rx.gaps if self.rx is not None else None
+                self.session.export_summary(
+                    self.session.hk_path.replace("_hk.csv", "_summary.json"),
+                    gaps)
+                self.session.close()
+            if self.commander is not None:
+                self.commander.close()
+            if self.rx is not None:
+                self.rx.stop()
         except Exception:
             pass
         super().closeEvent(ev)
@@ -1176,6 +1318,122 @@ class Engine(QtWidgets.QMainWindow):
         w, self._acq_worker = self._acq_worker, None
         w.deleteLater()
 
+    # ---------------------------------------------------------- flight half
+    def _tick_flight(self):
+        """Poll the downlink for housekeeping, events, and - only when the
+        operator has put the spectrum on the downlink - the quick-look trace.
+
+        Broad `except` on purpose: this is a QTimer slot, and PyQt5 aborts the
+        whole process on an unhandled exception in one. Losing the window is
+        strictly worse than a hint saying the refresh failed, and the flight
+        half must never be able to take the instrument half down with it.
+        """
+        if self.rx is None:
+            return
+        try:
+            self.flight.refresh()
+            if self.source == "downlink":
+                self._take_downlink_frame()
+        except Exception as e:                          # noqa: BLE001 - see above
+            self._set_hint(f"downlink refresh failed: {e}")
+
+    def _take_downlink_frame(self):
+        """Turn the latest quick-look into the same `last_proc` the detector
+        path produces, so one renderer draws both.
+
+        The counts are already the flight-scaled 16-bit values the MCU sent;
+        there is no dark subtraction, averaging or glitch filter to apply,
+        because none of that happened on the Pi. The instrument controls that
+        imply otherwise are ignored in this source rather than silently
+        pretending to work.
+        """
+        ql = getattr(self.rx, "quicklook", None)
+        if not ql:
+            return
+        r = self._ref()
+        proc, head = {}, None
+        for chan, payload in sorted(ql.items()):
+            counts = np.asarray(payload["counts"], dtype=float)
+            if not counts.size:
+                continue
+            if chan == 0:
+                proc["m"] = counts
+            elif chan == 1 and r is not None:
+                proc["r"] = counts
+            head = payload
+        if "m" not in proc or head is None:
+            return
+        if head["bin"] != self._src_bin:
+            # The banner quotes the binning, so it cannot be written once at
+            # switch time - until the first quick-look lands there is nothing
+            # to quote, and it must stop saying "waiting" when one does.
+            self._src_bin = head["bin"]
+            self._update_source_banner()
+        self._src_exp_ms = head["exposure_ms"]
+        # Saturation is worth having here too: the bench quick-look clips flat
+        # at saturation_count and the old dashboard gave no sign of it, so a
+        # clipped downlink looked like a real spectrum with a plateau.
+        allc = np.concatenate([v for v in proc.values()])
+        self._last_sat = (float(np.count_nonzero(
+            allc >= self.cal.saturation_count)) / allc.size) if allc.size else 0.0
+        self._last_glitch = 0.0
+        self.last_proc = proc
+        self._frame_n += 1
+        self._render_plot()
+        self._update_stats()
+
+    def _on_source(self, name):
+        """Switch what the spectrum view draws. Explicit only - nothing in the
+        app calls this on a link state change, because a plot that silently
+        becomes a different measurement is how a binned 1 Hz quick-look gets
+        read as a live instrument trace."""
+        if name == self.source:
+            return
+        self.source = name
+        self.last_proc = None                # never mix the two on one axis
+        self._last_sat = self._last_glitch = 0.0
+        self._src_bin = self._src_exp_ms = None
+        self._frame_n = 0
+        self._update_source_banner()
+        if name == "downlink":
+            self._take_downlink_frame()
+            self._set_hint("spectrum follows the downlink - 1 Hz, binned")
+        else:
+            self._set_hint("spectrum follows the detector"
+                           + ("" if self.connected else " - press Connect"))
+        self._render_plot()
+        self._update_stats()
+
+    def _update_source_banner(self):
+        """Say which source the plot is drawing, in the plot. The whole reason
+        the old two-app split was documented as a trap is that people could
+        not tell these apart by looking."""
+        if self.source == "downlink":
+            b = self._src_bin
+            txt = "DOWNLINK"
+            det = (f"1 Hz  mean-binned {b}x  -  not an instrument view"
+                   if b else "1 Hz  binned  -  waiting for a quick-look")
+            col, bg = "#8a4b00", "#fdf1e2"
+        else:
+            txt = "DETECTOR"
+            det = (f"continuous  full resolution  {self.kind}"
+                   if self.connected else "not connected")
+            col, bg = NAVY, "#e8f0f8"
+        self.src_banner.setText(f"  {txt}   {det}  ")
+        self.src_banner.setStyleSheet(
+            f"color:{col}; background:{bg}; border:1px solid {col};"
+            "border-radius:4px; font-size:10px; font-weight:bold;"
+            "letter-spacing:1px; padding:3px 6px;")
+        self.src_banner.adjustSize()
+        self._place_source_banner()
+
+    def _place_source_banner(self):
+        view = getattr(self, "_view", None)
+        if view is None or not hasattr(self, "src_banner"):
+            return
+        self.src_banner.move(max(16, (view.width() - self.src_banner.width()) // 2), 14)
+        self.src_banner.raise_()
+
     def _ref(self):
         """The reference channel, or None on a single-channel instrument."""
         for ch in self.cal.channels:
@@ -1238,6 +1496,44 @@ class Engine(QtWidgets.QMainWindow):
         self._set_hint("dark cleared")
 
     # ------------------------------------------------------------- rendering
+    # ------------------------------------------------- what the x axis means
+    # The two sources give a channel's counts on different grids: the detector
+    # returns every pixel in the channel's window, the downlink returns that
+    # window mean-binned to ~30 points. So a trace's x values follow the trace
+    # length rather than the calibration's full pixel array - line them up
+    # with `m.wavelengths` and a 29-point quick-look plots against 236 nm of
+    # axis compressed into the first 29 pixels.
+
+    def _trace_px(self, ch, n):
+        """Pixel centres for an n-point trace on channel `ch`."""
+        lo, hi = ch.pixel_window
+        if n >= (hi - lo + 1):                    # full resolution: as calibrated
+            return ch.pixels
+        b = self._src_bin or 1                    # binned: centre of each bin
+        return lo + np.arange(n) * b + (b - 1) / 2.0
+
+    def _trace_nm(self, ch, n):
+        lo, hi = ch.pixel_window
+        if n >= (hi - lo + 1):
+            return ch.wavelengths
+        return ch.pixel_to_nm(self._trace_px(ch, n))
+
+    def _trace_sample(self, ch, data, px):
+        """Counts on an n-point trace of `ch` at detector pixel `px`, or None
+        when the pixel is outside the channel window."""
+        if data is None or not data.size:
+            return None
+        lo, hi = ch.pixel_window
+        if not (lo <= px <= hi):
+            return None
+        i = int(np.argmin(np.abs(self._trace_px(ch, data.size) - px)))
+        return float(data[i])
+
+    def _trace_x(self, ch, n):
+        """x values for an n-point trace, in whichever axis is selected."""
+        return self._trace_nm(ch, n) if self.axis == "nm" \
+            else self._trace_px(ch, n)
+
     def _render_plot(self):
         view = getattr(self, "_view", None)
         if view is None:
@@ -1272,7 +1568,7 @@ class Engine(QtWidgets.QMainWindow):
             rc = self.last_proc.get("r")
             has_ref = r is not None and rc is not None
             if self.view == "counts" or not has_ref:
-                mx = m.wavelengths if self.axis == "nm" else m.pixels
+                mx = self._trace_x(m, mc.size)
                 flat = self.flat and self.reference_proc is not None
                 md = P.reference_ratio(mc, self.reference_proc["m"]) if flat else mc
                 if self.smooth_win:
@@ -1280,7 +1576,7 @@ class Engine(QtWidgets.QMainWindow):
                 ax.plot(mx, md, color=C_MEAS, lw=1.3, label="measurement  Ch1")
                 rd = None
                 if has_ref:
-                    rx = r.wavelengths if self.axis == "nm" else r.pixels
+                    rx = self._trace_x(r, rc.size)
                     rd = (P.reference_ratio(rc, self.reference_proc["r"])
                           if flat and self.reference_proc.get("r") is not None else rc)
                     if self.smooth_win:
@@ -1302,13 +1598,18 @@ class Engine(QtWidgets.QMainWindow):
                             lambda v: np.sqrt(np.clip(v, 0, None)), np.square))
                 ax.legend(loc="upper right", fontsize=7, framealpha=0.9)
                 if self.show_peak:
-                    self._draw_peak(ax, mx, md, m.wavelengths, C_MEAS)
+                    self._draw_peak(ax, mx, md, self._trace_nm(m, md.size),
+                                    C_MEAS)
                     if has_ref:
-                        self._draw_peak(ax, rx, rd, r.wavelengths, C_REF, minor=True)
+                        self._draw_peak(ax, rx, rd,
+                                        self._trace_nm(r, rd.size), C_REF,
+                                        minor=True)
             else:
-                grid = P.common_grid(m.wavelengths, r.wavelengths, 256)
-                mi = P.resample(m.wavelengths, mc, grid)
-                ri = P.resample(r.wavelengths, rc, grid)
+                mnm = self._trace_nm(m, mc.size)
+                rnm = self._trace_nm(r, rc.size)
+                grid = P.common_grid(mnm, rnm, 256)
+                mi = P.resample(mnm, mc, grid)
+                ri = P.resample(rnm, rc, grid)
                 yv = P.transmission(mi, ri) if self.view == "transmission" else P.absorbance(mi, ri)
                 if self.smooth_win:
                     yv = P.smooth(yv, self.smooth_win, self.smooth_mode)
@@ -1422,26 +1723,40 @@ class Engine(QtWidgets.QMainWindow):
             return
         m = self.cal.by_role("measurement")
         r = self._ref()
+        mproc = self.last_proc["m"]
         rproc = self.last_proc.get("r")
+        if mproc is None or not mproc.size:
+            self.cursor_box.hide()
+            return
+        # Index each trace on its own grid. On the downlink a channel is ~30
+        # binned points, so a pixel offset into the channel window names the
+        # wrong sample and, past the 30th pixel, no sample at all.
         if g["axis"] == "nm":
-            mi = int(np.argmin(np.abs(m.wavelengths - dx)))
-            px = m.pixel_window[0] + mi
-            nm_here = float(m.wavelengths[mi])
-            mc = float(self.last_proc["m"][mi])
+            mx = self._trace_nm(m, mproc.size)
+            mi = int(np.argmin(np.abs(mx - dx)))
+            px = int(round(float(self._trace_px(m, mproc.size)[mi])))
+            nm_here = float(mx[mi])
+            mc = float(mproc[mi])
             rc = None
-            if r is not None and rproc is not None:
-                rc = float(rproc[int(np.argmin(np.abs(r.wavelengths - dx)))])
+            if r is not None and rproc is not None and rproc.size:
+                rx = self._trace_nm(r, rproc.size)
+                rc = float(rproc[int(np.argmin(np.abs(rx - dx)))])
         else:
             px = int(round(dx))
-            nm_here = float(m.pixel_to_nm(px))
-            mw = m.pixel_window
-            mc = float(self.last_proc["m"][px - mw[0]]) if mw[0] <= px <= mw[1] else None
-            rc = None
-            if r is not None and rproc is not None and r.pixel_window[0] <= px <= r.pixel_window[1]:
-                rc = float(rproc[px - r.pixel_window[0]])
+            # A channel's calibration only describes its own window; the dark
+            # gap between the two is not a wavelength, and extrapolating Ch1
+            # across it printed confident nonsense (px 1833 as 3945 nm).
+            nm_here = None
+            for ch in (m, r):
+                if ch is not None and ch.pixel_window[0] <= px <= ch.pixel_window[1]:
+                    nm_here = float(ch.pixel_to_nm(px))
+                    break
+            mc = self._trace_sample(m, mproc, px)
+            rc = self._trace_sample(r, rproc, px) if r is not None else None
         ms = f"{mc:7.0f}" if mc is not None else "     --"
         rs = f"{rc:7.0f}" if rc is not None else "     --"
-        self.cursor_lbl.setText(f"px {px:4d}\n{nm_here:6.1f} nm\nmeas {ms}\nref  {rs}")
+        nms = f"{nm_here:6.1f} nm" if nm_here is not None else "     -- nm"
+        self.cursor_lbl.setText(f"px {px:4d}\n{nms}\nmeas {ms}\nref  {rs}")
         self.cursor_box.adjustSize()
         self.cursor_box.move(max(20, self._view.width() - self.cursor_box.width() - 16), 16)
         self.cursor_box.show()
@@ -1455,27 +1770,50 @@ class Engine(QtWidgets.QMainWindow):
             r = self._ref()
             mc = self.last_proc["m"]; rc = self.last_proc.get("r")
             mi = P.robust_peak_index(mc) if mc.size else 0      # glitch-robust peak readout
-            m_nm = float(m.wavelengths[mi]) if mc.size else 0.0
+            # Index the trace's own wavelength grid: on the downlink a channel
+            # is ~30 binned points, so m.wavelengths[mi] would name a
+            # wavelength from the wrong end of the window.
+            m_nm = float(self._trace_nm(m, mc.size)[mi]) if mc.size else 0.0
             m_pk = float(mc[mi]) if mc.size else 0.0
             if r is not None and rc is not None and rc.size:
                 ri = P.robust_peak_index(rc)
-                ref_line = f"ref   {float(rc[ri]):6.0f} @ {float(r.wavelengths[ri]):5.1f} nm\n"
+                r_nm = float(self._trace_nm(r, rc.size)[ri])
+                ref_line = f"ref   {float(rc[ri]):6.0f} @ {r_nm:5.1f} nm\n"
             else:
                 ref_line = "ref     --  single channel\n"
             sat = self._last_sat * 100.0
             clip = "  CLIPPING" if self._last_sat > 0.001 else ""
-            glitch = self._last_glitch * 100.0
-            gl = f"\nUSB   {glitch:4.1f} % glitch" if glitch > 0.2 else ""
-            self.stats.setText(
-                f"meas  {m_pk:6.0f} @ {m_nm:5.1f} nm\n"
-                + ref_line +
-                f"mean  {float(np.mean(mc)):6.0f}   sd {float(np.std(mc)):5.0f}\n"
-                f"sat   {sat:5.1f} %{clip}\n"
-                f"exp   {self.exposure_ms:g} ms  x{self.navg}"
-                + ("  TRACK" + (" " + self._track_msg if self._track_msg else "") if self._track else "")
-                + f"{gl}\n"
-                f"fps   {self._fps:4.1f}   frame #{self._frame_n}"
-                + (f"  drop {self._dropped}" if self._dropped else ""))
+            head = (f"meas  {m_pk:6.0f} @ {m_nm:5.1f} nm\n"
+                    + ref_line
+                    + f"mean  {float(np.mean(mc)):6.0f}   "
+                      f"sd {float(np.std(mc)):5.0f}\n"
+                    + f"sat   {sat:5.1f} %{clip}\n")
+            if self.source == "downlink":
+                # None of the acquisition controls applied to this frame - it
+                # was taken on the Pi and binned for the budget - so reporting
+                # this window's exposure and averaging here would be a lie.
+                age = self.rx.hk_age_s() if self.rx is not None else None
+                self.stats.setText(
+                    head
+                    + f"exp   {self._src_exp_ms or 0:g} ms  on the Pi\n"
+                    + f"bin   {self._src_bin or 0}x  mean\n"
+                    + f"hk    {'-' if age is None else f'{age:.1f} s'} old"
+                      f"   packet #{self._frame_n}")
+            else:
+                glitch = self._last_glitch * 100.0
+                gl = f"\nUSB   {glitch:4.1f} % glitch" if glitch > 0.2 else ""
+                self.stats.setText(
+                    head
+                    + f"exp   {self.exposure_ms:g} ms  x{self.navg}"
+                    + ("  TRACK" + (" " + self._track_msg
+                                    if self._track_msg else "")
+                       if self._track else "")
+                    + f"{gl}\n"
+                    + f"fps   {self._fps:4.1f}   frame #{self._frame_n}"
+                    + (f"  drop {self._dropped}" if self._dropped else ""))
+        if hasattr(self, "stats_cap"):
+            self.stats_cap.setText("LIVE" if self.source == "detector"
+                                   else "QUICK-LOOK")
         self.stats_box.adjustSize()
         self.stats_box.move(16, 16)
         self.stats_box.raise_()
@@ -1664,37 +2002,3 @@ class _CalibrationDialog(QtWidgets.QDialog):
     def closeEvent(self, ev):
         self.engine._cal_cb = None
         super().closeEvent(ev)
-
-
-def main():
-    mock = "--mock" in sys.argv
-    kind = "edu" if "--edu" in sys.argv else None
-    # --net HOST[:PORT]: detector on another machine running spectro.net_server
-    host = None
-    if "--net" in sys.argv:
-        i = sys.argv.index("--net")
-        if i + 1 >= len(sys.argv):
-            raise SystemExit("--net needs HOST[:PORT], e.g. --net 192.168.100.10")
-        host, kind = sys.argv[i + 1], "net"
-    if sys.platform == "win32":
-        try:
-            import ctypes
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("CLOUDS.SpectralEngine")
-        except Exception:
-            pass
-    print("[CLOUDS] starting the Spectral Engine ...")
-    app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
-    ico = os.path.join(HERE, "assets", "clouds.ico")
-    if os.path.exists(ico):
-        app.setWindowIcon(QtGui.QIcon(ico))
-    win = Engine(mock=mock, kind=kind, host=host)
-    win.show()
-    win._connect()
-    if win.connected:
-        win._start()
-    print("[CLOUDS] ready - window open.")
-    sys.exit(app.exec_())
-
-
-if __name__ == "__main__":
-    main()

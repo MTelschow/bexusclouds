@@ -125,6 +125,11 @@ static void test_hk_pack_layout(void)
     hk.fired = 0x01;
     hk.temp1_cc = -5512;      /* -55.12 C */
     hk.p_amb_pa = 5300;
+    hk.rail_mv[0] = 24012;    /* V_in */
+    hk.shunt_raw[0] = 514;    /* +1.285 mV -> 128.5 mA over 10 mOhm */
+    hk.rail_mv[1] = RAIL_MV_INVALID;  /* 24 V: no monitor fitted */
+    hk.rail_mv[2] = 5003;
+    hk.shunt_raw[2] = -40;    /* current can flow either way: sign survives */
     hk.mission_t_s = 4210;
     hk_pack(&hk, out);
     TEST_ASSERT_EQUAL_UINT8(5, out[0]);
@@ -132,12 +137,26 @@ static void test_hk_pack_layout(void)
     /* temp1_cc LE at offset 6: -5512 = 0xEA78 */
     TEST_ASSERT_EQUAL_HEX8(0x78, out[6]);
     TEST_ASSERT_EQUAL_HEX8(0xEA, out[7]);
-    /* p_amb_pa LE u32 at offset 16 */
-    TEST_ASSERT_EQUAL_HEX8(0xB4, out[16]); /* 5300 = 0x14B4 */
-    TEST_ASSERT_EQUAL_HEX8(0x14, out[17]);
-    /* mission_t_s at offset 40 */
-    TEST_ASSERT_EQUAL_HEX8(0x72, out[40]); /* 4210 = 0x1072 */
-    TEST_ASSERT_EQUAL_HEX8(0x10, out[41]);
+    /* p_amb_pa LE u32 at offset 14, where dropping rh2_cpct moved it */
+    TEST_ASSERT_EQUAL_HEX8(0xB4, out[14]); /* 5300 = 0x14B4 */
+    TEST_ASSERT_EQUAL_HEX8(0x14, out[15]);
+    /* rail_mv[] LE u16 x4 at offset 30, after the two IMU vectors */
+    TEST_ASSERT_EQUAL_HEX8(0xCC, out[30]); /* 24012 = 0x5DCC */
+    TEST_ASSERT_EQUAL_HEX8(0x5D, out[31]);
+    /* an unreadable or unfitted rail is the sentinel on the wire, never 0 - a
+     * rail that genuinely sits at 0 mV must stay distinguishable from one
+     * with no reading behind it */
+    TEST_ASSERT_EQUAL_HEX8(0xFF, out[32]);
+    TEST_ASSERT_EQUAL_HEX8(0xFF, out[33]);
+    /* shunt_raw[] LE i16 x4 at offset 38 */
+    TEST_ASSERT_EQUAL_HEX8(0x02, out[38]); /* 514 = 0x0202 */
+    TEST_ASSERT_EQUAL_HEX8(0x02, out[39]);
+    TEST_ASSERT_EQUAL_HEX8(0xD8, out[42]); /* -40 = 0xFFD8, two's complement */
+    TEST_ASSERT_EQUAL_HEX8(0xFF, out[43]);
+    /* mission_t_s at offset 50 */
+    TEST_ASSERT_EQUAL_HEX8(0x72, out[50]); /* 4210 = 0x1072 */
+    TEST_ASSERT_EQUAL_HEX8(0x10, out[51]);
+    TEST_ASSERT_EQUAL_UINT32(54, (uint32_t)HK_SIZE);
 }
 
 /* ---- config ------------------------------------------------------------ */
@@ -523,7 +542,7 @@ static void run_sim(sequencer_t *s, cfg_t *cfg, uint32_t from_s,
 {
     (void)cfg;
     for (uint32_t t = from_s; t < to_s; t++)
-        seq_step(s, (uint64_t)t * 1000u, t, profile_pa(t), profile_pa(t));
+        seq_step(s, (uint64_t)t * 1000u, t, profile_pa(t));
 }
 
 static void test_full_autonomous_flight(void)
@@ -641,7 +660,7 @@ static void test_self_test_failure_goes_safe(void)
     M.self_test_result = false;
     cfg_defaults(&cfg);
     seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
-    seq_step(&s, 1000, 1, 101325, 101325);
+    seq_step(&s, 1000, 1, 101325);
     TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
     TEST_ASSERT_EQUAL_INT(0, M.fires[1] + M.fires[2]);
 }
@@ -676,7 +695,7 @@ static void test_abort_goes_safe_without_firing(void)
     seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
     run_sim(&s, &cfg, 0, 1000);
     seq_command(&s, 1000000ull, 1000, CMD_ABORT, 0, 0, &cfg);
-    seq_step(&s, 1001000ull, 1001, profile_pa(1001), profile_pa(1001));
+    seq_step(&s, 1001000ull, 1001, profile_pa(1001));
     TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
     TEST_ASSERT_EQUAL_INT(0, M.fires[1] + M.fires[2]);
     TEST_ASSERT_EQUAL_INT(0, M.membrane_duty);
@@ -692,11 +711,11 @@ static void test_ground_release_override(void)
     seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
     run_sim(&s, &cfg, 0, 1000); /* ASCENT, before float */
     seq_command(&s, 1000000ull, 1000, CMD_RELEASE, 1, 0, &cfg);
-    seq_step(&s, 1001000ull, 1001, profile_pa(1001), profile_pa(1001));
+    seq_step(&s, 1001000ull, 1001, profile_pa(1001));
     TEST_ASSERT_EQUAL_INT(1, M.fires[1]); /* early release accepted (S.2) */
     /* duplicate command must not double-fire */
     seq_command(&s, 1002000ull, 1002, CMD_RELEASE, 1, 0, &cfg);
-    seq_step(&s, 1003000ull, 1003, profile_pa(1003), profile_pa(1003));
+    seq_step(&s, 1003000ull, 1003, profile_pa(1003));
     TEST_ASSERT_EQUAL_INT(1, M.fires[1]);
 }
 
@@ -708,7 +727,7 @@ static void test_start_command_accelerates_standby(void)
     mock_reset();
     cfg_defaults(&cfg);
     seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
-    seq_step(&s, 1000, 1, 101325, 101325); /* INIT -> STANDBY */
+    seq_step(&s, 1000, 1, 101325); /* INIT -> STANDBY */
     seq_command(&s, 2000, 2, CMD_START, 0, 0, &cfg);
     TEST_ASSERT_EQUAL_INT(ST_ASCENT, s.state);
     TEST_ASSERT_TRUE(s.mission_start_s > 0);
@@ -724,12 +743,11 @@ static void test_float_timer_fallback(void)
     /* pressure never satisfies the float criterion: stuck at 60000 Pa */
     seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
     for (uint32_t t = 0; t < 700; t++)
-        seq_step(&s, (uint64_t)t * 1000u, t, t < 600 ? 101325 : 60000,
-                 101325);
+        seq_step(&s, (uint64_t)t * 1000u, t, t < 600 ? 101325 : 60000);
     TEST_ASSERT_EQUAL_INT(ST_ASCENT, s.state);
     /* T_FLOAT_S (7200 s) after launch: fallback trips (S.1) */
     for (uint32_t t = 700; t < 700 + 7300; t++)
-        seq_step(&s, (uint64_t)t * 1000u, t, 60000, 101325);
+        seq_step(&s, (uint64_t)t * 1000u, t, 60000);
     TEST_ASSERT_TRUE(s.autonomy.float_detected);
     TEST_ASSERT_TRUE(s.state >= ST_SEAL);
 }
@@ -758,7 +776,7 @@ static void run_sim_pulsed(sequencer_t *s, uint32_t from_s, uint32_t to_s)
         pulse_service(&MP, SIM_MS, VALVE_PULSE_MS, rec_drive, NULL);
         if (SIM_MS % 1000u == 0) {
             uint32_t t = (uint32_t)(SIM_MS / 1000u);
-            seq_step(s, SIM_MS, t, profile_pa(t), profile_pa(t));
+            seq_step(s, SIM_MS, t, profile_pa(t));
         }
     }
 }
@@ -778,8 +796,7 @@ static void test_seal_check_waits_for_the_valve_drive(void)
     for (SIM_MS = 0; SIM_MS <= 20000; SIM_MS += LOOP_MS) {
         pulse_service(&MP, SIM_MS, VALVE_PULSE_MS, rec_drive, NULL);
         if (SIM_MS % 1000u == 0)
-            seq_step(&s, SIM_MS, 6000 + (uint32_t)(SIM_MS / 1000u), 5000,
-                     5000);
+            seq_step(&s, SIM_MS, 6000 + (uint32_t)(SIM_MS / 1000u), 5000);
     }
 
     /* one close command, not a burst of retries fired at the queue */
@@ -827,7 +844,7 @@ static void test_linkloss_latch_and_recovery(void)
     seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
     seq_command(&s, 1000, 1, CMD_PING, 0, 0, &cfg); /* link alive */
     for (uint32_t t = 2; t < 700; t++)
-        seq_step(&s, (uint64_t)t * 1000u, t, 101325, 101325);
+        seq_step(&s, (uint64_t)t * 1000u, t, 101325);
     TEST_ASSERT_TRUE(s.autonomy.autonomous_latched); /* > 600 s silent */
     seq_command(&s, 700000ull, 700, CMD_PING, 0, 0, &cfg);
     TEST_ASSERT_FALSE(s.autonomy.autonomous_latched); /* link back */
@@ -1114,7 +1131,7 @@ static void test_command_results_report_what_happened(void)
     mock_reset();
     cfg_defaults(&cfg);
     seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
-    seq_step(&s, 1000, 1, 101325, 101325); /* INIT -> STANDBY */
+    seq_step(&s, 1000, 1, 101325); /* INIT -> STANDBY */
 
     TEST_ASSERT_EQUAL_UINT8(ACK_OK,
                             seq_command(&s, 2000, 2, CMD_PING, 0, 0, &cfg));
@@ -1151,7 +1168,7 @@ static void test_manual_membrane_drive_and_stop(void)
     mock_reset();
     cfg_defaults(&cfg);
     seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
-    seq_step(&s, 1000, 1, 101325, 101325); /* INIT -> STANDBY, on the pad */
+    seq_step(&s, 1000, 1, 101325); /* INIT -> STANDBY, on the pad */
 
     /* On the pad is exactly where this is used: bench bring-up. No arm. */
     TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 2000, 2, CMD_MEMBRANE,
@@ -1182,7 +1199,7 @@ static void test_manual_disperse_runs_one_motor_pulse(void)
     mock_reset();
     cfg_defaults(&cfg);
     seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
-    seq_step(&s, 1000, 1, 101325, 101325);
+    seq_step(&s, 1000, 1, 101325);
 
     TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 2000, 2, CMD_DISPERSE,
                                                 1, 0, &cfg));
@@ -1202,7 +1219,7 @@ static void test_manual_disperse_runs_one_motor_pulse(void)
     no_motor = mock_ops;
     no_motor.disperse = NULL;
     seq_init(&s, &cfg, &no_motor, NULL, 0, 0);
-    seq_step(&s, 1000, 1, 101325, 101325);
+    seq_step(&s, 1000, 1, 101325);
     TEST_ASSERT_EQUAL_UINT8(ACK_REJECTED, seq_command(&s, 2000, 2,
                                                       CMD_DISPERSE, 1, 0,
                                                       &cfg));
@@ -1219,7 +1236,7 @@ static void test_manual_drives_are_refused_after_an_abort(void)
     seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
     run_sim(&s, &cfg, 0, 1000);
     seq_command(&s, 1000000ull, 1000, CMD_ABORT, 0, 0, &cfg);
-    seq_step(&s, 1001000ull, 1001, profile_pa(1001), profile_pa(1001));
+    seq_step(&s, 1001000ull, 1001, profile_pa(1001));
     TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
 
     /* SAFE means the actuators are off and stay off: the panel must not be
@@ -1245,7 +1262,7 @@ static void test_sequencer_membrane_duty_tracks_the_automatic_drive(void)
     seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
     run_sim(&s, &cfg, 0, 1000);
     seq_command(&s, 1000000ull, 1000, CMD_RELEASE, 1, 0, &cfg);
-    seq_step(&s, 1001000ull, 1001, profile_pa(1001), profile_pa(1001));
+    seq_step(&s, 1001000ull, 1001, profile_pa(1001));
     /* HK read the duty as a constant 0 while the solenoid oscillated until
      * the sequencer started recording what it commanded. */
     TEST_ASSERT_EQUAL_UINT8((uint8_t)cfg_get(&cfg, PARAM_MEMBRANE_DUTY),
@@ -1264,11 +1281,11 @@ static void test_release_already_fired_is_rejected_not_silent(void)
     run_sim(&s, &cfg, 0, 1000); /* ASCENT */
     TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 1000000ull, 1000,
                                                 CMD_RELEASE, 1, 0, &cfg));
-    seq_step(&s, 1001000ull, 1001, profile_pa(1001), profile_pa(1001));
+    seq_step(&s, 1001000ull, 1001, profile_pa(1001));
     TEST_ASSERT_EQUAL_INT(1, M.fires[1]);
     TEST_ASSERT_EQUAL_UINT8(ACK_REJECTED, seq_command(&s, 1002000ull, 1002,
                                                       CMD_RELEASE, 1, 0, &cfg));
-    seq_step(&s, 1003000ull, 1003, profile_pa(1003), profile_pa(1003));
+    seq_step(&s, 1003000ull, 1003, profile_pa(1003));
     TEST_ASSERT_EQUAL_INT(1, M.fires[1]); /* still exactly one fire */
 }
 
@@ -1281,7 +1298,7 @@ static void test_ground_link_latch_refreshes_without_the_sequencer(void)
     cfg_defaults(&cfg);
     seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
     for (uint32_t t = 1; t < 700; t++)
-        seq_step(&s, (uint64_t)t * 1000u, t, 101325, 101325);
+        seq_step(&s, (uint64_t)t * 1000u, t, 101325);
     TEST_ASSERT_TRUE(s.autonomy.autonomous_latched);
     /* An ARM is answered by core/link and never reaches seq_command, but it
      * is still ground traffic - the latch must clear on it (O.2). */

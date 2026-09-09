@@ -269,7 +269,7 @@ def main(argv=None) -> int:
     ap.add_argument("--bench-stream", nargs="?", type=int, const=4010,
                     default=None, metavar="PORT",
                     help="bench only: also serve acquired frames on PORT "
-                         "(default 4010) so `clouds_spectral.py --net HOST` "
+                         "(default 4010) so `clouds_ui --net HOST` "
                          "runs live alongside the GSE dashboard. Off in flight.")
     args = ap.parse_args(argv)
 

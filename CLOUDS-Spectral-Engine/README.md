@@ -28,11 +28,15 @@ Qt patterns of the *CLOUDS Raytracing Engine*.
 
 ## Quick start
 
-* Desktop: double-click **CLOUDS Spectral Engine** (`run_clouds_spectral.bat`,
-  which pins the correct Python interpreter).
-* Terminal: `python clouds_spectral.py`
-* Single-channel EDU board: `python clouds_spectral.py --edu`
-* No hardware? `python clouds_spectral.py --mock` runs against a synthetic Duo.
+* Desktop (Windows): double-click **CLOUDS Spectral Engine**
+  (`run_clouds_spectral.bat`, which pins the correct Python interpreter).
+* Terminal (macOS / Linux): `./run_clouds_ui.sh` — picks the repo venv, sets
+  the three `PYTHONPATH` entries, and passes every flag below straight
+  through. Both are thin wrappers; the app itself is `python -m clouds_ui`.
+* Terminal, by hand: `PYTHONPATH=.:gse:flight/pi python -m clouds_ui`
+* Single-channel EDU board: `python -m clouds_ui --edu`
+* No hardware? `python -m clouds_ui --mock` runs against a synthetic Duo.
+* Ground station (downlink only, no detector): `python -m clouds_ui --flight`
 * Fresh machine: Python 3.13 + `pip install -r requirements.txt`.
 * On Linux (incl. the Pi) build the vendor library first:
   `drivers/e9u_LSMD_LIB_Linux/install.sh` — see that folder's README.
@@ -51,7 +55,7 @@ Qt patterns of the *CLOUDS Raytracing Engine*.
 
 | Path                                            | Role                                                                                    |
 | ----------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `clouds_spectral.py`                          | Qt control panel + live dual-trace spectrum view                                        |
+| `clouds_ui/`                                  | **the** operator interface: one window, instrument controls + flight downlink/commanding |
 | `spectro/driver.py`                           | `SpectrometerDriver` interface + `open_driver(mock=, kind=)` factory                |
 | `spectro/eureca_driver.py`                    | ctypes wrapper over the Duo vendor library — Windows DLL or Linux`.so`               |
 | `spectro/eureca_edu_driver.py`                | ctypes wrapper over`libe9u_LSMD_EDU_x64.dll` (single-channel EDU board, Windows only) |
@@ -64,7 +68,8 @@ Qt patterns of the *CLOUDS Raytracing Engine*.
 | `drivers/e9u_LSMD_LIB_Linux/`                 | EURECA Duo**Linux** vendor source + build/udev installer (feature P-01)           |
 | `drivers/e9u_LSMD_EDU_LIB/`                   | EURECA EDU vendor SDK (headers, C source,`libe9u_LSMD_EDU_x64.dll`)                   |
 | `verify.py` / `verify_qt.py`                | headless driver/calibration checks / offscreen UI exercise — run before committing     |
-| `run_clouds_spectral.bat`                     | branded launcher;**hardcodes the interpreter path**                               |
+| `run_clouds_spectral.bat`                     | branded Windows launcher;**hardcodes the interpreter path**                       |
+| `run_clouds_ui.sh`                            | macOS/Linux launcher: repo venv +`PYTHONPATH`, args passed through                |
 | `assets/`                                     | logo, icon, Futura-Bold.ttf (shared with the engine)                                    |
 
 This is **ground / bench** software — the balloon spectrometer itself is run by
@@ -110,41 +115,46 @@ the GSE talk over the cable on their *defaults*, with no host flags:
 
 ```sh
 ssh clouds@192.168.100.10          # shell on the flight Pi
-python -m clouds_gse.main --gui    # ground station — defaults already match
+python -m clouds_ui --flight       # ground station — defaults already match
 ```
 
-### Which GUI: live instrument view vs flight downlink view
+### One GUI, two sources: instrument vs flight downlink
 
-Two GUIs, and picking the wrong one looks like a broken system:
+There used to be two GUIs here, and picking the wrong one looked like a broken
+system. There is now one — `python -m clouds_ui` — and it makes you choose the
+*source* instead, which is the thing that actually differs:
 
-| Want to… | Use | Rate |
+| Want to… | Source | Rate |
 |---|---|---|
-| **look at the detector** — trace responds to light immediately | `run_clouds_spectral_pi.bat` → `clouds_spectral.py --net <pi>` | continuous |
-| watch the **flight downlink** — HK, events, commanding, budget | `python -m clouds_gse.main --gui` | quick-look 1 Hz, binned to 29+31 pts |
+| **look at the detector** — trace responds to light immediately | Detector (`--net <pi>` for the Pi's) | continuous, full resolution |
+| watch the **flight downlink** — HK, events, commanding, budget | Downlink (`--flight` starts here) | quick-look 1 Hz, binned to 29+31 pts |
 
-The GSE dashboard is deliberately *not* a live instrument view: each quick-look
-is mean-binned to 29+31 points per channel (`quicklook_bin`) rather than the
-2048-px trace, and with no RP2350 attached its HK grid stays empty. Working as
-specified — just not what you want when checking the spectrometer.
+The choice is explicit and the app never changes it for you: the plot carries a
+banner naming the source and its rate, and the stats card reads `LIVE` or
+`QUICK-LOOK`. The downlink quick-look is deliberately *not* an instrument view —
+each one is mean-binned to 29+31 points per channel (`quicklook_bin`) rather
+than the 2048-px trace, and with no RP2350 attached the HK grid stays empty.
+Working as specified — just not what you want when checking the spectrometer.
 
 **Downlink cadence.** `quicklook_interval_s` is **1.0 s**, the maximum the
 2 kbit/s continuous E-Link limit allows, and it is the *only* knob that spends
 budget — acquisition (`sample_interval_s`) and `exposure_us` are independent of
 it, so transmitting more often changes nothing on the instrument. Measured frame
-sizes: quick-look cycle 164 B (80 + 84, both channels), PISTATUS 28 B, HK 60 B.
+sizes: quick-look cycle 164 B (80 + 84, both channels), PISTATUS 28 B, HK 66 B.
 
 | | rate |
 |---|---|
 | quick-look @ 1 Hz | 1.312 kbit/s |
-| HK @ 1 Hz (`HK_PERIOD_MS`, relayed from the MCU) | 0.480 kbit/s |
+| HK @ 1 Hz (`HK_PERIOD_MS`, relayed from the MCU) | 0.528 kbit/s |
 | PISTATUS @ 0.1 Hz | 0.022 kbit/s |
-| **total, full flight mix** | **1.814 kbit/s** of 2.0 |
+| **total, full flight mix** | **1.894 kbit/s** of 2.0 |
 | total with no RP2350 attached (bench today) | 1.334 kbit/s |
 
 Halving the interval would reach 3.1 kbit/s and bust the limit;
 `tests/test_fsw_telemetry.py::TestDownlinkBudget` asserts both directions from
 real encoded frame sizes, so a payload or cadence change cannot quietly exceed
-it. The headroom assumes HK stays at its implemented 44 B payload — the spec
+it. The headroom assumes HK stays at its implemented 54 B payload (44 B before
+the INA226 rail voltages, 50 B before the reserved 24 V rail slot) — the spec
 allows ~180 B, which would force the interval back to ~2.4 s.
 
 ### Both at once, one detector
@@ -157,9 +167,8 @@ serving the frames the FSW has *already acquired*:
 # Pi — flight chain and live view from one process
 python3 -m clouds_fsw.main --no-uart --bench-stream
 
-# PC — run both simultaneously
-python -m clouds_gse.main --gui --experiment 192.168.100.10   # downlink view
-run_clouds_spectral_pi.bat                                    # live view
+# PC — one window; switch Spectrum source between Detector and Downlink
+python -m clouds_ui --net 192.168.100.10 --experiment 192.168.100.10
 ```
 
 The live view updates at the FSW's acquisition cadence, which is **1 Hz on the

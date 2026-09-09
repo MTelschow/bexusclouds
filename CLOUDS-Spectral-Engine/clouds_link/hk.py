@@ -1,8 +1,20 @@
-"""Housekeeping payload (PacketType.HK) - 44 bytes, little-endian.
+"""Housekeeping payload (PacketType.HK) - 54 bytes, little-endian.
 
 Produced by the RP2350 at 1 Hz (C mirror flight/mcu/src/core/frame.c),
-relayed unchanged by the Pi, decoded by the GSE. Two RH channels are
-reserved per spec section 7 (F.6 needs humidity in two locations).
+relayed unchanged by the Pi, decoded by the GSE.
+
+The chamber pressure and second humidity channel that spec section 7 asks
+for are **not** in this packet: the two Keller 23SY parts that were to
+provide them are off the design (they answered at no address on the carrier,
+DEVLOG 2026-08-31), and a wire field no part can ever fill is worse than an
+absent one - it reads as data. The six bytes they held now carry the shunt
+voltage of the INA226 monitors, which is a measurement that exists.
+
+Four rails are carried, but only three monitors are fitted: the 24 V rail's
+INA226 is not on the carrier yet, so its slot is reserved here and reported
+as ``RAIL_MV_INVALID`` until the part is populated. A reserved slot is the
+cheaper mistake: the alternative is a wire format that changes on the day
+the part arrives, on an instrument that is already flying its protocol.
 """
 from __future__ import annotations
 
@@ -10,8 +22,8 @@ import struct
 from dataclasses import dataclass, field, asdict
 from enum import IntEnum
 
-_HK = struct.Struct("<BBBBBBhhhHHIIhhhhhhII")
-SIZE = _HK.size  # 44
+_HK = struct.Struct("<BBBBBBhhhHIhhhhhhHHHHhhhhII")
+SIZE = _HK.size  # 54
 
 
 class SeqState(IntEnum):
@@ -36,6 +48,48 @@ class McuFlags(IntEnum):
     HOLD = 1 << 4
 
 
+#: "No reading" for a ``rail_mv`` entry - mirror of RAIL_MV_INVALID in
+#: flight/mcu/src/hw/ina226.h. Not 0, because a rail can legitimately be at
+#: 0 mV: the 24 V bus reads 0 on a USB-powered bench with no supply attached,
+#: and collapsing that into the same value as a failed I2C transfer throws
+#: away the distinction ground most needs. 0xFFFF is 65.535 V, above the
+#: part's 36 V input rating, so it cannot be a real measurement.
+#:
+#: It covers the matching ``shunt_raw`` entry too: both registers are read
+#: from the same part in the same sweep, and the MCU invalidates the pair
+#: together rather than inventing a second sentinel for a distinction
+#: (bus read fine, shunt read failed) that nobody would chase separately.
+RAIL_MV_INVALID = 0xFFFF
+
+#: Rail names, in ``rail_mv`` order, with the nominal each should sit near.
+#:
+#: ``V_in`` is the incoming gondola bus, the rail the 0x40 monitor actually
+#: sits on - it was labelled "24 V" until the two were found to be different
+#: nets. The **24 V rail proper has no monitor fitted yet**; its slot exists
+#: so that adding the part is a firmware change and not a wire-format change.
+RAIL_NAMES = ("V_in", "24 V", "5 V", "3.3 V")
+RAIL_NOMINAL_MV = (24000, 24000, 5000, 3300)
+
+#: I2C address of each rail's INA226, or ``None`` where no part is fitted.
+#: Mirrors addr_of[] in flight/mcu/src/hw/ina226.c.
+RAIL_I2C_ADDR = (0x40, None, 0x44, 0x45)
+
+#: LSB of the INA226 shunt-voltage register, in microvolts. Absolute, from
+#: the datasheet: unlike the part's current and power registers it does not
+#: depend on the calibration register being programmed, so the raw i16 is a
+#: real voltage measurement whatever the MCU knows about the shunts.
+SHUNT_LSB_UV = 2.5
+
+#: Shunt resistance per rail, in milliohms, in ``rail_mv`` order.
+#:
+#: The conversion from shunt voltage to current happens **here**, on the
+#: ground, and not on the MCU: if one of these numbers turns out to be wrong,
+#: a logged session can be re-derived from ``shunt_raw``, whereas an amp value
+#: the firmware had already computed could not. Ohm's law in these units is
+#: exactly ``I[mA] = U[uV] / R[mOhm]``; ``rail_a()`` scales that to amps.
+RAIL_SHUNT_MOHM = (10.0, 15.0, 10.0, 50.0)
+
+
 class ValveStatus(IntEnum):
     """Mirror of the HKV_* bits in flight/mcu/src/core/frame.h.
 
@@ -58,13 +112,16 @@ class HkErrors(IntEnum):
 
     A set bit means the matching field is not a live measurement, so ground
     can distinguish a held or absent reading from a real one.
+
+    Bits 2 and 3 are free: they were NO_CHAMBER_P and NO_RH2, which went out
+    with the Keller pair and the fields those flagged. The surviving bits keep
+    the positions they had, so an older session log still decodes.
     """
     BME280_FAIL = 1 << 0    # BME280 absent or read failed
     P_AMB_STALE = 1 << 1    # p_amb_pa is a held last-good value
-    NO_CHAMBER_P = 1 << 2   # no chamber pressure sensor fitted
-    NO_RH2 = 1 << 3         # no second humidity channel fitted
     IMU_FAIL = 1 << 4       # IMU absent or reporting a fault
     NO_TEMP = 1 << 5        # STLM20 pair not fitted, temps unsourced
+    RAIL_FAIL = 1 << 6      # an INA226 rail is unreadable (see RAIL_MV_INVALID)
 
 
 @dataclass
@@ -79,11 +136,20 @@ class Housekeeping:
     temp2_cc: int = 0         # STLM20 #2
     bme_temp_cc: int = 0
     rh1_cpct: int = 0         # centi-%RH, ambient
-    rh2_cpct: int = 0         # centi-%RH, chamber (reserved, spec sec. 7)
     p_amb_pa: int = 101325
-    p_ch_pa: int = 101325
     accel_mg: tuple = field(default=(0, 0, 0))
     gyro_ddps: tuple = field(default=(0, 0, 0))
+    #: Bus voltage of the V_in, 24 V, 5 V and 3.3 V rails in mV, in
+    #: ``RAIL_NAMES`` order (INA226 at 0x40 / not fitted / 0x44 / 0x45).
+    #: ``RAIL_MV_INVALID`` means no reading, which is what the 24 V slot
+    #: carries until its monitor is populated. Defaults to "no reading"
+    #: rather than 0, so a Housekeeping() built in a test never asserts that
+    #: every rail is dead.
+    rail_mv: tuple = field(default=(RAIL_MV_INVALID,) * 4)
+    #: Raw INA226 shunt-voltage register per rail, same order: signed,
+    #: ``SHUNT_LSB_UV`` per count. Meaningful only where ``rail_mv`` is not
+    #: ``RAIL_MV_INVALID``; use ``rail_a()``, which enforces that.
+    shunt_raw: tuple = field(default=(0, 0, 0, 0))
     uptime_s: int = 0
     mission_t_s: int = 0      # 0 until launch detection
 
@@ -91,9 +157,9 @@ class Housekeeping:
         return _HK.pack(self.state, self.flags, self.fired, self.valve_status,
                         self.membrane_duty, self.error_flags,
                         self.temp1_cc, self.temp2_cc, self.bme_temp_cc,
-                        self.rh1_cpct, self.rh2_cpct,
-                        self.p_amb_pa, self.p_ch_pa,
+                        self.rh1_cpct, self.p_amb_pa,
                         *self.accel_mg, *self.gyro_ddps,
+                        *self.rail_mv, *self.shunt_raw,
                         self.uptime_s, self.mission_t_s)
 
     @classmethod
@@ -102,11 +168,32 @@ class Housekeeping:
         return cls(state=v[0], flags=v[1], fired=v[2], valve_status=v[3],
                    membrane_duty=v[4], error_flags=v[5],
                    temp1_cc=v[6], temp2_cc=v[7], bme_temp_cc=v[8],
-                   rh1_cpct=v[9], rh2_cpct=v[10],
-                   p_amb_pa=v[11], p_ch_pa=v[12],
-                   accel_mg=(v[13], v[14], v[15]),
-                   gyro_ddps=(v[16], v[17], v[18]),
-                   uptime_s=v[19], mission_t_s=v[20])
+                   rh1_cpct=v[9], p_amb_pa=v[10],
+                   accel_mg=(v[11], v[12], v[13]),
+                   gyro_ddps=(v[14], v[15], v[16]),
+                   rail_mv=(v[17], v[18], v[19], v[20]),
+                   shunt_raw=(v[21], v[22], v[23], v[24]),
+                   uptime_s=v[25], mission_t_s=v[26])
+
+    def rail_uv(self, i: int) -> float | None:
+        """Shunt voltage of rail ``i`` in microvolts, or None if that monitor
+        gave no reading."""
+        if self.rail_mv[i] == RAIL_MV_INVALID:
+            return None
+        return self.shunt_raw[i] * SHUNT_LSB_UV
+
+    def rail_a(self, i: int) -> float | None:
+        """Current through rail ``i`` in amps, or None if that monitor gave no
+        reading.
+
+        A rail whose monitor did not answer has no current, and returning 0.0
+        would claim an idle rail - the same mistake ``RAIL_MV_INVALID`` exists
+        to prevent on the voltage side.
+        """
+        uv = self.rail_uv(i)
+        if uv is None:
+            return None
+        return uv / (RAIL_SHUNT_MOHM[i] * 1000.0)
 
     @property
     def link_text(self) -> str:
@@ -133,14 +220,32 @@ class Housekeeping:
         return " ".join(names) if names else "-"
 
     @property
+    def rail_text(self) -> str:
+        """The rails for HK displays: volts and amps per rail.
+
+        An unreadable rail reads ``-``, never a number: an INA226 that did not
+        answer and a rail that is genuinely down are different faults, and
+        0.000 V would report the first as the second. A rail with no monitor
+        fitted - the 24 V rail today - reads the same way; the panel is where
+        the two are told apart, from ``RAIL_I2C_ADDR``.
+        """
+        parts = []
+        for i, name in enumerate(RAIL_NAMES):
+            mv, a = self.rail_mv[i], self.rail_a(i)
+            parts.append(f"{name} -" if a is None
+                         else f"{name} {mv / 1000:.2f}V {a:.3f}A")
+        return "  ".join(parts)
+
+    @property
     def error_text(self) -> str:
         """Which ``error_flags`` bits are set, by name.
 
         Most of these bits are permanently set on this hardware (the STLM20
-        pair and the Keller sensors are not populated, the IMU is unusable),
-        so the field is the operator's list of what has no source - and
-        ``0x003c`` is not a list. An unknown bit is kept visible as its mask
-        rather than dropped: a newer MCU must stay readable here.
+        pair is not populated, the IMU is unusable), so the field is the
+        operator's list of what has no source - and ``0x0030`` is not a list.
+        An unknown bit is kept visible as its mask rather than dropped: a
+        newer MCU, or an older log written when the Keller bits still
+        existed, must stay readable here.
         """
         names = [e.name for e in HkErrors if self.error_flags & e]
         known = 0
@@ -165,8 +270,15 @@ class Housekeeping:
         d["link_text"] = self.link_text
         d["actuator_text"] = self.actuator_text
         d["error_text"] = self.error_text
+        d["rail_text"] = self.rail_text
         ax, ay, az = d.pop("accel_mg")
         gx, gy, gz = d.pop("gyro_ddps")
         d.update(accel_x_mg=ax, accel_y_mg=ay, accel_z_mg=az,
                  gyro_x_ddps=gx, gyro_y_ddps=gy, gyro_z_ddps=gz)
+        # Derived current per rail, alongside the raw register it came from:
+        # a session log has to stay re-derivable if a shunt value turns out
+        # to be wrong, and it has to be readable without doing the arithmetic.
+        for i, name in enumerate(("vin", "24v", "5v", "3v3")):
+            a = self.rail_a(i)
+            d[f"rail_{name}_a"] = "" if a is None else round(a, 4)
         return d

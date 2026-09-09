@@ -14,7 +14,7 @@ import time
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from PyQt5 import QtWidgets
 
-import clouds_spectral
+from clouds_ui import window as clouds_ui_window
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 LAMP = os.path.join(HERE, "ha_lamp.py")
@@ -29,7 +29,7 @@ def lamp(*a, targets=None):
 
 
 app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
-win = clouds_spectral.Engine(mock=False)
+win = clouds_ui_window.CloudsWindow(mock=False)
 win.show()
 for _ in range(4):
     app.processEvents()

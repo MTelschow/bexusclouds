@@ -2,7 +2,7 @@
 
 Lets the Qt bench panel run on the PC while the detector hangs off the Pi:
 
-    python clouds_spectral.py --net 192.168.100.10
+    python -m clouds_ui --net 192.168.100.10
 
 The UI cannot tell the difference - it still gets full 2048-px uint16 frames
 from ``grab()``. Frames arrive as raw little-endian uint16, the same scale the

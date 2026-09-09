@@ -2,7 +2,7 @@
 rem Live control panel with the spectrometer on the flight Pi (not on this PC).
 rem
 rem This is the LIVE instrument view. The GSE dashboard
-rem (python -m clouds_gse.main --gui) is the flight *downlink* view: binned
+rem (python -m clouds_ui --flight) is the flight *downlink* view: binned
 rem quick-looks on the 2 kbit/s E-Link budget, ~30 s apart. Do not use it to
 rem check the detector - use this.
 rem

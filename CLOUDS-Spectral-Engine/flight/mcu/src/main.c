@@ -92,7 +92,7 @@ static void send_hk(uint64_t t_ms)
     uart_io_send(PKT_HK, hk_seq_no++, wall, 0, payload, HK_SIZE);
 
     /* step the sequence with the same sensor sweep */
-    seq_step(&seq, t_ms, wall, hk.p_amb_pa, hk.p_ch_pa);
+    seq_step(&seq, t_ms, wall, hk.p_amb_pa);
 }
 
 static void handle_command(uint64_t t_ms, const frame_view_t *view)

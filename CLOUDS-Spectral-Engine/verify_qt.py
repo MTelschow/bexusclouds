@@ -21,7 +21,7 @@ def _qt_msg(mode, ctx, msg):
 
 
 QtCore.qInstallMessageHandler(_qt_msg)
-import clouds_spectral
+from clouds_ui import window as clouds_ui_window
 
 FAILS = []
 
@@ -34,7 +34,7 @@ def check(n, c, d=""):
 
 
 app = QtWidgets.QApplication.instance() or QtWidgets.QApplication(sys.argv)
-win = clouds_spectral.Engine(mock=True)
+win = clouds_ui_window.CloudsWindow(mock=True)
 win.show()
 for _ in range(8):
     app.processEvents()
@@ -110,7 +110,7 @@ win.chk_peak.setChecked(True); app.processEvents()
 check("peak marker back on", win.show_peak)
 
 # interactive wavelength calibration dialog
-dlg = clouds_spectral._CalibrationDialog(win)
+dlg = clouds_ui_window._CalibrationDialog(win)
 mcal = win.cal.by_role("measurement")
 f110 = float(mcal.pixel_to_nm(110))
 dlg.table.setRowCount(0)
@@ -137,7 +137,7 @@ win._capture_reference(); app.processEvents()
 check("reference captured + flat on", win.reference_proc is not None and win.flat)
 win._single(); app.processEvents()
 _refm = np.asarray(win.reference_proc["m"], dtype=float)
-_md = clouds_spectral.P.reference_ratio(win.last_proc["m"], _refm)
+_md = clouds_ui_window.P.reference_ratio(win.last_proc["m"], _refm)
 _sel = _md[_refm > 100]
 check("flat-field baseline ~1 vs same light",
       _sel.size > 0 and abs(float(np.median(_sel)) - 1.0) < 0.15,
@@ -248,7 +248,7 @@ win._stop(); win.driver._shape = _orig_shape; app.processEvents()
 
 # single-channel support: swap to a 1-channel calibration and exercise the no-reference path
 win.chk_dark.setChecked(False); win.chk_flat.setChecked(False); win.reference_proc = None
-win.cal = clouds_spectral.Calibration.load(os.path.join(clouds_spectral.HERE, "calibration_single.json"))
+win.cal = clouds_ui_window.Calibration.load(os.path.join(clouds_ui_window.HERE, "calibration_single.json"))
 win.sp_exp.setValue(5); win._single(); app.processEvents()
 check("single-channel: no reference channel", win._ref() is None and win.last_proc.get("r") is None)
 check("single-channel: measurement renders", win.last_proc["m"].size > 0 and win._geom is not None)
@@ -282,13 +282,13 @@ if _lg_new:
 check("single-channel: session logging writes rows with blank reference", _lg_ok and win.logger is not None,
       f"{len(_lrows) - 1 if _lg_new else 0} rows")
 win.chk_log.setChecked(False)
-win.cal = clouds_spectral.Calibration.load(); app.processEvents()           # restore the Duo
+win.cal = clouds_ui_window.Calibration.load(); app.processEvents()           # restore the Duo
 
 # --edu wiring: kind selection + its per-instrument default calibration.
 # Wiring only, no acquisition - the mock driver emits 2048-px Duo frames, which
 # a 3648-px calibration has no business slicing.
 check("kind: default is std", win.kind == "std")
-_edu = clouds_spectral.Engine(mock=True, kind="edu")
+_edu = clouds_ui_window.CloudsWindow(mock=True, kind="edu")
 check("kind: --edu is honoured", _edu.kind == "edu")
 check("kind: --edu stays on the mock driver", type(_edu.driver) is type(win.driver))
 check("kind: --edu loads the 3648-px single-channel calibration",
@@ -296,9 +296,9 @@ check("kind: --edu loads the 3648-px single-channel calibration",
       f"{_edu.cal.n_pixels}px, {len(_edu.cal.channels)} channel(s)")
 check("kind: the Duo default is untouched",
       win.cal.n_pixels == 2048 and win.cal.by_role_optional("reference") is not None)
-os.environ["CLOUDS_CALIBRATION"] = os.path.join(clouds_spectral.HERE, "calibration.json")
+os.environ["CLOUDS_CALIBRATION"] = os.path.join(clouds_ui_window.HERE, "calibration.json")
 check("kind: an explicit CLOUDS_CALIBRATION overrides the --edu default",
-      clouds_spectral._default_calibration("edu") is None)
+      clouds_ui_window._default_calibration("edu") is None)
 del os.environ["CLOUDS_CALIBRATION"]
 _edu.driver.close(); _edu.close(); _edu.deleteLater(); app.processEvents()
 
@@ -335,12 +335,12 @@ win.chk_log.setChecked(False)
 app.processEvents()
 check("UI session log written", bool(_glob.glob("output/session_*.csv")))
 
-# -- GSE dashboard: the actuator controls move real hardware -----------------
+# -- flight half: the actuator controls move real hardware -------------------
 # The bench panel above only reads a detector; the GSE panel energizes the
 # membrane solenoid and the dispersion motor. A slot that is not wired means
 # an operator presses Stop and nothing happens, so the wiring is checked here
 # rather than trusted.
-print("\n-- GSE dashboard (offscreen) --")
+print("\n-- flight half of the merged window (offscreen) --")
 for _extra in ("gse", os.path.join("flight", "pi")):
     _p = os.path.join(os.path.dirname(os.path.abspath(__file__)), _extra)
     if _p not in sys.path:
@@ -352,7 +352,6 @@ from clouds_link.frames import AckResult as _Ack, Frame as _Frame, \
     PacketType as _Pkt, pack_event as _pack_event
 from clouds_fsw.command_server import CommandServer as _CmdServer, \
     CommandState as _CmdState
-from clouds_gse.app import GseWindow as _GseWindow
 from clouds_gse.commander import Commander as _Commander
 from clouds_gse.receiver import Receiver as _Receiver
 from clouds_gse.session_log import SessionLog as _SessionLog
@@ -378,25 +377,33 @@ _server.start()
 _rx = _Receiver(bind="127.0.0.1", port=0)
 _rx.start()
 _commander = _Commander("127.0.0.1", _server.port, timeout=2.0)
-_gse = _GseWindow(_rx, _commander, _SessionLog("output", stamp="verify_gse"))
-_gse.show()
+# The merged window in its flight shape. Instantiated with mock=True so this
+# section never reaches for a detector: what is under test here is the flight
+# half and the source switch, not acquisition.
+_win = clouds_ui_window.CloudsWindow(
+    mock=True, receiver=_rx, commander=_commander,
+    session=_SessionLog("output", stamp="verify_gse"), source="downlink")
+_win.resize(1420, 900)
+_win.fold_for(flight=True)
+_gse = _win.flight
+_win.show()
 app.processEvents()
 try:
-    _gse._duty.setValue(70)
-    _gse._hz.setValue(3)
+    _gse.sp_duty.setValue(70)
+    _gse.sp_hz.setValue(3)
     _gse._membrane_start()
-    check("GSE membrane drive reaches the link",
+    check("flight: membrane drive reaches the link",
           _mcu["log"] == [(int(_Cmd.SET_PARAM), int(_Param.MEMBRANE_HZ), 3),
                           (int(_Cmd.MEMBRANE), 70, 0)], str(_mcu["log"]))
-    check("GSE frequency is set before the drive starts", _mcu["hz"] == 3)
+    check("flight: frequency is set before the drive starts", _mcu["hz"] == 3)
     _mcu["log"].clear()
     _gse._membrane_stop()
-    check("GSE Stop commands duty 0",
+    check("flight: Stop commands duty 0",
           _mcu["log"] == [(int(_Cmd.MEMBRANE), 0, 0)] and _mcu["duty"] == 0,
           str(_mcu["log"]))
     _mcu["log"].clear()
     _gse._disperse()
-    check("GSE motor button asks for one pulse",
+    check("flight: motor button asks for one pulse",
           _mcu["log"] == [(int(_Cmd.DISPERSE), 1, 0)], str(_mcu["log"]))
 
     # housekeeping feedback: without it a 5 s pulse is invisible to ground
@@ -411,9 +418,9 @@ try:
     for _ in range(60):
         app.processEvents()
         QtCore.QThread.msleep(5)
-    _gse._refresh()
+    _gse.refresh()
     app.processEvents()
-    check("GSE renders the commanded drive",
+    check("flight: renders the commanded drive",
           _gse._hk_labels["Membrane"].text() == "70 %"
           and _gse._hk_labels["Driving"].text() == "DISPERSE",
           f'{_gse._hk_labels["Membrane"].text()} / '
@@ -426,18 +433,28 @@ try:
     _gse._membrane_start()
     _gse._membrane_stop()
     _gse._disperse()
-    check("GSE actuators survive a missing command link",
-          _gse._act_status.text() == "no command link", _gse._act_status.text())
+    check("flight: actuators survive a missing command link",
+          _gse.lbl_act_status.text() == "no command link", _gse.lbl_act_status.text())
     # Pixel regression: every button in the Commands box is one width. Three
     # different widths used to share that box (a full row, a part-filled row,
     # and the release pair), which reads as a broken layout.
-    _cmd_box = [b for b in _gse.findChildren(QtWidgets.QGroupBox)
-                if b.title() == "Commands"][0]
-    _gse.resize(1280, 860)
     app.processEvents()
-    _widths = sorted({b.width() for b in
-                      _cmd_box.findChildren(QtWidgets.QPushButton)})
-    check("GSE command buttons are one width", len(_widths) == 1, str(_widths))
+    # The command block must fit the 410 px sidebar, whose horizontal
+    # scrollbar is off: pinning its columns to the widest label once pushed
+    # the far button (and the rest of the sidebar) off the visible edge.
+    _sa = _win.findChild(QtWidgets.QScrollArea)
+    check("flight: the sidebar is not clipped horizontally",
+          _sa.widget().width() <= _sa.viewport().width(),
+          f"contents {_sa.widget().width()} vs viewport "
+          f"{_sa.viewport().width()}")
+    _rows = {}
+    for _b in _gse._cmd_buttons:
+        _rows.setdefault(_b.y(), []).append(_b.width())
+    # Uniform within a row, which is what reads as a tidy block; the release
+    # pair is deliberately wider (it spans 3 of 6 columns, not 2).
+    check("flight: command buttons are even across each row",
+          all(max(r) - min(r) <= 8 for r in _rows.values()),
+          str({y: sorted(r) for y, r in _rows.items()}))
 
     # The release confirmation must not ask about something it will refuse.
     _dialogs = []
@@ -448,13 +465,13 @@ try:
         _gse._cmd = _commander
         _commander.flight_mode = False
         _gse._release(1)
-        check("GSE checks the interlock before the confirm dialog",
+        check("flight: checks the interlock before the confirm dialog",
               _dialogs == []
-              and "interlock" in _gse._cmd_status.text().lower(),
-              f"{_dialogs} / {_gse._cmd_status.text()}")
+              and "interlock" in _gse.lbl_cmd_status.text().lower(),
+              f"{_dialogs} / {_gse.lbl_cmd_status.text()}")
         _commander.flight_mode = True
         _gse._release(1)
-        check("GSE still confirms a release it will send",
+        check("flight: still confirms a release it will send",
               len(_dialogs) == 1, str(_dialogs))
     finally:
         QtWidgets.QMessageBox.question = _real_question
@@ -469,15 +486,132 @@ try:
     for _ in range(60):
         app.processEvents()
         QtCore.QThread.msleep(5)
-    _gse._refresh()
+    _gse.refresh()
     app.processEvents()
-    _items = [_gse._event_list.item(i).text()
-              for i in range(_gse._event_list.count())]
-    check("GSE names event codes", any("MANUAL_DRIVE" in t for t in _items),
+    _items = [_gse.event_list.item(i).text()
+              for i in range(_gse.event_list.count())]
+    check("flight: names event codes", any("MANUAL_DRIVE" in t for t in _items),
           str(_items))
     _tx2.close()
 
-    _gse.grab().save("output/qt_gse_panel.png")
+    # A sensor field with no part behind it must never render as a number.
+    # Every one of these is zero-filled by the MCU, and "0.0 C" is
+    # indistinguishable from a real reading - which is the whole failure this
+    # project has already been bitten by.
+    import clouds_ui.flight as _fl
+    _unsourced = _hk.Housekeeping(
+        state=_hk.SeqState.STANDBY, p_amb_pa=99248,
+        bme_temp_cc=3422, rh1_cpct=2993,
+        error_flags=_hk.HkErrors.IMU_FAIL | _hk.HkErrors.NO_TEMP)
+    _gse._refresh_sensors(_unsourced)
+    _texts = {n: _gse._sensor_labels[n].text()
+              for n, _p, _f, _fg in _fl.SENSOR_FIELDS}
+    check("flight: unsourced sensors show no number",
+          not any(any(c.isdigit() for c in _texts[n])
+                  for n in ("T1 / T2", "Accel", "Gyro")),
+          str(_texts))
+    check("flight: the Keller rows are gone with the parts",
+          not any(n.startswith("Chamber") for n, _p, _f, _fg
+                  in _fl.SENSOR_FIELDS),
+          str([n for n, _p, _f, _fg in _fl.SENSOR_FIELDS]))
+    check("flight: the BME280 readings are shown, being real",
+          _texts["Ambient T"] == "34.2 C"
+          and _texts["Ambient p"].startswith("992.5 hPa")
+          and _texts["Ambient RH"] == "29.9 %",
+          f'{_texts["Ambient T"]} / {_texts["Ambient p"]} / '
+          f'{_texts["Ambient RH"]}')
+
+    # ...and a held ambient pressure is real data, so it is shown - labelled.
+    _stale = _hk.Housekeeping(p_amb_pa=99248,
+                              error_flags=_hk.HkErrors.P_AMB_STALE)
+    _gse._refresh_sensors(_stale)
+    check("flight: a held pressure is shown and marked stale",
+          "992.5 hPa" in _gse._sensor_labels["Ambient p"].text()
+          and "stale" in _gse._sensor_labels["Ambient p"].text(),
+          _gse._sensor_labels["Ambient p"].text())
+
+    # With nothing wrong, every row is a number.
+    _ok = _hk.Housekeeping(p_amb_pa=99248, bme_temp_cc=2140,
+                           rh1_cpct=3050, temp1_cc=2200,
+                           temp2_cc=2300, accel_mg=(1, -2, 981),
+                           gyro_ddps=(0, 1, -1),
+                           rail_mv=(24062, _hk.RAIL_MV_INVALID, 5095, 3297),
+                           shunt_raw=(514, 0, -40, 6667), error_flags=0)
+    _gse._refresh_sensors(_ok)
+    check("flight: a fully sourced packet renders every sensor row",
+          all(any(c.isdigit() for c in _gse._sensor_labels[n].text())
+              for n, _p, _f, _fg in _fl.SENSOR_FIELDS
+              if n != "Rail 24 V"),
+          str({n: _gse._sensor_labels[n].text()
+               for n, _p, _f, _fg in _fl.SENSOR_FIELDS}))
+
+    # A rail with no monitor must not render as 0.00 V: the 24 V bus reads a
+    # genuine 0 mV on a USB-powered bench, so a dead monitor and a dead rail
+    # have to stay distinguishable.
+    _rails = _hk.Housekeeping(rail_mv=(_hk.RAIL_MV_INVALID,
+                                       _hk.RAIL_MV_INVALID, 0, 3298),
+                              shunt_raw=(0, 0, 0, 6667),
+                              error_flags=_hk.HkErrors.RAIL_FAIL)
+    _gse._refresh_sensors(_rails)
+    check("flight: an unmonitored rail shows no voltage or current",
+          _gse._sensor_labels["Rail V_in"].text() == "no monitor",
+          _gse._sensor_labels["Rail V_in"].text())
+    # A rail with no INA226 on the board is not a fault to chase: it says so
+    # in its own words, and never "no monitor", which reads as a dead part.
+    check("flight: the unfitted 24 V rail reads as not fitted",
+          _gse._sensor_labels["Rail 24 V"].text() == "not fitted",
+          _gse._sensor_labels["Rail 24 V"].text())
+    check("flight: a rail that is genuinely down still reads 0.00 V",
+          _gse._sensor_labels["Rail 5 V"].text() == " 0.00 V   +0.000 A",
+          _gse._sensor_labels["Rail 5 V"].text())
+    # 6667 counts x 2.5 uV = 16.667 mV over the 3.3 V rail's 50 mOhm shunt
+    check("flight: a live rail reads its voltage and its current",
+          _gse._sensor_labels["Rail 3.3 V"].text() == " 3.30 V   +0.333 A",
+          _gse._sensor_labels["Rail 3.3 V"].text())
+    # A rail feeding current back into its supply is real data, and the sign
+    # is the only thing that says so.
+    _back = _hk.Housekeeping(rail_mv=(24062, _hk.RAIL_MV_INVALID, 5095, 3298),
+                             shunt_raw=(-514, 0, 0, 0))
+    _gse._refresh_sensors(_back)
+    check("flight: a negative rail current keeps its sign",
+          _gse._sensor_labels["Rail V_in"].text() == "24.06 V   -0.129 A",
+          _gse._sensor_labels["Rail V_in"].text())
+
+    # Cursor readout on a downlink trace. A quick-look is ~30 binned points
+    # per channel, not one per pixel: reading it at a pixel offset into the
+    # channel window walked off the end of the array and took the window down
+    # with it (IndexError inside an event filter aborts the process).
+    _ch1, _ch2 = _win.cal.by_role("measurement"), _win._ref()
+    _rx.quicklook = {
+        0: {"channel": 0, "bin": 8, "exposure_ms": 5.0,
+            "counts": [1000 + 10 * i for i in range(29)]},
+        1: {"channel": 1, "bin": 8, "exposure_ms": 5.0,
+            "counts": [2000 - 10 * i for i in range(31)]},
+    }
+    _win.source = "downlink"
+    _win._take_downlink_frame()
+    app.processEvents()
+    check("downlink: a quick-look draws as ~30 binned points per channel",
+          _win.last_proc is not None and _win.last_proc["m"].size == 29
+          and _win.last_proc["r"].size == 31,
+          str(None if _win.last_proc is None
+              else {k: v.size for k, v in _win.last_proc.items()}))
+    _swept = 0
+    for _axis in ("nm", "pixel"):
+        _win.axis = _axis
+        _win._render_plot()
+        app.processEvents()
+        for _fx in range(0, _win._view.width(), 7):
+            _win._cursor_readout(QtCore.QPoint(_fx, _win._view.height() // 2))
+            _swept += 1
+    check("downlink: the cursor readout survives the whole plot width",
+          _swept > 0 and _win.cursor_lbl.text() != "",
+          f"{_swept} positions, last {_win.cursor_lbl.text()!r}")
+    _win.axis = "nm"
+
+    _gse.sec_sensors.set_open(True)
+    app.processEvents()
+    _win.grab().save("output/qt_merged_flight.png")
 finally:
     _commander.close()
     _server.stop()
@@ -486,7 +620,7 @@ finally:
 
 if "--live" in sys.argv:
     print("\n-- live hardware through the full UI (real EURECA Duo) --")
-    lwin = clouds_spectral.Engine(mock=False)
+    lwin = clouds_ui_window.CloudsWindow(mock=False)
     lwin.show()
     for _ in range(4):
         app.processEvents()

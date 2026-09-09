@@ -10,8 +10,8 @@ once from one process and one device owner:
     python -m clouds_fsw.main --no-uart --bench-stream
 
     # PC - both at the same time, same detector
-    python -m clouds_gse.main --gui --experiment 192.168.100.10
-    python clouds_spectral.py --net 192.168.100.10
+    python -m clouds_ui --flight --experiment 192.168.100.10
+    python -m clouds_ui --net 192.168.100.10
 
 It never touches the driver: frames come from the acquisition thread's latest
 sample and exposure changes are *requested*, then applied by that thread

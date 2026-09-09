@@ -37,16 +37,16 @@ echo         BEXUS 38  -  dual-spectrometer operating software
 echo.
 echo     starting up:
 echo       [1/2] connecting to the EURECA Duo  (FTDI VCP / libe9u DLL)
-echo       [2/2] opening the control panel + live spectrum view
+echo       [2/2] opening the operator interface  (instrument + flight)
 echo.
 echo     this box can stay minimised - closing it closes the engine.
 echo.
-"%PY%" clouds_spectral.py %*
+"%PY%" -m clouds_ui %*
 if errorlevel 1 (
   echo.
   echo     [!] the interface hit a problem above.
   echo         run a headless self-check:   "%PY%" verify.py
-  echo         or try the synthetic camera: "%PY%" clouds_spectral.py --mock
+  echo         or try the synthetic camera: "%PY%" -m clouds_ui --mock
   echo.
 )
 echo.

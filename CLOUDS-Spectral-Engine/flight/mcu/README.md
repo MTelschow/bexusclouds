@@ -110,10 +110,22 @@ unplugged, and nothing on the link may delay a state transition (S.7).
   T/RH/pressure, verified on the board). Everything else on this carrier has
   no source and is flagged through `error_flags`: the **STLM20 pair is not
   populated** (and GP26, the pin the old map gave `ADC_TEMP1`, is the membrane
-  solenoid), there is no chamber pressure sensor and no second RH channel on
-  i2c0, and the BNO055 at 0x28 answers with a valid chip id while its
+  solenoid), and the BNO055 at 0x28 answers with a valid chip id while its
   accel/mag/gyro IDs read 0x00. The SED baselines no IMU at all, so there is
-  nothing to verify that integration against (DEVLOG 2026-08-31).
+  nothing to verify that integration against (DEVLOG 2026-08-31). The **Keller
+  23SY pair is off the design**, so chamber pressure and the second RH channel
+  are not flagged-but-absent any more: their HK fields are gone.
+- **M-09 rails**: the three fitted INA226 monitors are done
+  (`src/hw/ina226.c`) - bus voltage in `rail_mv[]` and the raw shunt-voltage
+  register in `shunt_raw[]`, both absolute registers. The calibration register
+  is left unprogrammed on purpose: amps are Ohm's law on the ground
+  (`clouds_link/hk.py` `RAIL_SHUNT_MOHM`, 10 / 15 / 10 / 50 mΩ), so a shunt
+  value that turns out wrong can be re-applied to a logged session. Four rails
+  ride the packet: `V_in` (0x40, the incoming gondola bus - it was labelled
+  24 V until the two were found to be different nets), a **24 V rail with no
+  monitor fitted yet**, 5 V (0x44) and 3.3 V (0x45). The unfitted slot reads
+  `RAIL_MV_INVALID` and is excluded from `HKE_RAIL_FAIL` by `ina226_fitted()`:
+  a flag that is set on every packet stops being read.
 - **M-07 membrane**: the drive is done. GP26, measured, with
   `PARAM_MEMBRANE_HZ` reaching the driver through `seq_ops_t.ctx`, default
   **2 Hz**. Because 2 Hz is below the ~9 Hz PWM floor, edges are toggled from

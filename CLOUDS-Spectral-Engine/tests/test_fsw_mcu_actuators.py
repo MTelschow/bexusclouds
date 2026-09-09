@@ -474,3 +474,41 @@ class TestUnsourcedSensorsAreFlagged:
                 assert 26 + int(m.group(1)) != pin, (
                     "%s maps to GP%d, which is the membrane pin"
                     % (name, 26 + int(m.group(1))))
+
+
+class TestRailMonitors:
+    """M-09: the INA226 rails are the health of the power tree, and the amps
+    are the half of it that depends on an assumption."""
+
+    def test_no_calibration_register_is_programmed(self):
+        """The part can compute current itself, from a calibration register
+        holding the shunt resistance. Programming that would bake the shunt
+        value into every downlinked amp - and if the value is wrong, nothing
+        on the ground can undo it. The raw shunt voltage goes down instead."""
+        ina = _read("src", "hw", "ina226.c")
+        assert "REG_CAL" not in ina
+        assert not re.search(r"write_reg\([^;]*0x0?5", ina), (
+            "register 0x05 is the calibration register: leave it unprogrammed")
+        assert "REG_SHUNT_V" in ina, "the shunt voltage is what ground needs"
+
+    def test_a_rail_reports_voltage_and_current_or_neither(self):
+        """A shunt reading kept next to an invalid rail_mv is a current for a
+        rail whose voltage is unknown, and a display has no way to say so."""
+        hw = _read("src", "hw", "hw.c")
+        body = hw.split("void hw_read_sensors", 1)[1]
+        loop = body.split("INA_RAIL_COUNT", 1)[1]
+        ok, fail = loop.split("} else {", 1)
+        assert "ina226_read_bus_mv" in ok and "ina226_read_shunt_raw" in ok
+        assert "&&" in ok, "both reads must have to succeed together"
+        assert "RAIL_MV_INVALID" in fail and "shunt_raw[i] = 0" in fail
+        assert "HKE_RAIL_FAIL" in fail
+
+    def test_the_shunt_register_keeps_its_sign(self):
+        """Current can flow either way through a shunt: a rail pushing back
+        into its supply is real data, and an unsigned read would report it as
+        a large forward current instead."""
+        ina = _read("src", "hw", "ina226.c")
+        body = ina.split("ina226_read_shunt_raw", 1)[1]
+        assert "(int16_t)" in body
+        assert "0x7FFF" not in body, (
+            "masking the top bit off would discard the sign, not the noise")

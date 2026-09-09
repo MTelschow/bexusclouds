@@ -13,7 +13,7 @@
 #define FRAME_VERSION 1
 #define FRAME_HEADER_LEN 14
 #define FRAME_CRC_LEN 2
-#define FRAME_MAX_PAYLOAD 256 /* MCU never sends/needs more (HK=44) */
+#define FRAME_MAX_PAYLOAD 256 /* MCU never sends/needs more (HK=50) */
 #define FRAME_MAX (FRAME_HEADER_LEN + FRAME_MAX_PAYLOAD + FRAME_CRC_LEN)
 
 enum packet_type {
@@ -61,15 +61,62 @@ typedef struct {
     uint16_t plen;
 } frame_view_t;
 
-/* Housekeeping payload - 44 bytes, mirror of clouds_link/hk.py. */
-#define HK_SIZE 44
+/* Housekeeping payload - 54 bytes, mirror of clouds_link/hk.py.
+ *
+ * No chamber pressure and no second humidity channel: the Keller 23SY pair
+ * that was to source them is off the design (absent at every address on the
+ * carrier, DEVLOG 2026-08-31), and a field no part can fill reads as data on
+ * a display. Their six bytes now carry the INA226 shunt voltages instead.
+ *
+ * Four rails are carried and three monitors are fitted: the 24 V rail's
+ * INA226 is not populated yet, and its slot is reserved so that fitting the
+ * part is a firmware change rather than a wire-format change.
+ *
+ * The ceiling is 67 B: the 2 kbit/s continuous E-Link budget leaves ~83 B for
+ * a framed HK packet alongside a 1 Hz quick-look. Growing past that means
+ * binning the quick-look harder or slowing its cadence, and
+ * tests/test_fsw_telemetry.py::TestDownlinkBudget fails first, by design. */
+#define HK_SIZE 54
+
+/* "No reading" for a rail_mv entry - mirror of RAIL_MV_INVALID in
+ * clouds_link/hk.py. Not 0: a rail can legitimately *be* at 0 mV when its
+ * supply is absent (the 24 V bus on a USB-powered bench), and collapsing that
+ * into the same value as a failed I2C transfer throws away the distinction
+ * ground most needs. 0xFFFF is 65.535 V, above the part's 36 V input rating,
+ * so it cannot be a real measurement. Lives here, with the rest of the wire
+ * schema, rather than in hw/ina226.h - it is a protocol value.
+ *
+ * It invalidates the matching shunt_raw entry too: both registers come from
+ * the same part in the same sweep, so the pair is reported together rather
+ * than needing a second sentinel for a bus-ok / shunt-failed split nobody
+ * would chase on its own. */
+#define RAIL_MV_INVALID 0xFFFFu
+
+/* Rails carried in hk_t, in wire order: V_in, 24 V, 5 V, 3.3 V. One more
+ * than the monitors that exist - see the note above HK_SIZE. Indexed by
+ * enum ina226_rail in hw/ina226.h. */
+#define RAIL_COUNT 4
 
 typedef struct {
     uint8_t state, flags, fired, valve_status, membrane_duty, error_flags;
     int16_t temp1_cc, temp2_cc, bme_temp_cc;
-    uint16_t rh1_cpct, rh2_cpct;
-    uint32_t p_amb_pa, p_ch_pa;
+    uint16_t rh1_cpct;
+    uint32_t p_amb_pa;
     int16_t accel_mg[3], gyro_ddps[3];
+    /* Bus voltage of the V_in, 24 V, 5 V and 3.3 V rails, mV, indexed by
+     * enum ina226_rail. RAIL_MV_INVALID (0xFFFF) means no reading - which is
+     * NOT the same as 0 mV, a value a rail can legitimately hold when its
+     * supply is absent (as V_in does on a USB-powered bench). The 24 V slot
+     * reads RAIL_MV_INVALID always: no monitor is fitted on that rail yet. */
+    uint16_t rail_mv[RAIL_COUNT];
+    /* Raw INA226 shunt-voltage register per rail, same order: signed, 2.5 uV
+     * per count, absolute (it does not depend on the part's calibration
+     * register). Sent raw and turned into amps on the ground, where the shunt
+     * resistances live (clouds_link/hk.py RAIL_SHUNT_MOHM) - so a logged
+     * session can be re-derived if one of those values turns out to be wrong,
+     * which an amp value computed in firmware could not be. Meaningful only
+     * where rail_mv is not RAIL_MV_INVALID. */
+    int16_t shunt_raw[RAIL_COUNT];
     uint32_t uptime_s, mission_t_s;
 } hk_t;
 
@@ -85,10 +132,14 @@ typedef struct {
  * so ground can tell a stale reading from a real one. */
 #define HKE_BME280_FAIL (1u << 0)   /* BME280 absent or read failed */
 #define HKE_P_AMB_STALE (1u << 1)   /* p_amb_pa is a held last-good value */
-#define HKE_NO_CHAMBER_P (1u << 2)  /* no chamber pressure sensor fitted */
-#define HKE_NO_RH2 (1u << 3)        /* no second humidity channel fitted */
+/* Bits 2 and 3 are free: they were HKE_NO_CHAMBER_P and HKE_NO_RH2, and went
+ * out with the Keller pair and the fields they flagged. The surviving bits
+ * keep their positions so an older session log still decodes. */
 #define HKE_IMU_FAIL (1u << 4)      /* IMU absent or reporting a fault */
 #define HKE_NO_TEMP (1u << 5)       /* STLM20 pair not fitted: temps unsourced */
+#define HKE_RAIL_FAIL (1u << 6)     /* one or more INA226 rails unreadable;
+                                     * that rail's rail_mv is
+                                     * RAIL_MV_INVALID */
 
 /* Actuator drive bits (hk_t.valve_status) - mirror of clouds_link/hk.py
  * ValveStatus. A set bit means that line is energized *now*, which is how
