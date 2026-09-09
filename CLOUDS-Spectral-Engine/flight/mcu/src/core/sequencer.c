@@ -19,9 +19,50 @@ static void persist_now(sequencer_t *s)
 
 /* Actuator drives are scheduled, not blocking (core/pulse): the sequencer
  * must let them finish before judging what they did. */
+uint8_t event_severity(uint8_t code)
+{
+    switch (code) {
+    case EV_ABORTED:
+        return EVS_CRITICAL;
+    case EV_SELF_TEST_FAIL:
+    case EV_SEAL_FAILED:
+        return EVS_ERROR;
+    /* Something is wrong with the flight the operator should chase, but the
+     * experiment carries on: a reset happened, ground was given up on, or
+     * the Pi went quiet. */
+    case EV_RESUMED_AFTER_RESET:
+    case EV_AUTONOMOUS_LATCHED:
+    case EV_PI_LINK_LOST:
+        return EVS_WARNING;
+    /* Nominal progress, including the release itself and an operator's own
+     * actuator drive - important, but not a fault. */
+    default:
+        return EVS_INFO;
+    }
+}
+
 static bool actuators_busy(const sequencer_t *s)
 {
     return s->ops->busy != NULL && s->ops->busy(s->ops->ctx);
+}
+
+/* TERMINATION and SAFE mean the actuators are off and stay off, so no ground
+ * command may start one there - an abort must not be reversible from the
+ * panel. Every other state is fair game: the operator drives are how the
+ * dispersion hardware is exercised on the bench, and how a release whose
+ * automatic drive failed can still be helped along in flight. */
+static bool actuators_commandable(const sequencer_t *s)
+{
+    return s->state != ST_TERMINATION && s->state != ST_SAFE;
+}
+
+/* The one path to the membrane: every caller goes through here so
+ * s->membrane_duty is what the solenoid is actually doing, and HK cannot
+ * drift away from the hardware. */
+static void set_membrane(sequencer_t *s, uint8_t duty_pct)
+{
+    s->membrane_duty = duty_pct;
+    s->ops->membrane(s->ops->ctx, duty_pct);
 }
 
 static void close_eq_valves(sequencer_t *s, uint64_t t_ms)
@@ -58,8 +99,7 @@ static void fire(sequencer_t *s, uint8_t n, uint64_t t_ms)
      * once. */
     if (s->ops->disperse != NULL)
         s->ops->disperse(s->ops->ctx);
-    s->ops->membrane(s->ops->ctx,
-                     (uint8_t)cfg_get(s->cfg, PARAM_MEMBRANE_DUTY));
+    set_membrane(s, (uint8_t)cfg_get(s->cfg, PARAM_MEMBRANE_DUTY));
     s->ops->event(s->ops->ctx, EV_RELEASE_FIRED, n == 1 ? "valve 1"
                                                         : "valve 2");
 }
@@ -202,7 +242,7 @@ void seq_step(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
         break;
 
     case ST_TERMINATION:
-        s->ops->membrane(s->ops->ctx, 0);
+        set_membrane(s, 0);
         s->ops->close_eq_valves(s->ops->ctx);
         enter(s, ST_SAFE, t_ms);
         break;
@@ -262,6 +302,27 @@ uint8_t seq_command(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
          * pad this is the state check that keeps a stray RELEASE harmless.
          * Ground needs to hear that it did nothing. */
         return key == 1 || key == 2 ? ACK_REJECTED : ACK_INVALID;
+    case CMD_MEMBRANE: /* operator drive of the push-pull solenoid */
+        if (key > 100)
+            return ACK_INVALID;
+        if (!actuators_commandable(s))
+            return ACK_REJECTED;
+        set_membrane(s, key);
+        s->ops->event(s->ops->ctx, EV_MANUAL_DRIVE,
+                      key ? "membrane on" : "membrane off");
+        return ACK_OK;
+    case CMD_DISPERSE: /* one bounded pulse of the CaCO3 motor */
+        if (key != 1)
+            return ACK_INVALID;
+        /* A board without the motor must say so rather than answer OK for a
+         * drive that no line can make. */
+        if (s->ops->disperse == NULL)
+            return ACK_REJECTED;
+        if (!actuators_commandable(s))
+            return ACK_REJECTED;
+        s->ops->disperse(s->ops->ctx);
+        s->ops->event(s->ops->ctx, EV_MANUAL_DRIVE, "disperse");
+        return ACK_OK;
     case CMD_SET_PARAM:
         return cfg_set(cfg, key, value) ? ACK_OK : ACK_INVALID;
     case CMD_STATUS_REQ:

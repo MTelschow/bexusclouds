@@ -20,6 +20,12 @@ extern const seq_ops_t hw_seq_ops;
  * actuation ever blocks past the 2 s watchdog (S.9). Never waits. */
 void hw_actuators_service(uint64_t now_ms);
 
+/* Which actuator line is energized right now, as HKV_* bits (core/frame.h),
+ * for hk_t.valve_status. The drives are bounded pulses that finish between
+ * two 1 Hz housekeeping packets, so this is the only way ground sees a
+ * commanded valve or motor drive actually happen. */
+uint8_t hw_actuator_status(void);
+
 /* Persistence (S.3): mirrored raw sectors on both SD cards, whichever has
  * the newer valid CRC wins. Returns false on cold start. */
 bool hw_restore_persist(seq_persist_t *out);

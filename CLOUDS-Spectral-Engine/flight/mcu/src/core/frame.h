@@ -48,6 +48,8 @@ enum command {
     CMD_SET_PARAM = 0x06,
     CMD_STATUS_REQ = 0x07,
     CMD_ARM = 0x08,
+    CMD_MEMBRANE = 0x09, /* key = duty percent, 0 = off */
+    CMD_DISPERSE = 0x0A, /* key = 1 -> one dispersion-motor pulse */
 };
 
 typedef struct {
@@ -88,6 +90,20 @@ typedef struct {
 #define HKE_IMU_FAIL (1u << 4)      /* IMU absent or reporting a fault */
 #define HKE_NO_TEMP (1u << 5)       /* STLM20 pair not fitted: temps unsourced */
 
+/* Actuator drive bits (hk_t.valve_status) - mirror of clouds_link/hk.py
+ * ValveStatus. A set bit means that line is energized *now*, which is how
+ * ground sees a manually commanded drive happen: the pinch valves and the
+ * dispersion motor are bounded pulses that are over long before the next 1 Hz
+ * HK, so an operator who cannot see this field cannot see them at all. Only
+ * one bit is ever set at a time - core/pulse drives one line at a time to
+ * cap peak actuator current. The membrane is not here; it is a repeating
+ * waveform, reported as a percentage in hk_t.membrane_duty. */
+#define HKV_PINCH_1 (1u << 0)
+#define HKV_PINCH_2 (1u << 1)
+#define HKV_EQ1_CLOSE (1u << 2)
+#define HKV_EQ2_CLOSE (1u << 3)
+#define HKV_DISPERSE (1u << 4)
+
 size_t frame_encode(uint8_t type, uint16_t seq, uint32_t t_s, uint16_t t_ms,
                     const uint8_t *payload, uint16_t plen,
                     uint8_t *out, size_t cap);
@@ -105,6 +121,13 @@ void ack_pack(uint16_t cmd_seq, uint8_t cmd, uint8_t result,
 /* TIMESYNC payload: t_s u32, t_ms u16 LE. */
 bool timesync_unpack(const frame_view_t *view, uint32_t *t_s, uint16_t *t_ms);
 /* EVENT payload builder: code u8, severity u8, text. Returns plen. */
+/* Severity levels of an EVENT payload - mirror of
+ * clouds_link.frames.EventSeverity. */
+#define EVS_INFO 0
+#define EVS_WARNING 1
+#define EVS_ERROR 2
+#define EVS_CRITICAL 3
+
 uint16_t event_pack(uint8_t code, uint8_t severity, const char *text,
                     uint8_t *out, size_t cap);
 

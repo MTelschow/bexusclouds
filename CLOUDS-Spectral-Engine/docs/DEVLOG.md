@@ -18,6 +18,166 @@ without re-deriving anything. Newest entries first.
 
 ---
 
+## 2026-09-09 (bench, after the actuator work) - The Pi <-> MCU link runs on real hardware, and naming things exposed two dead fields
+
+**The link is proven.** Everything the 2026-08-31 entry listed as still owed
+is now measured on the bench, with the RP2350 carrier
+(`21DD2AE08840C863`) on GP0/GP1 and the Pi on GPIO14/15:
+
+```
+raw wire, HK decoded off /dev/ttyAMA0     state=STANDBY p_amb=992.5 hPa err=0x003c
+GSE UDP 4000                              HK 1 Hz relayed, QUICKLOOK 2/s, PISTATUS, lost 0
+HK link= field                            GND PI      (MCUF_PI_OK set by the 10 s TIMESYNC)
+MEMBRANE 40 % -> 80 % -> off              ACK OK, HK membrane_duty follows each one
+DISPERSE                                  ACK OK, valve_status = DISPERSE for ~5 s
+ARM + RELEASE on the pad, flight mode on  ARM OK, RELEASE INTERLOCK (the Pi's enforcer)
+FSW stopped 60 s (M-13)                   link= GND, MCUF_PI_OK cleared; GND PI again on restart
+```
+
+The two-enforcer interlock (S.10) is the one worth calling out: with the GSE's
+own gate disabled the Pi still refused the release, because fresh HK said
+`STANDBY`. Both ends answered for themselves, which is the whole point of the
+ACK path.
+
+**Getting there took a Pi that is not the Pi in the documents.** The bench
+machine is a **Raspberry Pi 4 Model B Rev 1.2**; the SED and every README say
+Pi 5. That is why `enable_uart=1` was not enough: it left
+`/dev/serial0 -> ttyS0`, the mini-UART, with Bluetooth holding the PL011 and
+no `/dev/ttyAMA0` in existence - a state where `uart_port` fails and the
+service crash-loops while `config.txt` looks correct. `dtoverlay=disable-bt`
+frees the PL011. Steps and the trap are in `CLAUDE.md`; the Pi-5 route
+(`uart0-pi5`) is a different one, so this will need redoing on flight
+hardware.
+
+**Then the panel was read properly for the first time, and two fields turned
+out to carry nothing.**
+
+`error_flags` was rendered as `0x003c`. It is now `NO_CHAMBER_P NO_RH2
+IMU_FAIL NO_TEMP` - the list of what has no source on this carrier, which is
+what that row is actually for. A mask is not a list.
+
+Worse, `enum seq_event` was the **one C enum with no Python mirror**, so every
+event ever shown to an operator was a bare number: `[1] 12: membrane on`.
+`clouds_link.frames.EventCode` now mirrors it (0x01..0x0F) and carries the
+Pi's own codes (0x10..) in the same space, since ground sees one EVENT stream;
+a mirror test keeps the two ends together, and an unknown code degrades to its
+hex value rather than blanking, so a newer MCU stays readable on an older
+ground station. `main.py`'s private `_EV_*` constants are now that enum.
+
+Naming the severity is what exposed the second dead field: `main.c` passed a
+hardcoded `1` to `event_pack`, so **every** MCU event downlinked as WARNING -
+an abort and a routine state change at the same level, a field that could
+never sort anything. `event_severity()` (in `core/sequencer.c`, where the
+event codes live; `frame.c` is the layer below and must not know them) maps
+abort to CRITICAL, self-test and seal failure to ERROR, reset/autonomous/Pi-
+lost to WARNING, and progress - including an operator's own drive - to INFO.
+Two native tests: the mapping, and that not every code returns one level,
+because a blanket `return` would satisfy half the assertions on its own.
+
+**Two UI defects, both visible in the panel screenshot.** The Commands box
+held buttons at three different widths: a full row of three, a part-filled row
+whose two buttons stretched wider, and the release pair wider still. Equal
+column stretch does not fix it - stretch splits only the *spare* width, on top
+of each column's own minimum, so `ARM + RELEASE 1` kept pushing its column
+out. Pinning every column to the widest button's hint is what makes them one
+size, and `verify_qt.py` now asserts exactly one distinct width.
+
+And `_release()` opened its "Arm and fire pinch valve 1?" confirmation
+*before* checking the ground interlock, so on the pad - every press until
+launch - the operator confirmed an irreversible action and was then told it
+was refused. A confirmation that routinely means nothing is worse than none.
+The interlock is checked first now. This one had survived because
+`verify_qt.py` never exercised the release path; it does now.
+
+**Evidence.**
+
+```
+flight/mcu/test/run_native.sh        56 tests, 0 failures   (was 54)
+python -m pytest tests/              213 passed             (was 211)
+python -u verify_qt.py               VERIFY OK              (+4 GSE checks)
+cmake --build flight/mcu/build       clean, -Wall -Wextra
+picotool load -f -x ...uf2           carrier 21DD2AE08840C863
+GSE panel vs the real Pi + MCU       all drives, HK read-back and both interlocks
+```
+
+**Still open.** The GSE window is half-themed - a stock-Qt sidebar on the host
+palette beside a dark `#12141a` plot, no branding, no wavelength ramp - while
+`docs/UI_STYLE.md` defines a light panel and the bench app implements it. The
+docstring claimed it followed that language; it now says what it actually
+does. Also: the quick-look clips flat at 65520 above ~640 nm on the bench
+(`exposure_us` 100 ms, `auto_exposure` false) and the panel gives no
+indication, unlike the bench app's `sat %` readout. And the Pi has no RTC and
+no NTP on the cable, so its clock was ~5 weeks behind during all of this -
+harmless here, but every timestamp above is the Pi's.
+
+---
+
+## 2026-09-09 - The dispersion actuators are commandable, and their state reaches ground (M-07, G-01, G-03)
+
+**Why.** Both dispersion actuators existed, were measured, and ran - but only
+as a side effect of a release step. There was no way to drive the membrane
+solenoid or the CaCO3 motor on their own. That is the wrong shape for two
+reasons: on the bench the mechanism has to be exercised without faking a
+release, and in flight a release whose automatic drive does not do its job
+leaves no fallback.
+
+**Two commands, deliberately unarmed.** `MEMBRANE` (key = duty percent, 0 =
+off) and `DISPERSE` (key = 1, one pulse) join the set, and unlike `RELEASE`
+they carry no arm/execute handshake and no ground interlock. The reason is
+what the actuators are: the pinch valve is a one-shot with a persisted
+`fired` bit, so it is irreversible and gets both gates; the solenoid
+oscillates only while it is told to and stops on the next command, and the
+motor drive is bounded on the MCU (`VALVE_PULSE_MS`, 5 s). Interlocking them
+on the ground would block exactly the case they exist for. They are in
+`MANUAL_ACTUATORS` and `tests/test_fsw_mcu_actuators.py` asserts that
+membership against `ARMED_COMMANDS` / `GROUND_INTERLOCKED` / `FLIGHT_ONLY`,
+so a later edit that quietly arms or frees one has to argue with a test.
+
+The one hard state rule: both are refused in `TERMINATION` and `SAFE`
+(`actuators_commandable()`). An abort means the actuators are off and stay
+off, and no panel button may undo that.
+
+**What HK was reporting.** `membrane_duty` and `valve_status` had been in the
+44-byte payload from the start and the MCU never wrote either, so the panel
+showed a membrane at 0 % while the solenoid was audibly oscillating, and
+`Valves 0000` throughout. Harmless while nothing could be commanded;
+unusable as soon as it can, because a commanded drive is a 5 s pulse that is
+over before the next 1 Hz packet - the HK field is the *only* place ground
+sees it happen at all. Both are now filled from the two places that know:
+`seq.membrane_duty`, recorded by the single `set_membrane()` path every
+caller goes through, and `hw_actuator_status()`, which reads
+`pulses.active_pin` rather than a shadow flag set when a drive is *requested*
+(a request that never ran would otherwise report as an active drive). The
+`HKV_*` bits are mirrored in `clouds_link.hk.ValveStatus` and kept in step by
+a mirror test, like `HKE_*` before them.
+
+**UI.** A separate **Actuators** box in the GSE dashboard - membrane duty and
+frequency with Drive/Stop, one motor pulse - kept apart from the Commands box
+so the armed, interlocked release does not sit beside two drives that are
+neither. Frequency goes out as `SET_PARAM MEMBRANE_HZ` *before* the drive
+starts, because `ops_membrane()` reads that parameter when it starts: sending
+it afterwards would leave the solenoid running at the old rate while the
+panel showed the new one. The console monitor gained `membrane <duty|off>`
+and `disperse` for the no-display path. Every slot is guarded - an unhandled
+exception in a PyQt5 slot aborts the process, and "no command link" is a
+normal state in `--listen-only`.
+
+**Evidence.** 54 native firmware tests (four new: manual drive and stop, the
+motor pulse and its `NULL`-ops refusal, both drives refused after an abort,
+and the duty the sequencer records), 211 pytest, and a new GSE section in
+`verify_qt.py` that drives the real panel offscreen against a local
+`CommandServer` with a stub MCU forward - the real command server class, not
+the real Pi - and checks the commands that leave it, the HK it renders back,
+and that a missing command link reports instead of raising.
+
+Fixed along the way, both visible in the panel screenshot: the HK grid had
+**two rows labelled "Link"** (MCU link flags and downlink statistics) - the
+second is now "Downlink"; and the command buttons were ragged because a grid
+column is only as wide as its own content, so `HOLD`, alone in the last
+column, rendered at half the width of `PING` beside it.
+
+---
+
 ## 2026-08-31 (link work, after the motor bring-up) - The Pi <-> MCU conversation: confirmed commands, an arm gate on both ends, Pi liveness (M-13)
 
 **Why.** The two processors were wired together and could talk, but the
@@ -100,13 +260,14 @@ blocked on an ACK, and four schema mirrors between C and Python (ACK results,
 `SET_PARAM` keys, command codes, the arm window) so a renumbered enum fails a
 test instead of turning a refusal into an OK on the ground display.
 
-**Not yet proven on hardware.** The Pi was off the network for this work
-(`192.168.100.10` unreachable, `arp` incomplete on a link that was up), so
-everything above is desk-verified plus firmware running on the carrier. What
-the bench still owes: HK arriving over the real GP0/GP1 wire, an
-`ARM`+`RELEASE` round trip returning the MCU's own ACK, `MCUF_PI_OK`
-appearing in the GSE `link=` field, and pulling the UART to watch it clear
-after 60 s. `flight/pi/README.md` has the commands.
+**Not yet proven on hardware** at the time of writing. The Pi was off the
+network for this work (`192.168.100.10` unreachable, `arp` incomplete on a
+link that was up), so everything above was desk-verified plus firmware
+running on the carrier. **Since closed** by the 2026-09-09 bench entry above:
+HK over the real GP0/GP1 wire, the `ARM`+`RELEASE` round trip returning the
+MCU's own ACK, `MCUF_PI_OK` in the GSE `link=` field, and the 60 s clear
+(stopping the FSW drops `PI` from `link=`, restarting it brings it back).
+`flight/pi/README.md` has the commands.
 
 ## 2026-08-31 (latest) - Motor and membrane solenoid driven together (M-07)
 

@@ -62,7 +62,7 @@ spectra, storage of spectra, and all external communication.
 | Interface | Spec |
 |---|---|
 | E-Link downlink | UDP over Ethernet; ~1.9 kbit/s average (limit 2 kbit/s continuous; bursts ≤ 400 kbit/s max, 100 kbit/s avg per Table 6-3); self-contained packets (seq + timestamp + CRC-16), loss-tolerant |
-| E-Link uplink | TCP, ≤ 1 kbit/s; command set `PING, START, HOLD, RESUME, ABORT, RELEASE 1\|2, SET_PARAM, STATUS?`; mandatory ACK; arm/execute for actuators |
+| E-Link uplink | TCP, ≤ 1 kbit/s; command set `PING, START, HOLD, RESUME, ABORT, RELEASE 1\|2, SET_PARAM, STATUS?, ARM, MEMBRANE, DISPERSE`; mandatory ACK; arm/execute for the particle release. `MEMBRANE` (duty %, 0 = off) and `DISPERSE` (one pulse) are direct operator drives of the dispersion hardware, beyond the SED set: neither is irreversible, so neither is armed or ground-interlocked, and the MCU refuses both in TERMINATION/SAFE |
 | IP addressing | 2 addresses: FSW-PI, GSE bench port |
 | Pi ↔ RP2350 | UART, COBS-framed, CRC-16. Down: HK @ 1 Hz, state changes, actuator events. Up: forwarded commands, time sync every 10 s |
 | Spectrometer ↔ Pi | USB (FTDI FT2232H, VID 0403/PID 6010) → `/dev/ttyUSB*`, vendor library `libe9u_LSMD.so` (built from `drivers/e9u_LSMD_LIB_Linux/`, same API as the Windows DLL) — driven by this repo's `spectro/eureca_driver.py`; needs the vendor udev rules |

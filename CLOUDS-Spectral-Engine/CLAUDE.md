@@ -123,8 +123,8 @@ header.** Two boards are in play; keep them apart by USB serial - bare Pico 2
 | i2c0 | **SDA GP28, SCL GP29** (not GP12/13, which are unconnected) | BME280 `0x76` is the only usable sensor |
 | INA226 ×3 | `0x40` 24 V, `0x44` 5 V, `0x45` 3.3 V | live, but **no field in the 44-byte HK** |
 | BNO055 IMU | `0x28` | answers with valid chip id / SW rev; **sub-sensor IDs read 0x00**, unusable |
-| Membrane solenoid | **GP26** (not GP8, unconnected) | **2 Hz**, loop-toggled via `core/sqwave` |
-| CaCO₃ dispersion motor | **GP17 fwd / GP18 rev** | one 5 s scheduled pulse per release; runs concurrently with the membrane, measured; **not in the SED**, reverse sense untested, **current unmeasured - not on any monitored rail** |
+| Membrane solenoid | **GP26** (not GP8, unconnected) | **2 Hz**, loop-toggled via `core/sqwave`; driven from the GSE panel end to end (`MEMBRANE` duty), duty read back in HK |
+| CaCO₃ dispersion motor | **GP17 fwd / GP18 rev** | one 5 s scheduled pulse per release or per `DISPERSE` command, commanded from the panel and seen in `valve_status` for ~5 s; runs concurrently with the membrane, measured; **not in the SED**, reverse sense untested, **current unmeasured - not on any monitored rail** |
 | STLM20 ×2 | none | **not populated**; the old `ADC_TEMP1` collided with GP26 |
 | Keller 23SY ×2 | none | **absent at every address** |
 | SD / SPI0 | **pinout unknown**; the old map's GP17/GP18 drive the motor | no card answered `CMD0` there; defines deleted, **M-11 blocked on the schematic** |
@@ -256,6 +256,31 @@ Addresses match `FswConfig.ground_host` and the GSE `--experiment` default, so
 both run with no host flags. `pi.local` resolves to the **WiFi** address —
 address `192.168.100.10` explicitly for the cable, and check `$SSH_CONNECTION`.
 Pi config is persistent in `/etc/netplan/90-NM-75a1216a-*.yaml`.
+
+**The bench Pi is a Raspberry Pi 4 Model B Rev 1.2**, not the Pi 5 the SED
+and every README baseline (`cat /proc/device-tree/model`). It matters for the
+UART: the Pi 5 route is `dtparam=uart0=on` / the `uart0-pi5` overlay, while
+what this board needed was the Pi-4 route below. Same disagreement class as
+the IMU - hardware and document differ, and the document is the one that has
+not been updated.
+
+**Enabling the RP2350 UART on the bench Pi** took three changes and two
+reboots, and the intermediate state looks like success:
+
+```sh
+# /boot/firmware/config.txt
+enable_uart=1
+dtoverlay=disable-bt        # without this serial0 -> ttyS0, the mini-UART
+# /boot/firmware/cmdline.txt: drop console=serial0,115200
+```
+
+`enable_uart=1` alone gives `/dev/serial0 -> ttyS0`: the **mini-UART**, whose
+baud follows the core clock, with Bluetooth holding the PL011 as `ttyAMA1`.
+There is no `/dev/ttyAMA0` at all in that state, so `uart_port` in
+`/etc/clouds/fsw.json` fails and the service crash-loops. `disable-bt` frees
+the PL011 and `serial0 -> ttyAMA0` appears. Then delete the `--no-uart` in
+`/etc/systemd/system/clouds-fsw.service.d/10-bench.conf`, which exists only
+for a Pi with no MCU wired.
 
 Pi is **Debian 13 / Python 3.13, PEP 668** — install deps with apt
 (`python3-numpy python3-scipy python3-serial`), not pip; pip would build scipy

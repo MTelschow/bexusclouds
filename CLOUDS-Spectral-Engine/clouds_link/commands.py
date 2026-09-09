@@ -24,10 +24,21 @@ class Command(IntEnum):
     SET_PARAM = 0x06   # key = Param, value = i32
     STATUS_REQ = 0x07
     ARM = 0x08         # key = command code being armed
+    MEMBRANE = 0x09    # key = duty percent, 0 = off (M-07 manual drive)
+    DISPERSE = 0x0A    # key = 1 -> one dispersion-motor pulse
 
 
 #: Commands that require a prior ARM within ARM_WINDOW_S.
 ARMED_COMMANDS = frozenset({Command.RELEASE})
+
+#: Direct actuator drives for the dispersion hardware (M-07). Deliberately
+#: outside ARMED_COMMANDS and GROUND_INTERLOCKED: unlike RELEASE, neither is
+#: irreversible - the membrane solenoid oscillates while it is told to and
+#: stops on MEMBRANE key=0, and the motor runs one bounded pulse - and driving
+#: them on the bench is the whole point of having them on the panel. The MCU
+#: still refuses both in TERMINATION and SAFE, so an abort cannot be undone
+#: from the panel.
+MANUAL_ACTUATORS = frozenset({Command.MEMBRANE, Command.DISPERSE})
 
 #: Commands the GSE refuses to send while on ground (S.10) unless the
 #: operator has explicitly enabled flight mode.
@@ -46,7 +57,7 @@ FLIGHT_ONLY = frozenset({Command.RELEASE})
 #: it even while the RP2350 is silent; PISTATUS.uart_ok reports that instead.
 MCU_CONFIRMED = frozenset({Command.START, Command.HOLD, Command.RESUME,
                            Command.ABORT, Command.RELEASE, Command.SET_PARAM,
-                           Command.ARM})
+                           Command.ARM, Command.MEMBRANE, Command.DISPERSE})
 
 
 class Param(IntEnum):

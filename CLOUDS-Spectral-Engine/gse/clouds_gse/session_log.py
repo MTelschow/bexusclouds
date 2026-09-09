@@ -12,6 +12,7 @@ import os
 import time
 
 from clouds_link import hk
+from clouds_link.frames import event_name, severity_name
 
 
 class SessionLog:
@@ -50,7 +51,9 @@ class SessionLog:
     def log_event(self, frame, event: dict) -> None:
         row = {"recv_t": round(time.time(), 3),
                "frame_t": round(frame.timestamp, 3), "seq": frame.seq,
-               "code": event["code"], "severity": event["severity"],
+               "code": event["code"], "code_name": event_name(event["code"]),
+               "severity": event["severity"],
+               "severity_name": severity_name(event["severity"]),
                "text": event["text"]}
         if self._ev_writer is None:
             self._ev_file = open(self.events_path, "w", newline="",

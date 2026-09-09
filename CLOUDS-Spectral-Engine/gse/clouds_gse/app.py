@@ -1,8 +1,13 @@
 """GSE PyQt5 dashboard (G-01..G-04, G-07): live HK, quick-look spectrum,
-command panel with arm/execute + flight-mode interlock toggle.
+command panel with arm/execute + flight-mode interlock toggle, and direct
+drives for the dispersion actuators (membrane solenoid, CaCO3 motor).
 
-Follows the CLOUDS design language of the bench app (docs/UI_STYLE.md):
-dark panel, wavelength-coloured dual traces via matplotlib. GUI-only module
+Styling is NOT the bench app's design language yet (docs/UI_STYLE.md): the
+sidebar is stock Qt on the host palette while the plot is dark `#12141a`, so
+the window reads as two half-themed halves. The traces are two fixed colours,
+not the bench app's wavelength ramp, and there is no branding or spectrum bar.
+Worth settling before roll-out; the doc's panel background is `#ffffff`, so
+the plot is the half that is off-language. GUI-only module
 - everything testable lives in receiver/commander/session_log.
 """
 from __future__ import annotations
@@ -12,7 +17,8 @@ from PyQt5 import QtCore, QtWidgets
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 
-from clouds_link.commands import Command
+from clouds_link.commands import Command, Param
+from clouds_link.frames import AckResult, event_name, severity_name
 from clouds_link.hk import Housekeeping
 from spectro.calibration import Calibration
 
@@ -28,10 +34,46 @@ _HK_FIELDS = [
     ("T1 / T2", lambda h: f"{h.temp1_cc / 100:.1f} / {h.temp2_cc / 100:.1f} C"),
     ("RH1 / RH2", lambda h: f"{h.rh1_cpct / 100:.1f} / {h.rh2_cpct / 100:.1f} %"),
     ("Membrane", lambda h: f"{h.membrane_duty} %"),
-    ("Valves", lambda h: f"{h.valve_status:04b}"),
+    ("Driving", lambda h: h.actuator_text),
     ("Link", lambda h: h.link_text),
-    ("Errors", lambda h: f"{h.error_flags:#06x}"),
+    # Named, not the raw mask: most of these bits are permanently set on this
+    # hardware, so this row is the list of what has no source.
+    ("Errors", lambda h: h.error_text),
 ]
+
+
+def _expand_buttons(box: QtWidgets.QGroupBox, cols: int,
+                    uniform: bool = False) -> None:
+    """Let every button fill its cell. A QPushButton is horizontally
+    `Minimum` by default, so it sits at its text width inside a wider cell -
+    which is why one short label used to render as a stunted button next to
+    its neighbours.
+
+    Equal stretch is not enough on its own: it splits only the *spare* width,
+    on top of each column's own minimum, so a wide label ("ARM + RELEASE 1")
+    still pushes its column out and the grid comes back ragged in a second
+    way. `uniform` pins every column to the widest button's hint first, which
+    is what actually makes a block of command buttons one size.
+    """
+    lay = box.layout()
+    buttons = box.findChildren(QtWidgets.QPushButton)
+    widest = max((b.sizeHint().width() for b in buttons), default=0)
+    for col in range(cols):
+        lay.setColumnStretch(col, 1)
+        if uniform:
+            lay.setColumnMinimumWidth(col, widest)
+    for btn in buttons:
+        btn.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
+                          QtWidgets.QSizePolicy.Fixed)
+
+
+def _section(text: str, top: bool = False) -> QtWidgets.QLabel:
+    """Section header inside a group box (docs/UI_STYLE.md: `#8a97a3`).
+    Without it a heading is indistinguishable from a widget's own label."""
+    lab = QtWidgets.QLabel(text)
+    lab.setStyleSheet("color: #8a97a3; font-weight: bold; font-size: 11px;"
+                      + ("margin-top: 8px;" if top else ""))
+    return lab
 
 
 class GseWindow(QtWidgets.QMainWindow):
@@ -72,11 +114,14 @@ class GseWindow(QtWidgets.QMainWindow):
             lab = QtWidgets.QLabel("-")
             self._hk_labels[name] = lab
             form.addRow(name, lab)
+        # Not "Link": the HK row above already carries that name for the
+        # MCU's own link flags, and two rows with one label is unreadable.
         self._link_label = QtWidgets.QLabel("-")
-        form.addRow("Link", self._link_label)
+        form.addRow("Downlink", self._link_label)
         left.addLayout(form)
 
         left.addWidget(self._command_panel())
+        left.addWidget(self._actuator_panel())
         self._event_list = QtWidgets.QListWidget()
         left.addWidget(self._event_list, 1)
 
@@ -95,6 +140,10 @@ class GseWindow(QtWidgets.QMainWindow):
         simple = [("PING", Command.PING), ("START", Command.START),
                   ("HOLD", Command.HOLD), ("RESUME", Command.RESUME),
                   ("ABORT", Command.ABORT)]
+        # Plain grid cells, one column each: `_expand_buttons(uniform=True)`
+        # pins all three columns to the widest button, so a short label no
+        # longer renders as a stunted button and a part-filled row does not
+        # stretch its two buttons wider than the full row above it.
         for i, (label, cmd) in enumerate(simple):
             btn = QtWidgets.QPushButton(label)
             btn.clicked.connect(lambda _, c=cmd: self._send(c))
@@ -106,6 +155,57 @@ class GseWindow(QtWidgets.QMainWindow):
             lay.addWidget(btn, 3, n - 1)
         self._cmd_status = QtWidgets.QLabel("-")
         lay.addWidget(self._cmd_status, 4, 0, 1, 3)
+        _expand_buttons(box, 3, uniform=True)
+        return box
+
+    def _actuator_panel(self) -> QtWidgets.QGroupBox:
+        """Direct drives for the dispersion hardware (M-07).
+
+        Separate from the Commands box on purpose: these move hardware
+        without an arm/execute handshake, because neither drive is
+        irreversible - the membrane stops on Stop and the motor pulse is
+        bounded on the MCU - and running them is how the mechanism is
+        exercised on the bench. The MCU still refuses both in TERMINATION and
+        SAFE, so nothing here can restart an aborted experiment.
+        """
+        box = QtWidgets.QGroupBox("Actuators")
+        lay = QtWidgets.QGridLayout(box)
+
+        lay.addWidget(_section("Membrane solenoid"), 0, 0, 1, 4)
+        self._duty = QtWidgets.QSpinBox()
+        self._duty.setRange(5, 100)          # PARAM_MEMBRANE_DUTY limits
+        self._duty.setValue(60)
+        self._duty.setSuffix(" %")
+        self._duty.setToolTip("Drive duty cycle (MEMBRANE key)")
+        lay.addWidget(self._duty, 1, 0)
+        self._hz = QtWidgets.QSpinBox()
+        self._hz.setRange(1, 400)            # PARAM_MEMBRANE_HZ limits
+        self._hz.setValue(2)
+        self._hz.setSuffix(" Hz")
+        self._hz.setToolTip("Drive frequency, sent as SET_PARAM MEMBRANE_HZ "
+                            "before the drive starts")
+        lay.addWidget(self._hz, 1, 1)
+        start = QtWidgets.QPushButton("Drive")
+        start.setStyleSheet("color: #e8821e; font-weight: bold;")
+        start.clicked.connect(self._membrane_start)
+        lay.addWidget(start, 1, 2)
+        stop = QtWidgets.QPushButton("Stop")
+        stop.clicked.connect(self._membrane_stop)
+        lay.addWidget(stop, 1, 3)
+
+        lay.addWidget(_section("CaCO₃ dispersion motor", top=True),
+                      2, 0, 1, 4)
+        motor = QtWidgets.QPushButton("Run one pulse")
+        motor.setStyleSheet("color: #e8821e; font-weight: bold;")
+        motor.setToolTip("One forward pulse, timed on the MCU (5 s) and not "
+                         "interruptible from here")
+        motor.clicked.connect(self._disperse)
+        lay.addWidget(motor, 3, 0, 1, 2)
+        # Own row, like the Commands box: beside the button it reads as part
+        # of the button's label.
+        self._act_status = QtWidgets.QLabel("-")
+        lay.addWidget(self._act_status, 4, 0, 1, 4)
+        _expand_buttons(box, 4)
         return box
 
     # -- commands -------------------------------------------------------------
@@ -128,6 +228,14 @@ class GseWindow(QtWidgets.QMainWindow):
         if self._cmd is None:
             self._cmd_status.setText("no command link")
             return
+        # Interlock first, dialog second. Asking "arm and fire valve 1?" and
+        # then refusing the Yes teaches the operator that the confirmation
+        # means nothing, and on the pad that is every single press.
+        if not self._cmd.flight_mode:
+            self._cmd_status.setText(
+                "RELEASE is interlocked on ground (S.10); "
+                "enable flight mode to send it")
+            return
         ok = QtWidgets.QMessageBox.question(
             self, "Confirm release",
             f"Arm and fire pinch valve {valve}?",
@@ -139,6 +247,48 @@ class GseWindow(QtWidgets.QMainWindow):
             self._cmd_status.setText(f"RELEASE {valve} -> {r.name}")
         except (InterlockError, CommandError) as e:
             self._cmd_status.setText(str(e))
+
+    # -- actuators ------------------------------------------------------------
+
+    def _membrane_start(self) -> None:
+        """Frequency first, then the drive: PARAM_MEMBRANE_HZ is read when the
+        drive starts, so setting it afterwards would leave the solenoid
+        running at the old rate while the panel showed the new one."""
+        if self._cmd is None:
+            self._act_status.setText("no command link")
+            return
+        try:
+            r = self._cmd.set_param(int(Param.MEMBRANE_HZ), self._hz.value())
+            if r != AckResult.OK:
+                self._act_status.setText(f"MEMBRANE_HZ -> {r.name}, "
+                                         f"not driving")
+                return
+            r = self._cmd.membrane(self._duty.value())
+            self._act_status.setText(
+                f"membrane {self._duty.value()} % @ {self._hz.value()} Hz "
+                f"-> {r.name}")
+        except (InterlockError, CommandError, ValueError) as e:
+            self._act_status.setText(str(e))
+
+    def _membrane_stop(self) -> None:
+        if self._cmd is None:
+            self._act_status.setText("no command link")
+            return
+        try:
+            r = self._cmd.membrane(0)
+            self._act_status.setText(f"membrane off -> {r.name}")
+        except (InterlockError, CommandError, ValueError) as e:
+            self._act_status.setText(str(e))
+
+    def _disperse(self) -> None:
+        if self._cmd is None:
+            self._act_status.setText("no command link")
+            return
+        try:
+            r = self._cmd.disperse()
+            self._act_status.setText(f"disperse -> {r.name}")
+        except (InterlockError, CommandError) as e:
+            self._act_status.setText(str(e))
 
     # -- refresh --------------------------------------------------------------
 
@@ -166,7 +316,8 @@ class GseWindow(QtWidgets.QMainWindow):
         while self._event_list.count() < len(self._rx.events):
             ev = self._rx.events[self._event_list.count()]
             self._event_list.addItem(
-                f"[{ev['severity']}] {ev['code']}: {ev['text']}")
+                f"[{severity_name(ev['severity'])}] "
+                f"{event_name(ev['code'])}: {ev['text']}")
         self._plot()
 
     def _plot(self) -> None:

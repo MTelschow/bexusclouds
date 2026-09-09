@@ -1141,6 +1141,118 @@ static void test_command_results_report_what_happened(void)
                             seq_command(&s, 2800, 2, CMD_RELEASE, 1, 0, &cfg));
 }
 
+/* ---- operator drives of the dispersion hardware (M-07) ------------------ */
+
+static void test_manual_membrane_drive_and_stop(void)
+{
+    cfg_t cfg;
+    sequencer_t s;
+
+    mock_reset();
+    cfg_defaults(&cfg);
+    seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
+    seq_step(&s, 1000, 1, 101325, 101325); /* INIT -> STANDBY, on the pad */
+
+    /* On the pad is exactly where this is used: bench bring-up. No arm. */
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 2000, 2, CMD_MEMBRANE,
+                                                60, 0, &cfg));
+    TEST_ASSERT_EQUAL_INT(60, M.membrane_duty);
+    TEST_ASSERT_EQUAL_UINT8(60, s.membrane_duty); /* what HK will report */
+    TEST_ASSERT_EQUAL_UINT8(EV_MANUAL_DRIVE, M.last_event);
+
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 3000, 3, CMD_MEMBRANE,
+                                                0, 0, &cfg));
+    TEST_ASSERT_EQUAL_INT(0, M.membrane_duty);
+    TEST_ASSERT_EQUAL_UINT8(0, s.membrane_duty);
+
+    /* Out of range must not reach the hardware at all. */
+    seq_command(&s, 4000, 4, CMD_MEMBRANE, 60, 0, &cfg);
+    TEST_ASSERT_EQUAL_UINT8(ACK_INVALID, seq_command(&s, 4100, 4, CMD_MEMBRANE,
+                                                     101, 0, &cfg));
+    TEST_ASSERT_EQUAL_INT(60, M.membrane_duty); /* unchanged */
+    TEST_ASSERT_EQUAL_UINT8(60, s.membrane_duty);
+}
+
+static void test_manual_disperse_runs_one_motor_pulse(void)
+{
+    cfg_t cfg;
+    sequencer_t s;
+    seq_ops_t no_motor;
+
+    mock_reset();
+    cfg_defaults(&cfg);
+    seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
+    seq_step(&s, 1000, 1, 101325, 101325);
+
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 2000, 2, CMD_DISPERSE,
+                                                1, 0, &cfg));
+    TEST_ASSERT_EQUAL_INT(1, M.disperse_calls);
+    TEST_ASSERT_EQUAL_UINT8(EV_MANUAL_DRIVE, M.last_event);
+
+    /* key is the request, not a duty: anything but 1 is a bad command. */
+    TEST_ASSERT_EQUAL_UINT8(ACK_INVALID, seq_command(&s, 2100, 2, CMD_DISPERSE,
+                                                     0, 0, &cfg));
+    TEST_ASSERT_EQUAL_UINT8(ACK_INVALID, seq_command(&s, 2200, 2, CMD_DISPERSE,
+                                                     2, 0, &cfg));
+    TEST_ASSERT_EQUAL_INT(1, M.disperse_calls);
+
+    /* A board without the motor must refuse, not answer OK for a drive no
+     * line can make (the carrier grew the motor after the SED). */
+    mock_reset();
+    no_motor = mock_ops;
+    no_motor.disperse = NULL;
+    seq_init(&s, &cfg, &no_motor, NULL, 0, 0);
+    seq_step(&s, 1000, 1, 101325, 101325);
+    TEST_ASSERT_EQUAL_UINT8(ACK_REJECTED, seq_command(&s, 2000, 2,
+                                                      CMD_DISPERSE, 1, 0,
+                                                      &cfg));
+    TEST_ASSERT_EQUAL_INT(0, M.disperse_calls);
+}
+
+static void test_manual_drives_are_refused_after_an_abort(void)
+{
+    cfg_t cfg;
+    sequencer_t s;
+
+    mock_reset();
+    cfg_defaults(&cfg);
+    seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
+    run_sim(&s, &cfg, 0, 1000);
+    seq_command(&s, 1000000ull, 1000, CMD_ABORT, 0, 0, &cfg);
+    seq_step(&s, 1001000ull, 1001, profile_pa(1001), profile_pa(1001));
+    TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
+
+    /* SAFE means the actuators are off and stay off: the panel must not be
+     * able to restart either drive after an abort. */
+    TEST_ASSERT_EQUAL_UINT8(ACK_REJECTED, seq_command(&s, 1002000ull, 1002,
+                                                      CMD_MEMBRANE, 60, 0,
+                                                      &cfg));
+    TEST_ASSERT_EQUAL_UINT8(ACK_REJECTED, seq_command(&s, 1003000ull, 1003,
+                                                      CMD_DISPERSE, 1, 0,
+                                                      &cfg));
+    TEST_ASSERT_EQUAL_INT(0, M.membrane_duty);
+    TEST_ASSERT_EQUAL_UINT8(0, s.membrane_duty);
+    TEST_ASSERT_EQUAL_INT(0, M.disperse_calls);
+}
+
+static void test_sequencer_membrane_duty_tracks_the_automatic_drive(void)
+{
+    cfg_t cfg;
+    sequencer_t s;
+
+    mock_reset();
+    cfg_defaults(&cfg);
+    seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
+    run_sim(&s, &cfg, 0, 1000);
+    seq_command(&s, 1000000ull, 1000, CMD_RELEASE, 1, 0, &cfg);
+    seq_step(&s, 1001000ull, 1001, profile_pa(1001), profile_pa(1001));
+    /* HK read the duty as a constant 0 while the solenoid oscillated until
+     * the sequencer started recording what it commanded. */
+    TEST_ASSERT_EQUAL_UINT8((uint8_t)cfg_get(&cfg, PARAM_MEMBRANE_DUTY),
+                            s.membrane_duty);
+    TEST_ASSERT_EQUAL_INT(M.membrane_duty, s.membrane_duty);
+}
+
 static void test_release_already_fired_is_rejected_not_silent(void)
 {
     cfg_t cfg;
@@ -1186,6 +1298,40 @@ static void test_ack_payload_layout(void)
     TEST_ASSERT_EQUAL_UINT8(0x12, out[1]);
     TEST_ASSERT_EQUAL_UINT8(CMD_RELEASE, out[2]);
     TEST_ASSERT_EQUAL_UINT8(3, out[3]);
+}
+
+static void test_event_severity_separates_faults_from_progress(void)
+{
+    /* Every event used to downlink at EVS_WARNING, so the field told ground
+     * nothing and the panel could only show the raw number. */
+    TEST_ASSERT_EQUAL_UINT8(EVS_CRITICAL, event_severity(EV_ABORTED));
+    TEST_ASSERT_EQUAL_UINT8(EVS_ERROR, event_severity(EV_SELF_TEST_FAIL));
+    TEST_ASSERT_EQUAL_UINT8(EVS_ERROR, event_severity(EV_SEAL_FAILED));
+    TEST_ASSERT_EQUAL_UINT8(EVS_WARNING, event_severity(EV_PI_LINK_LOST));
+    TEST_ASSERT_EQUAL_UINT8(EVS_WARNING,
+                            event_severity(EV_AUTONOMOUS_LATCHED));
+    TEST_ASSERT_EQUAL_UINT8(EVS_WARNING,
+                            event_severity(EV_RESUMED_AFTER_RESET));
+    TEST_ASSERT_EQUAL_UINT8(EVS_INFO, event_severity(EV_STATE_CHANGE));
+    TEST_ASSERT_EQUAL_UINT8(EVS_INFO, event_severity(EV_RELEASE_FIRED));
+    TEST_ASSERT_EQUAL_UINT8(EVS_INFO, event_severity(EV_PI_LINK_OK));
+    /* An operator's own drive is not a fault. */
+    TEST_ASSERT_EQUAL_UINT8(EVS_INFO, event_severity(EV_MANUAL_DRIVE));
+}
+
+static void test_not_every_event_is_one_severity(void)
+{
+    /* The regression this guards: a blanket return would pass every check
+     * above that happens to expect that level. */
+    bool seen[4] = {false, false, false, false};
+    uint8_t code;
+
+    for (code = EV_STATE_CHANGE; code <= EV_MANUAL_DRIVE; code++)
+        seen[event_severity(code)] = true;
+    TEST_ASSERT_TRUE(seen[EVS_INFO]);
+    TEST_ASSERT_TRUE(seen[EVS_WARNING]);
+    TEST_ASSERT_TRUE(seen[EVS_ERROR]);
+    TEST_ASSERT_TRUE(seen[EVS_CRITICAL]);
 }
 
 int main(void)
@@ -1238,7 +1384,13 @@ int main(void)
     RUN_TEST(test_unarmed_commands_pass_the_gate_untouched);
     RUN_TEST(test_command_results_report_what_happened);
     RUN_TEST(test_release_already_fired_is_rejected_not_silent);
+    RUN_TEST(test_manual_membrane_drive_and_stop);
+    RUN_TEST(test_manual_disperse_runs_one_motor_pulse);
+    RUN_TEST(test_manual_drives_are_refused_after_an_abort);
+    RUN_TEST(test_sequencer_membrane_duty_tracks_the_automatic_drive);
     RUN_TEST(test_ground_link_latch_refreshes_without_the_sequencer);
+    RUN_TEST(test_event_severity_separates_faults_from_progress);
+    RUN_TEST(test_not_every_event_is_one_severity);
     RUN_TEST(test_ack_payload_layout);
     RUN_TEST(test_cfg_default_matches_cfg_defaults);
     return UNITY_END();

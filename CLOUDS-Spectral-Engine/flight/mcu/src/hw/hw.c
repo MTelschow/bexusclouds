@@ -86,6 +86,27 @@ void hw_actuators_service(uint64_t now_ms)
         gpio_put(PIN_MEMBRANE_PWM, sqwave_level(&membrane_wave));
 }
 
+uint8_t hw_actuator_status(void)
+{
+    /* core/pulse drives one line at a time, so at most one bit is set. The
+     * open lines are never energized (they are interlocks forced low), and
+     * the membrane is a waveform, reported as a duty instead. */
+    switch (pulses.active_pin) {
+    case PIN_PINCH_1:
+        return HKV_PINCH_1;
+    case PIN_PINCH_2:
+        return HKV_PINCH_2;
+    case PIN_EQ1_CLOSE:
+        return HKV_EQ1_CLOSE;
+    case PIN_EQ2_CLOSE:
+        return HKV_EQ2_CLOSE;
+    case PIN_DISPERSE_FWD:
+        return HKV_DISPERSE;
+    default:
+        return 0;
+    }
+}
+
 static void ops_fire_pinch(void *ctx, uint8_t n)
 {
     (void)ctx;

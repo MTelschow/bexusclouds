@@ -38,7 +38,8 @@ static uint16_t ack_seq_no;
 static void send_event(uint8_t code, const char *msg)
 {
     uint8_t payload[2 + 64];
-    uint16_t plen = event_pack(code, 1, msg, payload, sizeof payload);
+    uint16_t plen = event_pack(code, event_severity(code), msg,
+                               payload, sizeof payload);
     uint32_t wall = hw_wall_s();
 
     if (plen)
@@ -67,6 +68,12 @@ static void send_hk(uint64_t t_ms)
     hw_read_sensors(&hk);
     hk.state = (uint8_t)seq.state;
     hk.fired = seq.fired;
+    /* What the actuators are doing, from the two places that know: the
+     * sequencer owns the membrane duty, the pulse scheduler owns the line
+     * currently energized. Neither was reported before, so the panel showed
+     * a membrane at 0 % while the solenoid was oscillating. */
+    hk.membrane_duty = seq.membrane_duty;
+    hk.valve_status = hw_actuator_status();
     hk.flags = (uint8_t)((seq.autonomy.autonomous_latched
                               ? MCUF_AUTONOMOUS_LATCHED
                               : 0) |

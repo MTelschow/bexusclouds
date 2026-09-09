@@ -170,6 +170,46 @@ class TestCommander:
         assert commander.ping() == AckResult.OK
 
 
+class TestManualActuators:
+    """G-03 operator drives of the dispersion hardware (M-07), against the
+    real Pi command server."""
+
+    def test_membrane_drive_and_stop_need_no_arm_or_flight_mode(self, cmd_link):
+        commander, forwarded = cmd_link
+        assert not commander.flight_mode      # bench: the interlock is on
+        assert commander.membrane(60) == AckResult.OK
+        assert commander.membrane(0) == AckResult.OK
+        assert forwarded == [(Command.MEMBRANE, 60, 0),
+                             (Command.MEMBRANE, 0, 0)]
+
+    def test_disperse_asks_for_exactly_one_pulse(self, cmd_link):
+        commander, forwarded = cmd_link
+        assert commander.disperse() == AckResult.OK
+        assert forwarded == [(Command.DISPERSE, 1, 0)]
+
+    def test_duty_out_of_range_never_leaves_the_laptop(self, cmd_link):
+        commander, forwarded = cmd_link
+        for bad in (-1, 101):
+            with pytest.raises(ValueError):
+                commander.membrane(bad)
+        assert forwarded == []
+
+    def test_mcu_refusal_is_reported_not_swallowed(self):
+        """The drives are refused in TERMINATION/SAFE. The MCU decides that,
+        so the panel must show its verdict rather than a bare OK."""
+        server = CommandServer("127.0.0.1", 0,
+                               forward=lambda *a: AckResult.REJECTED,
+                               state=CommandState())
+        server.start()
+        commander = Commander("127.0.0.1", server.port, timeout=2.0)
+        try:
+            assert commander.membrane(60) == AckResult.REJECTED
+            assert commander.disperse() == AckResult.REJECTED
+        finally:
+            commander.close()
+            server.stop()
+
+
 class TestSessionLog:
     def test_hk_events_quicklook_logged_and_exported(self, tmp_path):
         log = SessionLog(str(tmp_path), stamp="test")

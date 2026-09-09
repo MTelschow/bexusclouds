@@ -22,7 +22,7 @@ import time
 
 from clouds_link import frames
 from clouds_link.commands import FLIGHT_ONLY, MCU_CONFIRMED, Command
-from clouds_link.frames import EventSeverity, PacketType
+from clouds_link.frames import EventCode, EventSeverity, PacketType, event_name
 from spectro.calibration import Calibration
 from spectro.driver import open_driver
 
@@ -36,9 +36,11 @@ from .telemetry import Downlink, QuicklookSender
 from .uart_link import PipeTransport, SerialTransport
 from .watchdog import SystemdWatchdog
 
-_EV_MCU_SILENT = 0x10
-_EV_SPECTRO = 0x11
-_EV_INTERLOCK = 0x12
+# The Pi's own event codes live in the shared EventCode space (0x10..), so
+# ground can name every event it receives whichever end emitted it.
+_EV_MCU_SILENT = EventCode.MCU_SILENT
+_EV_SPECTRO = EventCode.SPECTRO
+_EV_INTERLOCK = EventCode.INTERLOCK
 
 
 class FlightApp:
@@ -110,7 +112,8 @@ class FlightApp:
             self.down.relay(frame.encode())               # byte-identical
         if frame.type == PacketType.EVENT:
             ev = frames.unpack_event(frame.payload)
-            self.comm_log.log("mcu", f"event {ev['code']}: {ev['text']}")
+            self.comm_log.log(
+                "mcu", f"event {event_name(ev['code'])}: {ev['text']}")
 
     def _forward_to_mcu(self, cmd: int, key: int, value: int) -> int:
         """Hand a command to the MCU and report what the MCU said (S.8).

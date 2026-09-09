@@ -335,6 +335,155 @@ win.chk_log.setChecked(False)
 app.processEvents()
 check("UI session log written", bool(_glob.glob("output/session_*.csv")))
 
+# -- GSE dashboard: the actuator controls move real hardware -----------------
+# The bench panel above only reads a detector; the GSE panel energizes the
+# membrane solenoid and the dispersion motor. A slot that is not wired means
+# an operator presses Stop and nothing happens, so the wiring is checked here
+# rather than trusted.
+print("\n-- GSE dashboard (offscreen) --")
+for _extra in ("gse", os.path.join("flight", "pi")):
+    _p = os.path.join(os.path.dirname(os.path.abspath(__file__)), _extra)
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
+from clouds_link import hk as _hk
+from clouds_link.commands import Command as _Cmd, Param as _Param
+from clouds_link.frames import AckResult as _Ack, Frame as _Frame, \
+    PacketType as _Pkt, pack_event as _pack_event
+from clouds_fsw.command_server import CommandServer as _CmdServer, \
+    CommandState as _CmdState
+from clouds_gse.app import GseWindow as _GseWindow
+from clouds_gse.commander import Commander as _Commander
+from clouds_gse.receiver import Receiver as _Receiver
+from clouds_gse.session_log import SessionLog as _SessionLog
+
+_mcu = {"duty": 0, "valves": 0, "hz": 0, "log": []}
+
+
+def _forward(cmd, key, value):
+    """Stands in for the RP2350: its own acceptance rules are tested in
+    flight/mcu/test, so this only acks and reflects the drive into HK."""
+    _mcu["log"].append((int(cmd), key, value))
+    if cmd == _Cmd.MEMBRANE:
+        _mcu["duty"] = key
+    elif cmd == _Cmd.DISPERSE:
+        _mcu["valves"] = int(_hk.ValveStatus.DISPERSE)
+    elif cmd == _Cmd.SET_PARAM and key == _Param.MEMBRANE_HZ:
+        _mcu["hz"] = value
+    return _Ack.OK
+
+
+_server = _CmdServer("127.0.0.1", 0, forward=_forward, state=_CmdState())
+_server.start()
+_rx = _Receiver(bind="127.0.0.1", port=0)
+_rx.start()
+_commander = _Commander("127.0.0.1", _server.port, timeout=2.0)
+_gse = _GseWindow(_rx, _commander, _SessionLog("output", stamp="verify_gse"))
+_gse.show()
+app.processEvents()
+try:
+    _gse._duty.setValue(70)
+    _gse._hz.setValue(3)
+    _gse._membrane_start()
+    check("GSE membrane drive reaches the link",
+          _mcu["log"] == [(int(_Cmd.SET_PARAM), int(_Param.MEMBRANE_HZ), 3),
+                          (int(_Cmd.MEMBRANE), 70, 0)], str(_mcu["log"]))
+    check("GSE frequency is set before the drive starts", _mcu["hz"] == 3)
+    _mcu["log"].clear()
+    _gse._membrane_stop()
+    check("GSE Stop commands duty 0",
+          _mcu["log"] == [(int(_Cmd.MEMBRANE), 0, 0)] and _mcu["duty"] == 0,
+          str(_mcu["log"]))
+    _mcu["log"].clear()
+    _gse._disperse()
+    check("GSE motor button asks for one pulse",
+          _mcu["log"] == [(int(_Cmd.DISPERSE), 1, 0)], str(_mcu["log"]))
+
+    # housekeeping feedback: without it a 5 s pulse is invisible to ground
+    import socket as _socket
+    _tx = _socket.socket(_socket.AF_INET, _socket.SOCK_DGRAM)
+    _tx.sendto(_Frame(type=_Pkt.HK,
+                      payload=_hk.Housekeeping(state=_hk.SeqState.STANDBY,
+                                               membrane_duty=70,
+                                               valve_status=_mcu["valves"]
+                                               ).pack(),
+                      seq=0).stamp().encode(), ("127.0.0.1", _rx.port))
+    for _ in range(60):
+        app.processEvents()
+        QtCore.QThread.msleep(5)
+    _gse._refresh()
+    app.processEvents()
+    check("GSE renders the commanded drive",
+          _gse._hk_labels["Membrane"].text() == "70 %"
+          and _gse._hk_labels["Driving"].text() == "DISPERSE",
+          f'{_gse._hk_labels["Membrane"].text()} / '
+          f'{_gse._hk_labels["Driving"].text()}')
+    _tx.close()
+
+    # A raising slot aborts the whole process under PyQt5, so the listen-only
+    # path must report instead of raise.
+    _gse._cmd = None
+    _gse._membrane_start()
+    _gse._membrane_stop()
+    _gse._disperse()
+    check("GSE actuators survive a missing command link",
+          _gse._act_status.text() == "no command link", _gse._act_status.text())
+    # Pixel regression: every button in the Commands box is one width. Three
+    # different widths used to share that box (a full row, a part-filled row,
+    # and the release pair), which reads as a broken layout.
+    _cmd_box = [b for b in _gse.findChildren(QtWidgets.QGroupBox)
+                if b.title() == "Commands"][0]
+    _gse.resize(1280, 860)
+    app.processEvents()
+    _widths = sorted({b.width() for b in
+                      _cmd_box.findChildren(QtWidgets.QPushButton)})
+    check("GSE command buttons are one width", len(_widths) == 1, str(_widths))
+
+    # The release confirmation must not ask about something it will refuse.
+    _dialogs = []
+    _real_question = QtWidgets.QMessageBox.question
+    QtWidgets.QMessageBox.question = staticmethod(
+        lambda *a, **k: _dialogs.append(a[2]) or QtWidgets.QMessageBox.Yes)
+    try:
+        _gse._cmd = _commander
+        _commander.flight_mode = False
+        _gse._release(1)
+        check("GSE checks the interlock before the confirm dialog",
+              _dialogs == []
+              and "interlock" in _gse._cmd_status.text().lower(),
+              f"{_dialogs} / {_gse._cmd_status.text()}")
+        _commander.flight_mode = True
+        _gse._release(1)
+        check("GSE still confirms a release it will send",
+              len(_dialogs) == 1, str(_dialogs))
+    finally:
+        QtWidgets.QMessageBox.question = _real_question
+        _commander.flight_mode = False
+
+    # Events are named, not numbered: `[1] 12: membrane on` told an operator
+    # nothing. EventCode 0x0C is MANUAL_DRIVE.
+    _tx2 = _socket.socket(_socket.AF_INET, _socket.SOCK_DGRAM)
+    _tx2.sendto(_Frame(type=_Pkt.EVENT,
+                       payload=_pack_event(0x0C, 0, "membrane on"),
+                       seq=0).stamp().encode(), ("127.0.0.1", _rx.port))
+    for _ in range(60):
+        app.processEvents()
+        QtCore.QThread.msleep(5)
+    _gse._refresh()
+    app.processEvents()
+    _items = [_gse._event_list.item(i).text()
+              for i in range(_gse._event_list.count())]
+    check("GSE names event codes", any("MANUAL_DRIVE" in t for t in _items),
+          str(_items))
+    _tx2.close()
+
+    _gse.grab().save("output/qt_gse_panel.png")
+finally:
+    _commander.close()
+    _server.stop()
+    _rx.stop()
+
+
 if "--live" in sys.argv:
     print("\n-- live hardware through the full UI (real EURECA Duo) --")
     lwin = clouds_spectral.Engine(mock=False)

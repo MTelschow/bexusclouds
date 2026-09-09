@@ -73,6 +73,27 @@ class Commander:
     def set_param(self, key: int, value: int) -> AckResult:
         return self._transact(Command.SET_PARAM, key=key, value=value)
 
+    def membrane(self, duty_pct: int) -> AckResult:
+        """Drive the membrane push-pull solenoid; 0 stops it (M-07).
+
+        No arm and no ground interlock: the drive is not irreversible and
+        stops on the next call, and exercising it on the bench is what the
+        control is for (see MANUAL_ACTUATORS). Frequency is a separate knob -
+        SET_PARAM MEMBRANE_HZ.
+        """
+        if not 0 <= duty_pct <= 100:
+            raise ValueError("membrane duty must be 0..100 percent")
+        return self._transact(Command.MEMBRANE, key=duty_pct)
+
+    def disperse(self) -> AckResult:
+        """One pulse of the CaCO3 dispersion motor (M-07).
+
+        The drive is timed on the MCU (VALVE_PULSE_MS, 5 s) and cannot be cut
+        short from here, so this is a fire-and-forget request; watch
+        ``valve_status`` for the line actually being energized.
+        """
+        return self._transact(Command.DISPERSE, key=1)
+
     def ping(self) -> AckResult:
         return self._transact(Command.PING)
 

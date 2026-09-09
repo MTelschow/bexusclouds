@@ -117,6 +117,114 @@ class TestErrorFlagsMirror:
             % (c_bits, py_bits))
 
 
+class TestActuatorStatusMirror:
+    """The HKV_* bits are one schema across MCU, Pi and GSE - and they are
+    what the panel shows for a commanded drive, so a renumbered bit reports
+    the wrong actuator to the operator."""
+
+    def test_c_and_python_valve_bits_agree(self):
+        from clouds_link.hk import ValveStatus
+
+        frame_h = _read("src", "core", "frame.h")
+        c_bits = dict(
+            (m.group(1), int(m.group(2)))
+            for m in re.finditer(r"#define HKV_(\w+) \(1u << (\d+)\)", frame_h))
+        py_bits = dict((e.name, e.value.bit_length() - 1) for e in ValveStatus)
+        assert c_bits == py_bits, (
+            "frame.h HKV_* and clouds_link.hk.ValveStatus disagree: %s vs %s"
+            % (c_bits, py_bits))
+
+
+class TestEventCodeMirror:
+    """X-01: `enum seq_event` was the one C enum with no Python mirror, so
+    every event reached the operator as a bare number - `[1] 12: membrane
+    on`. Naming them is only safe if the two ends cannot drift."""
+
+    def test_c_and_python_event_codes_agree(self):
+        from clouds_link.frames import EventCode
+
+        seq_h = _read("src", "core", "sequencer.h")
+        body = seq_h.split("enum seq_event {", 1)[1].split("};", 1)[0]
+        c_codes = dict(
+            (m.group(1), int(m.group(2), 16))
+            for m in re.finditer(r"EV_(\w+)\s*=\s*(0x[0-9A-Fa-f]+)", body))
+        # The Pi's own codes (0x10..) have no C side; compare the MCU half.
+        py_codes = dict((e.name, int(e)) for e in EventCode if e < 0x10)
+        assert c_codes == py_codes, (
+            "sequencer.h EV_* and clouds_link.frames.EventCode disagree: "
+            "%s vs %s" % (c_codes, py_codes))
+
+    def test_an_unknown_code_stays_readable(self):
+        """A newer MCU must not blank out the event list on an older ground
+        station: an unnamed code shows as its hex value."""
+        from clouds_link.frames import event_name
+
+        assert event_name(0x7f) == "0x7f"
+        assert event_name(0x0c) == "MANUAL_DRIVE"
+
+
+class TestActuatorStateReachesHousekeeping:
+    """Both fields existed in HK for a long time while the MCU left them at
+    zero, so the panel showed a membrane at 0 % and no valve activity while
+    the hardware was moving. The operator drives are unusable without them:
+    a 5 s motor pulse is over before anyone can see it any other way."""
+
+    def test_membrane_duty_and_valve_status_are_filled(self):
+        main = _read("src", "main.c")
+        body = main.split("static void send_hk", 1)[1].split("\n}", 1)[0]
+        assert re.search(r"hk\.membrane_duty\s*=\s*seq\.membrane_duty", body), (
+            "HK must report the duty the sequencer commanded")
+        assert re.search(r"hk\.valve_status\s*=\s*hw_actuator_status\(", body), (
+            "HK must report which actuator line is energized")
+
+    def test_actuator_status_reads_the_scheduler_not_a_shadow_copy(self):
+        """The truth about what is driving lives in core/pulse: a separate
+        flag set when a drive is *requested* would report a queued pulse as
+        an active one, and stay set if the drive never ran."""
+        hw = _read("src", "hw", "hw.c")
+        body = hw.split("uint8_t hw_actuator_status", 1)[1].split("\n}", 1)[0]
+        assert "pulses.active_pin" in body
+        for pin in ("PIN_PINCH_1", "PIN_PINCH_2", "PIN_EQ1_CLOSE",
+                    "PIN_EQ2_CLOSE", "PIN_DISPERSE_FWD"):
+            assert pin in body, "%s has no HK bit" % pin
+
+
+class TestManualActuatorDrives:
+    """M-07 operator drives. The membrane and the motor are commandable from
+    the panel; the safety rules that make that acceptable are asserted here
+    so a later edit has to be deliberate about changing them."""
+
+    def test_manual_drives_are_not_armed_or_ground_interlocked(self):
+        from clouds_link.commands import (ARMED_COMMANDS, FLIGHT_ONLY,
+                                          GROUND_INTERLOCKED,
+                                          MANUAL_ACTUATORS, MCU_CONFIRMED,
+                                          Command)
+
+        assert MANUAL_ACTUATORS == {Command.MEMBRANE, Command.DISPERSE}
+        for cmd in MANUAL_ACTUATORS:
+            # Neither drive is irreversible, and driving them on the bench is
+            # the point - unlike RELEASE, which stays armed and interlocked.
+            assert cmd not in ARMED_COMMANDS
+            assert cmd not in GROUND_INTERLOCKED
+            assert cmd not in FLIGHT_ONLY
+            # But ground must still hear the MCU's own verdict, not "the Pi
+            # wrote to the UART".
+            assert cmd in MCU_CONFIRMED
+        assert Command.RELEASE in ARMED_COMMANDS & GROUND_INTERLOCKED
+
+    def test_termination_and_safe_refuse_both_drives(self):
+        """An abort must not be reversible from the panel. The behaviour is
+        tested natively; this pins the states it keys off."""
+        seq_c = _read("src", "core", "sequencer.c")
+        body = seq_c.split("static bool actuators_commandable", 1)[1] \
+                    .split("\n}", 1)[0]
+        assert "ST_TERMINATION" in body and "ST_SAFE" in body
+        for cmd in ("CMD_MEMBRANE", "CMD_DISPERSE"):
+            case = seq_c.split("case %s:" % cmd, 1)[1].split("case ", 1)[0]
+            assert "actuators_commandable(s)" in case, (
+                "%s must be state-checked" % cmd)
+
+
 class TestLinkSchemaMirror:
     """X-01: the Pi/GSE and the firmware must agree on the link vocabulary.
 

@@ -36,6 +36,23 @@ class McuFlags(IntEnum):
     HOLD = 1 << 4
 
 
+class ValveStatus(IntEnum):
+    """Mirror of the HKV_* bits in flight/mcu/src/core/frame.h.
+
+    A set bit means that actuator line is energized *now*. The drives are
+    bounded pulses (5 s) that can finish between two 1 Hz packets, so this is
+    where ground sees a commanded valve or motor drive actually happen. Only
+    one bit is ever set at a time: the MCU drives one line at a time to cap
+    peak actuator current. The membrane is not here - it is a repeating
+    waveform, reported as ``membrane_duty``.
+    """
+    PINCH_1 = 1 << 0
+    PINCH_2 = 1 << 1
+    EQ1_CLOSE = 1 << 2
+    EQ2_CLOSE = 1 << 3
+    DISPERSE = 1 << 4        # CaCO3 dispersion motor, forward line
+
+
 class HkErrors(IntEnum):
     """Mirror of the HKE_* bits in flight/mcu/src/core/frame.h.
 
@@ -55,7 +72,7 @@ class Housekeeping:
     state: int = 0
     flags: int = 0
     fired: int = 0            # bit0 pinch valve 1, bit1 pinch valve 2 (S.3)
-    valve_status: int = 0     # bitfield: 4 valves currently driven open
+    valve_status: int = 0     # ValveStatus bits: line energized right now
     membrane_duty: int = 0    # percent
     error_flags: int = 0
     temp1_cc: int = 0         # STLM20 #1, centi-degC
@@ -108,6 +125,33 @@ class Housekeeping:
         return " ".join(set_bits) if set_bits else "-"
 
     @property
+    def actuator_text(self) -> str:
+        """Which actuator lines ``valve_status`` says are driven, for HK
+        displays. A commanded drive is a 5 s pulse, so this is what tells an
+        operator the command reached the hardware."""
+        names = [v.name for v in ValveStatus if self.valve_status & v]
+        return " ".join(names) if names else "-"
+
+    @property
+    def error_text(self) -> str:
+        """Which ``error_flags`` bits are set, by name.
+
+        Most of these bits are permanently set on this hardware (the STLM20
+        pair and the Keller sensors are not populated, the IMU is unusable),
+        so the field is the operator's list of what has no source - and
+        ``0x003c`` is not a list. An unknown bit is kept visible as its mask
+        rather than dropped: a newer MCU must stay readable here.
+        """
+        names = [e.name for e in HkErrors if self.error_flags & e]
+        known = 0
+        for e in HkErrors:
+            known |= e
+        rest = self.error_flags & ~known
+        if rest:
+            names.append(f"{rest:#06x}")
+        return " ".join(names) if names else "-"
+
+    @property
     def state_name(self) -> str:
         try:
             return SeqState(self.state).name
@@ -119,6 +163,8 @@ class Housekeeping:
         d = asdict(self)
         d["state_name"] = self.state_name
         d["link_text"] = self.link_text
+        d["actuator_text"] = self.actuator_text
+        d["error_text"] = self.error_text
         ax, ay, az = d.pop("accel_mg")
         gx, gy, gz = d.pop("gyro_ddps")
         d.update(accel_x_mg=ax, accel_y_mg=ay, accel_z_mg=az,

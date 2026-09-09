@@ -133,6 +133,21 @@ class TestHousekeeping:
         assert latched.to_row()["link_text"] == "AUTONOMOUS"
 
 
+    def test_actuator_bits_are_rendered_for_displays(self):
+        """A commanded drive is a 5 s pulse: `valve_status` is where an
+        operator sees it happen at all, so it must be readable."""
+        h = hk.Housekeeping(valve_status=hk.ValveStatus.DISPERSE)
+        assert h.actuator_text == "DISPERSE"
+        assert hk.Housekeeping(valve_status=0).actuator_text == "-"
+        assert h.to_row()["actuator_text"] == "DISPERSE"
+
+    def test_actuator_bits_fit_the_valve_status_byte(self):
+        """valve_status is one byte in the 44-byte payload - a sixth or
+        seventh line would need a wider field, not a wider enum."""
+        for v in hk.ValveStatus:
+            assert 0 < int(v) <= 0xFF
+
+
 class TestPayloads:
     def test_quicklook_roundtrip(self):
         counts = list(range(0, 2560, 10))

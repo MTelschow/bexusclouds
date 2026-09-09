@@ -47,7 +47,16 @@ enum seq_event {
     EV_AUTONOMOUS_LATCHED = 0x09,
     EV_PI_LINK_LOST = 0x0A,
     EV_PI_LINK_OK = 0x0B,
+    EV_MANUAL_DRIVE = 0x0C, /* operator drove an actuator from the panel */
 };
+
+/* Severity (EVS_* in frame.h) to downlink one event code at. Every MCU event
+ * used to go out at a hardcoded EVS_WARNING, which made the field carry no
+ * information: an abort and a routine state change reached ground at the same
+ * level, so an operator could not sort a log by what matters. Lives here
+ * because the event codes do - frame.c is the layer below and must not need
+ * to know them. */
+uint8_t event_severity(uint8_t code);
 
 /* What survives a reset (persisted to SD/flash before it matters, S.3). */
 typedef struct {
@@ -81,6 +90,10 @@ typedef struct {
 typedef struct {
     seq_state_t state;
     uint8_t fired;
+    /* Last duty handed to ops->membrane, i.e. what the solenoid is doing
+     * now. Kept here so HK reports the drive rather than a constant 0 - the
+     * membrane is the one actuator whose state is not a short pulse. */
+    uint8_t membrane_duty;
     bool hold;
     bool seal_verified;
     uint8_t seal_attempts;
@@ -102,7 +115,13 @@ void seq_step(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
  * that). Returns the enum ack_result to answer with: ACK_OK when it was
  * acted on, ACK_REJECTED when the command is not allowed in this state,
  * ACK_INVALID for an unknown command or an out-of-range parameter. Ground
- * gets the MCU's own verdict, not merely "the Pi wrote to the UART". */
+ * gets the MCU's own verdict, not merely "the Pi wrote to the UART".
+ *
+ * CMD_MEMBRANE (key = duty percent, 0 = off) and CMD_DISPERSE (key = 1) are
+ * direct operator drives of the dispersion hardware, for bench bring-up and
+ * as a fallback if the drive a release step starts does not do its job. Both
+ * are refused in TERMINATION and SAFE: after an abort the actuators stay
+ * off, and no ground command may undo that. */
 uint8_t seq_command(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
                     uint8_t cmd, uint8_t key, int32_t value, cfg_t *cfg);
 /* Any valid ground command refreshes the link-loss latch (O.2), including

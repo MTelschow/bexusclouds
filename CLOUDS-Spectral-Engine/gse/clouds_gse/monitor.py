@@ -2,14 +2,14 @@
 integration use, and the fallback when no display is available).
 
 Commands:  ping start hold resume abort  release 1|2  set <key> <value>
-           status flight-mode quit
+           membrane <duty%|off>  disperse  status flight-mode quit
 """
 from __future__ import annotations
 
 import threading
 
 from clouds_link.commands import Command, Param
-from clouds_link.frames import AckResult
+from clouds_link.frames import AckResult, event_name, severity_name
 
 from .commander import Commander, CommandError, InterlockError
 from .receiver import Receiver
@@ -20,8 +20,8 @@ def _fmt_hk(h) -> str:
     return (f"[{h.state_name:11s}] fired={h.fired:02b} "
             f"p_amb={h.p_amb_pa / 100:8.1f} hPa p_ch={h.p_ch_pa / 100:8.1f} hPa "
             f"T1={h.temp1_cc / 100:6.1f} C RH1={h.rh1_cpct / 100:5.1f}% "
-            f"duty={h.membrane_duty:3d}% t+{h.mission_t_s}s "
-            f"link={h.link_text}")
+            f"duty={h.membrane_duty:3d}% drive={h.actuator_text} "
+            f"t+{h.mission_t_s}s link={h.link_text}")
 
 
 class ConsoleMonitor:
@@ -46,12 +46,13 @@ class ConsoleMonitor:
 
     def _on_event(self, frame, ev) -> None:
         self._session.log_event(frame, ev)
-        sev = ("INFO", "WARN", "ERROR", "CRIT")[min(ev["severity"], 3)]
-        self._print(f"EVENT {sev} code={ev['code']}: {ev['text']}")
+        self._print(f"EVENT {severity_name(ev['severity'])} "
+                    f"{event_name(ev['code'])}: {ev['text']}")
 
     def repl(self, input_fn=input) -> None:
         self._print("GSE console - commands: ping start hold resume abort "
-                    "release 1|2, set <param> <value>, status, flight-mode, quit")
+                    "release 1|2, membrane <duty%|off>, disperse, "
+                    "set <param> <value>, status, flight-mode, quit")
         while True:
             try:
                 line = input_fn("gse> ").strip()
@@ -84,6 +85,13 @@ class ConsoleMonitor:
         try:
             if parts[0] == "release" and len(parts) == 2:
                 r = self._cmd.release(int(parts[1]))
+            elif parts[0] == "membrane" and len(parts) == 2:
+                # The frequency knob is `set membrane_hz <n>`: it is read when
+                # the drive starts, so set it before driving.
+                r = self._cmd.membrane(0 if parts[1] in ("off", "stop")
+                                       else int(parts[1]))
+            elif parts[0] == "disperse" and len(parts) == 1:
+                r = self._cmd.disperse()
             elif parts[0] == "set" and len(parts) == 3:
                 key = Param[parts[1].upper()] if not parts[1].isdigit() \
                     else int(parts[1])

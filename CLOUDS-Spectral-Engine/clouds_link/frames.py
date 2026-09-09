@@ -61,6 +61,51 @@ class EventSeverity(IntEnum):
     CRITICAL = 3
 
 
+class EventCode(IntEnum):
+    """Event payload codes, from the two emitters that produce them.
+
+    0x01..0x0F mirror ``enum seq_event`` in flight/mcu/src/core/sequencer.h
+    (kept in step by a mirror test, like ``HkErrors`` and ``ValveStatus``);
+    0x10.. are the Pi's own, which never reach the MCU. Both arrive on ground
+    as one EVENT stream, so they share one space and one lookup - without it
+    the flight log and the GSE panel show a bare number for every event that
+    ever happens.
+    """
+    # MCU (mirror of enum seq_event)
+    STATE_CHANGE = 0x01
+    SELF_TEST_FAIL = 0x02
+    LAUNCH_DETECTED = 0x03
+    FLOAT_DETECTED = 0x04
+    SEAL_FAILED = 0x05
+    RELEASE_FIRED = 0x06
+    ABORTED = 0x07
+    RESUMED_AFTER_RESET = 0x08
+    AUTONOMOUS_LATCHED = 0x09
+    PI_LINK_LOST = 0x0A
+    PI_LINK_OK = 0x0B
+    MANUAL_DRIVE = 0x0C
+    # Pi-origin
+    MCU_SILENT = 0x10
+    SPECTRO = 0x11
+    INTERLOCK = 0x12
+
+
+def event_name(code: int) -> str:
+    """Name for an event code, or ``0xNN`` for one this build does not know -
+    a newer MCU must stay readable on an older ground station."""
+    try:
+        return EventCode(code).name
+    except ValueError:
+        return f"{code:#04x}"
+
+
+def severity_name(severity: int) -> str:
+    try:
+        return EventSeverity(severity).name
+    except ValueError:
+        return f"sev{severity}"
+
+
 @dataclass
 class Frame:
     type: int
