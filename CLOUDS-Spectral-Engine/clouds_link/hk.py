@@ -87,7 +87,7 @@ SHUNT_LSB_UV = 2.5
 #: a logged session can be re-derived from ``shunt_raw``, whereas an amp value
 #: the firmware had already computed could not. Ohm's law in these units is
 #: exactly ``I[mA] = U[uV] / R[mOhm]``; ``rail_a()`` scales that to amps.
-RAIL_SHUNT_MOHM = (10.0, 15.0, 10.0, 50.0)
+RAIL_SHUNT_MOHM = (10.0, 15.0, 50.0, 50.0)
 
 
 class ValveStatus(IntEnum):

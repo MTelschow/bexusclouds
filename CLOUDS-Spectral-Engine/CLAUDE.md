@@ -136,17 +136,31 @@ the method in `docs/DEVLOG.md` (2026-08-31). **Measure before trusting that
 header.** Two boards are in play; keep them apart by USB serial - bare Pico 2
 `182A9FD0C5146E6F`, CLOUDS carrier `21DD2AE08840C863`.
 
+**The carrier schematic (`pin_layout.jpeg`, 2026-09-11) confirms every measured
+pin and contradicts two that were never measured.** The full net table is in
+`board.h`. `PIN_PINCH_1`/`PIN_PINCH_2` (GP2/GP3) are the Pi's **`PI_RTS`/
+`PI_CTS`**, and `PIN_EQ1/2_OPEN/CLOSE` (GP4..GP7) are **`SPI_0` + `SD_1_SENS`**
+- so firing a pinch valve today toggles a UART flow-control line. Those defines
+are **deliberately left wrong** with the contradiction written beside them: the
+board's actuator channels are `ACT_R_1..4` (GP26/25/24/23), `ACT_EC`
+(GP19..GP22) and `ACT_HB` (GP17/GP18/GP46), but the page names *channels, not
+loads*, and guessing which relay holds pinch 1 is how an actuator gets driven
+from the wrong pin. Needs the load side of the schematic or a measurement.
+Also: the carrier is an **RP2350B** (GP0..GP47) while the build is
+`-DPICO_BOARD=pico2` (RP2350A, 30 GPIOs), so the INA226 alert pins, the 24 V
+regulator enable, five ADC channels and `ACT_HB_SENS` are all unreachable.
+
 | What | Where | State |
 |---|---|---|
 | i2c0 | **SDA GP28, SCL GP29** (not GP12/13, which are unconnected) | BME280 `0x76` is the only usable sensor |
-| INA226 ×3 | `0x40` **V_in**, `0x44` 5 V, `0x45` 3.3 V | live and **downlinked**: bus voltage in `hk.rail_mv[]` (mV, measured 24.06 / 5.09 / 3.30 V) and the raw shunt-voltage register in `hk.shunt_raw[]` (i16, 2.5 µV/LSB). **Amps are computed on the ground**, `hk.rail_a()` over `RAIL_SHUNT_MOHM = 10, 15, 10, 50 mΩ` - the part's calibration register is left alone, so a wrong shunt value can be corrected against a logged session instead of being baked into it |
+| INA226 ×3 | `0x40` **V_in**, `0x44` 5 V, `0x45` 3.3 V | live and **downlinked**: bus voltage in `hk.rail_mv[]` (mV, measured 24.06 / 5.09 / 3.30 V) and the raw shunt-voltage register in `hk.shunt_raw[]` (i16, 2.5 µV/LSB). **Amps are computed on the ground**, `hk.rail_a()` over `RAIL_SHUNT_MOHM = 10, 15, 50, 50 mΩ` - the part's calibration register is left alone, so a wrong shunt value can be corrected against a logged session instead of being baked into it |
 | INA226 24 V | **not fitted** | the rail holds slot 1 of `rail_mv[]` / `shunt_raw[]` and downlinks `RAIL_MV_INVALID`; the panel says `not fitted`, and `HKE_RAIL_FAIL` is **not** raised for it - an absent part is not a fault to chase (`ina226_fitted()`) |
-| BNO055 IMU | `0x28` | **does not answer (2026-09-11)**: 0/50 ACK at 0x28 *and* 0x29, read- and write-probe, in the same sweep where 0x40/0x44/0x45/0x76 all answer - electrically absent from i2c0, which is *not* the "sub-sensor dies dead" on record from 2026-08-31, when it answered `CHIP_ID 0xA0`. The board changed between those dates. Driven by `hw/bno055.c` (reset, 650 ms boot wait, ID check, `OPR_MODE` read-back, 30 s retry); with no part it reports `HKE_IMU_FAIL` and zeroed vectors, verified on hardware. Re-test with `src/tools/bno055_probe.c` (`-DCLOUDS_BUILD_TOOLS=ON`, USB CDC) when a part is fitted |
+| BNO055 IMU | `0x29` **or** `0x28` - the strap, not the part: 0x29 is the datasheet default and COM3 has an internal pull-up, so `hw/bno055.c` tries both and latches whichever returns a whole ID block | **does not answer (2026-09-11)**: 0/50 ACK at 0x28 *and* 0x29, read- and write-probe, in the same sweep where 0x40/0x44/0x45/0x76 all answer - electrically absent from i2c0, which is *not* the "sub-sensor dies dead" on record from 2026-08-31, when it answered `CHIP_ID 0xA0`. The board changed between those dates. Driven by `hw/bno055.c`: **400 ms start-up wait (TSup) before the bus is touched at all**, then reset, 650 ms boot (TPOR), ID check, 19 ms CONFIGMODE wait, 7 ms mode switch, `OPR_MODE` read-back, 30 s retry - five 1 Hz sweeps to a first sample, never sleeping. With no part it reports `HKE_IMU_FAIL` and zeroed vectors, verified on hardware. **`BNO_INT` is on GP27** and reads `pu=1 pd=0`, which **proves nothing** - `INT_EN`/`INT_MSK` reset to `0x00` and nothing enables an interrupt, so a *working* part may leave the line undriven too (only an actively driven pin says anything). What is *absent* cannot be told apart from unpowered, held in nRESET, or PS1/PS0 strapped to UART - that needs a meter, not firmware. HID-I2C is ruled out: `0x40` answers as a verified INA226. `src/tools/bno055_probe.c` (`-DCLOUDS_BUILD_TOOLS=ON`, USB CDC) discovers the strap; flash it first when a part is fitted. Verified on the carrier with no part: 119 HK in 120 s, uptime monotonic (no watchdog reset), `IMU_FAIL` set, vectors zero, rest of the bus undisturbed. **The success path has never run against real silicon** |
 | Membrane solenoid | **GP26** (not GP8, unconnected) | **2 Hz**, loop-toggled via `core/sqwave`; driven from the GSE panel end to end (`MEMBRANE` duty), duty read back in HK |
 | CaCO₃ dispersion motor | **GP17 fwd / GP18 rev** | one 5 s scheduled pulse per release or per `DISPERSE` command, commanded from the panel and seen in `valve_status` for ~5 s; runs concurrently with the membrane, measured; **not in the SED**, reverse sense untested, **current unmeasured - not on any monitored rail** |
 | STLM20 ×2 | none | **not populated**; the old `ADC_TEMP1` collided with GP26 |
 | Keller 23SY ×2 | none | **off the design** - absent at every address, and the HK fields they fed (`p_ch_pa`, `rh2_cpct`) went with them |
-| SD / SPI0 | **pinout unknown**; the old map's GP17/GP18 drive the motor | no card answered `CMD0` there; defines deleted, **M-11 blocked on the schematic** |
+| SD / SPI0 | **pinout now known** from the carrier schematic (2026-09-11): SPI_0 on GP4/GP6/GP7, `SD_1_CS` GP14 + `SD_1_SENS` GP5, `SD_2_CS` GP16 + `SD_2_SENS` GP15 | still no defines. **M-11 is no longer blocked on the schematic but on a pin conflict**: `board.h` currently gives GP4..GP7 to the equalisation valves, and an `spi_init()` would drive whatever the valve code thinks it owns |
 
 HK is **54 B** (framed 70 B against an 83 B allowance, ceiling 67 B payload).
 The Keller pair's 6 B (`p_ch_pa` + `rh2_cpct`) became `shunt_raw[]`; the four

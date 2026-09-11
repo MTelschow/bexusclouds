@@ -32,12 +32,23 @@ Reference implementation for the widgets we reuse: that engine's
 ## Spectrometer-specific layout (this app)
 
 `QMainWindow` -> horizontal: **live spectrum view** (stretch 1) + **control
-sidebar** (~410 px) in a `QScrollArea`. Sidebar order: branding; Connect /
-identify; Acquisition (exposure, averaging, run/stop); Dark frame
-(capture / subtract); Channels (measurement & reference roles, calibration);
-View (raw / transmission / absorbance, nm vs pixel axis); Export. A hint line
-under the action area is the feedback channel; a stats card overlays the plot
-top-left. This section grows as the panels land.
+sidebar** (~410 px) in a `QScrollArea`. Sidebar order: branding; then the
+group that steers the plot and the experiment - Spectrum source; Timeline
+(which housekeeping series the lower plot draws); Sensors; Commands;
+Actuators; Events - and below it what is set once and left alone -
+Housekeeping (the full HK grid); Device (connect / identify); Acquisition
+(exposure, averaging, run/stop); Dark frame (capture / subtract); Reference;
+View (counts / transmission / absorbance, nm vs pixel axis); Calibration;
+Export. What is expanded at startup is `fold_for()`, from two lists in
+`clouds_ui/window.py`: `DEFAULT_OPEN` (Spectrum source, Sensors, Commands,
+Actuators, Events) starts open and `DEFAULT_CLOSED` (Timeline, Device,
+Acquisition, Dark frame, Reference, View, Calibration, Export) starts folded,
+in either kind of session; only Housekeeping follows the half that was asked
+for - open with `--flight`, folded on the bench. The folded ones are either
+long (Timeline's two dozen series toggles, View) or set once and forgotten,
+and on screen at startup they cost the sections above them the height they
+are read in. A hint line under the action area is the feedback channel; a
+stats card overlays the plot top-left.
 
 The left half is a **vertical `QSplitter`**: the spectrum on top, the
 housekeeping **timeline** under it (`clouds_ui/timeline.py`). A splitter, not

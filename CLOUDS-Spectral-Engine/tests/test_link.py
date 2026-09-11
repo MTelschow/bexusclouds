@@ -172,7 +172,7 @@ class TestHousekeeping:
         assert h.rail_a(0) == pytest.approx(0.1285)
         # same shunt voltage, different resistor: the 3.3 V rail is 50 mOhm
         assert h.rail_a(3) == pytest.approx(1285.0 / 50_000)
-        assert hk.RAIL_SHUNT_MOHM == (10.0, 15.0, 10.0, 50.0)
+        assert hk.RAIL_SHUNT_MOHM == (10.0, 15.0, 50.0, 50.0)
 
     def test_a_negative_rail_current_survives_the_wire(self):
         """The shunt register is signed because current can flow either way.

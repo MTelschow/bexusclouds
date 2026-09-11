@@ -161,10 +161,9 @@ class FlightPanel(QtWidgets.QWidget):
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(12)
 
-        self.sec_hk = Section("Housekeeping")
-        self._build_hk(self.sec_hk)
-        lay.addWidget(self.sec_hk)
-
+        # Order is the operator's working order, not the data's: the sections
+        # they steer the experiment with come first, and the housekeeping
+        # grid - long, and read rather than acted on - sits below them.
         self.sec_sensors = Section("Sensors")
         self._build_sensors(self.sec_sensors)
         lay.addWidget(self.sec_sensors)
@@ -181,8 +180,12 @@ class FlightPanel(QtWidgets.QWidget):
         self._build_events(self.sec_events)
         lay.addWidget(self.sec_events)
 
-        self.sections = [self.sec_hk, self.sec_sensors, self.sec_cmd,
-                         self.sec_act, self.sec_events]
+        self.sec_hk = Section("Housekeeping")
+        self._build_hk(self.sec_hk)
+        lay.addWidget(self.sec_hk)
+
+        self.sections = [self.sec_sensors, self.sec_cmd, self.sec_act,
+                         self.sec_events, self.sec_hk]
 
     # -- layout --------------------------------------------------------------
 

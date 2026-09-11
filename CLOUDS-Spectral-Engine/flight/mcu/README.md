@@ -119,7 +119,7 @@ unplugged, and nothing on the link may delay a state transition (S.7).
   (`src/hw/ina226.c`) - bus voltage in `rail_mv[]` and the raw shunt-voltage
   register in `shunt_raw[]`, both absolute registers. The calibration register
   is left unprogrammed on purpose: amps are Ohm's law on the ground
-  (`clouds_link/hk.py` `RAIL_SHUNT_MOHM`, 10 / 15 / 10 / 50 mΩ), so a shunt
+  (`clouds_link/hk.py` `RAIL_SHUNT_MOHM`, 10 / 15 / 50 / 50 mΩ), so a shunt
   value that turns out wrong can be re-applied to a logged session. Four rails
   ride the packet: `V_in` (0x40, the incoming gondola bus - it was labelled
   24 V until the two were found to be different nets), a **24 V rail with no

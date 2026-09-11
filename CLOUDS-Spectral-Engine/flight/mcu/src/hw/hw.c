@@ -297,12 +297,17 @@ const seq_ops_t hw_seq_ops = {
  *   --    INA226  24 V rail  -> not fitted yet. The rail keeps its slot in
  *                              hk_t and downlinks RAIL_MV_INVALID; an absent
  *                              part is not HKE_RAIL_FAIL.
- *   0x28  BNO055 IMU        -> accel and gyro, in the non-fusion ACCGYRO mode.
- *                              The 2026-08-31 survey read its accel/mag/gyro
- *                              IDs as 0x00 and called the part faulted; it
- *                              read them before the part's 650 ms boot could
- *                              have written them. bno055.c resets it, waits
- *                              the boot out, and checks the IDs when they mean
+ *   0x29  BNO055 IMU        -> accel and gyro, in the non-fusion ACCGYRO mode.
+ *   or 0x28                    Which of the two is a board strap, not a
+ *                              property of the part: 0x29 is the datasheet
+ *                              default and COM3 carries an internal pull-up,
+ *                              so bno055.c tries both and latches whichever
+ *                              returns a whole ID block. The 2026-08-31
+ *                              survey read the accel/mag/gyro IDs as 0x00 and
+ *                              called the part faulted; it read them before
+ *                              the part's 400 ms start-up and 650 ms boot
+ *                              could have written them. bno055.c waits both
+ *                              out and checks the IDs when they mean
  *                              something - and still reports HKE_IMU_FAIL,
  *                              with zeroed vectors, if they do not come up.
  * There is no chamber pressure sensor and no second humidity channel: the
@@ -352,8 +357,9 @@ void hw_read_sensors(hk_t *hk)
     }
 
     /* The IMU is allowed to be late: bno055_read() returns false through the
-     * 650 ms boot, through a re-reset after a bus glitch, and forever if the
-     * part really is faulted. All three cases downlink zeros behind
+     * 400 ms start-up and the 650 ms boot behind it, through a re-reset after
+     * a bus glitch, and forever if the part really is faulted or absent. All
+     * of those cases downlink zeros behind
      * HKE_IMU_FAIL, because a zero acceleration is a reading a working
      * accelerometer can produce and the flag is the only thing that says this
      * one is not. The bring-up runs from here rather than from hw_init() so
@@ -435,7 +441,9 @@ void hw_init(void)
      * HKE_BME280_FAIL, and the sequencer is required to survive it. */
     (void)bme280_init();
     (void)ina226_init();
-    /* Starts the IMU's reset and its 650 ms boot timer; the bring-up itself
-     * happens in the 1 Hz sweep, so nothing here waits for it. */
-    (void)bno055_init(hw_monotonic_ms());
+    /* Arms the IMU's bring-up without touching the bus: the BNO055 is still
+     * inside its own 400 ms start-up (datasheet TSup) while this runs, so the
+     * reset that starts its 650 ms boot is issued from the 1 Hz sweep once
+     * that has elapsed. Nothing here waits for any of it. */
+    bno055_init(hw_monotonic_ms());
 }

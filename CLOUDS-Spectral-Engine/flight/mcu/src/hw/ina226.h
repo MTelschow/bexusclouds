@@ -19,7 +19,7 @@
  * shunt there produces confident, wrong amps with nothing on the ground able
  * to undo them. So the calibration register is left alone, the raw shunt
  * voltage goes down the link, and Ohm's law is applied on the ground where
- * the resistances live (clouds_link/hk.py RAIL_SHUNT_MOHM: 10, 15, 10, 50
+ * the resistances live (clouds_link/hk.py RAIL_SHUNT_MOHM: 10, 15, 50, 50
  * mOhm) -
  * a logged session stays re-derivable if one of those values is wrong.
  *

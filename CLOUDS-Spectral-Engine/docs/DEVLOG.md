@@ -18,7 +18,220 @@ without re-deriving anything. Newest entries first.
 
 ---
 
-## 2026-09-11 (newest) - The BNO055 has a driver, and the part is no longer on the bus (M-09)
+## 2026-09-11 (newest) - Three BNO055 bugs the missing part was hiding, and the carrier schematic (M-09)
+
+**What was asked.** "The BNO055 sensors are not working, fix this" - this time
+with `pin_layout.jpeg` (the carrier's RP2350B page) and the Bosch datasheet
+(BST-BNO055-DS000-18 rev 1.8).
+
+**The part is still absent, and no firmware change makes an absent part
+answer.** The entry below this one has the evidence: 0/50 ACK at both 0x28 and
+0x29, both probe shapes, in the same sweep in which 0x40, 0x44, 0x45 and 0x76
+all answer. That has not changed and is not a software question.
+
+**But the driver written against that absent part had three defects, each of
+which would keep a *fitted* one dead**, and they were invisible precisely
+because there was nothing on the bus to expose them. All three come straight
+out of the datasheet, which had not been read against the code.
+
+**1. The address was one board's strap, written up as the part's address.**
+`bno055.c` hardcoded `0x28`. Table 4-7 makes **0x29 the default** and 0x28 the
+*alternative*, selected by pulling COM3 low; Table 4-6 gives COM3 a 20-60 kOhm
+**internal pull-up to VDDIO**, so a COM3 left open - the common case on a
+module - reads high and the part answers at 0x29. The 2026-08-31 survey found
+a part at 0x28 and that address was then treated as a property of the BNO055.
+A part fitted with COM3 open would have answered a bus scan at 0x29 all day
+while the flight build never spoke to it, and at the HK bit that is
+indistinguishable from no part at all. Both addresses are now tried and the
+one that returns a whole ID block is latched - identity, not an ACK, as in
+`ina226.c`, because 0x28 and 0x29 are ordinary addresses another part could
+hold. `stand_down()` forgets the address again, so a reseated module on the
+other strap is found by the next retry.
+
+**2. There are two boot numbers and only one was honoured.** Table 0-2 gives
+**TSup = 400 ms "From Off to configuration mode"** *and* TPOR = 650 ms "From
+Reset to Config mode". The driver waited the 650 ms and ignored the 400 ms.
+The IMU and the MCU share the 3V3 rail, so `hw_init()` runs while the BNO055
+is still inside its own start-up: the `RST_SYS` write issued there went to a
+part that could not acknowledge it, **no reset happened**, and the 650 ms
+timer was then measured from an instant that meant nothing. The fix is a new
+`ST_POWER_WAIT` that touches nothing at all until TSup has elapsed, after
+which the reset is issued to a part awake enough to hear it and TPOR is timed
+from there. `bno055_init()` consequently writes nothing and no longer returns
+a bool - there was no hardware verdict to give at that point, and returning
+one invited it to be read as evidence.
+
+**3. The configuration writes landed inside the 19 ms the part needs to reach
+CONFIGMODE.** Table 3-6: 7 ms CONFIGMODE -> operation mode, **19 ms the other
+way**, and section 3.3.1 says only `OPR_MODE` and the interrupt registers are
+writable outside CONFIGMODE. The old `configure()` wrote `OPR_MODE = CONFIG`
+and then `PWR_MODE`, `SYS_TRIGGER` and `UNIT_SEL` back to back, inside that
+window, where the part ACKs them on the wire and drops them. This only bites
+on the re-reset path (after a reset the part is already in CONFIGMODE), which
+is exactly the path that runs after a bus glitch in flight. The `OPR_MODE`
+read-back would have caught the result and called it a failed part. Split into
+`enter_config()` and `configure()` across a new `ST_CONFIG_WAIT`.
+
+Bring-up is now five 1 Hz sweeps to a first sample - power wait, boot wait,
+config wait, mode wait, run - and still never sleeps, so the 2 s watchdog
+(S.9) is untouched. The I2C timeout went 4 ms -> 10 ms because section 4.6
+says **the BNO055 uses clock stretching**, alone among the parts on this bus;
+worst case is six transfers a sweep, 60 ms.
+
+**A way to tell "not fitted" from "fitted but silent", which is the actual open
+question.** The schematic has **`BNO_INT` on GP27** - the IMU is in the
+design and wired to the MCU, whatever is or is not soldered today. INT is a
+push-pull output idling low (Table 5-1 pin 14), so `bno055_probe.c` now samples
+GP27 as a plain SIO input with each pull in turn, before it touches the bus:
+driven low means something is present and powered, which no absent part can
+fake; floating means not fitted, unpowered, **or held in reset**, so a high
+reading narrows the fault without closing it. Printed as `pu=? pd=?` with that
+caveat in the output, because `pu=1 pd=0` has already been mistaken for
+"nothing attached" once on this board (GP17/GP18, which drive the motor).
+
+**The schematic also settles four things that were open, and opens one.**
+
+| Net | Pin | Against the firmware |
+|---|---|---|
+| `SDA_0` / `SCL_0` | GP28 / GP29 | confirms the measurement |
+| `ACT_HB_IN1` / `IN2` | GP17 / GP18 | confirms the dispersion motor, and names it an H-bridge |
+| `ACT_R_1` | GP26 | confirms the membrane |
+| `SPI_1_CS2` / `CS3` | GP12 / GP13 | not the i2c0 the old map claimed |
+| `SPI_0` + SD | GP4/6/7, CS GP14/GP16, sense GP5/GP15 | **M-11's pinout, which was the blocker** |
+| `PI_RTS` / `PI_CTS` | GP2 / GP3 | **`PIN_PINCH_1` / `PIN_PINCH_2`** |
+| `SPI_0_MISO` .. `MOSI` | GP4..GP7 | **`PIN_EQ1/2_OPEN/CLOSE`** |
+
+The last two are serious and are **not** fixed here. Firing a pinch valve
+today toggles a Pi UART flow-control line; driving an equalisation valve
+toggles the SD bus. The board's actuator channels are `ACT_R_1..4`
+(GP26/25/24/23), the `ACT_EC` driver (GP19..GP22) and the `ACT_HB` bridge
+(GP17/GP18/GP46) - but this page names *channels, not loads*: it does not say
+which relay holds pinch 1 or which holds an equalisation valve. Guessing that
+is how an actuator ends up driven from the wrong pin, which is the failure
+`board.h` already carries at the top. They need the load side of the
+schematic, or a measurement in the manner of 2026-08-31, and until then the
+wrong numbers stay in place with the contradiction written next to them rather
+than being replaced by better-looking guesses. M-11 stays blocked for the same
+reason: GP4..GP7 cannot be both SPI_0 and the valve pins, and an `spi_init()`
+would drive whatever the valve code thinks it owns.
+
+**The carrier is an RP2350B** (80-pin, GP0..GP47); the build is
+`-DPICO_BOARD=pico2`, i.e. RP2350A with 30 GPIOs. Nothing in use today is
+above GP29 so nothing is broken, but both debug lines, all four INA226 alert
+pins, the 24 V regulator enable and power-good, five ADC channels and the
+H-bridge current sense are unreachable from this firmware. The full net table
+is in `board.h`.
+
+**Checks.** `cmake --build flight/mcu/build` clean for both targets
+(`clouds_fsw_mcu`, `bno055_probe`), no warnings; `run_native.sh` 56/56;
+`pytest` 246 passed; `verify.py` and `verify_qt.py` both `VERIFY OK`.
+
+**Run on the carrier** (`21DD2AE08840C863`; `picotool info` reports
+`package: QFN80`, which confirms the schematic's RP2350B independently of the
+drawing). The board was carrying a `clouds_fsw_mcu` built 2026-08-31 - before
+the driver existed at all.
+
+*The probe, 175 s of USB CDC:*
+
+```
+-- watching i2c0 for 120 s (reseat/repower now) --
+t=  0 s: 0x40 0x44 0x45 0x76   (no IMU)
+
+-- is a part fitted at all? --
+BNO_INT (GP27): pu=1 pd=0 -> floating: NOT FITTED, unpowered, or held in reset
+i2c0 read-probe : 0x40 0x44 0x45 0x76
+i2c0 write-probe: 0x40 0x44 0x45 0x76
+0x28: 0/50 read-ACK, 0/50 write-ACK
+0x29: 0/50 read-ACK, 0/50 write-ACK
+no CHIP_ID 0xA0 at either 0x29 or 0x28
+```
+
+The address set never changed once across the full 120 s watch, so this is a
+**stable** absence and not an intermittent part. The ID block reads `00` at all
+eight points across the boot curve with the transfer itself failing (`[-1]` =
+address-phase NACK), which is the signature of nothing answering - distinct
+from the 2026-08-31 reading, where the transfers *succeeded* and returned
+`A0 00 00 00`.
+
+**What this does and does not establish.** It establishes that no BNO055
+answers I2C on i2c0. It rules out a bus fault (four parts answer in the same
+sweep), a scan artefact (both probe shapes, 50 attempts each, stable over
+120 s), and the HID-I2C strap (PS0 high would put the part at `0x40`, where a
+device answers with INA226 mfg `0x5449` and die `0x2260` - so that is the
+current monitor and not a mis-strapped IMU). It does **not** distinguish, and
+nothing reachable from the MCU can: no part fitted; VDD or VDDIO absent;
+nRESET (pin 11) held low; nBOOT_LOAD_PIN (pin 4) low, which boots the part
+into its bootloader; or PS1/PS0 (pins 5/6) strapped to UART rather than the
+`0b00` that selects I2C. The UART strap in particular would leave a perfectly
+healthy part invisible here and not disturb the bus, since a UART-mode BNO055
+transmits only when addressed and idles high, like the I2C bus itself. The
+datasheet is explicit that PS1/PS0 may not be left floating (4.5).
+
+**Closing it needs a meter on the board, not more firmware:** is a part on the
+footprint at all; VDD 2.4-3.6 V and VDDIO 1.7-3.6 V at its pins (Table 0-1);
+nRESET and nBOOT_LOAD_PIN both high; PS1 and PS0 both at GNDIO and neither
+floating; COM0/COM1 (pins 20/19) continuous to GP28/GP29. COM3 (pin 17) then
+says which address to expect - open or high is `0x29`, and the driver now
+handles either.
+
+**GP27 reads `pu=1 pd=0` - and that is worth nothing, which took a second
+reading of the datasheet to establish.** It was written up here first as the
+decisive presence test, on the reasoning that BNO_INT is the sensor's *output*
+and so a powered part would hold it low - the asymmetry that was supposed to
+make it admissible where the GP16/17/18 survey's identical `pu=1 pd=0` was
+not. **That reasoning is unsourced and the datasheet contradicts its premise.**
+`INT_EN` and `INT_MSK` both reset to `0x00` (4.4.8/4.4.9), every interrupt
+disabled, and neither the driver nor the probe writes them; 3.8.1 says only
+that INT "is set to high" once an interrupt occurs, and gives **no idle level
+and no output stage** for the pin. A healthy, powered, correctly strapped
+BNO055 sitting in ACCGYRO with no interrupt enabled may leave GP27 undriven,
+reading exactly as it does now.
+
+So the useful form of the test is one-sided: a pin found actively **driven**,
+either way, proves something is there; a pin that follows its pull proves
+nothing and is what a working part may well give. The probe now prints it that
+way and `board.h` says so. **This is the third time on this board that an
+instrument produced its own finding** (the `GPIO_FUNC_I2C` phantom stuck SCL,
+the `0xFE`/`0xFF` reads that caused the `SYS_ERR 0x05` they were then read as
+evidence of), and the first where the bad inference was this log's.
+
+*The flight firmware, 120 s of live downlink* (MCU -> Pi -> UDP 4000 on
+`192.168.100.1`), which is what proves the rewritten state machine is safe to
+fly with no part present:
+
+```
+hk #  1 uptime=  163s accel=(0,0,0) gyro=(0,0,0) err=IMU_FAIL NO_TEMP
+hk #105 uptime=  268s accel=(0,0,0) gyro=(0,0,0) err=IMU_FAIL NO_TEMP
+frame types seen: {HK: 119, QUICKLOOK: 239, PISTATUS: 12}
+HK packets: 119 over 120 s
+uptime 163 -> 282 s (delta 119 over 120 s elapsed)
+last rails: (19990, 65535, 5092, 3298)
+```
+
+- **119 HK in 120 s, and uptime advances 119 s over 120 s elapsed.** No drop,
+  so no watchdog reset (S.9) across ~2 minutes in which the 30 s retry fired
+  four times, each running the full `ST_POWER_WAIT` -> `ST_BOOT_WAIT` ->
+  `stand_down()` cycle. The extra states and the 10 ms timeout cost the 1 Hz
+  sweep nothing measurable.
+- `IMU_FAIL NO_TEMP` throughout, vectors flat zero: the flag reaches ground and
+  no number is invented for a part that is not there.
+- Nothing else on the bus is disturbed by the wider timeout or the extra
+  transfers - V_in 19.99 V (the bench is still on the 20 V supply), 5 V
+  5.092 V, 3.3 V 3.298 V, the unfitted 24 V monitor `65535` =
+  `RAIL_MV_INVALID` with no `RAIL_FAIL` raised against it, and no
+  `BME280_FAIL`.
+
+**Still untested: the success path.** `identify()` -> `enter_config()` ->
+`configure()` -> samples has never run against real silicon, because there is
+none to run it against. All three fixes above are read off the datasheet and
+verified only in that they compile, do not disturb the bus, and fail in the
+documented direction. When a part is fitted, flash the probe first - it now
+answers whether anything is on GP27 at all, which strap, which die, which
+clock and which mode in one pass - and only then judge the driver.
+
+---
+
+## 2026-09-11 - The BNO055 has a driver, and the part is no longer on the bus (M-09)
 
 **What was asked.** "The BNO055 sensors are not working, fix this."
 

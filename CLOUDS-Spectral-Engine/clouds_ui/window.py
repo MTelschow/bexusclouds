@@ -49,6 +49,22 @@ MONO = "Menlo,DejaVu Sans Mono,Consolas,monospace"
 VERSION = "0.1.0"
 RECONNECT_INTERVAL_MS = 3000   # auto-retry cadence after a driver/link error
 
+#: Sections that start expanded, in either kind of session, and the order they
+#: sit in at the top of the sidebar (`_build_panel` + `FlightPanel.sections`
+#: build them in this order). These are what an operator steers the experiment
+#: with and watches it answer on; everything else is set once and then left
+#: alone. Titles are upper-case to match `Section.title_key`.
+DEFAULT_OPEN = ("SPECTRUM SOURCE", "SENSORS", "COMMANDS", "ACTUATORS",
+                "EVENTS")
+
+#: Sections that start folded whichever half was asked for. Each is either
+#: long (Timeline's two dozen series toggles, the View block) or set once and
+#: forgotten (Device, Dark frame, Reference, Calibration, Export) - on screen
+#: at startup they cost the sections above them the height they are read in.
+#: Folding is display only, so a folded Timeline keeps recording.
+DEFAULT_CLOSED = ("TIMELINE", "DEVICE", "ACQUISITION", "DARK FRAME",
+                  "REFERENCE", "VIEW", "CALIBRATION", "EXPORT")
+
 # Default frame averaging. Tuned for the CURRENT bench cable: a ~5 m passive USB run
 # corrupts ~7% of pixels/frame to a fixed glitch code, and the median only fully
 # rejects that once it has a quorum. Measured (docs/DEVLOG.md): flat-region noise is
@@ -277,29 +293,31 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self._restore_stored_dark()
 
     def fold_for(self, flight: bool) -> None:
-        """Open the half the operator asked for and fold the other away.
+        """Set which sections are on screen at startup.
 
-        Both halves stay built and live either way - folding is display only -
-        so a bench session can open Commands without a restart, and a flight
-        session can still look at the instrument sections to read what the
-        settings were. What this decides is only what is on screen first.
+        `DEFAULT_OPEN` is expanded and `DEFAULT_CLOSED` folded in either kind
+        of session; only the housekeeping grid follows the half that was
+        asked for. Both halves stay built and live either way - folding is
+        display only - so a bench session can open Commands without a
+        restart, and a flight session can still look at the instrument
+        sections to read what the settings were. What this decides is only
+        what is on screen first.
         """
         flight_secs = set(self.flight.sections)
         for sec in self._sections:
-            is_flight = sec in flight_secs
-            if sec.title_key in ("SPECTRUM SOURCE",):
-                continue                      # always visible: it steers the plot
-            if sec.title_key == "TIMELINE":
-                # Built in the instrument half but fed by the downlink, so it
-                # follows the flight sections: in a bench session with no link
-                # its checkboxes have nothing to draw.
-                sec.set_open(flight)
-                continue
-            sec.set_open(is_flight if flight else not is_flight)
-        # ...except the two that are long and rarely wanted at startup.
-        for sec in self._sections:
-            if sec.title_key in ("REFERENCE", "CALIBRATION", "EVENTS"):
+            if sec.title_key in DEFAULT_OPEN:
+                # The group at the top of the sidebar: what the operator
+                # steers the experiment and the plot with, in either kind of
+                # session. Open regardless of which half was asked for -
+                # these are the sections you look for first.
+                sec.set_open(True)
+            elif sec.title_key in DEFAULT_CLOSED:
                 sec.set_open(False)
+            else:
+                # What is left - the housekeeping grid - follows the half
+                # that was asked for.
+                sec.set_open(sec in flight_secs if flight
+                             else sec not in flight_secs)
 
     # ----------------------------------------------------------- branding bits
     def _load_futura(self):

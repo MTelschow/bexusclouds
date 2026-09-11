@@ -12,6 +12,15 @@
  * it leaves the dispersion motor's state to its driver's idea of a floating
  * input. No actuator is commanded anywhere below.
  *
+ * It probes BOTH BNO055 addresses and decides between them by the ID block:
+ * the datasheet's default is 0x29 (COM3 high or open) and 0x28 is the
+ * alternative strap, and assuming one of them is what kept the flight driver
+ * from finding a part it could have talked to.
+ *
+ * It also reads BNO_INT (GP27) before touching the bus. That pin separates
+ * "footprint empty" from "fitted but silent", which every bus scan on this
+ * board so far has been unable to do.
+ *
  * Rules inherited from the 2026-08-31 survey's mistakes: never read above
  * register 0x6A (the page-0 map ends there, and reads past it provoke
  * SYS_ERR 0x05), and never report one sample as a measurement - the ID block
@@ -20,15 +29,30 @@
  */
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 
+#include "hardware/gpio.h"
 #include "hardware/i2c.h"
 #include "pico/stdlib.h"
 
 #include "../hw/board.h"
 #include "../hw/hw.h"
 
-#define BNO_ADDR 0x28
-#define TIMEOUT_US 4000
+/* Both straps. Datasheet Table 4-7: 0x29 is the default (COM3 high, and COM3
+ * has a 20-60 kOhm internal pull-up, so open reads high too), 0x28 is the
+ * alternative reached by pulling COM3 low. The probe discovers which one the
+ * board uses and every register access below follows it; the flight driver
+ * does the same. Zero means nothing identified. */
+static const uint8_t BNO_ADDRS[2] = {0x29, 0x28};
+static uint8_t bno_addr = 0x29; /* provisional until identify_addr() runs */
+
+/* Section 4.6: the BNO055 I2C interface uses clock stretching, alone among
+ * the parts on this bus. 10 ms leaves it room to hold SCL and still bounds a
+ * dead bus. */
+#define TIMEOUT_US 10000
+/* Long enough to walk to the board and back, short enough that the probe
+ * still finishes on its own if nobody is there. */
+#define WATCH_S 120u
 
 static int read_reg(uint8_t addr, uint8_t reg, uint8_t *val)
 {
@@ -59,7 +83,7 @@ static int write_reg(uint8_t addr, uint8_t reg, uint8_t val)
 static void show_named(const char *what, uint8_t reg)
 {
     uint8_t v = 0;
-    int rc = read_reg(BNO_ADDR, reg, &v);
+    int rc = read_reg(bno_addr, reg, &v);
 
     if (rc)
         printf("  %-14s (0x%02X) I2C ERROR %d\n", what, reg, rc);
@@ -72,11 +96,11 @@ static void show_named(const char *what, uint8_t reg)
 static void show_ids(unsigned t_ms)
 {
     uint8_t burst[7] = {0}, one[7] = {0};
-    int rc_b = read_burst(BNO_ADDR, 0x00, burst, sizeof burst);
+    int rc_b = read_burst(bno_addr, 0x00, burst, sizeof burst);
     int rc_1 = 0;
 
     for (unsigned i = 0; i < sizeof one; i++)
-        if (read_reg(BNO_ADDR, (uint8_t)i, &one[i]))
+        if (read_reg(bno_addr, (uint8_t)i, &one[i]))
             rc_1 = -1;
 
     printf("t=%4u ms  burst[%d] ", t_ms, rc_b);
@@ -105,6 +129,52 @@ static bool ack_write(uint8_t a)
     uint8_t reg = 0x00;
 
     return i2c_write_timeout_us(i2c0, a, &reg, 1, false, TIMEOUT_US) >= 0;
+}
+
+/* GP27 is BNO_INT on the carrier (schematic 2026-09-11). Sampled here as a
+ * plain SIO input under each pull in turn, per the GPIO_FUNC trap in DEVLOG
+ * 2026-08-31.
+ *
+ * READ THE VERDICT NARROWLY. A pin that follows its pull does NOT mean no
+ * part is fitted, and this probe said so for one revision until the datasheet
+ * was read properly. INT_EN and INT_MSK both reset to 0x00 (register map,
+ * 4.4.8/4.4.9) - every interrupt disabled - and the flight driver configures
+ * neither, so no interrupt is ever raised. Section 3.8.1 says only that INT
+ * "is set to high" when one occurs; it gives no idle level and no output
+ * stage for the pin. A healthy, powered, correctly strapped BNO055 sitting in
+ * ACCGYRO with no interrupt enabled may therefore leave this line undriven,
+ * exactly like an empty footprint.
+ *
+ * So: a pin that is DRIVEN, either way, proves something is there - no absent
+ * part can hold a line. A pin that follows its pull proves nothing at all,
+ * and is the reading to expect even from a working part. This is the same
+ * asymmetry as the GP16/17/18 survey, which read pu=1 pd=0 on pins that turned
+ * out to drive the motor. */
+static void int_pin_probe(void)
+{
+    bool pu, pd;
+
+    gpio_init(PIN_BNO_INT);
+    gpio_set_dir(PIN_BNO_INT, GPIO_IN);
+
+    gpio_pull_up(PIN_BNO_INT);
+    sleep_ms(2);
+    pu = gpio_get(PIN_BNO_INT);
+
+    gpio_set_pulls(PIN_BNO_INT, false, true); /* pull-down */
+    sleep_ms(2);
+    pd = gpio_get(PIN_BNO_INT);
+
+    gpio_set_pulls(PIN_BNO_INT, false, false); /* leave it floating */
+
+    printf("BNO_INT (GP%u): pu=%d pd=%d -> %s\n", PIN_BNO_INT, pu, pd,
+           (!pu && !pd) ? "driven LOW: something is on this pin"
+           : (pu && pd) ? "driven HIGH: something is on this pin"
+           : (pu && !pd)
+               ? "follows the pull - INCONCLUSIVE. No interrupt is enabled "
+                 "(INT_EN resets to 0x00), so a WORKING part reads this way "
+                 "too. Says nothing about whether a part is fitted."
+               : "pu=0 pd=1, which is not a state a pin can be in");
 }
 
 static void bus_scan(void)
@@ -139,6 +209,31 @@ static void bus_scan(void)
     }
 }
 
+/* Which strap the board uses, decided by the ID block and not by an ACK -
+ * 0x28 and 0x29 are ordinary addresses another part could hold. Everything
+ * after this point talks to whatever this latches. Leaves bno_addr at its
+ * provisional 0x29 when nothing identifies, so the register dumps below still
+ * run and still print their NACKs, which is the diagnosis in that case. */
+static void identify_addr(void)
+{
+    for (unsigned i = 0; i < 2; i++) {
+        uint8_t id[4] = {0};
+
+        if (read_burst(BNO_ADDRS[i], 0x00, id, sizeof id) == 0 &&
+            id[0] == 0xA0) {
+            bno_addr = BNO_ADDRS[i];
+            printf("BNO055 identified at 0x%02X (COM3 %s)  IDs %02X %02X %02X "
+                   "%02X\n",
+                   bno_addr, bno_addr == 0x29 ? "high or open" : "pulled low",
+                   id[0], id[1], id[2], id[3]);
+            return;
+        }
+    }
+    printf("no CHIP_ID 0xA0 at either 0x29 or 0x28 - using 0x%02X for the "
+           "dumps below, which will NACK\n",
+           bno_addr);
+}
+
 int main(void)
 {
     static const unsigned points[] = {0, 100, 300, 650, 800, 1200, 2000, 3000};
@@ -154,7 +249,44 @@ int main(void)
     sleep_ms(500);
 
     printf("\n=== BNO055 probe (bench tool) ===\n");
+
+    /* Live watch first, for working on the hardware with feedback: the set of
+     * answering addresses, once a second, printed only when it changes. Plug,
+     * reseat or repower the IMU and 0x28 appears here within a second. It runs
+     * for a bounded time and then falls through to the one-shot sequence
+     * below, so the probe is still a probe when nobody is watching. */
+    printf("-- watching i2c0 for %u s (reseat/repower now) --\n", WATCH_S);
+    {
+        char prev[128] = "";
+
+        for (unsigned t = 0; t < WATCH_S; t++) {
+            char now[128];
+            unsigned n = 0;
+
+            now[0] = '\0';
+            for (uint8_t a = 0x08; a < 0x78; a++)
+                if (ack_write(a) && n < sizeof now - 8)
+                    n += (unsigned)snprintf(now + n, sizeof now - n,
+                                            " 0x%02X", a);
+            if (strcmp(now, prev) != 0) {
+                printf("t=%3u s:%s%s\n", t, now,
+                       strstr(now, "0x28") || strstr(now, "0x29")
+                           ? "   <-- IMU PRESENT"
+                           : "   (no IMU)");
+                snprintf(prev, sizeof prev, "%s", now);
+            }
+            sleep_ms(1000);
+        }
+    }
+
+    /* Fitted or not, before anything is read from the bus: this is the one
+     * question a bus scan cannot answer, and the answer changes what the rest
+     * of the output means. */
+    printf("\n-- is a part fitted at all? --\n");
+    int_pin_probe();
+
     bus_scan();
+    identify_addr();
 
     printf("\n-- state as hw_init() left it --\n");
     show_named("CHIP_ID", 0x00);
@@ -167,7 +299,7 @@ int main(void)
     show_named("ST_RESULT", 0x36);
 
     printf("\n-- RST_SYS, then the ID block across the boot --\n");
-    (void)write_reg(BNO_ADDR, 0x3F, 0x20); /* NACK here is expected */
+    (void)write_reg(bno_addr, 0x3F, 0x20); /* NACK here is expected */
     for (unsigned i = 0; i < sizeof points / sizeof points[0]; i++) {
         while (elapsed < points[i]) {
             sleep_ms(10);
@@ -189,25 +321,25 @@ int main(void)
      * answer for themselves. ST_RESULT is the decisive measurement: it names
      * which die failed POST, which no amount of ID reading can. */
     printf("\n-- BIST (SYS_TRIGGER bit0) --\n");
-    (void)write_reg(BNO_ADDR, 0x3D, 0x00); /* CONFIGMODE */
+    (void)write_reg(bno_addr, 0x3D, 0x00); /* CONFIGMODE */
     sleep_ms(30);
-    (void)write_reg(BNO_ADDR, 0x3F, 0x01);
+    (void)write_reg(bno_addr, 0x3F, 0x01);
     sleep_ms(1000);
     show_named("ST_RESULT", 0x36);
     show_named("SYS_ERR", 0x3A);
 
     printf("\n-- try ACCGYRO (0x05) and read the data registers --\n");
-    (void)write_reg(BNO_ADDR, 0x3F, 0x00); /* internal clock, clear triggers */
-    (void)write_reg(BNO_ADDR, 0x3E, 0x00); /* PWR normal */
-    (void)write_reg(BNO_ADDR, 0x3B, 0x01); /* UNIT_SEL: accel in mg */
-    (void)write_reg(BNO_ADDR, 0x3D, 0x05);
+    (void)write_reg(bno_addr, 0x3F, 0x00); /* internal clock, clear triggers */
+    (void)write_reg(bno_addr, 0x3E, 0x00); /* PWR normal */
+    (void)write_reg(bno_addr, 0x3B, 0x01); /* UNIT_SEL: accel in mg */
+    (void)write_reg(bno_addr, 0x3D, 0x05);
     sleep_ms(50);
     show_named("OPR_MODE", 0x3D);
     for (unsigned i = 0; i < 5; i++) {
         uint8_t acc[6] = {0}, gyr[6] = {0};
 
-        (void)read_burst(BNO_ADDR, 0x08, acc, sizeof acc);
-        (void)read_burst(BNO_ADDR, 0x14, gyr, sizeof gyr);
+        (void)read_burst(bno_addr, 0x08, acc, sizeof acc);
+        (void)read_burst(bno_addr, 0x14, gyr, sizeof gyr);
         printf("  acc %6d %6d %6d mg   gyr %6d %6d %6d raw\n",
                (int16_t)(acc[0] | (acc[1] << 8)),
                (int16_t)(acc[2] | (acc[3] << 8)),
@@ -224,15 +356,15 @@ int main(void)
      * clock - which is why the flight driver never asserts it and why this is
      * the last thing the probe does. */
     printf("\n-- CLK_SEL (external crystal) probe --\n");
-    (void)write_reg(BNO_ADDR, 0x3D, 0x00);
+    (void)write_reg(bno_addr, 0x3D, 0x00);
     sleep_ms(30);
-    (void)write_reg(BNO_ADDR, 0x3F, 0x80);
+    (void)write_reg(bno_addr, 0x3F, 0x80);
     sleep_ms(1000);
     show_named("SYS_CLK_ST", 0x38);
     show_named("SYS_STATUS", 0x39);
     show_named("SYS_ERR", 0x3A);
     show_ids(0);
-    if (read_reg(BNO_ADDR, 0x00, &v) == 0)
+    if (read_reg(bno_addr, 0x00, &v) == 0)
         printf("  (chip still answers)\n");
 
     printf("\n=== probe done ===\n");
