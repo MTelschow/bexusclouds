@@ -44,15 +44,22 @@ def test_records_one_sample_per_packet():
 
 
 def test_unsourced_field_is_a_gap_not_a_zero():
-    """The whole point of the flag column: the MCU sends 0 for a part that is
-    not fitted, and 0 degC is a plausible temperature."""
+    """The whole point of the flag column: the MCU sends 0 for a part it
+    cannot read, and 0 mg is a plausible acceleration."""
     buf = T.TimelineBuffer()
-    buf.append(1000.0, _hk(temp1_cc=0, temp2_cc=0,
-                           error_flags=int(HkErrors.NO_TEMP)))
-    _x, cols = buf.window(["t1", "t2"], None)
-    assert np.isnan(cols["t1"]).all()
-    assert np.isnan(cols["t2"]).all()
-    assert buf.last_flags & HkErrors.NO_TEMP
+    buf.append(1000.0, _hk(accel_mg=(0, 0, 0), gyro_ddps=(0, 0, 0),
+                           error_flags=int(HkErrors.IMU_FAIL)))
+    _x, cols = buf.window(["acc_x", "acc_z", "gyr_y"], None)
+    assert all(np.isnan(v).all() for v in cols.values())
+    assert buf.last_flags & HkErrors.IMU_FAIL
+
+
+def test_the_stlm20_pair_has_no_rows():
+    """Not populated and not coming, so it is not offered. The two wire
+    fields survive in the packet and are declared by HKE_NO_TEMP."""
+    assert not any(s.key in ("t1", "t2") or "STLM20" in s.group
+                   for s in T.SERIES)
+    assert not any("STLM20" in g for g, _m in T.GROUPS)
 
 
 def test_unreadable_rail_is_a_gap_but_a_dead_rail_is_a_number():

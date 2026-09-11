@@ -50,8 +50,10 @@
 
 /* I2C0 as measured on the carrier, not assumed: BME280 0x76 (the only source
  * of ambient T/RH/p), INA226 x3 on 0x40/0x44/0x45 watching the 24 V, 5 V and
- * 3.3 V rails, and a BNO055 IMU at 0x28 whose sub-sensor IDs read 0x00, so it
- * answers but cannot be used. GP12/GP13 are unconnected here. No chamber pressure sensor and no
+ * 3.3 V rails. A BNO055 IMU answered at 0x28 on 2026-08-31 and does NOT answer
+ * at all on 2026-09-11 (0/50 ACK at 0x28 and 0x29 while the other four parts
+ * answered in the same sweep), so hw/bno055.c currently drives nothing and
+ * reports HKE_IMU_FAIL. GP12/GP13 are unconnected here. No chamber pressure sensor and no
  * second RH channel exist on this bus. The STLM20 pair the old map put on the
  * ADC is not populated - see the note below.
  * Identities and method: DEVLOG 2026-08-31. */

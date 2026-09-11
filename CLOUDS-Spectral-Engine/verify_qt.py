@@ -574,12 +574,18 @@ try:
               for n, _p, _f, _fg in _fl.SENSOR_FIELDS}
     check("flight: unsourced sensors show no number",
           not any(any(c.isdigit() for c in _texts[n])
-                  for n in ("T1 / T2", "Accel", "Gyro")),
+                  for n in ("Accel", "Gyro")),
           str(_texts))
-    check("flight: the Keller rows are gone with the parts",
-          not any(n.startswith("Chamber") for n, _p, _f, _fg
-                  in _fl.SENSOR_FIELDS),
+    # A part that is not part of the experiment gets no row at all - the
+    # Keller 23SY pair, and the STLM20 pair that was never populated. A row
+    # that can only ever say "not populated" sends an operator looking for a
+    # part to fit; HKE_NO_TEMP in the Errors row is the honest declaration.
+    check("flight: rows for parts that are off the design are gone",
+          not any(n.startswith("Chamber") or n.startswith("T1")
+                  for n, _p, _f, _fg in _fl.SENSOR_FIELDS),
           str([n for n, _p, _f, _fg in _fl.SENSOR_FIELDS]))
+    check("flight: HKE_NO_TEMP is still declared in the Errors row",
+          "NO_TEMP" in _unsourced.error_text, _unsourced.error_text)
     check("flight: the BME280 readings are shown, being real",
           _texts["Ambient T"] == "34.2 C"
           and _texts["Ambient p"].startswith("992.5 hPa")
@@ -598,8 +604,7 @@ try:
 
     # With nothing wrong, every row is a number.
     _ok = _hk.Housekeeping(p_amb_pa=99248, bme_temp_cc=2140,
-                           rh1_cpct=3050, temp1_cc=2200,
-                           temp2_cc=2300, accel_mg=(1, -2, 981),
+                           rh1_cpct=3050, accel_mg=(1, -2, 981),
                            gyro_ddps=(0, 1, -1),
                            rail_mv=(24062, _hk.RAIL_MV_INVALID, 5095, 3297),
                            shunt_raw=(514, 0, -40, 6667), error_flags=0)
@@ -699,14 +704,18 @@ try:
     # An unsourced field must not become a line at zero - the same failure
     # the Sensors section guards, one axis further on.
     _rx.last_hk = _hk.Housekeeping(
-        temp1_cc=0, temp2_cc=0,
-        error_flags=_hk.HkErrors.NO_TEMP | _hk.HkErrors.IMU_FAIL)
+        accel_mg=(0, 0, 0), gyro_ddps=(0, 0, 0),
+        error_flags=_hk.HkErrors.IMU_FAIL)
     _rx.last_hk_time = 5200.0
     _win._sample_timeline()
-    _x, _cols = _win.tl_buf.window(["t1", "acc_x", "gyr_z"], None)
+    _x, _cols = _win.tl_buf.window(["acc_x", "gyr_z"], None)
     check("timeline: an unsourced field is a gap, never a zero",
-          all(np.isnan(_cols[k][-1]) for k in ("t1", "acc_x", "gyr_z")),
+          all(np.isnan(_cols[k][-1]) for k in ("acc_x", "gyr_z")),
           str({k: float(v[-1]) for k, v in _cols.items()}))
+    check("timeline: the STLM20 pair is not offered either",
+          not any(k in _win._tl_boxes for k in ("t1", "t2"))
+          and not any("STLM20" in s.group for s in _tl.SERIES),
+          str(sorted({s.group for s in _tl.SERIES})))
 
     # A part the carrier does not have cannot be selected at all.
     check("timeline: the unfitted 24 V rail cannot be toggled on",

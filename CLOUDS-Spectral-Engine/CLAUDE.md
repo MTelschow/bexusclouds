@@ -141,7 +141,7 @@ header.** Two boards are in play; keep them apart by USB serial - bare Pico 2
 | i2c0 | **SDA GP28, SCL GP29** (not GP12/13, which are unconnected) | BME280 `0x76` is the only usable sensor |
 | INA226 ×3 | `0x40` **V_in**, `0x44` 5 V, `0x45` 3.3 V | live and **downlinked**: bus voltage in `hk.rail_mv[]` (mV, measured 24.06 / 5.09 / 3.30 V) and the raw shunt-voltage register in `hk.shunt_raw[]` (i16, 2.5 µV/LSB). **Amps are computed on the ground**, `hk.rail_a()` over `RAIL_SHUNT_MOHM = 10, 15, 10, 50 mΩ` - the part's calibration register is left alone, so a wrong shunt value can be corrected against a logged session instead of being baked into it |
 | INA226 24 V | **not fitted** | the rail holds slot 1 of `rail_mv[]` / `shunt_raw[]` and downlinks `RAIL_MV_INVALID`; the panel says `not fitted`, and `HKE_RAIL_FAIL` is **not** raised for it - an absent part is not a fault to chase (`ina226_fitted()`) |
-| BNO055 IMU | `0x28` | answers with valid chip id / SW rev; **sub-sensor IDs read 0x00**, unusable |
+| BNO055 IMU | `0x28` | **does not answer (2026-09-11)**: 0/50 ACK at 0x28 *and* 0x29, read- and write-probe, in the same sweep where 0x40/0x44/0x45/0x76 all answer - electrically absent from i2c0, which is *not* the "sub-sensor dies dead" on record from 2026-08-31, when it answered `CHIP_ID 0xA0`. The board changed between those dates. Driven by `hw/bno055.c` (reset, 650 ms boot wait, ID check, `OPR_MODE` read-back, 30 s retry); with no part it reports `HKE_IMU_FAIL` and zeroed vectors, verified on hardware. Re-test with `src/tools/bno055_probe.c` (`-DCLOUDS_BUILD_TOOLS=ON`, USB CDC) when a part is fitted |
 | Membrane solenoid | **GP26** (not GP8, unconnected) | **2 Hz**, loop-toggled via `core/sqwave`; driven from the GSE panel end to end (`MEMBRANE` duty), duty read back in HK |
 | CaCO₃ dispersion motor | **GP17 fwd / GP18 rev** | one 5 s scheduled pulse per release or per `DISPERSE` command, commanded from the panel and seen in `valve_status` for ~5 s; runs concurrently with the membrane, measured; **not in the SED**, reverse sense untested, **current unmeasured - not on any monitored rail** |
 | STLM20 ×2 | none | **not populated**; the old `ADC_TEMP1` collided with GP26 |
@@ -158,7 +158,7 @@ whose supply is absent, and a dead monitor is a different fault from a dead
 rail. The sentinel invalidates that rail's `shunt_raw` too, so no current is
 ever shown against an unknown voltage.
 
-So `temp1/2_cc` and the IMU vectors have **no source**. They are declared
+So `temp1/2_cc` has **no source**. It is declared
 through `error_flags` (`HKE_*` in `core/frame.h`, `HkErrors` in
 `clouds_link/hk.py`, kept in step by a mirror test) rather than filled with
 invented numbers; bits 2 and 3 are now free, having been the Keller pair's

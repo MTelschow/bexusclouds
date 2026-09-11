@@ -18,7 +18,141 @@ without re-deriving anything. Newest entries first.
 
 ---
 
-## 2026-09-11 (newest) - The dark frame survives a restart (P-04)
+## 2026-09-11 (newest) - The BNO055 has a driver, and the part is no longer on the bus (M-09)
+
+**What was asked.** "The BNO055 sensors are not working, fix this."
+
+**What was actually there.** No driver. `flight/mcu/src/hw/` had `bme280.c` and
+`ina226.c` and nothing for the IMU; `hw_read_sensors()` set `HKE_IMU_FAIL`
+unconditionally and zeroed `accel_mg` / `gyro_ddps` on every packet. So the
+sensors were not failing - nothing had ever asked them for a reading. The 2026-08-31
+survey's verdict ("fitted, talking, sub-sensor dies dead") had been written
+straight into the firmware as a constant.
+
+**Why that verdict does not hold.** The survey read `CHIP_ID` = `0xA0`,
+`SW_REV` = `0x0311`, `BL_REV` = `0x15` - all correct - and `ACC_ID` / `MAG_ID` /
+`GYR_ID` = `0x00` where a working part gives `0xFB` / `0x32` / `0x0F`, and
+concluded the fault sits between the BNO055's M0 and its three sensor dies.
+The split is real but it has a second explanation the probe could not rule out:
+**the BNO055 needs 650 ms from power-on reset before it is configured**
+(datasheet 3.3), the probe ran from a Pico that boots in milliseconds, and the
+three constants that read correctly are exactly the ones its ROM and bootloader
+serve immediately, while the three that read `0x00` are the ones the boot
+sequence writes when it brings the accel, mag and gyro dies up. `OPR_MODE` also
+read `0x10`, outside its valid `0x00`-`0x0C` range and unexplained at the time -
+which is what an un-booted register file looks like, and not what a booted part
+in CONFIGMODE (`0x00`) looks like. Reading the ID block at t=0 cannot tell a
+dead die from an un-booted one. This is the same class of error as the
+`GPIO_FUNC_I2C` stuck-SCL and the self-inflicted `SYS_ERR 0x05` in the entry
+below: the instrument produced the finding.
+
+**What was built.** `hw/bno055.c` + `.h`, a non-blocking driver whose whole
+shape is that timing argument:
+
+- `bno055_init()` issues `SYS_TRIGGER` `RST_SYS` and arms a 750 ms timer. It
+  does not wait - the part NACKs partway through its own reset, so that write's
+  return value says nothing and is ignored.
+- The bring-up runs from `hw_read_sensors()` at 1 Hz, not from `hw_init()`.
+  Two reasons: nothing in the hardware layer may sleep (S.9, 2 s watchdog), and
+  a bring-up that lives in the sweep can also recover a part that drops out in
+  flight.
+- Only after the full boot does it read the ID block and require `CHIP_ID`,
+  `ACC_ID` and `GYR_ID`. `MAG_ID` is read but not required: nothing here uses
+  the magnetometer, and refusing to deliver acceleration over a sensor no one
+  reads would be its own invented failure.
+- Mode is **ACCGYRO (`0x05`)**, non-fusion. `hk_t` carries acceleration and
+  angular rate and nothing else; every fusion mode needs a magnetometer
+  calibration this flight has no opportunity to perform, next to a dispersion
+  motor, and launch/float detection wants acceleration, not attitude.
+- `SYS_TRIGGER` is explicitly written `0x00` after the reset, i.e. **internal
+  oscillator**. A missing or non-oscillating 32.768 kHz crystal with `CLK_SEL`
+  asserted is the classic cause of this exact signature, and the carrier's
+  crystal is unconfirmed - so the driver never asserts it.
+- `OPR_MODE` is **read back** before the first sample is believed. A part whose
+  dies never came up can accept the write and sit in CONFIGMODE, where the data
+  registers are all zero - precisely the reading that must never be passed off
+  as a measurement.
+- Nothing reads above `0x3F`. The page-0 map ends at `0x6A`, and the earlier
+  probe's `0xFE`/`0xFF` reads are what provoked the `SYS_ERR 0x05` it then
+  read back as evidence.
+- Failure handling: one failed transfer is a bus glitch, three consecutive ones
+  force a re-reset, and a part that fails bring-up is retried every 30 s. An IMU
+  is not on the release path (S.7, MS002), so hammering a wedged device every
+  second buys nothing and costs bus time.
+
+**What did not change, on purpose.** If the dies really are dead, the ID check
+fails, `HKE_IMU_FAIL` is raised exactly as before and the vectors stay zero.
+No number is invented either way. What changed is that the flag now reports a
+measurement taken at a time when the answer means something, instead of a
+constant compiled into the firmware.
+
+**Units, and a bug the dead IMU was hiding.** `UNIT_SEL` bit 0 selects mg, so
+`accel_mg` is a copy rather than a conversion. The gyro has no deci-dps unit:
+the part gives 16 LSB/dps and the wire field is deci-dps, so it is `x5/8` in
+32-bit (the numerator reaches 160 000 at the +-2000 dps full scale). On the
+ground, **both the Sensors row and the timeline plotted `gyro_ddps` raw and
+labelled it `dps`** - a rate ten times the real one, which nothing on screen
+would have contradicted. Nobody noticed because the field was always zero.
+Fixed in `clouds_ui/flight.py` and `clouds_ui/timeline.py`.
+
+**Verified on the carrier, and the answer is not the one the hypothesis
+predicted: the BNO055 does not answer at all any more.** Flashed to the
+carrier (`21DD2AE08840C863`) with the bench chain live - MCU -> Pi -> ground,
+HK landing in `gse_sessions/`. `HKE_IMU_FAIL` stayed set through the whole run.
+So a register-level probe was built to say *which* step failed, since one HK
+bit cannot: `src/tools/bno055_probe.c`, a bench-only target behind
+`-DCLOUDS_BUILD_TOOLS=ON`, printing over USB CDC (never UART - those are the
+downlink's pins).
+
+```
+i2c0 read-probe : 0x40 0x44 0x45 0x76
+i2c0 write-probe: 0x40 0x44 0x45 0x76
+0x28: 0/50 read-ACK, 0/50 write-ACK
+0x29: 0/50 read-ACK, 0/50 write-ACK
+```
+
+Every register read returns the address-phase NACK, at both BNO055 addresses,
+under both probe shapes, 50 attempts each - **in the same sweep in which the
+three INA226 and the BME280 all answer**. That rules the instrument out the way
+this project has had to learn to: the bus works, the pull-ups work, the scan
+works, and nothing is at 0x28.
+
+**So the part is electrically absent from i2c0, which is a different fault from
+the one on record.** On 2026-08-31 it answered with `CHIP_ID` = `0xA0`,
+`SW_REV` = `0x0311` and `BL_REV` = `0x15`; today it does not acknowledge its
+own address. The board changed between those two dates - unpopulated, on a
+module that is not currently mated, or lost its supply - and that is a
+hardware question, not a firmware one. The boot-timing hypothesis is therefore
+**neither confirmed nor refuted**: it cannot be tested against a part that is
+not on the bus. It stays the first thing to re-test when one is, because the
+probe now reads the ID block at eight points across the boot and would show the
+sub-IDs filling in.
+
+**What the hardware run does prove**, which is the absent-part path end to end:
+
+- HK keeps flowing at 1 Hz with the new driver in it; uptime runs 0 -> 44 s
+  and 0 -> 16 s across two boots with no gap and no reset, so the bring-up,
+  its 750 ms timer and the 30 s retry never push the sweep into the 2 s
+  watchdog (S.9).
+- `error_flags` reads `IMU_FAIL NO_TEMP` and the vectors stay `0, 0, 0` - the
+  flag reaches ground correctly and no number is invented for a part that is
+  not there.
+- Nothing else on the bus is disturbed: `V_in 19.99 V 0.20 A`, `5 V 5.09 V
+  0.73 A`, `3.3 V 3.30 V 0.04 A`, no `BME280_FAIL`, link `GND PI` up.
+
+**Untested: the success path.** `identify()` -> `configure()` -> samples has
+never run against a real BNO055. When a part is fitted, flash the probe first -
+it answers which die, which clock and which mode in one pass - and only then
+judge the driver.
+
+**V_in reads 19.99 V, not the 24.06 V of 2026-09-09, because the bench is
+temporarily on a 20 V supply.** Recorded so a later reader of this session does
+not chase it as a rail sag. It does not bear on the missing IMU: the 5 V and
+3.3 V rails read nominal (5.09 / 3.30 V) throughout.
+
+---
+
+## 2026-09-11 - The dark frame survives a restart (P-04)
 
 **What was asked.** Capture a dark frame now and make it the GUI's default, so
 a restart does not mean re-taking it; still changeable later.
@@ -1095,7 +1229,10 @@ adding them is a protocol change, not a driver change.
 
 **There is no chamber pressure sensor and no second RH channel on this bus,
 and no Keller 23SY at any address.** The IMU is fitted and answers, but its
-internal sensor dies do not, so it is unusable as it stands. Those three
+internal sensor dies do not, so it is unusable as it stands. *(Superseded
+2026-09-11: this probe read the ID block before the part's 650 ms boot could
+have written those three registers, so it cannot distinguish a dead die from
+an un-booted one - see the newest entry.)* Those three
 sub-sensor IDs are the whole case: they are fixed constants readable in any
 mode, and `CHIP_ID` read correctly in the same byte-wise loop, so the I2C path
 works and the fault sits inside the package between the M0 and its accel, mag

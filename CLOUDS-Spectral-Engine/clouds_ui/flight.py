@@ -92,18 +92,22 @@ def _rail_row(i: int):
 #: part that produces it, how to render it, and the `HkErrors` bit that means
 #: **this number has no sensor behind it**.
 #:
-#: That last column is the point of this table. Three of these fields are
-#: unsourced on the measured carrier - the STLM20 pair is not populated and
-#: the BNO055's sub-sensor IDs read 0x00 - and the MCU fills them with zeros.
-#: Rendered as numbers they are indistinguishable from readings: 0 degC is a
-#: plausible temperature. So a row whose flag is set says what is wrong
-#: instead of showing the number, and the number is not quietly turned into
-#: something prettier.
+#: That last column is the point of this table. The MCU fills a field with
+#: zeros whenever it has no reading for it - the IMU vectors through the
+#: BNO055's 650 ms boot, after a bus glitch, and permanently if its bring-up
+#: fails. Rendered as numbers those zeros are indistinguishable from readings:
+#: 0 mg is a plausible acceleration. So a row whose flag is set says what is
+#: wrong instead of showing the number, and the number is not quietly turned
+#: into something prettier.
 #:
-#: The chamber pressure and humidity rows that used to sit here are gone with
-#: the Keller 23SY pair, and so are their HK fields - a row that could only
-#: ever say "not fitted" was telling the operator about a part that is no
-#: longer part of the experiment.
+#: Two groups of rows that used to sit here are gone with their parts: the
+#: chamber pressure and second humidity channel with the Keller 23SY pair
+#: (their HK fields went too), and `T1 / T2` with the **STLM20 pair, which is
+#: not populated and is not coming**. A row that can only ever say "not
+#: populated" is telling the operator about a part that is not part of the
+#: experiment; `HKE_NO_TEMP` still rides in `error_flags`, so the Errors row
+#: declares the two wire fields as unsourced without giving them a readout
+#: that looks like a sensor.
 SENSOR_FIELDS = [
     ("Ambient p", "BME280",
      lambda h: f"{h.p_amb_pa / 100:.1f} hPa{_held(h)}", HkErrors.BME280_FAIL),
@@ -111,14 +115,14 @@ SENSOR_FIELDS = [
      lambda h: f"{h.bme_temp_cc / 100:.1f} C", HkErrors.BME280_FAIL),
     ("Ambient RH", "BME280",
      lambda h: f"{h.rh1_cpct / 100:.1f} %", HkErrors.BME280_FAIL),
-    ("T1 / T2", "STLM20 x2",
-     lambda h: f"{h.temp1_cc / 100:.1f} / {h.temp2_cc / 100:.1f} C",
-     HkErrors.NO_TEMP),
     ("Accel", "BNO055",
      lambda h: "  ".join(f"{v:+d}" for v in h.accel_mg) + " mg",
      HkErrors.IMU_FAIL),
+    # gyro_ddps is deci-dps on the wire, like every other scaled HK integer.
+    # Printed raw it reads as a rate ten times the real one, which nothing on
+    # screen would contradict.
     ("Gyro", "BNO055",
-     lambda h: "  ".join(f"{v:+d}" for v in h.gyro_ddps) + " dps",
+     lambda h: "  ".join(f"{v / 10:+.1f}" for v in h.gyro_ddps) + " dps",
      HkErrors.IMU_FAIL),
 ] + [
     # One row per rail rather than one packed line, so an operator can see at
@@ -136,8 +140,7 @@ SENSOR_FIELDS = [
 #: operator reading "failed" would go looking for a fault to clear.
 UNSOURCED_TEXT = {
     HkErrors.BME280_FAIL: "no read",
-    HkErrors.NO_TEMP: "not populated",
-    HkErrors.IMU_FAIL: "unusable",
+    HkErrors.IMU_FAIL: "no data",
 }
 
 #: Older than this and the state banner goes red - the numbers on screen are
@@ -219,8 +222,8 @@ class FlightPanel(QtWidgets.QWidget):
         """Every sensor reading the housekeeping packet carries, with the part
         that produces it named next to it.
 
-        The part name is not decoration: `T1 / T2` looks like instrument data
-        until you know it comes from a pair of STLM20s that are not populated.
+        The part name is not decoration: `Accel` looks like instrument data
+        until you know it comes from a BNO055 whose sub-sensor IDs read 0x00.
         An operator who can see which part a number came from can see which
         numbers to believe.
         """

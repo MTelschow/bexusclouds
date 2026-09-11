@@ -15,10 +15,14 @@ same confusion the source banner exists to prevent.
 Three rules it inherits from the Sensors section, because they are about the
 same numbers and disagreeing would be worse than not plotting at all:
 
-* **A field with no sensor behind it is not drawn.** The STLM20 pair is not
-  populated and the BNO055's sub-sensor IDs read 0x00; the MCU sends zeros.
-  A zero plotted on a temperature axis is a reading. So a sample whose
-  `HkErrors` flag is set becomes a gap, and the legend says why.
+* **A field with no sensor behind it is not drawn.** The MCU sends zeros
+  whenever a part has no reading to give - the BNO055 through its 650 ms
+  boot, and permanently if its bring-up fails. A zero plotted on an
+  acceleration axis is a reading. So a sample whose `HkErrors` flag is set
+  becomes a gap, and the legend says why. The STLM20 pair has no rows here at all - like the
+  Sensors section, a series that could only ever be empty is not offered;
+  `HKE_NO_TEMP` in the Errors row is where those two wire fields are
+  declared.
 * **An unreadable rail is a gap, not a zero.** `RAIL_MV_INVALID` means the
   monitor did not answer; 0 V is a real reading for a rail with no supply.
   `Housekeeping.rail_a()` already enforces that pair, and is used as-is.
@@ -80,14 +84,16 @@ class Series:
     an unreadable rail, a field the MCU filled with zeros because nothing is
     fitted. None becomes a gap in the trace; it is never turned into 0.
 
-    `flag` is the `HkErrors` bit that means this field has no source. It is
-    read per sample rather than once, because `BME280_FAIL` and `IMU_FAIL`
-    can come and go while `NO_TEMP` never clears on this carrier.
+    `flag` is the `HkErrors` bit that means this field has no source, read
+    per sample rather than once: `BME280_FAIL` and `IMU_FAIL` come and go.
 
-    `fitted` is False for a part the board does not have at all. Those series
-    stay in the table so the operator can see the row exists and read why,
-    but their toggle is disabled: a checkbox that can only ever draw nothing
-    is worse than one that says "not fitted".
+    `fitted` is False where the reading belongs to a rail whose monitor is
+    reserved but unpopulated - the 24 V slot. Those series stay in the table
+    with their toggle disabled, because the operator needs to find out that
+    the monitor is missing, and the slot is expected to be filled. A part
+    that is simply not part of the experiment gets no entry at all (the
+    STLM20 pair, the Keller 23SY pair): a row that can never draw anything,
+    ever, teaches nothing that `error_flags` does not already say.
     """
     key: str
     label: str
@@ -110,8 +116,8 @@ def _rail_i(i: int):
     return lambda h: h.rail_a(i)
 
 
-def _vec(attr: str, axis: int):
-    return lambda h: float(getattr(h, attr)[axis])
+def _vec(attr: str, axis: int, scale: float = 1.0):
+    return lambda h: float(getattr(h, attr)[axis]) * scale
 
 
 # Per-group ramps rather than one rainbow: the four rail voltages belong
@@ -130,17 +136,13 @@ SERIES: tuple[Series, ...] = (
            lambda h: h.bme_temp_cc / 100.0, HkErrors.BME280_FAIL),
     Series("rh1", "Ambient RH", "%", "BME280", "#4d8fd1",
            lambda h: h.rh1_cpct / 100.0, HkErrors.BME280_FAIL),
-    Series("t1", "T1", "C", "STLM20 x2", "#E8821E",
-           lambda h: h.temp1_cc / 100.0, HkErrors.NO_TEMP, fitted=False),
-    Series("t2", "T2", "C", "STLM20 x2", "#8a4b00",
-           lambda h: h.temp2_cc / 100.0, HkErrors.NO_TEMP, fitted=False),
 ) + tuple(
     Series(f"acc_{ax}", f"Accel {ax.upper()}", "mg", "BNO055", _AXIS_C[i],
            _vec("accel_mg", i), HkErrors.IMU_FAIL)
     for i, ax in enumerate("xyz")
 ) + tuple(
     Series(f"gyr_{ax}", f"Gyro {ax.upper()}", "dps", "BNO055", _AXIS_C[i],
-           _vec("gyro_ddps", i), HkErrors.IMU_FAIL)
+           _vec("gyro_ddps", i, 0.1), HkErrors.IMU_FAIL)
     for i, ax in enumerate("xyz")
 ) + tuple(
     Series(f"rail_v{i}", f"{name} bus", "V", "INA226", _RAIL_C[i],

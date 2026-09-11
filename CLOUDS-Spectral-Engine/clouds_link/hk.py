@@ -240,9 +240,9 @@ class Housekeeping:
     def error_text(self) -> str:
         """Which ``error_flags`` bits are set, by name.
 
-        Most of these bits are permanently set on this hardware (the STLM20
-        pair is not populated, the IMU is unusable), so the field is the
-        operator's list of what has no source - and ``0x0030`` is not a list.
+        Some of these bits are permanently set on this hardware (the STLM20
+        pair is not populated), so the field is the operator's list of what
+        has no source - and ``0x0030`` is not a list.
         An unknown bit is kept visible as its mask rather than dropped: a
         newer MCU, or an older log written when the Keller bits still
         existed, must stay readable here.

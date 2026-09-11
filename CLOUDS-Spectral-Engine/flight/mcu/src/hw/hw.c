@@ -22,6 +22,7 @@
 #include "../core/pwmdiv.h"
 #include "../core/sqwave.h"
 #include "bme280.h"
+#include "bno055.h"
 #include "ina226.h"
 #include "board.h"
 
@@ -296,10 +297,14 @@ const seq_ops_t hw_seq_ops = {
  *   --    INA226  24 V rail  -> not fitted yet. The rail keeps its slot in
  *                              hk_t and downlinks RAIL_MV_INVALID; an absent
  *                              part is not HKE_RAIL_FAIL.
- *   0x28  BNO055 IMU        -> chip id, SW rev and bootloader rev all match a
- *                              genuine part, but its accel/mag/gyro IDs read
- *                              0x00 instead of 0xFB/0x32/0x0F: fitted, talking,
- *                              and not usable. Reported via HKE_IMU_FAIL.
+ *   0x28  BNO055 IMU        -> accel and gyro, in the non-fusion ACCGYRO mode.
+ *                              The 2026-08-31 survey read its accel/mag/gyro
+ *                              IDs as 0x00 and called the part faulted; it
+ *                              read them before the part's 650 ms boot could
+ *                              have written them. bno055.c resets it, waits
+ *                              the boot out, and checks the IDs when they mean
+ *                              something - and still reports HKE_IMU_FAIL,
+ *                              with zeroed vectors, if they do not come up.
  * There is no chamber pressure sensor and no second humidity channel: the
  * Keller 23SY pair is off the design, and the HK fields they were to fill
  * went with them rather than being downlinked as zeros. */
@@ -346,10 +351,18 @@ void hw_read_sensors(hk_t *hk)
         hk->error_flags |= HKE_BME280_FAIL | HKE_P_AMB_STALE;
     }
 
-    hk->error_flags |= HKE_IMU_FAIL;
-
-    memset(hk->accel_mg, 0, sizeof hk->accel_mg);
-    memset(hk->gyro_ddps, 0, sizeof hk->gyro_ddps);
+    /* The IMU is allowed to be late: bno055_read() returns false through the
+     * 650 ms boot, through a re-reset after a bus glitch, and forever if the
+     * part really is faulted. All three cases downlink zeros behind
+     * HKE_IMU_FAIL, because a zero acceleration is a reading a working
+     * accelerometer can produce and the flag is the only thing that says this
+     * one is not. The bring-up runs from here rather than from hw_init() so
+     * that it can also recover a part that drops out in flight. */
+    if (!bno055_read(hw_monotonic_ms(), hk->accel_mg, hk->gyro_ddps)) {
+        memset(hk->accel_mg, 0, sizeof hk->accel_mg);
+        memset(hk->gyro_ddps, 0, sizeof hk->gyro_ddps);
+        hk->error_flags |= HKE_IMU_FAIL;
+    }
 
     /* Rail voltage and shunt voltage, per rail. A rail that does not answer
      * reports RAIL_MV_INVALID and not 0: 0 mV is a legitimate reading for a
@@ -422,4 +435,7 @@ void hw_init(void)
      * HKE_BME280_FAIL, and the sequencer is required to survive it. */
     (void)bme280_init();
     (void)ina226_init();
+    /* Starts the IMU's reset and its 650 ms boot timer; the bring-up itself
+     * happens in the 1 Hz sweep, so nothing here waits for it. */
+    (void)bno055_init(hw_monotonic_ms());
 }

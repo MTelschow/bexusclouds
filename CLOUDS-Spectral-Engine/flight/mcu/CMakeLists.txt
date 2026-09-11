@@ -28,6 +28,7 @@ add_executable(clouds_fsw_mcu
     src/core/sqwave.c
     src/hw/hw.c
     src/hw/bme280.c
+    src/hw/bno055.c
     src/hw/ina226.c
     src/hw/uart_io.c
 )
@@ -66,3 +67,41 @@ pico_enable_stdio_uart(clouds_fsw_mcu 0)
 pico_enable_stdio_usb(clouds_fsw_mcu 1)
 
 pico_add_extra_outputs(clouds_fsw_mcu)
+
+# --- bench tool, not flight software -----------------------------------------
+# bno055_probe: register-level IMU bring-up diagnostics over USB CDC. Built
+# only when -DCLOUDS_BUILD_TOOLS=ON so a normal build cannot produce a .uf2
+# that is not the flight image. Same stdio rules as the flight target: USB on,
+# UART off, because uart0/GP0/GP1 carry the HK downlink.
+if(CLOUDS_BUILD_TOOLS)
+    add_executable(bno055_probe
+        src/tools/bno055_probe.c
+        src/core/crc16.c
+        src/core/cobs.c
+        src/core/frame.c
+        src/core/config.c
+        src/core/link.c
+        src/core/autonomy.c
+        src/core/sequencer.c
+        src/core/pulse.c
+        src/core/pwmdiv.c
+        src/core/sqwave.c
+        src/hw/hw.c
+        src/hw/bme280.c
+        src/hw/bno055.c
+        src/hw/ina226.c
+        src/hw/uart_io.c
+    )
+    target_compile_options(bno055_probe PRIVATE -Wall -Wextra)
+    target_link_libraries(bno055_probe
+        pico_stdlib
+        hardware_adc
+        hardware_i2c
+        hardware_pwm
+        hardware_uart
+        hardware_watchdog
+    )
+    pico_enable_stdio_uart(bno055_probe 0)
+    pico_enable_stdio_usb(bno055_probe 1)
+    pico_add_extra_outputs(bno055_probe)
+endif()
