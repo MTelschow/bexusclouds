@@ -24,17 +24,17 @@ class TestResolveKind:
 
     def test_explicit_wins_over_env(self, monkeypatch):
         monkeypatch.setenv(KIND_ENV, "std")
-        assert resolve_kind("edu") == "edu"
+        assert resolve_kind("net") == "net"
 
     def test_env_used_when_unset(self, monkeypatch):
-        monkeypatch.setenv(KIND_ENV, "edu")
-        assert resolve_kind() == "edu"
-        assert resolve_kind(None) == "edu"
+        monkeypatch.setenv(KIND_ENV, "net")
+        assert resolve_kind() == "net"
+        assert resolve_kind(None) == "net"
 
     def test_case_and_whitespace_tolerant(self):
-        assert resolve_kind("  EDU ") == "edu"
+        assert resolve_kind("  NET ") == "net"
 
-    @pytest.mark.parametrize("bad", ["duo", "std2", "STD ,edu", "x"])
+    @pytest.mark.parametrize("bad", ["duo", "std2", "STD ,net", "x", "edu"])
     def test_unknown_kind_raises(self, bad):
         with pytest.raises(ValueError, match="unknown spectrometer kind"):
             resolve_kind(bad)
@@ -47,22 +47,29 @@ class TestResolveKind:
 
 class TestOpenDriver:
     def test_mock_ignores_kind(self):
-        # --mock must stay hardware-free whatever kind is configured
+        # mock=True must stay hardware-free whatever kind is configured
         assert isinstance(open_driver(mock=True), MockDriver)
-        assert isinstance(open_driver(mock=True, kind="edu"), MockDriver)
+        assert isinstance(open_driver(mock=True, kind="net"), MockDriver)
 
     def test_std_selects_duo_driver(self):
         from spectro.eureca_driver import EurecaDriver
         assert type(open_driver(kind="std")) is EurecaDriver
 
-    def test_edu_selects_edu_driver(self):
-        from spectro.eureca_edu_driver import EurecaEduDriver
-        assert type(open_driver(kind="edu")) is EurecaEduDriver
+    def test_net_selects_net_driver(self):
+        from spectro.net_driver import NetDriver
+        assert type(open_driver(kind="net")) is NetDriver
 
-    def test_env_selects_edu_driver(self, monkeypatch):
-        from spectro.eureca_edu_driver import EurecaEduDriver
-        monkeypatch.setenv(KIND_ENV, "edu")
-        assert type(open_driver()) is EurecaEduDriver
+    def test_env_selects_net_driver(self, monkeypatch):
+        from spectro.net_driver import NetDriver
+        monkeypatch.setenv(KIND_ENV, "net")
+        assert type(open_driver()) is NetDriver
+
+    def test_the_edu_board_is_no_longer_a_kind(self):
+        # The single-channel EDU board is gone (Windows-only vendor DLL, never
+        # a flight article). A stale CLOUDS_SPECTRO_KIND=edu must fail loudly
+        # rather than silently fall back to the Duo and mis-slice its window.
+        with pytest.raises(ValueError, match="unknown spectrometer kind"):
+            open_driver(kind="edu")
 
     def test_unknown_kind_raises_before_loading_a_library(self):
         with pytest.raises(ValueError):
@@ -74,16 +81,6 @@ class TestOpenDriver:
             assert open_driver(kind=kind) is not None
 
 
-@pytest.mark.skipif(sys.platform == "win32",
-                    reason="the EDU DLL is present and loadable on Windows")
-class TestEduPlatformGuard:
-    def test_edu_connect_raises_clear_error_off_windows(self):
-        from spectro.driver import DriverError
-        drv = open_driver(kind="edu")
-        with pytest.raises(DriverError, match="Windows-only"):
-            drv.connect()
-
-
 class TestFswConfigKind:
     """The flight config must reject a bad kind at load, not at first connect."""
 
@@ -93,7 +90,7 @@ class TestFswConfigKind:
 
     def test_valid_kind_accepted(self):
         from clouds_fsw.config import FswConfig
-        assert FswConfig.load(None, spectro_kind="edu").spectro_kind == "edu"
+        assert FswConfig.load(None, spectro_kind="net").spectro_kind == "net"
 
     def test_bad_kind_rejected_at_load(self):
         from clouds_fsw.config import FswConfig

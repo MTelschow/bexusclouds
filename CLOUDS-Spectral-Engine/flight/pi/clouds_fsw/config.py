@@ -26,7 +26,7 @@ class FswConfig:
     rotate_s: int = 600
     flush_every: int = 10          # records between forced flushes
     # acquisition (P.3)
-    spectro_kind: str = "std"      # "std" = Duo (flight), "edu" = single-channel
+    spectro_kind: str = "std"      # "std" = the Duo; the only flight detector
     sample_interval_s: float = 1.0
     exposure_us: int = 100_000     # fixed flight default (P-09)
     auto_exposure: bool = False    # optional guard servo

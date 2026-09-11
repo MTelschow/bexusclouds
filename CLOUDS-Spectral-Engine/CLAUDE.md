@@ -22,9 +22,8 @@ is its Windows counterpart. By hand:
 
 ```sh
 # the operator interface - one window, instrument + flight (clouds_ui/)
-python -m clouds_ui                     # real Duo on this machine
-python -m clouds_ui --edu               # single-channel EDU board (Windows only)
-python -m clouds_ui --mock              # synthetic, no hardware
+python -m clouds_ui                     # real Duo on this machine; on macOS
+                                        # this defaults to --net 192.168.100.10
 python -m clouds_ui --net 192.168.100.10          # detector on the Pi
 python -m clouds_ui --flight            # downlink only: HK, quick-look, commanding
 
@@ -87,10 +86,15 @@ the quick-look harder or slow its cadence -
 
 - **Strict driver/UI split.** UI and FSW talk only to
   `spectro.driver.SpectrometerDriver` via `open_driver(mock=, kind=)`. Kinds:
-  `std` (Duo), `edu` (EDU board), `net` (remote — `spectro/net_driver.py` over
-  TCP to `spectro.net_server` or the FSW's `--bench-stream`). Construction must
+  `std` (Duo), `net` (remote — `spectro/net_driver.py` over TCP to
+  `spectro.net_server` or the FSW's `--bench-stream`). Construction must
   stay side-effect-free; reaching hardware is `connect()`'s job
-  (`tests/test_driver_factory.py` enforces this).
+  (`tests/test_driver_factory.py` enforces this). **The operator interface has
+  no `--mock` and no `--edu`** (removed 2026-09-11): a detector spectrum on
+  that screen is always real light off the Duo. `mock=True` survives for the
+  hardware-free checks (`pytest`, `verify.py`, `verify_qt.py`,
+  `clouds_fsw.main --mock`) and has no command-line route in the UI; the EDU
+  board is gone entirely, and a stale `CLOUDS_SPECTRO_KIND=edu` now raises.
 - **`spectro/` is shared** by bench app, FSW and GSE — calibration, processing,
   export. The GSE swaps the USB driver for a downlink source.
 - **`clouds_link/`** is one schema for MCU, Pi and GSE: CRC-16/CCITT-FALSE,
@@ -106,6 +110,7 @@ the quick-look harder or slow its cadence -
   and a missing ACK is a rejection.
 
 Env vars: `CLOUDS_SPECTRO_KIND`, `CLOUDS_SPECTRO_HOST`, `CLOUDS_CALIBRATION`,
+`CLOUDS_DARK` (stored dark frame, see `docs/CALIBRATION.md`),
 `CLOUDS_E9U_DLL_DIR` / `CLOUDS_E9U_LIB_DIR`, `CLOUDS_E9U_COUNT_SHIFT`.
 
 ## Hardware

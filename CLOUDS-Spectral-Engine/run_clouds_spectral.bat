@@ -46,7 +46,7 @@ if errorlevel 1 (
   echo.
   echo     [!] the interface hit a problem above.
   echo         run a headless self-check:   "%PY%" verify.py
-  echo         or try the synthetic camera: "%PY%" -m clouds_ui --mock
+  echo         or run the ground station with no detector: "%PY%" -m clouds_ui --flight
   echo.
 )
 echo.

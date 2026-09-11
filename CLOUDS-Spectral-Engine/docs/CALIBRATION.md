@@ -46,6 +46,41 @@ platforms. `CLOUDS_E9U_COUNT_SHIFT` overrides the factor — set it to `0` if a
 future vendor release starts shifting on Linux too, which would otherwise
 double-scale.
 
+## The stored dark frame
+
+A dark frame is the detector with no light on it - pedestal, per-pixel offset,
+dark current - and on this unit that pedestal is large: the **covered**
+inter-channel gap (px 236-1515, which cannot see light by construction) reads
+~24 000 ct at 10 ms, ~37 % of the 65520 full scale. Subtracting it is not a
+refinement, it is what makes a count mean anything.
+
+Capturing one needs a darkened bench, so the operator interface keeps the last
+capture: `Capture dark` writes `dark_frame.npz` (numpy, no pickle, beside
+`calibration.json`; `CLOUDS_DARK` moves it, `.gitignore`d as instrument state)
+and the next start loads it back. `Clear` drops it and deletes the file, so
+what is on screen is what comes back.
+
+Two guards, in `spectro/dark.py`:
+
+* **The exposure travels with the counts.** Dark current scales with
+  integration time, so a 10 ms dark subtracted off a 200 ms frame removes the
+  wrong pedestal and still looks like a spectrum. A restored dark therefore
+  brings its exposure back with it and switches the auto-integration servo
+  off - a servo that moves the exposure would invalidate the dark within a
+  frame or two. Change the exposure and the subtraction is **withheld**, with
+  the Dark frame section saying so, rather than applied to a frame it does not
+  describe.
+* **So do `pixels`, `model` and `serial`.** A stored frame whose length does
+  not match the detector in front of you raises `DarkError` instead of being
+  broadcast onto the wrong geometry.
+
+**A dark captured with light on the bench is worse than no dark**: it absorbs
+real signal into the baseline, and nothing downstream can tell. Check it after
+capture - the channel windows should sit at the covered gap's level. On
+2026-09-11 the stored dark had the reference channel ~6.9 k **above** the gap,
+i.e. light was still reaching that fibre; it is a usable pedestal for Ch1 and
+an over-subtraction for Ch2 until it is retaken blocked.
+
 ## Validation
 
 A covers-on dark frame showed stray room light leaking through both SMA fibres;

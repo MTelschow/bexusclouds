@@ -92,7 +92,8 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--bind", default="0.0.0.0")
     ap.add_argument("--port", type=int, default=DEFAULT_PORT)
-    ap.add_argument("--kind", default=None, help="std (default) or edu")
+    ap.add_argument("--kind", default=None,
+                    help="detector family; std (the Duo) is the only one")
     ap.add_argument("--mock", action="store_true",
                     help="serve the synthetic driver (no hardware)")
     ap.add_argument("--exposure-us", type=int, default=100_000)

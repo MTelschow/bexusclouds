@@ -27,7 +27,7 @@
   ],
   "notes": [
     "Single-channel example: ONE fibre across the full detector, NO reference channel.",
-    "Load via the Calibrate dialog's Load... button or the CLOUDS_CALIBRATION env var. With no reference channel the Engine hides the reference trace, the ratio (transmission/absorbance) views fall back to counts, and the cursor/stats show 'ref --'. Recalibrate the linear b/c against your real STD/EDU unit.",
+    "Load via the Calibrate dialog's Load... button or the CLOUDS_CALIBRATION env var. With no reference channel the Engine hides the reference trace, the ratio (transmission/absorbance) views fall back to counts, and the cursor/stats show 'ref --'. Recalibrate the linear b/c against your real single-fibre unit.",
     "For a 3648-px STD set pixels=3648 and pixel_window [0, 3647]."
   ]
 }

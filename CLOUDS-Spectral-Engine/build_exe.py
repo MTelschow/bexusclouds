@@ -39,7 +39,6 @@ def main() -> None:
         ("assets", "assets"),
         ("vendor", "vendor"),
         ("calibration.json", "."),
-        ("calibration_edu.json", "."),
         ("calibration_single.json", "."),
     ]
     args = [

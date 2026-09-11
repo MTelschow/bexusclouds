@@ -1,9 +1,13 @@
 """Hardware-agnostic spectrometer driver interface.
 
 The UI talks only to ``SpectrometerDriver`` and never imports a concrete driver
-directly - it asks ``open_driver(mock=..., kind=...)``. That keeps the UI
-testable without hardware and lets future Ground Support Equipment (GSE) /
+directly - it asks ``open_driver(mock=..., kind=...)``. That keeps the checks
+runnable without hardware and lets the Ground Support Equipment (GSE) /
 downlink consumers reuse the same interface.
+
+``mock=True`` exists for the hardware-free checks (``tests/``, ``verify.py``,
+``verify_qt.py``, ``clouds_fsw.main --mock``). The operator interface has no
+flag for it: what it draws from the detector is always real light.
 """
 from __future__ import annotations
 
@@ -75,7 +79,9 @@ class SpectrometerDriver(ABC):
 
 # "net" is not a hardware family: it forwards this same interface to a
 # spectro.net_server on another machine (detector on the Pi, UI on the PC).
-KINDS = ("std", "edu", "net")
+# "std" is the only real instrument - the single-channel EDU board is gone
+# (Windows-only vendor DLL, never a flight article).
+KINDS = ("std", "net")
 
 
 def resolve_kind(kind: str | None = None) -> str:
@@ -90,11 +96,11 @@ def open_driver(mock: bool = False, kind: str | None = None,
                 **kwargs) -> SpectrometerDriver:
     """Factory: real EURECA driver, or a synthetic one for headless testing.
 
-    ``kind`` picks the real hardware family - ``"std"`` (default) for the
-    dual-channel Duo, ``"edu"`` for the single-channel e9u_LSMD_EDU board, or
-    ``"net"`` for a detector attached to another machine running
-    ``spectro.net_server`` (pass ``host=``, or set ``CLOUDS_SPECTRO_HOST``).
-    Falls back to the ``CLOUDS_SPECTRO_KIND`` env var, then ``"std"``.
+    ``kind`` picks where the detector is - ``"std"`` (default) for the
+    dual-channel Duo on this machine, or ``"net"`` for a detector attached to
+    another machine running ``spectro.net_server`` (pass ``host=``, or set
+    ``CLOUDS_SPECTRO_HOST``). Falls back to the ``CLOUDS_SPECTRO_KIND`` env
+    var, then ``"std"``.
 
     Concrete drivers are imported lazily so that importing this module pulls in
     neither the vendor library (real) nor numpy until actually needed.
@@ -106,8 +112,5 @@ def open_driver(mock: bool = False, kind: str | None = None,
     if resolved == "net":
         from .net_driver import NetDriver
         return NetDriver(**kwargs)
-    if resolved == "edu":
-        from .eureca_edu_driver import EurecaEduDriver
-        return EurecaEduDriver(**kwargs)
     from .eureca_driver import EurecaDriver
     return EurecaDriver(**kwargs)

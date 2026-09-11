@@ -13,14 +13,18 @@ Qt patterns of the *CLOUDS Raytracing Engine*.
 ## Features (v0.1.0)
 
 * Connect / identify the EURECA Duo (auto-detect, no COM number or tty
-  hardcoded) on **Windows or Linux**, or a single-channel EURECA
-  e9u_LSMD_EDU board (`--edu`, Windows only). See `docs/DRIVER.md`.
+  hardcoded) on **Windows or Linux**, locally or over the bench cable
+  (`--net HOST`). See `docs/DRIVER.md`.
 * Live dual-trace view - measurement (Ch1) and reference (Ch2) on a shared
-  wavelength axis, with a wavelength colour strip (single-trace on the EDU board).
+  wavelength axis, with a wavelength colour strip.
 * Single shared integration time (1-1000 ms) + per-channel frame averaging.
 * Auto-exposure: **Auto** (one-shot, set ~70% full scale) and **track** (continuous
   servo that holds the exposure as the scene brightness changes - point it around).
-* Dark-frame capture and subtraction; live per-channel saturation/clipping flag.
+* Dark-frame capture and subtraction, **kept across restarts**: a capture is
+  stored as the default (`dark_frame.npz`, `CLOUDS_DARK` to move it) and comes
+  back with the exposure it was taken at; at any other exposure it is withheld
+  rather than silently applied. `Clear` drops it and the stored file.
+* Live per-channel saturation/clipping flag.
 * Factory INSION pixel -> wavelength calibration (Ch1/Ch2 polynomials).
 * Views: Counts, Transmission (meas/ref), Absorbance (-log10); nm or pixel axis.
 * Export: timestamped CSV + branded PDF report; optional session logging to CSV.
@@ -34,9 +38,17 @@ Qt patterns of the *CLOUDS Raytracing Engine*.
   the three `PYTHONPATH` entries, and passes every flag below straight
   through. Both are thin wrappers; the app itself is `python -m clouds_ui`.
 * Terminal, by hand: `PYTHONPATH=.:gse:flight/pi python -m clouds_ui`
-* Single-channel EDU board: `python -m clouds_ui --edu`
-* No hardware? `python -m clouds_ui --mock` runs against a synthetic Duo.
+* Detector on the flight Pi: `python -m clouds_ui --net 192.168.100.10` — and
+  this is the **default on macOS**, which has no EURECA vendor library, so a
+  bare `./run_clouds_ui.sh` there already reaches the detector over the bench
+  cable (`CLOUDS_SPECTRO_HOST` moves the address). The Pi must be serving
+  frames: `clouds_fsw.main --bench-stream`, or `spectro.net_server`.
 * Ground station (downlink only, no detector): `python -m clouds_ui --flight`
+
+The operator interface has no synthetic-detector flag: a spectrum on that
+screen is always real light off the Duo. The mock driver is for the
+hardware-free checks (`verify.py`, `verify_qt.py`, `pytest`,
+`clouds_fsw.main --mock`), reachable from code and not from this command line.
 * Fresh machine: Python 3.13 + `pip install -r requirements.txt`.
 * On Linux (incl. the Pi) build the vendor library first:
   `drivers/e9u_LSMD_LIB_Linux/install.sh` — see that folder's README.
@@ -58,15 +70,14 @@ Qt patterns of the *CLOUDS Raytracing Engine*.
 | `clouds_ui/`                                  | **the** operator interface: one window, instrument controls + flight downlink/commanding |
 | `spectro/driver.py`                           | `SpectrometerDriver` interface + `open_driver(mock=, kind=)` factory                |
 | `spectro/eureca_driver.py`                    | ctypes wrapper over the Duo vendor library — Windows DLL or Linux`.so`               |
-| `spectro/eureca_edu_driver.py`                | ctypes wrapper over`libe9u_LSMD_EDU_x64.dll` (single-channel EDU board, Windows only) |
 | `spectro/mock_driver.py`                      | synthetic Duo frames for hardware-free testing                                          |
 | `spectro/calibration.py`                      | `calibration.json` → pixel→nm, channel split, dark subtract                         |
 | `spectro/processing.py`                       | averaging, ratio / transmission / absorbance, saturation flags                          |
 | `spectro/export.py`                           | CSV session log + branded PDF report                                                    |
-| `calibration.json` / `calibration_edu.json` | factory INSION pixel→wavelength polynomials (Duo / EDU, versioned)                     |
+| `calibration.json`                            | factory INSION pixel→wavelength polynomials (Duo, versioned)                          |
 | `vendor/`                                     | EURECA Duo Windows DLL (`libe9u_LSMD_x64.dll`) + runtime deps + licence               |
 | `drivers/e9u_LSMD_LIB_Linux/`                 | EURECA Duo**Linux** vendor source + build/udev installer (feature P-01)           |
-| `drivers/e9u_LSMD_EDU_LIB/`                   | EURECA EDU vendor SDK (headers, C source,`libe9u_LSMD_EDU_x64.dll`)                   |
+| `drivers/e9u_LSMD_EDU_LIB/`                   | EURECA EDU vendor SDK - **unused**, kept for reference (the EDU board was dropped)    |
 | `verify.py` / `verify_qt.py`                | headless driver/calibration checks / offscreen UI exercise — run before committing     |
 | `run_clouds_spectral.bat`                     | branded Windows launcher;**hardcodes the interpreter path**                       |
 | `run_clouds_ui.sh`                            | macOS/Linux launcher: repo venv +`PYTHONPATH`, args passed through                |
@@ -259,10 +270,6 @@ channels live on one 2048-px detector (Ch1 low pixels, Ch2 high pixels; the
 gap is dark) and share a single exposure. Full polynomial coefficients, data
 scaling, and validation are in [`docs/CALIBRATION.md`](docs/CALIBRATION.md) —
 the single source of truth, not duplicated here.
-
-`calibration_edu.json` is the single-channel counterpart for the 3648-px EDU
-board (`--edu`); its pixel geometry is a hardware fact but its polynomial is a
-**placeholder** — recalibrate it against your unit.
 
 ## Verification
 

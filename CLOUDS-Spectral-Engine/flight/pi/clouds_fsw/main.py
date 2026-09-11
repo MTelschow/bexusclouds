@@ -276,10 +276,15 @@ def main(argv=None) -> int:
     overrides = {}
     if args.mock:
         overrides["mock"] = True
-        overrides.setdefault("data_dir", os.path.abspath("./clouds_data"))
     if args.data_dir:
         overrides["data_dir"] = args.data_dir
     cfg = FswConfig.load(args.config, **overrides)
+    # A mock run must not write to the flight path (/data/clouds is root-owned
+    # on the Pi and absent on a laptop), but only when nothing asked for a
+    # directory: an override here would silently discard a data_dir set in the
+    # config file, and the run then logs somewhere the operator is not looking.
+    if cfg.mock and cfg.data_dir == FswConfig.data_dir:
+        cfg.data_dir = os.path.abspath("./clouds_data")
 
     transport = None
     if cfg.mock or args.no_uart:

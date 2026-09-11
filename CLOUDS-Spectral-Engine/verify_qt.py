@@ -8,6 +8,11 @@ panel screenshot. Run:
 import os
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+# Capture now persists the dark as the operator's default. A QC run must never
+# overwrite the one on the bench, so point the store at a scratch file before
+# clouds_ui is imported.
+os.makedirs("output", exist_ok=True)
+os.environ["CLOUDS_DARK"] = os.path.join("output", "verify_dark.npz")
 import csv
 import glob as _glob
 import sys
@@ -84,6 +89,48 @@ win.chk_dark.setChecked(True)
 win._single()
 app.processEvents()
 check("dark subtract on", win.subtract_dark_flag)
+
+# The dark survives a restart: capture writes it, a fresh window loads it back
+# together with the exposure it was taken at - and refuses to apply it at any
+# other exposure, because dark current scales with integration time.
+from spectro import dark as _darkstore                                     # noqa: E402
+
+_dpath = _darkstore.default_path()
+check("dark: captured dark is stored as the default", os.path.isfile(_dpath),
+      os.path.basename(_dpath))
+_stored = _darkstore.load(_dpath, pixels=2048)
+check("dark: the store keeps the exposure it was taken at",
+      _stored is not None and _stored.exposure_us == int(round(win.exposure_ms * 1000)),
+      _stored.summary() if _stored else "-")
+
+_dwin = clouds_ui_window.CloudsWindow(mock=True)
+app.processEvents()
+check("dark: a fresh window restores it", _dwin.dark is not None
+      and np.allclose(np.asarray(_dwin.dark, dtype=float),
+                      np.asarray(win.dark, dtype=float), atol=1e-3))
+check("dark: the exposure comes back with it",
+      abs(_dwin.exposure_ms - win.exposure_ms) < 1e-3,
+      f"{_dwin.exposure_ms:g} ms")
+check("dark: subtraction is on and the servo is off",
+      _dwin.chk_dark.isChecked() and not _dwin.chk_track.isChecked())
+check("dark: the panel names what is subtracted",
+      "ms" in _dwin.lbl_dark.text() and "mean" in _dwin.lbl_dark.text(),
+      _dwin.lbl_dark.text())
+_dwin.sp_exp.setValue(_dwin.exposure_ms / 4)   # down: 4x up can hit the 1000 ms rail
+app.processEvents()
+check("dark: a different exposure withholds it rather than subtracting it",
+      _dwin.dark is not None and _dwin._dark_in_use() is None)
+check("dark: and the panel says it is held back",
+      "held back" in _dwin.lbl_dark.text(), _dwin.lbl_dark.text())
+_dwin.sp_exp.setValue(win.exposure_ms)
+app.processEvents()
+check("dark: back at its own exposure it applies again",
+      _dwin._dark_in_use() is not None)
+_dwin._clear_dark()
+app.processEvents()
+check("dark: Clear drops the stored default too",
+      _dwin.dark is None and not os.path.isfile(_dpath))
+_dwin.driver.close(); _dwin.close(); _dwin.deleteLater(); app.processEvents()
 
 win.sp_avg.setValue(8)
 app.processEvents()
@@ -284,23 +331,42 @@ check("single-channel: session logging writes rows with blank reference", _lg_ok
 win.chk_log.setChecked(False)
 win.cal = clouds_ui_window.Calibration.load(); app.processEvents()           # restore the Duo
 
-# --edu wiring: kind selection + its per-instrument default calibration.
-# Wiring only, no acquisition - the mock driver emits 2048-px Duo frames, which
-# a 3648-px calibration has no business slicing.
+# Kind wiring. One instrument family is left ("std", plus "net" for the same
+# Duo reached over the cable), so the window must default to the Duo and reject
+# a kind that no longer exists instead of quietly opening the wrong detector.
 check("kind: default is std", win.kind == "std")
-_edu = clouds_ui_window.CloudsWindow(mock=True, kind="edu")
-check("kind: --edu is honoured", _edu.kind == "edu")
-check("kind: --edu stays on the mock driver", type(_edu.driver) is type(win.driver))
-check("kind: --edu loads the 3648-px single-channel calibration",
-      _edu.cal.n_pixels == 3648 and _edu.cal.by_role_optional("reference") is None,
-      f"{_edu.cal.n_pixels}px, {len(_edu.cal.channels)} channel(s)")
-check("kind: the Duo default is untouched",
-      win.cal.n_pixels == 2048 and win.cal.by_role_optional("reference") is not None)
-os.environ["CLOUDS_CALIBRATION"] = os.path.join(clouds_ui_window.HERE, "calibration.json")
-check("kind: an explicit CLOUDS_CALIBRATION overrides the --edu default",
-      clouds_ui_window._default_calibration("edu") is None)
-del os.environ["CLOUDS_CALIBRATION"]
-_edu.driver.close(); _edu.close(); _edu.deleteLater(); app.processEvents()
+check("kind: the Duo calibration is what it loaded",
+      win.cal.n_pixels == 2048 and win.cal.by_role_optional("reference") is not None,
+      f"{win.cal.n_pixels}px, {len(win.cal.channels)} channel(s)")
+try:
+    clouds_ui_window.CloudsWindow(mock=True, kind="edu")
+    _kind_rejected = False
+except ValueError:
+    _kind_rejected = True
+check("kind: the retired EDU board is refused, not silently the Duo",
+      _kind_rejected)
+
+# Where a bare `python -m clouds_ui` looks for the detector. macOS has no
+# EURECA vendor library at all, so "this machine" is not a place the detector
+# can be - the default has to be the cable, or the app fails into a reconnect
+# loop against a driver that cannot exist.
+from clouds_ui import main as clouds_ui_main                                # noqa: E402
+
+_bare = clouds_ui_main._parse([])
+if sys.platform == "darwin":
+    check("args: a bare run goes to the bench Pi on macOS",
+          _bare.net == clouds_ui_main.BENCH_PI, _bare.net)
+    check("args: the detector and the command link agree by default",
+          _bare.net == _bare.experiment, f"{_bare.net} / {_bare.experiment}")
+    os.environ["CLOUDS_SPECTRO_HOST"] = "10.9.8.7"
+    check("args: CLOUDS_SPECTRO_HOST moves the default",
+          clouds_ui_main._default_net() == "10.9.8.7")
+    del os.environ["CLOUDS_SPECTRO_HOST"]
+else:
+    check("args: a bare run opens the local detector off macOS",
+          _bare.net is None, repr(_bare.net))
+check("args: --net always wins",
+      clouds_ui_main._parse(["--net", "1.2.3.4"]).net == "1.2.3.4")
 
 win._start()
 app.processEvents()

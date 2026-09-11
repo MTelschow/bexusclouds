@@ -87,7 +87,9 @@ def _load_vendor_lib():
         raise DriverError(
             "no native detector driver for macOS - EURECA ships a Windows DLL "
             "and a Linux .so only.\n"
-            "Use --net <pi-ip> for the detector on the Pi, or --mock."
+            "The detector is on the Pi from here: run the flight app there "
+            "with --bench-stream (or spectro.net_server) and start this app "
+            "as `--net <pi-ip>`."
         )
     lib_dir = _resolve_lib_dir()
     if _IS_WINDOWS:

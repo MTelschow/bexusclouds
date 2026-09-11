@@ -18,7 +18,135 @@ without re-deriving anything. Newest entries first.
 
 ---
 
-## 2026-09-09 (newest) - V_in is not the 24 V rail, and the shunt values were wrong (M-09, G-01)
+## 2026-09-11 (newest) - The dark frame survives a restart (P-04)
+
+**What was asked.** Capture a dark frame now and make it the GUI's default, so
+a restart does not mean re-taking it; still changeable later.
+
+**Why a dark is worth persisting here.** The pedestal on this unit is huge.
+The inter-channel gap (px 236-1515) is covered - it cannot see light - and it
+reads **~24 000 ct at 10 ms**, 37 % of the 65520 full scale. Every count above
+that is signal, so the dark is not a refinement; without it the numbers mean
+nothing. And capturing one needs a darkened bench, which is a physical
+errand - exactly the kind of work a default should not make the operator redo
+on every start.
+
+**What is stored, and why each field is on the wire.** `spectro/dark.py`
+writes `dark_frame.npz` (numpy, `allow_pickle=False`, beside
+`calibration.json`; `CLOUDS_DARK` moves it; `.gitignore`d, because it is
+instrument state that one button press regenerates). With the counts go
+`exposure_us`, `navg`, `clean`, `captured_t`, `model`, `serial`, `source`. Two
+of those are guards, not metadata:
+
+- **The exposure.** Dark current scales with integration time, so a 10 ms dark
+  subtracted off a 200 ms frame removes the wrong pedestal - and the result
+  still looks like a spectrum, which is what makes it dangerous. A restored
+  dark brings its exposure back with it, and the auto-integration servo is
+  switched **off** on restore, because a servo that moves the exposure would
+  invalidate the restored dark within a frame or two. Those three are one
+  setting. Change the exposure and the subtraction is withheld - not silently,
+  the Dark frame section reads `held back: dark is 10 ms, exposure is 250 ms`.
+- **The pixel count.** A stored frame that is not this detector's length is a
+  different instrument and raises `DarkError` rather than being broadcast onto
+  the wrong geometry.
+
+`Capture dark` persists on the spot rather than behind a second "save" click -
+the expensive half (a dark bench) is already paid for. `Clear` drops the frame
+**and deletes the file**: leaving it would resurrect a dark the operator just
+dropped on the next start, which is the one thing a default must never do.
+
+**Captured on hardware, and it is honest about being imperfect.** Taken
+through the UI's own `_capture_dark` over the cable (`--net`, 16 frames, clean,
+10 ms) off `e9u_LSMD-TCD1304-PRO` S/N 20260312-004: measurement 25 399 ct mean,
+reference 31 038, covered gap 24 142. So Ch1 sits at the gap - a clean pedestal
+- while **Ch2 is ~6.9 k above it**, i.e. light was still on that fibre. That
+is a real defect of this particular capture, not of the mechanism: subtracting
+it over-corrects Ch2 and inflates transmission. Retaking it with the fibre
+blocked is one button press and overwrites the default. Recorded here because
+a dark taken in light is invisible downstream - nothing in the trace says so.
+
+**One thing the change had to be careful about.** `verify_qt.py` and
+`qc_live.py` both call `_capture_dark`, which now writes the operator's
+default. Both now point `CLOUDS_DARK` at a scratch file under `output/`: a QC
+run that replaced the bench's working dark would be a nasty way to learn that
+capture persists.
+
+**Evidence.** 233 tests pass (11 new in `tests/test_dark_frame.py` - roundtrip,
+wrong-detector refusal, unreadable file, exposure tolerance, env override);
+`verify_qt.py` adds 10 checks covering store, restore, servo-off, withholding
+at another exposure, and `Clear` removing the file, and still ends `VERIFY OK`;
+a bare `./run_clouds_ui.sh` on this Mac comes up with the stored dark loaded,
+subtraction on, exposure 10 ms.
+
+---
+
+## 2026-09-11 - The operator interface lost `--mock` and `--edu` (P-01)
+
+**What was asked.** Remove the mock version and the `--edu` board from the
+operator interface, so connecting to the spectrometer is the direct path.
+
+**Why the flag was worth removing, not just hiding.** `clouds_ui --mock`
+draws a synthetic spectrum in the same window, the same plot, the same stats
+card as the real detector. The window already carries one guard of this class -
+the source banner and the `LIVE` / `QUICK-LOOK` badge exist because reading a
+binned 1 Hz quick-look as a live instrument view is a mistake that costs a
+measurement - and a synthetic trace is the same mistake one step further: the
+`[MOCK]` tag in the identity line is the only thing separating invented light
+from real light. On a bench where the operator interface is the instrument,
+that flag has no job that the checks do not already do better.
+
+**The mock driver itself stays.** `open_driver(mock=True)` is what makes 226
+tests, `verify.py`, `verify_qt.py` and `clouds_fsw.main --mock` runnable with
+no hardware attached, and `CloudsWindow(mock=True)` is how `verify_qt.py`
+exercises the real widget tree offscreen. So the removal is of the *command
+line*, not of the capability: nothing in `spectro/mock_driver.py` changed, and
+the UI's `mock=` keyword survives with a docstring saying it has no CLI route.
+Deleting `MockDriver` outright would have left the repo with no hardware-free
+check at all - a much worse trade than the one it was meant to buy.
+
+**The EDU board went entirely.** `spectro/eureca_edu_driver.py`,
+`calibration_edu.json`, `tests/test_calibration_edu.py`, the `"edu"` kind and
+its per-kind default calibration in `clouds_ui/window.py` are deleted. The
+board was a single-fibre 3648-px unit whose vendored SDK ships a Windows
+backend and no Linux source (DEVLOG 2026-07-31), so it could never run on the
+Pi and was never a flight path; what it cost was a second pixel geometry in
+the shared instrument layer, including a `_CAL_BY_KIND` indirection that now
+collapses to `Calibration.load()`. The vendor SDK stays under
+`drivers/e9u_LSMD_EDU_LIB/` for reference, loaded by nothing.
+
+**A retired kind must fail, not fall back.** `KINDS` is `("std", "net")` and
+`resolve_kind("edu")` raises. That matters for a stale
+`CLOUDS_SPECTRO_KIND=edu` in a shell profile or a `spectro_kind` left in an
+FSW config: falling back to the Duo would slice Ch1 `[0, 235]` and Ch2
+`[1516, 1766]` out of a detector that has neither, and report transmission
+against noise. `tests/test_driver_factory.py` now asserts the rejection, and
+`FswConfig.load` still validates the kind at load rather than at first
+connect.
+
+**A bare run now finds the detector on macOS.** With `--mock` gone, a
+flagless `./run_clouds_ui.sh` on this Mac opened `kind="std"` - a local USB
+Duo - and EURECA ships a Windows DLL and a Linux `.so` and nothing else, so
+that open cannot succeed on the platform at all. It failed into the 3 s
+reconnect loop, which reads as a broken app rather than as the wrong machine.
+The detector is on the Pi here (cable, `--bench-stream` on port 4010), so
+`--net` now **defaults** to the bench Pi on `sys.platform == "darwin"` and to
+nothing (this machine) everywhere else; `CLOUDS_SPECTRO_HOST` moves it,
+`--net HOST` overrides it, `--flight` opens no detector. The default lives in
+`clouds_ui/main.py`, not in the launcher, because it follows from a platform
+fact rather than from one operator's habit - and `run_clouds_ui.sh` stays a
+wrapper that invents nothing. The macOS `DriverError` also stopped advising
+`--mock`, a flag that no longer exists, and names the working route instead.
+Proven on hardware: a bare run holds `192.168.100.1:->192.168.100.10:4010`
+and `:4001`, with real frames off `e9u_LSMD-TCD1304-PRO` S/N 20260312-004.
+
+**Evidence.** `python -m pytest tests/` 225 passed (the EDU calibration file's
+own suite is gone with the file); `python verify.py` and `python -u
+verify_qt.py` both end `VERIFY OK`, the latter with the kind checks replaced
+by "the retired EDU board is refused, not silently the Duo".
+
+---
+
+## 2026-09-09 - V_in is not the 24 V rail, and the shunt values were wrong (M-09, G-01)
 
 **What was asked.** Rename the monitored 24 V rail to `V_in`, leave a
 placeholder for the real 24 V rail, which has no monitor fitted yet, and

@@ -5,16 +5,25 @@ interface the UI talks to. Implementations:
 
 * `eureca_driver.py` - the real EURECA Duo, Windows **and** Linux
   (default, `kind="std"`).
-* `eureca_edu_driver.py` - the real EURECA e9u_LSMD_EDU single-channel board
-  (`kind="edu"`, `python clouds_spectral.py --edu`). Windows only. See below.
+* `net_driver.py` - the same Duo reached over TCP (`kind="net"`), served by
+  `spectro.net_server` or the FSW's `--bench-stream`.
 * `mock_driver.py` - synthetic Duo frames, so `verify.py` and `verify_qt.py`
   run with no hardware.
 
 The UI never imports a concrete driver directly; it asks `open_driver(mock=...,
-kind=...)` for "real or mock" and, for real hardware, "std or edu" (also
-settable via the `CLOUDS_SPECTRO_KIND` env var, and by `spectro_kind` in the
-FSW-PI config) - so future Ground Support Equipment (GSE) / downlink consumers
-can reuse the same interface (a downlink source in place of the USB driver).
+kind=...)` for "real or mock" and, for real hardware, where the detector is -
+`"std"` (this machine) or `"net"` (also settable via the
+`CLOUDS_SPECTRO_KIND` env var, and by `spectro_kind` in the FSW-PI config) -
+so the Ground Support Equipment (GSE) / downlink consumers reuse the same
+interface (a downlink source in place of the USB driver).
+
+The single-channel **e9u_LSMD_EDU** board was supported until 2026-09-11
+(`kind="edu"`, `--edu`, `eureca_edu_driver.py`, `calibration_edu.json`) and is
+gone: its vendor SDK ships no Linux backend, so it could never fly, and a
+second pixel geometry in the one shared instrument layer bought nothing. A
+stale `CLOUDS_SPECTRO_KIND=edu` now fails at `resolve_kind`, which is the point
+- silently falling back to the Duo would slice a 2048-px window out of the
+wrong detector. See `docs/DEVLOG.md` (2026-09-11).
 
 ## EURECA Duo vendor library (`libe9u_LSMD_x64.dll` / `libe9u_LSMD.so`)
 
@@ -78,39 +87,16 @@ unbind `ftdi_sio` from interface 0. The shipped rules cover board types
 works (the scan handshakes every tty) but probes a spare device first. Details
 and checks in that folder's README.
 
-## EURECA vendor DLL (`libe9u_LSMD_EDU_x64.dll`)
+## The retired EDU board (`libe9u_LSMD_EDU_x64.dll`)
 
-A different device family, vendored under `drivers/e9u_LSMD_EDU_LIB/` (headers,
-C source, x64 lib - the vendor's own GTK reference GUI is not vendored, it's
-unused by this Engine). One **e9u_LSMD-TCD1304-EDU** board,
-one fibre, **3648 px**, no reference channel - matches `calibration_edu.json`,
-which `--edu` loads by default (`calibration.json` would slice a phantom
-reference channel out of a single-fibre frame).
-It talks over an FTDI VCP UART (not the Duo's async USB link) and exports its
-own `e9u_LSMD_EDU_*` symbols - no relation to the Duo's `e9u_LSMD_*` exports,
-so it needed its own driver (`eureca_edu_driver.py`) rather than a DLL swap.
-
-| Function | Signature | Purpose |
-|---|---|---|
-| `e9u_LSMD_EDU_search_for_camera(uint,int)` -> int | (cam, i_USB=1) | scan COM0-COM99 for the board, identify + open it |
-| `e9u_LSMD_EDU_start_camera_async(uint)` -> int | | no-op on this board (kept for API symmetry with the Duo) |
-| `e9u_LSMD_EDU_set_exp_time_us(uint,uint)` -> int | (cam, exposure_us) | integration time (single value - no separate frame time) |
-| `e9u_LSMD_EDU_get_next_frame(uint)` -> int | | trigger + read the next frame over UART |
-| `e9u_LSMD_EDU_get_pixel_pointer(uint)` -> uint16* | (cam) | pointer to the pixel buffer (one arg - single channel) |
-| `e9u_LSMD_EDU_get_pixel_count(uint)` -> int | | pixel count (3648) |
-
-The DLL exposes no public close/disconnect call for this camera index (the
-`e9u_LSMD_EDU_IO_*` teardown functions take a `struct e9u_LSMD_EDU*` we don't
-have from the outside) - `close()` just drops the ctypes handle; the OS
-reclaims the COM port on process exit. Select it with `kind="edu"` /
-`CLOUDS_SPECTRO_KIND=edu` / `python clouds_spectral.py --edu`; the DLL
-directory resolves as `CLOUDS_E9U_EDU_DLL_DIR` env -> repo-local
-`drivers/e9u_LSMD_EDU_LIB/lib_x64/` -> `vendor/`.
-
-**Windows only.** The vendored EDU SDK has a Windows backend
-(`lib_src/e9u_LSMD_EDU_Windows.c`) and the x64 DLL, but no Linux backend
-source - unlike the Duo family. So `kind="edu"` raises a `DriverError` naming
-the alternative off Windows, and the Pi flies the Duo (feature P-01).
+A different device family - one **e9u_LSMD-TCD1304-EDU** board, one fibre,
+**3648 px**, no reference channel - supported until 2026-09-11 and now removed
+from the software. It spoke over an FTDI VCP UART (not the Duo's async USB
+link) and exported its own `e9u_LSMD_EDU_*` symbols, so it needed a whole
+driver rather than a DLL swap, and the vendored SDK
+(`drivers/e9u_LSMD_EDU_LIB/`) has a Windows backend and x64 DLL but **no Linux
+backend source** - it could never run on the Pi, so it was never a flight
+path. The SDK stays vendored for reference; nothing in this repo loads it.
 
 ## Detector
 

@@ -2,15 +2,16 @@
 
 Qt control panel + live dual-trace spectrum view (measurement Ch1 / reference
 Ch2 on one detector). Adopts the CLOUDS design language from the Raytracing
-Engine (docs/UI_STYLE.md). Talks only to spectro.driver.SpectrometerDriver, so
-``--mock`` runs the whole UI with no hardware.
+Engine (docs/UI_STYLE.md). Talks only to spectro.driver.SpectrometerDriver.
 
-    python clouds_spectral.py            # real EURECA Duo on this machine
-    python clouds_spectral.py --edu      # real EURECA e9u_LSMD_EDU (single channel)
-    python clouds_spectral.py --mock     # synthetic Duo
-    python clouds_spectral.py --net 192.168.100.10
+    python -m clouds_ui                  # the EURECA Duo on this machine
+    python -m clouds_ui --net 192.168.100.10
                                         # Duo on the flight Pi, live over the
                                         # cable (run spectro.net_server there)
+
+The operator interface has no synthetic-detector flag: what it draws from the
+detector is always real light. ``mock=True`` stays on this constructor for the
+hardware-free checks (verify_qt.py, tests/) and has no command-line route.
 """
 from __future__ import annotations
 
@@ -26,6 +27,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+from spectro import dark as darkstore
 from spectro.calibration import Calibration, subtract_dark
 from spectro.driver import DriverError, open_driver, resolve_kind
 from spectro import processing as P
@@ -57,21 +59,6 @@ C_MEAS = NAVY
 C_REF = "#4d8fd1"
 C_TRANS = "#1D9E75"
 C_ABS = "#b0413e"
-
-# Per-kind default calibration. The EDU board is single-fibre / 3648 px, so the
-# Duo's two-window calibration.json would slice a phantom reference channel out
-# of it. An explicit CLOUDS_CALIBRATION (or the Calibrate dialog's Load...)
-# still wins - Calibration.load(None) reads the env var first.
-_CAL_BY_KIND = {"edu": "calibration_edu.json"}
-
-
-def _default_calibration(kind: str) -> str | None:
-    name = _CAL_BY_KIND.get(kind)
-    if not name or os.environ.get("CLOUDS_CALIBRATION"):
-        return None                       # None -> env var, else calibration.json
-    path = os.path.join(HERE, name)
-    return path if os.path.exists(path) else None
-
 
 # --------------------------------------------------------------------- widgets
 def _wl_rgb(nm):
@@ -187,7 +174,10 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self.futura = self._load_futura()
 
         self.kind = resolve_kind(kind)
-        self.cal = Calibration.load(_default_calibration(self.kind))
+        # One instrument family, one factory file: Calibration.load(None) reads
+        # CLOUDS_CALIBRATION if it is set, else calibration.json.
+        self.cal = Calibration.load()
+        self.host = host            # only meaningful for kind="net"
         extra = {"host": host} if self.kind == "net" else {}
         self.driver = open_driver(mock=mock, kind=self.kind, **extra)
         self.mock = mock
@@ -214,6 +204,7 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self.view = "counts"        # "counts" | "transmission" | "absorbance"
         self.show_peak = True       # vertical peak marker + readout on the spectrum
         self.dark = None
+        self._dark_meta = None      # DarkFrame the counts came from, or None
         self.subtract_dark_flag = False
         self.reference_proc = None      # captured no-sample baseline (per channel)
         self.flat = False               # divide by the stored reference (flat-field)
@@ -280,6 +271,7 @@ class CloudsWindow(QtWidgets.QMainWindow):
             self.flight_timer.start()
         self._set_hint("press Connect, then Run" if self.source == "detector"
                        else "waiting for the downlink")
+        self._restore_stored_dark()
 
     def fold_for(self, flight: bool) -> None:
         """Open the half the operator asked for and fold the other away.
@@ -565,6 +557,18 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self.chk_dark.setStyleSheet(self._checkbox_style())
         self.chk_dark.toggled.connect(self._on_dark_toggle)
         v.addWidget(self.chk_dark)
+        # What is actually being subtracted, and whether it applies at the
+        # current exposure. A dark is invisible in the trace once it works, so
+        # the only way to know a stale one is in play is to say so.
+        self.lbl_dark = QtWidgets.QLabel("no dark - press Capture dark")
+        self.lbl_dark.setStyleSheet(
+            f"color:#6b7784; font-family:{MONO}; font-size:10px;")
+        self.lbl_dark.setWordWrap(True)
+        self.lbl_dark.setToolTip(
+            "A captured dark is saved as the default and loaded on the next "
+            "start, together with the exposure it was taken at.\n"
+            "Clear removes both.")
+        v.addWidget(self.lbl_dark)
         self.offset_combo = QtWidgets.QComboBox()
         self.offset_combo.setStyleSheet(self._combo_style())
         self.offset_combo.addItems(["offset: none", "subtract minimum", "subtract dark pixels"])
@@ -828,6 +832,10 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self.exposure_ms = float(v)
         if self._track:                     # a manual slider drag takes back control
             self.chk_track.setChecked(False)
+        if self.dark is not None and not self._dark_exposure_ok():
+            self._set_hint(f"dark is for {self._dark_meta.exposure_ms:g} ms - held back "
+                           f"at {self.exposure_ms:g} ms; recapture to use it here")
+        self._update_dark_label()
         if self.connected and not self.running:
             self._single()
 
@@ -873,6 +881,10 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self.subtract_dark_flag = bool(on)
         if self.dark is None and on:
             self._set_hint("no dark captured yet - press Capture dark")
+        elif on and not self._dark_exposure_ok():
+            self._set_hint(f"dark was taken at {self._dark_meta.exposure_ms:g} ms - "
+                           f"not subtracted at {self.exposure_ms:g} ms; recapture it")
+        self._update_dark_label()
         self._process()
         self._render_plot()
         self._update_stats()
@@ -891,8 +903,7 @@ class CloudsWindow(QtWidgets.QMainWindow):
             return
         m = self.cal.by_role("measurement")
         r = self._ref()
-        use_dark = self.dark if (self.subtract_dark_flag and self.dark is not None) else None
-        fr = subtract_dark(frame, use_dark)
+        fr = subtract_dark(frame, self._dark_in_use())
         ref = {"m": m.slice(fr).copy()}
         if r is not None:
             ref["r"] = r.slice(fr).copy()
@@ -1446,8 +1457,7 @@ class CloudsWindow(QtWidgets.QMainWindow):
             return
         m = self.cal.by_role("measurement")
         r = self._ref()
-        use_dark = self.dark if (self.subtract_dark_flag and self.dark is not None) else None
-        fr = subtract_dark(self.last_frame, use_dark)
+        fr = subtract_dark(self.last_frame, self._dark_in_use())
         if self.offset_mode == "darkpixels" and self._dark_value is not None:
             fr = np.clip(fr - self._dark_value, 0.0, None)
         mc = m.slice(fr)
@@ -1473,6 +1483,75 @@ class CloudsWindow(QtWidgets.QMainWindow):
             self._peak_nm = float(m.wavelengths[P.robust_peak_index(mc)])
 
     # ------------------------------------------------------------ dark frame
+    def _dark_in_use(self):
+        """The dark to subtract right now, or ``None``.
+
+        A dark is only valid at the exposure it was taken at - dark current
+        scales with integration time - so an exposure change withholds it
+        instead of subtracting the wrong pedestal off every frame. The
+        withholding is visible: the checkbox stays on and the Dark frame
+        section says why, because silently not subtracting is its own lie.
+        """
+        if not self.subtract_dark_flag or self.dark is None:
+            return None
+        if self._dark_meta is not None and not self._dark_meta.matches_exposure(
+                int(round(self.exposure_ms * 1000))):
+            return None
+        return self.dark
+
+    def _dark_exposure_ok(self) -> bool:
+        return (self.dark is None or self._dark_meta is None
+                or self._dark_meta.matches_exposure(
+                    int(round(self.exposure_ms * 1000))))
+
+    def _update_dark_label(self):
+        if not hasattr(self, "lbl_dark"):
+            return
+        if self.dark is None:
+            self.lbl_dark.setText("no dark - press Capture dark")
+        elif not self._dark_exposure_ok():
+            self.lbl_dark.setText(
+                f"held back: dark is {self._dark_meta.exposure_ms:g} ms, "
+                f"exposure is {self.exposure_ms:g} ms")
+        elif self._dark_meta is not None:
+            self.lbl_dark.setText(self._dark_meta.summary())
+        else:
+            self.lbl_dark.setText(f"dark @ {self.exposure_ms:g} ms")
+
+    def _restore_stored_dark(self):
+        """Load the dark captured in an earlier session, if there is one.
+
+        The exposure comes back with it and the auto-integration servo is
+        switched off, because those three are one setting: a dark is only
+        valid at its own exposure, and a servo that moves the exposure would
+        invalidate the thing we just restored within a frame or two. The
+        operator gets both back exactly as they left them, and either control
+        overrides it in one click.
+        """
+        try:
+            stored = darkstore.load(pixels=self.driver.PIXELS)
+        except darkstore.DarkError as e:
+            self._set_hint(str(e))
+            return
+        if stored is None:
+            return
+        self.dark = stored.counts
+        self._dark_meta = stored
+        self.exposure_ms = round(stored.exposure_ms, 3)
+        if hasattr(self, "sp_exp"):
+            self.sp_exp.blockSignals(True)
+            self.sp_exp.setValue(self.exposure_ms)
+            self.sp_exp.blockSignals(False)
+        if hasattr(self, "chk_track") and self.chk_track.isChecked():
+            self.chk_track.blockSignals(True)
+            self.chk_track.setChecked(False)
+            self.chk_track.blockSignals(False)
+            self._track = False
+        self.chk_dark.setChecked(True)
+        self._update_dark_label()
+        self._set_hint(f"stored dark loaded ({stored.summary()}) - exposure "
+                       f"set to {self.exposure_ms:g} ms, auto integration off")
+
     def _capture_dark(self):
         if not self.connected:
             self._set_hint("connect first")
@@ -1485,15 +1564,39 @@ class CloudsWindow(QtWidgets.QMainWindow):
         except (DriverError, OSError) as e:
             self._on_driver_error(e)
             return
+        info = self.info
+        meta = darkstore.DarkFrame(
+            counts=self.dark, exposure_us=int(round(self.exposure_ms * 1000)),
+            navg=n, clean=self.clean,
+            model=getattr(info, "model", "") or "",
+            serial=getattr(info, "serial", "") or "",
+            source=self.kind if self.kind != "net" else f"net {self.host or ''}".strip())
+        self._dark_meta = meta
         self.chk_dark.setChecked(True)
-        self._set_hint(f"dark captured ({n} frames @ {self.exposure_ms:g} ms)")
+        # Persisted on capture, not behind a second "save" click: the capture
+        # needs a darkened bench, so the expensive half is already done and
+        # nobody wants to redo it after a restart. Clear removes it again.
+        try:
+            path = darkstore.save(meta)
+            saved = f", saved as the default ({os.path.basename(path)})"
+        except OSError as e:
+            saved = f" - could not save it as the default: {e}"
+        self._update_dark_label()
+        self._set_hint(f"dark captured ({n} frames @ {self.exposure_ms:g} ms){saved}")
         if not self.running:
             self._single()
 
     def _clear_dark(self):
         self.dark = None
+        self._dark_meta = None
         self.chk_dark.setChecked(False)
-        self._set_hint("dark cleared")
+        # The stored default goes with it. Leaving it on disk would resurrect
+        # a dark the operator just dropped on the next start, which is the
+        # kind of surprise a default must never spring.
+        removed = darkstore.clear()
+        self._update_dark_label()
+        self._set_hint("dark cleared (stored default removed)" if removed
+                       else "dark cleared")
 
     # ------------------------------------------------------------- rendering
     # ------------------------------------------------- what the x axis means
@@ -1835,11 +1938,10 @@ class CloudsWindow(QtWidgets.QMainWindow):
                           f"{self.cal.instrument.get('serials', {}).get('eureca', '')}",
             "exposure_ms": self.exposure_ms,
             "averaging": self.navg,
-            "dark_subtracted": bool(self.subtract_dark_flag and self.dark is not None),
+            "dark_subtracted": self._dark_in_use() is not None,
             "glitch_filtered": bool(self.clean),
         }
-        use_dark = self.dark if (self.subtract_dark_flag and self.dark is not None) else None
-        frame = subtract_dark(self.last_frame, use_dark)
+        frame = subtract_dark(self.last_frame, self._dark_in_use())
         base = os.path.join("output", f"clouds_spectrum_{ts}")
         EX.write_spectrum_csv(base + ".csv", self.cal, frame, meta)
         pdfp = EX.write_pdf_report(base + ".pdf", self.cal, frame, meta)
@@ -1992,9 +2094,8 @@ class _CalibrationDialog(QtWidgets.QDialog):
             self.status.setText(f"loaded {os.path.basename(path)}")
 
     def _reset(self):
-        # back to this instrument's factory file, not always the Duo's
-        self.engine.cal = Calibration.load(
-            _default_calibration(getattr(self.engine, "kind", "std")))
+        # back to the factory file (CLOUDS_CALIBRATION, else calibration.json)
+        self.engine.cal = Calibration.load()
         self.engine._render_plot()
         self.result.setText("")
         self.status.setText("reset to the factory calibration")

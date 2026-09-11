@@ -1,11 +1,19 @@
 """Entry point for the one CLOUDS operator interface.
 
-    python -m clouds_ui                       # bench: real Duo on this machine
-    python -m clouds_ui --mock                # synthetic detector, no hardware
-    python -m clouds_ui --edu                 # single-channel EDU board
+    python -m clouds_ui                       # bench: the Duo on this machine
+                                              # (macOS: the Duo on the Pi, see
+                                              # below)
     python -m clouds_ui --net 192.168.100.10  # detector on the Pi (bench-stream)
     python -m clouds_ui --flight              # downlink only: HK, quick-look,
                                               # commanding. No detector.
+
+There is no synthetic detector here and no second instrument family: the
+operator interface either talks to the Duo (locally, or over the cable via
+``--net``) or it does not open a detector at all (``--flight``). A spectrum on
+this screen is therefore always a real measurement of real light. The mock
+driver still exists for the hardware-free checks (``tests/``, ``verify.py``,
+``verify_qt.py``, ``clouds_fsw.main --mock``) - it is reachable from code, not
+from this command line.
 
 This replaces both `clouds_spectral.py` (bench panel) and
 `clouds_gse.main --gui` (ground dashboard). The two halves are the same window
@@ -27,19 +35,40 @@ from PyQt5 import QtGui, QtWidgets
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# The bench Pi (docs/BENCH.md): the same address FswConfig.ground_host and the
+# GSE's --experiment already default to.
+BENCH_PI = "192.168.100.10"
+
+
+def _default_net() -> str | None:
+    """Where the detector is when nobody said.
+
+    On Windows and Linux that is this machine - a USB Duo, ``kind="std"``.
+    On macOS it is never this machine: EURECA ships a Windows DLL and a Linux
+    ``.so`` and nothing else, so a local open cannot succeed here, ever. The
+    old default failed into a 3 s reconnect loop against a driver that does
+    not exist on the platform, which reads as "the app is broken" rather than
+    "you are on the wrong machine". So default to the cable, which is the
+    bench's actual wiring: detector on the Pi, operator interface here.
+
+    ``CLOUDS_SPECTRO_HOST`` moves it; ``--net HOST`` overrides it; ``--flight``
+    opens no detector at all.
+    """
+    if sys.platform != "darwin":
+        return None
+    return os.environ.get("CLOUDS_SPECTRO_HOST") or BENCH_PI
+
 
 def _parse(argv=None):
     ap = argparse.ArgumentParser(
         prog="clouds_ui", description="CLOUDS operator interface "
                                       "(bench instrument + flight downlink)")
     det = ap.add_argument_group("detector (bench)")
-    det.add_argument("--mock", action="store_true",
-                     help="synthetic detector, no hardware")
-    det.add_argument("--edu", action="store_true",
-                     help="single-channel EDU board instead of the Duo")
-    det.add_argument("--net", metavar="HOST",
+    det.add_argument("--net", metavar="HOST", default=_default_net(),
                      help="detector on another machine (the Pi's "
-                          "--bench-stream, or spectro.net_server)")
+                          "--bench-stream, or spectro.net_server). Defaults "
+                          "to the bench Pi on macOS, which has no native "
+                          "detector driver, and to this machine elsewhere")
     fl = ap.add_argument_group("flight link")
     fl.add_argument("--flight", action="store_true",
                     help="downlink only: open no detector, start on the "
@@ -63,7 +92,7 @@ def _parse(argv=None):
 def main(argv=None) -> int:
     args = _parse(argv)
 
-    kind = "edu" if args.edu else None
+    kind = None
     host = None
     if args.net:
         host, kind = args.net, "net"
@@ -106,7 +135,7 @@ def main(argv=None) -> int:
 
     from .window import CloudsWindow
 
-    win = CloudsWindow(mock=args.mock, kind=kind, host=host,
+    win = CloudsWindow(kind=kind, host=host,
                        receiver=receiver, commander=commander,
                        session=session,
                        source="downlink" if args.flight else "detector")

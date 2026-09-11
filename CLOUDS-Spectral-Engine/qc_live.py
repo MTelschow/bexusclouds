@@ -19,6 +19,11 @@ import sys
 import time
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")   # no PDF auto-open, no GPU
+# Block A captures darks. Capture persists the dark as the operator's default,
+# and a QC sweep's darks are its own - point the store at a scratch file so a
+# run cannot replace the one the bench is using.
+os.makedirs("output", exist_ok=True)
+os.environ.setdefault("CLOUDS_DARK", os.path.join("output", "qc_live_dark.npz"))
 import numpy as np
 from PyQt5 import QtCore, QtWidgets
 

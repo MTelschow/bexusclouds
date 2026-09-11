@@ -77,3 +77,53 @@ class TestCommLog:
         lines = open(path, encoding="utf-8").read().splitlines()
         assert len(lines) == 2
         assert "cmd=PING" in lines[0] and "seal failed" in lines[1]
+
+
+class TestMockDataDir:
+    """``--mock`` must not write to the flight path, and must not overrule a
+    data directory somebody actually asked for.
+
+    ``/data/clouds`` is root-owned on the Pi and absent on a bench laptop, so a
+    mock run redirects itself. The trap is doing that unconditionally: the run
+    then logs to ./clouds_data while the operator watches the directory their
+    config named, and nothing says so.
+    """
+
+    def _run_main(self, monkeypatch, argv):
+        from clouds_fsw import main as m
+
+        seen = {}
+
+        class _StubApp:
+            def __init__(self, cfg, transport=None, bench_port=None):
+                seen["cfg"] = cfg
+
+            def run(self):
+                pass
+
+            def stop(self):
+                pass
+
+            def shutdown(self):
+                pass
+
+        monkeypatch.setattr(m, "FlightApp", _StubApp)
+        assert m.main(argv) == 0
+        return seen["cfg"]
+
+    def test_mock_redirects_the_flight_path(self, monkeypatch):
+        cfg = self._run_main(monkeypatch, ["--mock"])
+        assert cfg.data_dir == os.path.abspath("./clouds_data")
+
+    def test_config_data_dir_survives_mock(self, monkeypatch, tmp_path):
+        import json
+
+        cfg_path = tmp_path / "fsw.json"
+        cfg_path.write_text(json.dumps({"data_dir": str(tmp_path / "d")}))
+        cfg = self._run_main(monkeypatch, ["--mock", "--config", str(cfg_path)])
+        assert cfg.data_dir == str(tmp_path / "d")
+
+    def test_explicit_flag_wins_over_both(self, monkeypatch, tmp_path):
+        cfg = self._run_main(monkeypatch,
+                             ["--mock", "--data-dir", str(tmp_path / "e")])
+        assert cfg.data_dir == str(tmp_path / "e")

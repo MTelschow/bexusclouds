@@ -123,9 +123,9 @@ the service will fight over `/dev/ttyUSB*`; stop the former before starting
 the latter, or the FSW sits in its `reconnect_s` loop logging
 `Device or resource busy`.
 
-`spectro_kind` in the config selects the hardware family — `"std"` (default,
-the Duo; the only one with a Linux library) or `"edu"`. It is validated at
-config load, not at the first connect attempt.
+`spectro_kind` in the config selects where the detector is — `"std"`
+(default, the Duo on this machine; the only flight detector) or `"net"`. It is
+validated at config load, not at the first connect attempt.
 
 Tests live in the repo-root suite: `python -m pytest tests/` — unit tests
 per module plus the end-to-end chain (`tests/test_e2e.py`, feature X-04):

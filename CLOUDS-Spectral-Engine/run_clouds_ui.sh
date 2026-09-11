@@ -14,14 +14,17 @@
 #   fails on the Qt import with nothing to say about why.
 #
 # Every argument is passed straight through to `python -m clouds_ui`, so this
-# adds no flags of its own and invents no defaults:
+# adds no flags of its own and invents no defaults - the one default that does
+# exist lives in the app: on macOS, which has no EURECA vendor library at all,
+# the detector defaults to the bench Pi over the cable (192.168.100.10, moved
+# by CLOUDS_SPECTRO_HOST), because "this machine" is not somewhere the
+# detector can be here.
 #
-#   ./run_clouds_ui.sh                          real Duo on this machine
-#   ./run_clouds_ui.sh --mock --no-link         synthetic, no hardware at all
-#   ./run_clouds_ui.sh --net 192.168.100.10     detector on the Pi
+#   ./run_clouds_ui.sh                          the Duo on this machine;
+#                                               on macOS, the Duo on the Pi
+#   ./run_clouds_ui.sh --no-link                instrument only, no downlink
+#   ./run_clouds_ui.sh --net 192.168.100.10     detector on the Pi, explicitly
 #   ./run_clouds_ui.sh --flight                 ground station, downlink only
-#   ./run_clouds_ui.sh --net 192.168.100.10 --experiment 192.168.100.10
-#                                               both sources, switchable
 #   ./run_clouds_ui.sh --help                   the full flag list
 set -e
 

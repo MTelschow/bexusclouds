@@ -24,3 +24,4 @@ gse_sessions/
 drivers/e9u_LSMD_LIB_Linux/e9u_lsmd_camera_library-*/
 
 .DS_Store
+dark_frame.npz
