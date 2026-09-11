@@ -18,7 +18,95 @@ without re-deriving anything. Newest entries first.
 
 ---
 
-## 2026-09-11 (newest) - Three BNO055 bugs the missing part was hiding, and the carrier schematic (M-09)
+## 2026-09-11 (newest) - The sidebar packs into columns instead of scrolling
+
+**What was asked.** "Rework the UI so open panels by default are visible all
+at once without scrolling."
+
+**Measured first, because the fix depends on the number.** Offscreen, with
+`fold_for(False)` and the shipped `DEFAULT_OPEN` set, the sections were
+77 px (Spectrum source), **325** (Sensors), 189 (Commands), 214 (Actuators),
+**217** (Events) and 19 per folded heading - **~1500 px of sidebar** with
+margins, spacing, wordmark and hint. The old layout was one 410 px column in
+a `QScrollArea`, so against a laptop's ~870 px that is off by about 2x: the
+open sections could not all be on screen at any window size, and the two
+halves of the interface - the command you send and the housekeeping that
+answers it - were never visible together. No amount of tightening one
+section closes a 2x gap; **the column count is the variable**.
+
+**`sections.SectionFlow`.** The sidebar is now N columns of 340 px, packed
+greedily in order and then evened out: once the column count is known, the
+smallest per-column height that still yields that count is found by
+bisection, which also minimises the tallest column. Order is preserved - a
+break moves a section sideways, never past its neighbours. Heights come from
+`heightForWidth` at the column width, not `sizeHint()` alone, because several
+sections end in a wrapped note that is two lines at 340 px where the hint
+assumed one. The count is the *fewest that fit*, so a tall screen still gets
+one column and gives the width back to the spectrum.
+
+**The split is the operator's: a horizontal `QSplitter`.** The first cut
+pinned the sidebar with `setFixedWidth` to exactly the columns it wanted, and
+that is wrong twice over. It takes the choice away - a calibration pass wants
+the trace, a commanding pass wants the controls - and a fixed-width sidebar
+*is* the window's minimum width, so a cap computed from the window's own
+width is a feedback loop: three columns force the window wider, the wider
+window permits three columns, and the window can no longer be shrunk.
+Measured while it was wrong: asking for 1280x720 left the window 2274 px wide
+with 173 px of spectrum. Now the handle sets the width, the sidebar is
+clamped between one column and `MAX_COLS` (3), the spectrum has a floor of
+`MIN_PLOT_W` = 420 px, and `columns_for_width` turns whatever width it is
+given into a column count - so dragging the sidebar out adds a column instead
+of adding empty space, and dragging it in gives the trace the room back.
+Columns widen past 340 px to fill the width, and because several sections end
+in a wrapped note, a wider sidebar is not only wider: it can shorten the
+columns enough to drop one. The vertical scrollbar's width is reserved
+whether or not it is showing, or a bar that appears would narrow the sidebar
+by its own width, drop a column, make the content fit, and vanish again.
+
+**Fitting 1440x870 took the columns *and* four trims**, because two columns
+of 808 px still came up ~110 px short in the flight shape (Housekeeping open
+as well):
+
+* the **wordmark is a flow item**, not a header above the flow. A header is
+  ~100 px the columns never get to use.
+* **Sensors is one line a row** - name, part, value in a 3-column grid -
+  instead of a two-line `name\npart` label: 325 -> 251 px. The part name
+  stays, because it is what makes a reading judgeable (`Accel` looks like
+  instrument data until you know it comes from a BNO055 that does not
+  answer).
+* the **Events list is `setFixedHeight(140)`**, not a 120 px minimum with a
+  ~250 px hint. Five events visible and the rest scrolling is what a log
+  does; the height it was claiming was empty rows.
+* a **run of folded sections packs at `TIGHT_GAP` = 4 px**, not 12. Seven
+  folded headings in a row are a list of one-line labels, not seven blocks -
+  worth ~50 px at the bottom of a column, and it reads better.
+
+**`FlightPanel` stopped being a container.** It was a `QWidget` stacking its
+five sections in its own `QVBoxLayout`, which would have pinned the whole
+flight half into one column. It is now a `QObject` that builds sections and
+owns their slots and exposes `sections` for the sidebar to pack - the update
+logic is untouched. Its one dialog re-parents to `sec_cmd`, a real widget
+(`QMessageBox` needs a widget parent, and a `QObject` is not one).
+
+**Folding re-packs, batched.** `fold_for` sets fourteen sections in a row;
+without `SectionFlow.held()` the operator would watch the columns rearrange
+thirteen times before landing. `_set_hint` re-packs too: the hint spans the
+sidebar and wraps, so a long one is height the columns no longer have.
+
+**Result, on the 1440x870 screen this was measured against.** The window
+opens with the handle set to two columns where there is room for them: 743 px
+of sidebar, 697 px of spectrum, **no scrollbar in either shape** - content
+715 px on the bench and 804 px in flight against an 870 px viewport; tallest
+column 666 / 755 px against a 808 px budget. Dragging the handle re-packs
+live: 400 px -> one column, 760 px -> two, 1016 px -> two columns 476 px
+wide. The window's default size went 1420x920 -> 1720x980, clamped to the
+screen. `verify_qt.py` checks the packing directly - tallest column within
+budget, every item placed exactly once, one column when the height is there -
+alongside the existing "the sidebar is not clipped horizontally".
+
+---
+
+## 2026-09-11 - Three BNO055 bugs the missing part was hiding, and the carrier schematic (M-09)
 
 **What was asked.** "The BNO055 sensors are not working, fix this" - this time
 with `pin_layout.jpeg` (the carrier's RP2350B page) and the Bosch datasheet

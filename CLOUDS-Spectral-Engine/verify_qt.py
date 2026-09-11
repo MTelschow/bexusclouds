@@ -505,7 +505,7 @@ try:
     # different widths used to share that box (a full row, a part-filled row,
     # and the release pair), which reads as a broken layout.
     app.processEvents()
-    # The command block must fit the 410 px sidebar, whose horizontal
+    # The command block must fit its 340 px sidebar column, whose horizontal
     # scrollbar is off: pinning its columns to the widest label once pushed
     # the far button (and the rest of the sidebar) off the visible edge.
     _sa = _win.findChild(QtWidgets.QScrollArea)
@@ -513,6 +513,34 @@ try:
           _sa.widget().width() <= _sa.viewport().width(),
           f"contents {_sa.widget().width()} vs viewport "
           f"{_sa.viewport().width()}")
+    # The sidebar packs into columns instead of scrolling: with the default
+    # sections open it must fit the height of the window, because the failure
+    # being fixed is an operator who cannot see the command they sent and the
+    # housekeeping that answers it at the same time. Driven with an explicit
+    # budget rather than the window's, since the offscreen platform reports an
+    # 800x600 screen and the column cap is sized from the real one.
+    _budget = 760
+    _win.flow.relayout(_budget, 3 * 340 + 2 * 12)
+    app.processEvents()
+    _colh = _win.flow.column_heights()
+    check("sidebar: the open sections fit without scrolling",
+          bool(_colh) and max(_colh) <= _budget,
+          f"{_win.flow.columns} columns, tallest {max(_colh) if _colh else 0} "
+          f"of {_budget} px")
+    _placed = [_l.itemAt(_i).widget() for _l in _win.flow._cols
+               for _i in range(_l.count())
+               if _l.itemAt(_i).widget() is not None]
+    check("sidebar: every section is placed exactly once",
+          len(_placed) == len(set(map(id, _placed))) == len(_win.flow._items)
+          and all(_s in _placed for _s in _win._sections),
+          f"{len(_placed)} placed of {len(_win.flow._items)}, columns {_colh}")
+    # A tall screen gets one column and gives the width back to the spectrum.
+    _win.flow.relayout(4000, 3 * 340 + 2 * 12)
+    check("sidebar: a tall window uses one column",
+          _win.flow.columns == 1, f"{_win.flow.columns} columns")
+    _win._reflow_panel()
+    app.processEvents()
+
     _rows = {}
     for _b in _gse._cmd_buttons:
         _rows.setdefault(_b.y(), []).append(_b.width())

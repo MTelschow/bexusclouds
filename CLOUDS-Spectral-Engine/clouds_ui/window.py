@@ -34,7 +34,7 @@ from spectro import processing as P
 from . import style
 from . import timeline
 from .flight import FlightPanel
-from .sections import Section, group_label
+from .sections import Section, SectionFlow, group_label
 from .timeline import TimelineBuffer, TimelineView, fig_to_pixmap
 
 # Repo root, not this package: assets/, calibration*.json and the Calibrate
@@ -48,6 +48,9 @@ NAVY = "#01386a"
 MONO = "Menlo,DejaVu Sans Mono,Consolas,monospace"
 VERSION = "0.1.0"
 RECONNECT_INTERVAL_MS = 3000   # auto-retry cadence after a driver/link error
+#: The spectrum pane's floor on the horizontal splitter. The operator sets the
+#: split, but not to the point where the trace stops being a trace.
+MIN_PLOT_W = 420
 
 #: Sections that start expanded, in either kind of session, and the order they
 #: sit in at the top of the sidebar (`_build_panel` + `FlightPanel.sections`
@@ -182,8 +185,14 @@ class CloudsWindow(QtWidgets.QMainWindow):
         if os.path.exists(ico):
             self.setWindowIcon(QtGui.QIcon(ico))
         screen = QtWidgets.QApplication.primaryScreen()
-        max_h = screen.availableGeometry().height() if screen else 920
-        self.resize(1420, min(920, max_h))
+        avail = screen.availableGeometry() if screen else None
+        max_w = avail.width() if avail else 1720
+        max_h = avail.height() if avail else 920
+        # Wider than the old 1420: the sidebar packs its open sections into
+        # columns rather than a scrolling strip (`SectionFlow`), and on a
+        # laptop-height screen that is two columns. Asking for the width they
+        # need up front is what keeps the spectrum from paying for them.
+        self.resize(min(1720, max_w), min(980, max_h))
         self.futura = self._load_futura()
 
         self.kind = resolve_kind(kind)
@@ -276,13 +285,35 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self.flight_timer.setInterval(500)
         self.flight_timer.timeout.connect(self._tick_flight)
 
-        central = QtWidgets.QWidget()
+        # Horizontal splitter, not a fixed sidebar: how much of the window
+        # goes to the trace and how much to the controls is the operator's,
+        # and it changes with the job - a calibration pass wants the
+        # spectrum, a commanding pass wants the sidebar. The sidebar re-packs
+        # into however many columns the width it is dragged to can hold
+        # (`_reflow_panel`), so widening it turns into columns rather than
+        # into empty space.
+        central = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
+        central.setChildrenCollapsible(False)
+        central.setHandleWidth(4)
+        central.setStyleSheet(
+            f"QSplitter::handle{{background:{style.BORDER};}}"
+            f"QSplitter::handle:hover{{background:{NAVY};}}")
         self.setCentralWidget(central)
-        lay = QtWidgets.QHBoxLayout(central)
-        lay.setContentsMargins(0, 0, 0, 0)
-        lay.setSpacing(0)
-        lay.addWidget(self._build_view(), 1)
-        lay.addWidget(self._build_panel(), 0)
+        view = self._build_view()
+        view.setMinimumWidth(MIN_PLOT_W)
+        central.addWidget(view)
+        central.addWidget(self._build_panel())
+        central.setStretchFactor(0, 1)      # extra width goes to the trace
+        central.setStretchFactor(1, 0)
+        central.splitterMoved.connect(lambda *_: self._reflow_panel())
+        self._h_split = central
+        # Two columns to start where the window is wide enough for them,
+        # which is the layout the default sections were sized against; one
+        # otherwise, and the operator can drag for the second.
+        want = self._panel_width_for(2)
+        if self.width() - want < MIN_PLOT_W:
+            want = self._panel_width_for(1)
+        central.setSizes([max(MIN_PLOT_W, self.width() - want), want])
         self._update_source_banner()
         self._render_plot()
         self._update_stats()
@@ -304,6 +335,11 @@ class CloudsWindow(QtWidgets.QMainWindow):
         what is on screen first.
         """
         flight_secs = set(self.flight.sections)
+        with self.flow.held():
+            self._fold_sections(flight, flight_secs)
+        self._reflow_panel()
+
+    def _fold_sections(self, flight: bool, flight_secs) -> None:
         for sec in self._sections:
             if sec.title_key in DEFAULT_OPEN:
                 # The group at the top of the sidebar: what the operator
@@ -480,19 +516,33 @@ class CloudsWindow(QtWidgets.QMainWindow):
         panel = QtWidgets.QWidget()
         panel.setStyleSheet(f"background:{style.PANEL_BG};")
         outer = QtWidgets.QVBoxLayout(panel)
-        outer.setContentsMargins(20, 20, 20, 18)
-        outer.setSpacing(12)
+        outer.setContentsMargins(16, 14, 16, 12)
+        outer.setSpacing(10)
         self._sections: list[Section] = []
+        # Everything in the sidebar goes into the flow, which decides how many
+        # columns it all needs for the height on offer - including the
+        # wordmark, which is a flow item rather than a header above it. A
+        # header would be ~100 px the columns never get to use, and on a
+        # 1440x870 screen that is the difference between fitting and not.
+        # `outer` carries only the hint line, which spans the full width
+        # because it is the panel's status line, not one column's.
+        self.flow = SectionFlow()
 
         def sec(title, open_=True):
             """Start a new collapsible section and return its body layout, so
             the group-building code below stays plain `v.addWidget` calls."""
             s_ = Section(title, open_=open_)
             self._sections.append(s_)
-            outer.addWidget(s_)
+            self.flow.add(s_)
             return s_.body
 
-        v = outer
+        brand = QtWidgets.QWidget()
+        head = QtWidgets.QVBoxLayout(brand)
+        head.setContentsMargins(0, 0, 0, 0)
+        head.setSpacing(6)
+        self.flow.add(brand)
+        outer.addWidget(self.flow, 0, QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
+        v = head
 
         logo = QtWidgets.QLabel()
         logo.setStyleSheet("background:transparent;")
@@ -542,7 +592,8 @@ class CloudsWindow(QtWidgets.QMainWindow):
         # --- Flight: housekeeping, commanding, actuators, events -----------
         self.flight = FlightPanel(self.rx, self.commander, self.session)
         self._sections.extend(self.flight.sections)
-        outer.addWidget(self.flight)
+        for s_ in self.flight.sections:
+            self.flow.add(s_)
 
         # --- Device ---
         v = sec("Device")
@@ -727,13 +778,76 @@ class CloudsWindow(QtWidgets.QMainWindow):
                                 "font-style:italic;")
         outer.addWidget(self.hint)
 
+        # The scroll area is the fallback, not the layout: the flow packs the
+        # open sections into the height that is there, and only a window
+        # shorter than three columns can hold makes a scrollbar appear.
+        # Horizontal scrolling stays off - a clipped sidebar is a bug, and
+        # the flow sizes itself to whole columns so it cannot want one.
         scroll = QtWidgets.QScrollArea()
         scroll.setWidget(panel)
         scroll.setWidgetResizable(True)
-        scroll.setFixedWidth(410)
         scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         scroll.setFrameShape(QtWidgets.QFrame.NoFrame)
+        # One column is the floor - narrower clips the command grid - and
+        # MAX_COLS the ceiling, so dragging the handle out past the widest
+        # useful sidebar gives the width back to the trace instead of
+        # stretching three columns of air.
+        scroll.setMinimumWidth(self._panel_width_for(1))
+        scroll.setMaximumWidth(self._panel_width_for(SectionFlow.MAX_COLS))
+        self._panel_scroll = scroll
+        self._panel_chrome = 14 + 12        # outer margins, for the budget
+        self._reflow_panel()
         return scroll
+
+    def _panel_width_for(self, cols: int) -> int:
+        """Sidebar width that holds `cols` columns: the columns, the gaps
+        between them, the panel's own margins and the vertical scrollbar's
+        width - which is reserved whether or not the bar is showing, so that
+        one appearing cannot change the column count and make it vanish
+        again."""
+        sb = self._panel_scroll.verticalScrollBar() if hasattr(
+            self, "_panel_scroll") else None
+        pad = sb.sizeHint().width() if sb is not None else 16
+        return (cols * SectionFlow.COL_W + (cols - 1) * SectionFlow.GAP
+                + 2 * 16 + pad)
+
+    #: Height the sidebar needs beyond its sections: wordmark, subtitle, rule,
+    #: the hint line, and the spacing between those and the flow.
+    _PANEL_HEAD_H = 120
+
+    def _reflow_panel(self) -> None:
+        """Re-pack the sidebar for the space it currently has.
+
+        Driven from the window's resize and the splitter's handle rather than
+        from the panel, because the panel is as tall as its content and so
+        can report neither the height it has nor the width it was given.
+
+        Nothing here sets the sidebar's width - that is the operator's, via
+        the splitter. What this decides is how many columns to spend it on.
+        """
+        if not hasattr(self, "flow") or not hasattr(self, "_panel_scroll"):
+            return
+        avail_h = self._panel_scroll.viewport().height() or self.height()
+        panel = self._panel_scroll.widget()
+        # What the sidebar spends on things that are not sections - wordmark,
+        # subtitle, rule, hint, margins - measured rather than guessed, so a
+        # longer hint line does not quietly push the last section off screen.
+        chrome = panel.sizeHint().height() - self.flow.sizeHint().height()
+        if chrome <= 0:
+            chrome = self._PANEL_HEAD_H + self._panel_chrome
+        budget = max(200, avail_h - chrome)
+        # The scrollbar's width is reserved whether or not it is showing: a
+        # bar that appears would otherwise narrow the sidebar by its own
+        # width, drop a column, make the content fit, and vanish again.
+        sb = self._panel_scroll.verticalScrollBar()
+        pad = sb.sizeHint().width() if sb is not None else 16
+        width = max(SectionFlow.COL_W,
+                    self._panel_scroll.width() - 2 * 16 - pad)
+        self.flow.relayout(budget, width)
+
+    def resizeEvent(self, ev):
+        super().resizeEvent(ev)
+        self._reflow_panel()
 
     def _build_timeline_section(self, v):
         """Which housekeeping series the lower plot draws, and over how long.
@@ -2079,6 +2193,10 @@ class CloudsWindow(QtWidgets.QMainWindow):
     def _set_hint(self, txt):
         if hasattr(self, "hint"):
             self.hint.setText(txt)
+            # The hint spans the sidebar and wraps: a long one is two or three
+            # lines, which is height the columns no longer have. Re-pack, or a
+            # hint could be what pushes the last section out of view.
+            self._reflow_panel()
 
     def _export(self):
         if self.last_frame is None:

@@ -31,8 +31,29 @@ Reference implementation for the widgets we reuse: that engine's
 
 ## Spectrometer-specific layout (this app)
 
-`QMainWindow` -> horizontal: **live spectrum view** (stretch 1) + **control
-sidebar** (~410 px) in a `QScrollArea`. Sidebar order: branding; then the
+`QMainWindow` -> a **horizontal `QSplitter`**: **live spectrum view**
+(stretch 1, floor `MIN_PLOT_W` = 420 px) + **control sidebar**, a
+`QScrollArea` whose contents are **as many 340 px columns as the width it has
+been dragged to can hold** (`sections.SectionFlow`,
+`CloudsWindow._reflow_panel`). The split is the operator's - a calibration
+pass wants the trace, a commanding pass wants the controls - and the sidebar
+is clamped between one column and `MAX_COLS` (3), so dragging past the widest
+useful sidebar gives the width back to the trace instead of stretching
+columns of air. Columns widen past 340 px to fill whatever width they are
+given; `columns_for_width` is the cap and the height picks the count.
+
+The one column the sidebar used to be held ~1500 px of expanded sections, so
+an operator on a laptop scrolled to reach the half they were not looking at -
+and could not see the command they sent and the housekeeping that answers it
+at once. The flow packs the sections, in order, into the **fewest columns
+that fit the height available**, then evens the columns out by bisecting for
+the shortest per-column height that still yields that count; a tall window
+therefore collapses back to one column on its own. The scroll area is the
+fallback, not the layout. The **wordmark is a flow item**, not a header above
+the flow, so the columns get that ~100 px; a run of folded sections packs at
+`TIGHT_GAP` (4 px) because it is a list of one-line headings rather than a
+stack of blocks; only the hint line sits outside, spanning the panel.
+Sidebar order: branding; then the
 group that steers the plot and the experiment - Spectrum source; Timeline
 (which housekeeping series the lower plot draws); Sensors; Commands;
 Actuators; Events - and below it what is set once and left alone -
@@ -47,8 +68,12 @@ in either kind of session; only Housekeeping follows the half that was asked
 for - open with `--flight`, folded on the bench. The folded ones are either
 long (Timeline's two dozen series toggles, View) or set once and forgotten,
 and on screen at startup they cost the sections above them the height they
-are read in. A hint line under the action area is the feedback channel; a
-stats card overlays the plot top-left.
+are read in - less than they used to, now that a column break rather than a
+scrollbar absorbs the overflow, but a folded section is still one the
+operator is not reading. Folding re-packs the flow (batched through
+`SectionFlow.held()` so `fold_for`'s fourteen calls rearrange the columns
+once, not thirteen times). A hint line under the action area is the feedback
+channel; a stats card overlays the plot top-left.
 
 The left half is a **vertical `QSplitter`**: the spectrum on top, the
 housekeeping **timeline** under it (`clouds_ui/timeline.py`). A splitter, not

@@ -148,8 +148,15 @@ UNSOURCED_TEXT = {
 STALE_HK_S = 5.0
 
 
-class FlightPanel(QtWidgets.QWidget):
-    """The flight sections, stacked, ready to drop into the sidebar."""
+class FlightPanel(QtCore.QObject):
+    """The flight sections and the slots that keep them fed.
+
+    It builds sections and owns their update logic; it does **not** lay them
+    out. The sidebar packs every section - both halves - into one column flow
+    (`sections.SectionFlow`), so a container of its own here would pin the
+    flight group into a single column and defeat that. `sections` is the
+    ordered list the sidebar consumes.
+    """
 
     def __init__(self, receiver, commander, session, parent=None):
         super().__init__(parent)
@@ -157,32 +164,23 @@ class FlightPanel(QtWidgets.QWidget):
         self._cmd = commander
         self._session = session
 
-        lay = QtWidgets.QVBoxLayout(self)
-        lay.setContentsMargins(0, 0, 0, 0)
-        lay.setSpacing(12)
-
         # Order is the operator's working order, not the data's: the sections
         # they steer the experiment with come first, and the housekeeping
         # grid - long, and read rather than acted on - sits below them.
         self.sec_sensors = Section("Sensors")
         self._build_sensors(self.sec_sensors)
-        lay.addWidget(self.sec_sensors)
 
         self.sec_cmd = Section("Commands")
         self._build_commands(self.sec_cmd)
-        lay.addWidget(self.sec_cmd)
 
         self.sec_act = Section("Actuators")
         self._build_actuators(self.sec_act)
-        lay.addWidget(self.sec_act)
 
         self.sec_events = Section("Events")
         self._build_events(self.sec_events)
-        lay.addWidget(self.sec_events)
 
         self.sec_hk = Section("Housekeeping")
         self._build_hk(self.sec_hk)
-        lay.addWidget(self.sec_hk)
 
         self.sections = [self.sec_sensors, self.sec_cmd, self.sec_act,
                          self.sec_events, self.sec_hk]
@@ -197,7 +195,7 @@ class FlightPanel(QtWidgets.QWidget):
 
         form = QtWidgets.QFormLayout()
         form.setContentsMargins(0, 0, 0, 0)
-        form.setSpacing(4)
+        form.setSpacing(2)
         form.setLabelAlignment(QtCore.Qt.AlignLeft)
         self._hk_labels: dict[str, QtWidgets.QLabel] = {}
         for name, _ in HK_FIELDS:
@@ -230,19 +228,30 @@ class FlightPanel(QtWidgets.QWidget):
         An operator who can see which part a number came from can see which
         numbers to believe.
         """
-        form = QtWidgets.QFormLayout()
-        form.setContentsMargins(0, 0, 0, 0)
-        form.setSpacing(4)
-        form.setLabelAlignment(QtCore.Qt.AlignLeft)
+        # Three columns on one line - reading, part, value - rather than the
+        # two-line label this used to be. Nine rows at two lines each is
+        # ~270 px of a sidebar column, and the sidebar now has to fit its
+        # open sections on screen without scrolling (`sections.SectionFlow`);
+        # one line a row buys that back without dropping the part name, which
+        # is the column that makes the readings judgeable.
+        grid = QtWidgets.QGridLayout()
+        grid.setContentsMargins(0, 0, 0, 0)
+        grid.setHorizontalSpacing(8)
+        grid.setVerticalSpacing(2)
         self._sensor_labels: dict[str, QtWidgets.QLabel] = {}
-        for name, part, _fmt, _flag in SENSOR_FIELDS:
-            val = QtWidgets.QLabel("-")
-            val.setWordWrap(True)
-            self._sensor_labels[name] = val
-            key = QtWidgets.QLabel(f"{name}\n{part}")
+        for row, (name, part, _fmt, _flag) in enumerate(SENSOR_FIELDS):
+            key = QtWidgets.QLabel(name)
             key.setStyleSheet(f"color:{style.MUTED}; font-size:11px;")
-            form.addRow(key, val)
-        sec.add(form)
+            src = QtWidgets.QLabel(part)
+            src.setStyleSheet(f"color:{style.SECTION}; font-size:10px;")
+            val = QtWidgets.QLabel("-")
+            val.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+            self._sensor_labels[name] = val
+            grid.addWidget(key, row, 0)
+            grid.addWidget(src, row, 1)
+            grid.addWidget(val, row, 2)
+        grid.setColumnStretch(2, 1)
+        sec.add(grid)
 
         # The shunt resistances are named on screen because they are the one
         # number in the current reading that is not measured: the MCU
@@ -260,8 +269,8 @@ class FlightPanel(QtWidgets.QWidget):
         sec.add(note)
 
     def _build_commands(self, sec: Section) -> None:
-        # A QCheckBox does not wrap, and the sidebar is 410 px: keep the label
-        # short and put the requirement in the tooltip.
+        # A QCheckBox does not wrap, and a sidebar column is 340 px: keep the
+        # label short and put the requirement in the tooltip.
         self.chk_flight_mode = QtWidgets.QCheckBox("Flight mode")
         self.chk_flight_mode.setStyleSheet(style.checkbox_style())
         self.chk_flight_mode.setToolTip(
@@ -283,10 +292,10 @@ class FlightPanel(QtWidgets.QWidget):
         #
         # Pinning columns to the widest button's own hint is what NOT to do
         # here, even though it does produce equal widths: 3 x "ARM + RELEASE 1"
-        # is ~470 px inside a 410 px sidebar whose horizontal scrollbar is
-        # off, so the far column is silently clipped - and it drags the rest
-        # of the sidebar off the edge with it. Spanning spreads a long label
-        # across columns instead of widening one.
+        # is ~470 px inside a 340 px sidebar column whose horizontal scrollbar
+        # is off, so the far column is silently clipped - and it drags the
+        # rest of the sidebar off the edge with it. Spanning spreads a long
+        # label across columns instead of widening one.
         self._cmd_buttons: list[QtWidgets.QPushButton] = []
         for i, (label, cmd) in enumerate(simple):
             btn = QtWidgets.QPushButton(label)
@@ -374,7 +383,11 @@ class FlightPanel(QtWidgets.QWidget):
     def _build_events(self, sec: Section) -> None:
         self.event_list = QtWidgets.QListWidget()
         self.event_list.setStyleSheet(style.list_style())
-        self.event_list.setMinimumHeight(120)
+        # Fixed, not a minimum: a list widget's own hint is ~250 px, and the
+        # sidebar spends that height on sections the operator is reading
+        # rather than on empty rows. Six or so events are visible and the
+        # rest scroll, which is what a log does.
+        self.event_list.setFixedHeight(140)
         sec.add(self.event_list)
 
     # -- commands ------------------------------------------------------------
@@ -406,7 +419,8 @@ class FlightPanel(QtWidgets.QWidget):
                 "enable flight mode to send it")
             return
         ok = QtWidgets.QMessageBox.question(
-            self, "Confirm release", f"Arm and fire pinch valve {valve}?",
+            self.sec_cmd, "Confirm release",
+            f"Arm and fire pinch valve {valve}?",
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
         if ok != QtWidgets.QMessageBox.Yes:
             return
