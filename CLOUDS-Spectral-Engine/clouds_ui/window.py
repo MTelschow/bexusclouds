@@ -23,7 +23,6 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
@@ -33,8 +32,10 @@ from spectro.driver import DriverError, open_driver, resolve_kind
 from spectro import processing as P
 
 from . import style
+from . import timeline
 from .flight import FlightPanel
-from .sections import Section
+from .sections import Section, group_label
+from .timeline import TimelineBuffer, TimelineView, fig_to_pixmap
 
 # Repo root, not this package: assets/, calibration*.json and the Calibrate
 # dialog's file pickers all live one level up now that the window moved into
@@ -130,13 +131,9 @@ class _AcquisitionWorker(QtCore.QThread):
         self.done.emit(result)
 
 
-def _fig_to_pixmap(fig):
-    canvas = FigureCanvasAgg(fig)
-    canvas.draw()
-    w, h = canvas.get_width_height()
-    data = bytes(canvas.buffer_rgba())          # keep alive until the pixmap owns a copy
-    img = QtGui.QImage(data, w, h, QtGui.QImage.Format_RGBA8888)
-    return QtGui.QPixmap.fromImage(img.copy())
+#: Both plots in the view render a matplotlib figure into a QLabel; the helper
+#: lives with the timeline so there is one copy of it.
+_fig_to_pixmap = fig_to_pixmap
 
 
 # ----------------------------------------------------------------------- engine
@@ -246,6 +243,12 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self._src_bin = None        # quick-look bin factor, for the x axis
         self._src_exp_ms = None     # exposure the downlinked frame was taken at
 
+        # Housekeeping history for the timeline under the spectrum. Filled
+        # from the flight tick, not from the receiver's thread: the receiver
+        # must never touch Qt, and the buffer is read by the render slot.
+        self.tl_buf = TimelineBuffer()
+        self._tl_last_t = 0.0       # last HK arrival recorded, to sample once per packet
+
         self.timer = QtCore.QTimer(self)
         self.timer.setInterval(60)
         self.timer.timeout.connect(self._tick_live)
@@ -286,6 +289,12 @@ class CloudsWindow(QtWidgets.QMainWindow):
             is_flight = sec in flight_secs
             if sec.title_key in ("SPECTRUM SOURCE",):
                 continue                      # always visible: it steers the plot
+            if sec.title_key == "TIMELINE":
+                # Built in the instrument half but fed by the downlink, so it
+                # follows the flight sections: in a bench session with no link
+                # its checkboxes have nothing to draw.
+                sec.set_open(flight)
+                continue
             sec.set_open(is_flight if flight else not is_flight)
         # ...except the two that are long and rarely wanted at startup.
         for sec in self._sections:
@@ -339,8 +348,28 @@ class CloudsWindow(QtWidgets.QMainWindow):
 
     # --------------------------------------------------------------- left view
     def _build_view(self):
+        """The left half: spectrum on top, housekeeping history below.
+
+        A vertical `QSplitter`, not a fixed split, because the two halves are
+        wanted in different proportions at different times - a calibration
+        pass is all spectrum, an ascent is all timeline - and either can be
+        dragged shut without a restart or a menu.
+
+        `self._view` stays the **spectrum pane**, not the splitter: the stats,
+        cursor and source-banner cards are children of it and are positioned
+        against its geometry, and the resize handler re-renders the spectrum
+        from its size. Pointing it at the container would float those cards
+        over the timeline and size the figure to both halves.
+        """
+        split = QtWidgets.QSplitter(QtCore.Qt.Vertical)
+        split.setStyleSheet(
+            f"QSplitter::handle{{background:{style.BORDER}; height:3px;}}"
+            f"QSplitter::handle:hover{{background:{NAVY};}}")
+        split.setChildrenCollapsible(True)
+
         view = QtWidgets.QWidget()
         view.setStyleSheet("background:#eef3f8;")
+        view.setMinimumHeight(220)
         self._view = view
         self.plot = QtWidgets.QLabel(view)
         self.plot.setAlignment(QtCore.Qt.AlignCenter)
@@ -391,7 +420,17 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self.src_banner.setAlignment(QtCore.Qt.AlignCenter)
 
         view.installEventFilter(self)
-        return view
+
+        # --- housekeeping over time, under the spectrum --------------------
+        self.timeline = TimelineView(self.tl_buf)
+        if self.rx is None:
+            self.timeline.set_note("no downlink in this session")
+        split.addWidget(view)
+        split.addWidget(self.timeline)
+        split.setStretchFactor(0, 3)
+        split.setStretchFactor(1, 2)
+        split.setSizes([560, 300])
+        return split
 
     def eventFilter(self, obj, ev):
         if obj is getattr(self, "_view", None) and ev.type() == QtCore.QEvent.Resize:
@@ -478,6 +517,9 @@ class CloudsWindow(QtWidgets.QMainWindow):
         if self.rx is None:
             self.rb_downlink.setEnabled(False)
             self.rb_downlink.setToolTip("No downlink receiver in this session")
+
+        # --- Timeline: which housekeeping series the lower plot draws ------
+        self._build_timeline_section(sec("Timeline"))
 
         # --- Flight: housekeeping, commanding, actuators, events -----------
         self.flight = FlightPanel(self.rx, self.commander, self.session)
@@ -674,6 +716,100 @@ class CloudsWindow(QtWidgets.QMainWindow):
         scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         scroll.setFrameShape(QtWidgets.QFrame.NoFrame)
         return scroll
+
+    def _build_timeline_section(self, v):
+        """Which housekeeping series the lower plot draws, and over how long.
+
+        The toggles live in the sidebar rather than under the plot because
+        there are two dozen of them: a strip of checkboxes wide enough to
+        hold that would cost the timeline the height it exists for. They are
+        grouped by the part that produces them, the same way the Sensors
+        section is, so "which of these can I believe" has one answer in both
+        places.
+
+        A part the carrier does not have gets a disabled box that says so,
+        not a missing row: an operator looking for a rail current needs to
+        find out that the monitor is unpopulated, and an absent checkbox
+        teaches them nothing.
+        """
+        row = QtWidgets.QHBoxLayout()
+        row.setSpacing(8)
+        lab = QtWidgets.QLabel("Span")
+        lab.setStyleSheet(f"color:{style.TEXT}; font-size:11px;")
+        row.addWidget(lab)
+        self.cmb_tl_window = QtWidgets.QComboBox()
+        self.cmb_tl_window.setStyleSheet(self._combo_style())
+        for name, _secs in timeline.WINDOWS:
+            self.cmb_tl_window.addItem(name)
+        self.cmb_tl_window.setCurrentIndex(1)            # 5 min
+        self.cmb_tl_window.currentIndexChanged.connect(self._on_tl_window)
+        row.addWidget(self.cmb_tl_window, 1)
+        btn = QtWidgets.QPushButton("Clear")
+        btn.setStyleSheet(self._flat_btn())
+        btn.setToolTip("Discard the recorded history. The session log on disk "
+                       "is not touched.")
+        btn.clicked.connect(self._clear_timeline)
+        row.addWidget(btn)
+        v.addLayout(row)
+
+        self._tl_boxes: dict[str, QtWidgets.QCheckBox] = {}
+        for group, members in timeline.GROUPS:
+            v.addWidget(group_label(group))
+            grid = QtWidgets.QGridLayout()
+            grid.setContentsMargins(0, 0, 0, 0)
+            grid.setSpacing(2)
+            for i, s in enumerate(members):
+                box = QtWidgets.QCheckBox(s.label)
+                box.setStyleSheet(self._checkbox_style())
+                box.setChecked(s.key in timeline.DEFAULT_KEYS)
+                if not s.fitted:
+                    box.setEnabled(False)
+                    box.setToolTip("No part fitted on this carrier - there is "
+                                   "no reading to plot.")
+                else:
+                    box.setToolTip(f"{s.label} [{s.unit}] from {s.group}")
+                box.toggled.connect(self._on_tl_series)
+                self._tl_boxes[s.key] = box
+                grid.addWidget(box, i // 2, i % 2)
+            v.addLayout(grid)
+
+        note = QtWidgets.QLabel(
+            "1 Hz from the downlink. Series sharing a unit share an axis; a "
+            "gap is a reading that does not exist, never a zero.")
+        note.setWordWrap(True)
+        note.setStyleSheet(f"color:{style.SECTION}; font-size:10px;"
+                           "font-style:italic;")
+        v.addWidget(note)
+
+    # ------------------------------------------------------------- timeline
+    def _on_tl_series(self, *_):
+        self.timeline.set_selection([k for k, b in self._tl_boxes.items()
+                                     if b.isChecked()])
+
+    def _on_tl_window(self, idx):
+        self.timeline.set_window(timeline.WINDOWS[idx][1])
+
+    def _clear_timeline(self):
+        self.tl_buf.clear()
+        self._tl_last_t = 0.0
+        self.timeline.refresh()
+
+    def _sample_timeline(self):
+        """Record one point per housekeeping packet.
+
+        Keyed on the receiver's `last_hk_time`, not on this timer: the flight
+        tick runs at 2 Hz against a 1 Hz stream, so polling blind would record
+        every packet twice and halve the real span of the buffer. A repeated
+        timestamp means no new packet arrived, which is exactly the case a
+        dropout must be allowed to show as a gap.
+        """
+        hk = getattr(self.rx, "last_hk", None)
+        t = getattr(self.rx, "last_hk_time", 0.0)
+        if hk is None or t <= self._tl_last_t:
+            return
+        self._tl_last_t = t
+        self.tl_buf.append(t, hk)
+        self.timeline.refresh()
 
     # ---------------------------------------------------------- control styles
     def _primary_btn(self):
@@ -1343,6 +1479,7 @@ class CloudsWindow(QtWidgets.QMainWindow):
             return
         try:
             self.flight.refresh()
+            self._sample_timeline()
             if self.source == "downlink":
                 self._take_downlink_frame()
         except Exception as e:                          # noqa: BLE001 - see above

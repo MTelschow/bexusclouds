@@ -643,6 +643,125 @@ try:
           _gse._sensor_labels["Rail V_in"].text() == "24.06 V   -0.129 A",
           _gse._sensor_labels["Rail V_in"].text())
 
+    # -- the housekeeping timeline under the spectrum ----------------------
+    # The lower half of the view. What is checked here is the split (the
+    # overlay cards must still belong to the spectrum pane, not float over
+    # the timeline), the sampling rule (one point per packet, not one per
+    # tick), and that the Sensors section's "no number without a sensor"
+    # rule survives being turned into a line.
+    import clouds_ui.timeline as _tl
+    check("timeline: the view is split, spectrum over history",
+          _win.timeline is not None
+          and _win._view is not _win.timeline
+          and _win.stats_box.parent() is _win._view
+          and _win.timeline.parent() is _win._view.parent(),
+          f"pane {_win._view.height()} px / timeline {_win.timeline.height()} px")
+    # The flight tick is the only thing that feeds it - the receiver's thread
+    # must never touch Qt - so a packet that reached the sidebar must have
+    # reached the buffer too.
+    check("timeline: the flight tick records housekeeping",
+          len(_win.tl_buf) > 0, f"{len(_win.tl_buf)} samples")
+    _win._clear_timeline()
+
+    # The flight tick runs at 2 Hz against a 1 Hz stream. Polling it twice
+    # for the same packet must record one point: two would halve the real
+    # span of every window the operator picks.
+    _rx.last_hk = _hk.Housekeeping(p_amb_pa=99248, bme_temp_cc=2140,
+                                   rh1_cpct=3050,
+                                   rail_mv=(24062, _hk.RAIL_MV_INVALID,
+                                            5095, 3298),
+                                   shunt_raw=(514, 0, -40, 660))
+    _rx.last_hk_time = 5000.0
+    _win._sample_timeline()
+    _win._sample_timeline()
+    check("timeline: one point per packet, not one per tick",
+          len(_win.tl_buf) == 1, f"{len(_win.tl_buf)} samples")
+    for _i in range(1, 30):
+        _rx.last_hk_time = 5000.0 + _i
+        _win._sample_timeline()
+    _x, _cols = _win.tl_buf.window(["p_amb", "rail_v0"], None)
+    check("timeline: records the series it drew",
+          _x.size == 30 and abs(_cols["p_amb"][-1] - 992.48) < 0.01
+          and abs(_cols["rail_v0"][-1] - 24.062) < 0.001,
+          f"{_x.size} pts, p={_cols['p_amb'][-1]:.2f} hPa, "
+          f"v={_cols['rail_v0'][-1]:.3f} V")
+
+    # A dropout is a gap. A straight line across a link outage claims ground
+    # knows what happened during it.
+    _rx.last_hk_time = 5100.0
+    _win._sample_timeline()
+    _x, _cols = _win.tl_buf.window(["p_amb"], None)
+    check("timeline: a dropout breaks the trace",
+          _x.size == 32 and np.isnan(_cols["p_amb"][-2])
+          and not np.isnan(_cols["p_amb"][-1]),
+          f"{_x.size} pts")
+
+    # An unsourced field must not become a line at zero - the same failure
+    # the Sensors section guards, one axis further on.
+    _rx.last_hk = _hk.Housekeeping(
+        temp1_cc=0, temp2_cc=0,
+        error_flags=_hk.HkErrors.NO_TEMP | _hk.HkErrors.IMU_FAIL)
+    _rx.last_hk_time = 5200.0
+    _win._sample_timeline()
+    _x, _cols = _win.tl_buf.window(["t1", "acc_x", "gyr_z"], None)
+    check("timeline: an unsourced field is a gap, never a zero",
+          all(np.isnan(_cols[k][-1]) for k in ("t1", "acc_x", "gyr_z")),
+          str({k: float(v[-1]) for k, v in _cols.items()}))
+
+    # A part the carrier does not have cannot be selected at all.
+    check("timeline: the unfitted 24 V rail cannot be toggled on",
+          not _win._tl_boxes["rail_v1"].isEnabled()
+          and not _win._tl_boxes["rail_i1"].isEnabled()
+          and _win._tl_boxes["rail_v0"].isEnabled())
+
+    # Toggling a box reaches the plot, and every unit that is selected gets
+    # its own axis rather than sharing a scale with amps.
+    for _k in ("rh1", "rail_v0", "rail_i0"):
+        _win._tl_boxes[_k].setChecked(True)
+    app.processEvents()
+    _sel = set(_win.timeline.selected)
+    _units = {_tl.SERIES_BY_KEY[k].unit for k in _sel}
+    check("timeline: the checkboxes drive the plot",
+          _sel == {"p_amb", "bme_t", "rh1", "rail_v0", "rail_i0"}
+          and _units == {"hPa", "C", "%", "V", "A"},
+          f"{sorted(_sel)} over {sorted(_units)}")
+    _win._tl_boxes["rh1"].setChecked(False)
+    app.processEvents()
+    check("timeline: unticking removes the series",
+          "rh1" not in _win.timeline.selected)
+
+    for _i in range(len(_tl.WINDOWS)):
+        _win.cmb_tl_window.setCurrentIndex(_i)
+        app.processEvents()
+        if _win.timeline.plot.pixmap() is None:
+            break
+    check("timeline: every span renders",
+          _win.timeline.window_s is _tl.WINDOWS[-1][1]
+          and _win.timeline.plot.pixmap() is not None
+          and not _win.timeline.plot.pixmap().isNull(),
+          f"span {_win.timeline.window_s}")
+    _win.cmb_tl_window.setCurrentIndex(1)
+
+    # Nothing selected is a legible state, not a crash or a blank panel.
+    _was = list(_win.timeline.selected)
+    for _k in _was:
+        _win._tl_boxes[_k].setChecked(False)
+    app.processEvents()
+    check("timeline: an empty selection still draws",
+          _win.timeline.selected == []
+          and _win.timeline.plot.pixmap() is not None
+          and not _win.timeline.plot.pixmap().isNull())
+    for _k in _was:
+        _win._tl_boxes[_k].setChecked(True)
+    app.processEvents()
+
+    _win._clear_timeline()
+    check("timeline: Clear drops the history",
+          len(_win.tl_buf) == 0 and _win._tl_last_t == 0.0)
+    _rx.last_hk_time = 5300.0
+    _win._sample_timeline()
+    check("timeline: it records again after a clear", len(_win.tl_buf) == 1)
+
     # Cursor readout on a downlink trace. A quick-look is ~30 binned points
     # per channel, not one per pixel: reading it at a pixel offset into the
     # channel window walked off the end of the array and took the window down

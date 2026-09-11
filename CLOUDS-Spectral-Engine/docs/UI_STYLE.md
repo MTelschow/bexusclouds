@@ -38,3 +38,28 @@ identify; Acquisition (exposure, averaging, run/stop); Dark frame
 View (raw / transmission / absorbance, nm vs pixel axis); Export. A hint line
 under the action area is the feedback channel; a stats card overlays the plot
 top-left. This section grows as the panels land.
+
+The left half is a **vertical `QSplitter`**: the spectrum on top, the
+housekeeping **timeline** under it (`clouds_ui/timeline.py`). A splitter, not
+a fixed ratio - a calibration pass is all spectrum, an ascent is all timeline,
+and either pane can be dragged shut without a restart.
+
+`self._view` remains the **spectrum pane**, never the splitter. The stats,
+cursor and source-banner cards are children of it and are moved against its
+geometry, and the resize handler sizes the spectrum figure from it; pointing
+it at the container would float those cards over the timeline.
+
+Timeline rules, inherited from the `Sensors` section because they are the
+same numbers:
+
+- one sub-axis **per unit**, stacked and sharing the time axis. hPa beside A
+  on one scale is unreadable, and normalising everything to 0..1 throws away
+  the only thing an engineering readout is for;
+- a value that is not a measurement is a **gap**, never a zero - an unsourced
+  field (`HkErrors`), an unreadable rail (`RAIL_MV_INVALID`), or a link
+  dropout longer than `GAP_S`. A selected series that drew nothing says why in
+  its legend entry (`not fitted` / `no source` / `no reading`);
+- series toggles live in the sidebar, not under the plot: there are two dozen
+  of them and a checkbox strip that wide would cost the timeline the height
+  it exists for. A part the carrier does not have keeps its row, disabled - an
+  absent checkbox teaches the operator nothing.
