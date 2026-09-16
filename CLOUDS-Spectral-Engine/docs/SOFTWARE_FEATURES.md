@@ -74,6 +74,7 @@ Code: `flight/mcu/` (M-xx), `flight/pi/` (P-xx), `gse/` (G-xx), `clouds_link/` +
 | X-02 | Mock spectrometer driver for hardware-free FSW-PI testing (adapt `spectro/mock_driver.py`) | P0 | bench testing | ✔ |
 | X-03 | MCU bench harness: simulated pressure profile injection → full autonomous sequence on desk (T-07 rehearsal) | P0 | T-07 | ✔ |
 | X-04 | End-to-end test script: boot → simulated flight → verify data on all 3 SDs + downlink completeness (T-10) | P0 | T-10 | ✔ |
+| X-05 | Hardware-free operator interface (`clouds_ui --mock`): mock spectrometer + simulated RP2350 (`clouds_fsw/sim_mcu.py`) behind the real FSW and GSE, labelled as simulated throughout | P1 | training / UI review | ✔ |
 
 ## Suggested build order
 

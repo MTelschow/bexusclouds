@@ -368,6 +368,44 @@ else:
 check("args: --net always wins",
       clouds_ui_main._parse(["--net", "1.2.3.4"]).net == "1.2.3.4")
 
+# --mock is the one way a spectrum on this screen is not real light, so the
+# window has to say so where nobody can miss it - and it must not be able to
+# leave a synthetic dark behind for the next real session to subtract.
+check("args: --mock opens no detector anywhere",
+      clouds_ui_main._parse(["--mock"]).net is None)
+try:
+    clouds_ui_main._parse(["--mock", "--net", "1.2.3.4"])
+    _contradiction_refused = False
+except SystemExit:
+    _contradiction_refused = True
+check("args: --mock and --net are refused together", _contradiction_refused)
+
+_mwin = clouds_ui_window.CloudsWindow(mock=True, persist_dark=False)
+_mwin._connect()
+app.processEvents()
+check("mock: the title names the simulation", "MOCK" in _mwin.windowTitle(),
+      _mwin.windowTitle())
+check("mock: the plot banner names it too", "MOCK" in _mwin.src_banner.text(),
+      _mwin.src_banner.text().strip())
+_mwin.source = "downlink"
+_mwin._update_source_banner()
+check("mock: and on the downlink source as well",
+      "MOCK" in _mwin.src_banner.text(), _mwin.src_banner.text().strip())
+_mwin.source = "detector"
+_mwin._update_source_banner()
+
+_before = open(_dpath, "rb").read() if os.path.isfile(_dpath) else None
+_mwin.sp_exp.setValue(7)
+_mwin._capture_dark()
+app.processEvents()
+_after = open(_dpath, "rb").read() if os.path.isfile(_dpath) else None
+check("mock: a simulated dark is used but never stored",
+      _mwin.dark is not None and _after == _before)
+_mwin._clear_dark()
+check("mock: clearing it leaves the real stored dark alone",
+      os.path.isfile(_dpath) == (_before is not None))
+_mwin.close()
+
 win._start()
 app.processEvents()
 check("running", win.running and win.timer.isActive())

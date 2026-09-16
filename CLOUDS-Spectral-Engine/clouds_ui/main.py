@@ -111,7 +111,7 @@ def _parse(argv=None):
         if args.net:
             ap.error("--mock and --net are contradictory: --mock opens no "
                      "detector anywhere, --net names a real one")
-    else:
+    elif args.net is None:
         args.net = _default_net()
     return args
 
@@ -180,7 +180,8 @@ def main(argv=None) -> int:
 
     from .window import CloudsWindow
 
-    win = CloudsWindow(mock=args.mock, kind=kind, host=host,
+    win = CloudsWindow(mock=args.mock, persist_dark=not args.mock,
+                       kind=kind, host=host,
                        receiver=receiver, commander=commander,
                        session=session,
                        source="downlink" if args.flight else "detector")

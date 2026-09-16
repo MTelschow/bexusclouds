@@ -55,16 +55,19 @@ class SimMcu:
 
     ``ascent_s`` is how long the compressed ascent takes to reach float, and
     ``t_measure_s`` stands in for PARAM_T_MEASURE_S (480 s in flight). Both
-    are demo numbers - see the module docstring.
+    are demo numbers - see the module docstring. ``valve_pulse_s`` is the
+    real 5 s drive; only the tests shorten it.
     """
 
     def __init__(self, transport, *, hk_interval_s: float = 1.0,
                  ascent_s: float = 45.0, t_measure_s: float = 60.0,
+                 valve_pulse_s: float = VALVE_PULSE_S,
                  imu: bool = False, log=None):
         self._t = transport
         self._hk_interval = hk_interval_s
         self._ascent_s = ascent_s
         self._t_measure_s = t_measure_s
+        self._valve_pulse_s = valve_pulse_s
         self._imu = imu
         self._log = log or (lambda *_: None)
 
@@ -233,7 +236,7 @@ class SimMcu:
                 return AckResult.INVALID
             if not self._actuators_commandable():
                 return AckResult.REJECTED
-            self._drive_queue.append((hk.ValveStatus.DISPERSE, VALVE_PULSE_S))
+            self._queue_drive(hk.ValveStatus.DISPERSE)
             self._event(EventCode.MANUAL_DRIVE, "disperse")
             return AckResult.OK
         if cmd == Command.SET_PARAM:
@@ -265,10 +268,9 @@ class SimMcu:
         if self.fired & bit:
             return                       # never re-fire (S.3)
         self.fired |= bit
-        self._drive_queue.append(
-            (hk.ValveStatus.PINCH_1 if n == 1 else hk.ValveStatus.PINCH_2,
-             VALVE_PULSE_S))
-        self._drive_queue.append((hk.ValveStatus.DISPERSE, VALVE_PULSE_S))
+        self._queue_drive(hk.ValveStatus.PINCH_1 if n == 1
+                          else hk.ValveStatus.PINCH_2)
+        self._queue_drive(hk.ValveStatus.DISPERSE)
         self.membrane_duty = 60          # PARAM_MEMBRANE_DUTY
         self._event(EventCode.RELEASE_FIRED, f"valve {n}")
 
@@ -287,10 +289,8 @@ class SimMcu:
             if self.hold:
                 return
             if not self.seal_verified:
-                self._drive_queue.append((hk.ValveStatus.EQ1_CLOSE,
-                                          VALVE_PULSE_S))
-                self._drive_queue.append((hk.ValveStatus.EQ2_CLOSE,
-                                          VALVE_PULSE_S))
+                self._queue_drive(hk.ValveStatus.EQ1_CLOSE)
+                self._queue_drive(hk.ValveStatus.EQ2_CLOSE)
                 self.seal_verified = True
                 return
             if self._drive is None and not self._drive_queue:
@@ -312,6 +312,11 @@ class SimMcu:
             self._drive_queue.clear()
             self._drive = None
             self._enter(st.SAFE)
+
+    def _queue_drive(self, bit: int) -> None:
+        """Ask for one actuator line. It waits its turn: the MCU drives one
+        at a time to cap peak current, so queued drives never overlap."""
+        self._drive_queue.append((bit, self._valve_pulse_s))
 
     def _step_drives(self, now: float) -> None:
         if self._drive is not None and now >= self._drive[1]:

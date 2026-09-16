@@ -19,6 +19,7 @@ rem
 rem   run_clouds_spectral.bat                        the Duo on this PC
 rem   run_clouds_spectral.bat --net 192.168.100.10   the Duo on the bench Pi
 rem   run_clouds_spectral.bat --flight               ground station, no detector
+rem   run_clouds_spectral.bat --mock                 no hardware at all
 rem   run_clouds_spectral.bat --help                 the full flag list
 rem
 rem Ethernet to the Pi is a one-time setup: see setup_windows_net.ps1.
@@ -123,6 +124,7 @@ if not "%RC%"=="0" (
   echo     [!] the interface hit a problem above  ^(exit %RC%^).
   echo         headless self-check:        %PYCMD% verify.py
   echo         no detector, downlink only: %PYCMD% -m clouds_ui --flight
+  echo         no hardware at all:         %PYCMD% -m clouds_ui --mock
   echo         detector on the bench Pi:   %PYCMD% -m clouds_ui --net 192.168.100.10
   echo         Ethernet link to the Pi:    powershell -ExecutionPolicy Bypass -File setup_windows_net.ps1 -Check
   echo.

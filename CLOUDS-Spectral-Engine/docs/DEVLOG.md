@@ -18,7 +18,78 @@ without re-deriving anything. Newest entries first.
 
 ---
 
-## 2026-09-16 (newest) - The Mac launcher builds its own environment
+## 2026-09-16 (newest) - `--mock` is back, and it is the whole chain
+
+**The ask.** `./run_clouds_ui.sh --mock` should run the interface with no
+connection to any hardware. The flag was deliberately removed on 2026-09-11
+(entry below) and the reason it was removed has not gone away: a synthetic
+spectrum that an operator reads as a measurement is the worst failure this
+app can have. So it comes back with that failure engineered against, rather
+than with the argument re-litigated.
+
+**Not just the driver.** The obvious implementation - `open_driver(mock=True)`
+and stop - produces an interface whose flight half is dead: no housekeeping,
+no events, no quick-look, and every command timing out, because the flight
+half is fed by the Pi and there is no Pi. That is not "no hardware", it is
+"broken hardware", and it teaches an operator the wrong reflexes. So `--mock`
+stands up the real chain in-process (`clouds_ui/mock_stack.py`): the actual
+`clouds_fsw.FlightApp` with a mock spectrometer, talking real UDP and TCP on
+loopback to the window's own receiver and commander, with a **simulated
+RP2350** (`flight/pi/clouds_fsw/sim_mcu.py`) on the far end of its UART pipe.
+Exactly two things are fake - the light on the detector and the silicon on
+the UART. The framing, the packets, the sockets, the interlocks and the
+storage path are the flight ones.
+
+`SimMcu` mirrors `core/sequencer.c` and `core/link.c` where it matters to
+ground: HK at 1 Hz, an ACK carrying its own verdict for every CMD, the
+arm/execute window, `RELEASE` rejected on the pad and refused a second time
+once `fired` is set (S.3), actuator drives locked out in TERMINATION/SAFE,
+one actuator line energized at a time. It is **not** a second source of truth
+and not flight timing: ascent and the measurement phases are compressed to
+demo length (45 s / 60 s against 480 s), and the ascent pressure is a decaying
+exponential, not an atmosphere. When the C and the sim disagree, the C is
+right. The sensor picture it reports is this carrier as measured - BME280 and
+three INA226 rails live, the 24 V slot `RAIL_MV_INVALID`, `NO_TEMP` and
+`IMU_FAIL` set - because a mock that invents an IMU trains an operator to
+expect one.
+
+**Where the labelling lives.** Anything that could later be mistaken for a
+measurement says otherwise at the point it would be misread: the window title
+(`MOCK: SIMULATED DATA, NO HARDWARE`), the plot's source banner in its own
+colour rather than a shade of the detector one, the device line, and the
+launcher's own startup lines. `--mock` and `--net` are refused together - one
+promises no detector anywhere, the other names a real one, and picking a
+winner would leave the operator looking at the other.
+
+**Contamination, which is where the real bugs were.** Three paths let a mock
+session reach a real one, and all three are closed:
+- **The stored dark frame.** Capture persists it as the default, and the next
+  session loads it - so a synthetic dark would be silently subtracted from
+  real light, a wrong measurement nobody would think to suspect. `--mock`
+  neither writes nor clears the store. This is a **separate switch**
+  (`persist_dark=`) rather than `not mock`, because `verify_qt.py` runs a mock
+  window and is the only thing that *can* test the store; wiring it to `mock`
+  broke nine of its checks, which is how the distinction was found.
+- **The downlink port.** A real GSE on UDP 4000 and a mock one are the same
+  socket. The mock binds `127.0.0.1:0` - ephemeral, loopback-only - so it
+  cannot collide with a real session and cannot take a command from off the
+  machine. A test asserts the command port refuses a non-loopback connect.
+- **The files left behind.** Session logs are named `session_mock_*`, and the
+  FSW's data directory is a temp dir removed on exit.
+
+**Checks.** `pytest` 265 passed, including `tests/test_sim_mcu.py` (13 cases
+on the verdicts ground actually sees) and `tests/test_ui_mock.py` (the flag
+rules, the chain downlinking, an end-to-end ARM+RELEASE, the loopback-only
+port, the temp dir). `verify.py` `VERIFY OK`. `verify_qt.py` `VERIFY OK` -
+including the ten checks the entry below left failing: `_parse` no longer
+overwrites an explicit `--net` (it only fills in the default when nothing was
+given), and the nine `dark:` checks pass again now that persistence is its own
+switch. Five new `mock:` / `args:` checks cover the labelling and the dark
+guard.
+
+---
+
+## 2026-09-16 - The Mac launcher builds its own environment
 
 **What was broken.** `run_clouds_ui.sh` assumed an environment already
 existed. On a Mac with none it fell through to `python3`, failed the PyQt5
@@ -676,6 +747,12 @@ subtraction on, exposure 10 ms.
 ---
 
 ## 2026-09-11 - The operator interface lost `--mock` and `--edu` (P-01)
+
+> **Superseded in part on 2026-09-16** (top of this file): `--mock` is back,
+> for demo and training away from the one Duo and the one Pi. The reasoning
+> below stands and is what the new flag is built against - it is labelled in
+> the title bar, the source banner and the device line, and it cannot write
+> the shared dark frame. `--edu` is still gone.
 
 **What was asked.** Remove the mock version and the `--edu` board from the
 operator interface, so connecting to the spectrometer is the direct path.

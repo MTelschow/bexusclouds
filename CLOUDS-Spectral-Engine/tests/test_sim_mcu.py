@@ -60,7 +60,9 @@ class Pi:
 @pytest.fixture
 def sim():
     near, far = PipeTransport.pair()
-    mcu = SimMcu(far, hk_interval_s=0.1, ascent_s=1.0, t_measure_s=0.5)
+    # 5 s valve drives are flight numbers and would idle the suite.
+    mcu = SimMcu(far, hk_interval_s=0.1, ascent_s=1.0, t_measure_s=0.5,
+                 valve_pulse_s=0.3)
     mcu.start()
     try:
         yield mcu, Pi(near)

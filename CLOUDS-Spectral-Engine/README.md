@@ -49,11 +49,28 @@ Qt patterns of the *CLOUDS Raytracing Engine*.
   cable (`CLOUDS_SPECTRO_HOST` moves the address). The Pi must be serving
   frames: `clouds_fsw.main --bench-stream`, or `spectro.net_server`.
 * Ground station (downlink only, no detector): `python -m clouds_ui --flight`
+* No hardware at all (demo, training, a UI change you want to see):
+  `./run_clouds_ui.sh --mock`
 
-The operator interface has no synthetic-detector flag: a spectrum on that
-screen is always real light off the Duo. The mock driver is for the
-hardware-free checks (`verify.py`, `verify_qt.py`, `pytest`,
-`clouds_fsw.main --mock`), reachable from code and not from this command line.
+Apart from `--mock`, a spectrum on that screen is always real light off the
+Duo — there is no other synthetic-detector route, and `--mock` refuses to run
+alongside `--net`.
+
+`--mock` fakes exactly two things: the light on the detector, and the silicon
+on the UART. Everything between them is real — the actual flight app
+(`clouds_fsw`) with a synthetic spectrometer, a simulated RP2350 answering its
+UART (`clouds_fsw/sim_mcu.py`), and the real ground station decoding real UDP
+and TCP on loopback. So housekeeping, events, the quick-look, the timeline and
+the whole arm/execute command path behave as they do on the bench: `START`
+flies a compressed ascent, `ARM`+`RELEASE` fires once and never twice, an
+`ABORT` locks the actuators out.
+
+Because a simulated spectrum that looked real would be the worst failure this
+app has, the mock says so in the window title, in the plot's source banner and
+on the device line; its session logs are named `session_mock_*`; and it never
+writes or clears the stored dark frame, which is shared with real sessions.
+Ports are ephemeral and bound to loopback, so a mock run cannot collide with a
+real GSE on UDP 4000 or take a command from off the machine.
 * Fresh machine: Python 3.13 + `pip install -r requirements.txt`.
 * On Linux (incl. the Pi) build the vendor library first:
   `drivers/e9u_LSMD_LIB_Linux/install.sh` — see that folder's README.

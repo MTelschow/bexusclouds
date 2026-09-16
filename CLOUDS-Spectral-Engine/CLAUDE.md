@@ -26,6 +26,8 @@ python -m clouds_ui                     # real Duo on this machine; on macOS
                                         # this defaults to --net 192.168.100.10
 python -m clouds_ui --net 192.168.100.10          # detector on the Pi
 python -m clouds_ui --flight            # downlink only: HK, quick-look, commanding
+python -m clouds_ui --mock              # no hardware: synthetic detector +
+                                        # simulated Pi/MCU on loopback
 
 # flight app (on the Pi, from /opt/clouds)
 python3 -m clouds_fsw.main --config /etc/clouds/fsw.json
@@ -89,12 +91,19 @@ the quick-look harder or slow its cadence -
   `std` (Duo), `net` (remote — `spectro/net_driver.py` over TCP to
   `spectro.net_server` or the FSW's `--bench-stream`). Construction must
   stay side-effect-free; reaching hardware is `connect()`'s job
-  (`tests/test_driver_factory.py` enforces this). **The operator interface has
-  no `--mock` and no `--edu`** (removed 2026-09-11): a detector spectrum on
-  that screen is always real light off the Duo. `mock=True` survives for the
-  hardware-free checks (`pytest`, `verify.py`, `verify_qt.py`,
-  `clouds_fsw.main --mock`) and has no command-line route in the UI; the EDU
-  board is gone entirely, and a stale `CLOUDS_SPECTRO_KIND=edu` now raises.
+  (`tests/test_driver_factory.py` enforces this). **`--edu` is gone**
+  (removed 2026-09-11) and a stale `CLOUDS_SPECTRO_KIND=edu` now raises.
+  **`--mock` is back** (2026-09-16), on purpose and labelled everywhere:
+  outside it a detector spectrum is always real light off the Duo, and it
+  refuses to run with `--net`. It is the whole chain, not just the driver -
+  `clouds_ui/mock_stack.py` starts the real `FlightApp` (mock spectrometer)
+  against `clouds_fsw/sim_mcu.py`, a simulated RP2350 that emits HK and
+  answers commands with the sequencer's own verdicts, all on ephemeral
+  loopback ports. Constraints that keep it from contaminating real work:
+  window title, plot banner and device line all say MOCK; session logs are
+  `session_mock_*`; the stored dark frame is never written or cleared
+  (`persist_dark=False`, a separate switch from `mock=` so `verify_qt.py`
+  can still exercise the store); its data directory is temporary.
 - **`spectro/` is shared** by bench app, FSW and GSE — calibration, processing,
   export. The GSE swaps the USB driver for a downlink source.
 - **`clouds_link/`** is one schema for MCU, Pi and GSE: CRC-16/CCITT-FALSE,

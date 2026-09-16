@@ -1,11 +1,27 @@
-# CLOUDS Spectral Engine - pinned (Python 3.13, Windows, Microsoft-Store interpreter)
+# CLOUDS Spectral Engine - operator interface runtime. Python 3.11-3.13.
+#
+# Every entry here must install as a WHEEL on macOS, Windows and Linux/ARM.
+# run_clouds_ui.sh installs with --only-binary=:all: for exactly that reason:
+# a source build on a bench laptop needs a compiler and system libraries that
+# are not there, and it fails after several minutes inside meson rather than
+# immediately.
 numpy==2.2.6
 scipy==1.16.0           # Savitzky-Golay smoothing (spectro/processing.py)
-PyQt5==5.15.11
-matplotlib==3.10.8
-# branded PDF report + logo/icon assets
-reportlab==4.5.1
-pillow==12.1.1
-svglib==1.6.0
-# Hardware (EURECA e9u_LSMD Duo) is reached through the vendor DLL
-# libe9u_LSMD_x64.dll via ctypes (Python stdlib) - no extra package required.
+PyQt5==5.15.11          # also supplies QtSvg - the wordmark is rendered by Qt
+matplotlib==3.10.8      # the spectrum view, and the branded PDF report
+pillow==12.1.1          # matplotlib's PNG reader (spectro/export.py logo)
+#
+# NOT here, and deliberately: reportlab + svglib. They were listed for the
+# "branded PDF report + logo/icon assets" and nothing ever imported them -
+# spectro/export.py builds the PDF with matplotlib and reads the PNG logo with
+# matplotlib.image, and clouds_ui/window.py renders the SVG with PyQt5's
+# QtSvg. What they did do was pull svglib -> rlPyCairo -> pycairo, which
+# publishes NO macOS wheel at any version: pip fell back to a meson source
+# build and died on `Dependency lookup for cairo with method 'pkg-config'
+# failed` on any Mac without Homebrew cairo and pkg-config installed.
+#
+# Hardware (EURECA e9u_LSMD Duo) is reached through the vendor library
+# libe9u_LSMD_x64.dll / libe9u_LSMD.so via ctypes (Python stdlib) - no extra
+# package required.
+#
+# Checks and packaging (pytest, pyserial, pyinstaller): requirements-dev.txt.

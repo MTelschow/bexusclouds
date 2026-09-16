@@ -40,8 +40,9 @@
 # The cable itself is ./setup_macos_net.sh - run that first on a fresh Mac.
 #
 # Environment:
-#   CLOUDS_PYTHON    use exactly this interpreter, skip all discovery
-#   CLOUDS_NO_SETUP  1 = never create a venv or install anything
+#   CLOUDS_PYTHON              use exactly this interpreter, skip discovery
+#   CLOUDS_NO_SETUP            1 = never create a venv or install anything
+#   CLOUDS_ALLOW_SOURCE_BUILD  1 = let pip build sdists (it may not need to)
 set -e
 
 cd "$(dirname "$0")"
@@ -156,12 +157,40 @@ install_requirements() {
     # --upgrade pip first: the venv ships whatever pip the base interpreter
     # bundled, and an old resolver picks source distributions over wheels.
     "$VENV_PY" -m pip install --quiet --upgrade pip setuptools wheel || true
-    if ! "$VENV_PY" -m pip install -r "$REQ"; then
+
+    # --only-binary=:all: on purpose. Every entry in requirements.txt has a
+    # wheel on every platform this runs on, so a source build means something
+    # is wrong - and a source build is the worst way to find that out. It needs
+    # a compiler and system libraries a bench laptop does not have, and it
+    # fails several minutes in, deep inside meson or setup.py, with an error
+    # about pkg-config rather than about the package you asked for. Refusing
+    # sdists turns that into an immediate "no wheel for X".
+    #
+    # That is how svglib -> rlPyCairo -> pycairo used to break a fresh Mac:
+    # pycairo publishes no macOS wheel at any version, so pip built it, and it
+    # died on `Dependency lookup for cairo with method 'pkg-config' failed`.
+    # Neither package was ever imported; both are gone from requirements.txt.
+    ONLY_BINARY="--only-binary=:all:"
+    [ "${CLOUDS_ALLOW_SOURCE_BUILD:-0}" = "1" ] && ONLY_BINARY=""
+
+    if ! "$VENV_PY" -m pip install $ONLY_BINARY -r "$REQ"; then
         err
         err "run_clouds_ui.sh: pip install failed."
         err "  environment: $VENV_PY ($(py_version "$VENV_PY")), $(uname -m)"
+        if [ -n "$ONLY_BINARY" ]; then
+            err
+            err "  Wheels only - nothing was compiled. If the error above says a"
+            err "  package has no matching distribution, that package has no wheel"
+            err "  for Python $(py_version "$VENV_PY") on $(uname -m):"
+            err "    - a Python outside 3.$PY_MIN_MINOR-3.$PY_MAX_MINOR is the usual cause, but this"
+            err "      venv is inside it, so more likely a pin in $REQ moved;"
+            err "    - to build it from source anyway (needs Xcode command line"
+            err "      tools, and often Homebrew libraries + pkg-config):"
+            err "          CLOUDS_ALLOW_SOURCE_BUILD=1 ./run_clouds_ui.sh"
+        fi
+        err
         err "  retry by hand to see the full output:"
-        err "      $VENV_PY -m pip install -r $REQ"
+        err "      $VENV_PY -m pip install $ONLY_BINARY -r $REQ"
         err "  or start over:  rm -rf $VENV && ./run_clouds_ui.sh"
         exit 1
     fi

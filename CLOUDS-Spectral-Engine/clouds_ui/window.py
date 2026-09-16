@@ -182,7 +182,7 @@ class CloudsWindow(QtWidgets.QMainWindow):
 
     def __init__(self, mock=False, kind=None, host=None,
                  receiver=None, commander=None, session=None,
-                 source="detector"):
+                 source="detector", persist_dark=True):
         super().__init__()
         # The title is the one label that is on screen even when the window is
         # behind something else or in a screenshot someone later argues from,
@@ -212,6 +212,12 @@ class CloudsWindow(QtWidgets.QMainWindow):
         extra = {"host": host} if self.kind == "net" else {}
         self.driver = open_driver(mock=mock, kind=self.kind, **extra)
         self.mock = mock
+        # The stored dark frame is shared with every later session, so a
+        # synthetic one must not be able to reach a real measurement. The
+        # hardware-free checks (verify_qt.py) still exercise the store - they
+        # are the only thing that can - which is why this is its own switch
+        # and not simply `not mock`: `python -m clouds_ui --mock` turns it off.
+        self._persist_dark = persist_dark
         self.connected = False
         self.info = None
         self.running = False
@@ -1866,11 +1872,11 @@ class CloudsWindow(QtWidgets.QMainWindow):
         # needs a darkened bench, so the expensive half is already done and
         # nobody wants to redo it after a restart. Clear removes it again.
         #
-        # Except under --mock: the stored default is loaded by whatever runs
-        # next, and a synthetic dark subtracted from real light is a wrong
-        # measurement nobody would think to suspect. The mock may use its own
-        # dark for the session; it may not leave one behind.
-        if self.mock:
+        # Except with persistence off (--mock): the stored default is loaded
+        # by whatever runs next, and a synthetic dark subtracted from real
+        # light is a wrong measurement nobody would think to suspect. The mock
+        # may use its own dark for the session; it may not leave one behind.
+        if not self._persist_dark:
             saved = " - not stored: a mock dark must not reach a real session"
         else:
             try:
@@ -1889,10 +1895,10 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self.chk_dark.setChecked(False)
         # The stored default goes with it. Leaving it on disk would resurrect
         # a dark the operator just dropped on the next start, which is the
-        # kind of surprise a default must never spring. Under --mock the file
-        # on disk belongs to a real bench session that this one never touched,
-        # so clearing a simulated dark must not delete it.
-        removed = False if self.mock else darkstore.clear()
+        # kind of surprise a default must never spring. With persistence off
+        # the file on disk belongs to a real bench session this one never
+        # touched, so clearing a simulated dark must not delete it.
+        removed = darkstore.clear() if self._persist_dark else False
         self._update_dark_label()
         self._set_hint("dark cleared (stored default removed)" if removed
                        else "dark cleared")
