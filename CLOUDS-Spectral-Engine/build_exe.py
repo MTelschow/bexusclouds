@@ -41,6 +41,14 @@ def main() -> None:
         ("calibration.json", "."),
         ("calibration_single.json", "."),
     ]
+    # clouds_gse / clouds_fsw live off the repo root (gse/, flight/pi/) and
+    # are imported *inside* main(), so PyInstaller's static analysis reaches
+    # neither the packages nor the path they are on. Without both halves the
+    # exe builds cleanly and then dies on `No module named 'clouds_gse'` the
+    # moment it opens the downlink - i.e. on every start that is not
+    # --no-link. Same three entries as PYTHONPATH in the launcher scripts.
+    extra_paths = [HERE, os.path.join(HERE, "gse"),
+                   os.path.join(HERE, "flight", "pi")]
     args = [
         os.path.join(HERE, "clouds_ui", "__main__.py"),
         "--name", NAME,
@@ -48,6 +56,10 @@ def main() -> None:
         "--noconfirm",
         "--collect-data", "matplotlib",
     ]
+    for p in extra_paths:
+        args += ["--paths", p]
+    for pkg in ("clouds_gse", "clouds_link", "spectro"):
+        args += ["--collect-submodules", pkg]
     for src, dst in data_files:
         src_path = os.path.join(HERE, src)
         if os.path.exists(src_path):

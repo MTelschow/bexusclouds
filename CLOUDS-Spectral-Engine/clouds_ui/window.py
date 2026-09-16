@@ -8,10 +8,14 @@ Engine (docs/UI_STYLE.md). Talks only to spectro.driver.SpectrometerDriver.
     python -m clouds_ui --net 192.168.100.10
                                         # Duo on the flight Pi, live over the
                                         # cable (run spectro.net_server there)
+    python -m clouds_ui --mock           # synthetic detector, for demo and
+                                        # for the hardware-free checks
 
-The operator interface has no synthetic-detector flag: what it draws from the
-detector is always real light. ``mock=True`` stays on this constructor for the
-hardware-free checks (verify_qt.py, tests/) and has no command-line route.
+Unless ``mock`` is set, what this window draws from the detector is real
+light. ``mock=True`` also serves the hardware-free checks (verify_qt.py,
+tests/), and wherever it is set the window says so: in the title bar, in the
+plot's source banner, and on the device line. It additionally refuses to
+write or clear the stored dark frame, which is shared with real sessions.
 """
 from __future__ import annotations
 
@@ -180,7 +184,12 @@ class CloudsWindow(QtWidgets.QMainWindow):
                  receiver=None, commander=None, session=None,
                  source="detector"):
         super().__init__()
-        self.setWindowTitle("CLOUDS Spectral Engine")
+        # The title is the one label that is on screen even when the window is
+        # behind something else or in a screenshot someone later argues from,
+        # so the simulation is named there first.
+        self.setWindowTitle("CLOUDS Spectral Engine"
+                            + ("  -  MOCK: SIMULATED DATA, NO HARDWARE"
+                               if mock else ""))
         ico = os.path.join(HERE, "assets", "clouds.ico")
         if os.path.exists(ico):
             self.setWindowIcon(QtGui.QIcon(ico))
@@ -1690,10 +1699,19 @@ class CloudsWindow(QtWidgets.QMainWindow):
         not tell these apart by looking."""
         if self.source == "downlink":
             b = self._src_bin
-            txt = "DOWNLINK"
+            txt = "MOCK DOWNLINK" if self.mock else "DOWNLINK"
             det = (f"1 Hz  mean-binned {b}x  -  not an instrument view"
                    if b else "1 Hz  binned  -  waiting for a quick-look")
-            col, bg = "#8a4b00", "#fdf1e2"
+            col, bg = ("#7b1fa2", "#f5e9fa") if self.mock \
+                else ("#8a4b00", "#fdf1e2")
+        elif self.mock:
+            # Not a shade of the detector banner: a simulated trace has to be
+            # unmistakable at a glance, including in a screenshot with no
+            # command line next to it.
+            txt = "MOCK DETECTOR"
+            det = ("synthetic spectrum - no instrument, no light"
+                   if self.connected else "not connected")
+            col, bg = "#7b1fa2", "#f5e9fa"
         else:
             txt = "DETECTOR"
             det = (f"continuous  full resolution  {self.kind}"
@@ -1839,17 +1857,27 @@ class CloudsWindow(QtWidgets.QMainWindow):
             navg=n, clean=self.clean,
             model=getattr(info, "model", "") or "",
             serial=getattr(info, "serial", "") or "",
-            source=self.kind if self.kind != "net" else f"net {self.host or ''}".strip())
+            source="mock" if self.mock
+            else (self.kind if self.kind != "net"
+                  else f"net {self.host or ''}".strip()))
         self._dark_meta = meta
         self.chk_dark.setChecked(True)
         # Persisted on capture, not behind a second "save" click: the capture
         # needs a darkened bench, so the expensive half is already done and
         # nobody wants to redo it after a restart. Clear removes it again.
-        try:
-            path = darkstore.save(meta)
-            saved = f", saved as the default ({os.path.basename(path)})"
-        except OSError as e:
-            saved = f" - could not save it as the default: {e}"
+        #
+        # Except under --mock: the stored default is loaded by whatever runs
+        # next, and a synthetic dark subtracted from real light is a wrong
+        # measurement nobody would think to suspect. The mock may use its own
+        # dark for the session; it may not leave one behind.
+        if self.mock:
+            saved = " - not stored: a mock dark must not reach a real session"
+        else:
+            try:
+                path = darkstore.save(meta)
+                saved = f", saved as the default ({os.path.basename(path)})"
+            except OSError as e:
+                saved = f" - could not save it as the default: {e}"
         self._update_dark_label()
         self._set_hint(f"dark captured ({n} frames @ {self.exposure_ms:g} ms){saved}")
         if not self.running:
@@ -1861,8 +1889,10 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self.chk_dark.setChecked(False)
         # The stored default goes with it. Leaving it on disk would resurrect
         # a dark the operator just dropped on the next start, which is the
-        # kind of surprise a default must never spring.
-        removed = darkstore.clear()
+        # kind of surprise a default must never spring. Under --mock the file
+        # on disk belongs to a real bench session that this one never touched,
+        # so clearing a simulated dark must not delete it.
+        removed = False if self.mock else darkstore.clear()
         self._update_dark_label()
         self._set_hint("dark cleared (stored default removed)" if removed
                        else "dark cleared")

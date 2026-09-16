@@ -58,11 +58,19 @@ def _resolve_count_shift() -> int:
 def _resolve_lib_dir() -> str | None:
     """Directory holding the vendor library, or None if only the loader knows.
 
-    Windows: ``CLOUDS_E9U_DLL_DIR`` -> repo-local ``vendor/`` -> the legacy
-    ``EURECA_e9u\\e9u_LSMD_GTK_x64`` folder.
+    Windows: ``CLOUDS_E9U_DLL_DIR`` -> repo-local ``vendor/`` -> None.
     Linux: ``CLOUDS_E9U_LIB_DIR`` -> repo-local ``vendor/`` -> the usual
     ``make install`` prefixes -> None (fall back to the dynamic loader, i.e.
     ``ldconfig`` after ``sudo make install``).
+
+    Every candidate is a directory that actually *contains* the library. The
+    Windows branch used to end at one developer's absolute
+    ``C:\\Users\\...\\EURECA_e9u`` path, which on any other machine turned a
+    missing DLL into a DriverError naming a folder that had never existed
+    there - so the operator went looking for the wrong thing. ``vendor/`` is
+    in the repo (and in the PyInstaller bundle), so the real answer on Windows
+    is almost always "it is already found"; if it is not, say so about a path
+    the operator can act on.
     """
     env = os.environ.get("CLOUDS_E9U_DLL_DIR" if _IS_WINDOWS else "CLOUDS_E9U_LIB_DIR")
     if env and os.path.isfile(os.path.join(env, _LIB_NAME)):
@@ -71,7 +79,7 @@ def _resolve_lib_dir() -> str | None:
     if os.path.isfile(os.path.join(vendor, _LIB_NAME)):
         return vendor
     if _IS_WINDOWS:
-        return r"C:\Users\kai-w\projects\EURECA_e9u\e9u_LSMD_GTK_x64"
+        return None
     for d in _LINUX_FALLBACK_DIRS:
         if os.path.isfile(os.path.join(d, _SO_NAME)):
             return d
@@ -93,14 +101,28 @@ def _load_vendor_lib():
         )
     lib_dir = _resolve_lib_dir()
     if _IS_WINDOWS:
-        path = os.path.join(lib_dir, _DLL_NAME)
-        if not os.path.isfile(path):
+        if lib_dir is None:
             raise DriverError(
-                f"vendor DLL not found: {path}\n"
-                f"set CLOUDS_E9U_DLL_DIR or drop {_DLL_NAME} into vendor/."
+                f"vendor DLL {_DLL_NAME} not found.\n"
+                f"Looked in $CLOUDS_E9U_DLL_DIR and "
+                f"{os.path.join(_ROOT, 'vendor')}.\n"
+                f"Drop {_DLL_NAME} (with its libgcc_s_seh-1 / libssp-0 / "
+                f"libwinpthread-1 mingw runtime DLLs) into vendor/, or set "
+                f"CLOUDS_E9U_DLL_DIR to the directory holding it."
             )
-        os.add_dll_directory(lib_dir)       # mingw runtime deps live beside it
-        return ctypes.WinDLL(path)
+        path = os.path.join(lib_dir, _DLL_NAME)
+        # mingw runtime deps live beside it, and a plain WinDLL() would not
+        # find them - the failure reads as "the DLL is missing" either way.
+        os.add_dll_directory(lib_dir)
+        try:
+            return ctypes.WinDLL(path)
+        except OSError as exc:
+            raise DriverError(
+                f"vendor DLL {path} failed to load ({exc}).\n"
+                f"Usually a missing mingw runtime beside it "
+                f"(libgcc_s_seh-1.dll, libssp-0.dll, libwinpthread-1.dll) or "
+                f"a 32-bit Python against this 64-bit DLL."
+            ) from exc
     if lib_dir is not None:
         return ctypes.CDLL(os.path.join(lib_dir, _SO_NAME))
     # Linux, not found on any known path: let the dynamic loader try.

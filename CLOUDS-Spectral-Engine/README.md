@@ -33,10 +33,15 @@ Qt patterns of the *CLOUDS Raytracing Engine*.
 ## Quick start
 
 * Desktop (Windows): double-click **CLOUDS Spectral Engine**
-  (`run_clouds_spectral.bat`, which pins the correct Python interpreter).
-* Terminal (macOS / Linux): `./run_clouds_ui.sh` — picks the repo venv, sets
-  the three `PYTHONPATH` entries, and passes every flag below straight
-  through. Both are thin wrappers; the app itself is `python -m clouds_ui`.
+  (`run_clouds_spectral.bat`) — finds an interpreter, sets the three
+  `PYTHONPATH` entries, and passes every flag below straight through. Full
+  Windows setup, including the bench Ethernet, is
+  [below](#windows-from-a-fresh-machine).
+* Terminal (macOS / Linux): `./run_clouds_ui.sh` — **builds the environment if
+  there isn't one**, then sets the three `PYTHONPATH` entries and passes every
+  flag below straight through. Full macOS setup, including the bench Ethernet,
+  is [below](#macos-from-a-fresh-machine). Both launchers are thin wrappers;
+  the app itself is `python -m clouds_ui`.
 * Terminal, by hand: `PYTHONPATH=.:gse:flight/pi python -m clouds_ui`
 * Detector on the flight Pi: `python -m clouds_ui --net 192.168.100.10` — and
   this is the **default on macOS**, which has no EURECA vendor library, so a
@@ -52,6 +57,124 @@ hardware-free checks (`verify.py`, `verify_qt.py`, `pytest`,
 * Fresh machine: Python 3.13 + `pip install -r requirements.txt`.
 * On Linux (incl. the Pi) build the vendor library first:
   `drivers/e9u_LSMD_LIB_Linux/install.sh` — see that folder's README.
+
+### macOS, from a fresh machine
+
+```sh
+./run_clouds_ui.sh
+```
+
+That is the whole install. On a machine with no environment yet the script
+picks a base interpreter, creates the repo-local `.venv`, installs
+`requirements.txt` into it, and starts the window. Nothing outside `./.venv` is
+touched and nothing is ever installed into a system interpreter — `rm -rf
+.venv` undoes all of it, and `CLOUDS_NO_SETUP=1` turns the whole behaviour off
+in favour of printing the commands.
+
+It also **rebuilds a `.venv` that has stopped working**, which on a Mac is the
+normal end of one: `brew upgrade python` moves the base interpreter out from
+under it and leaves `.venv/bin/python` as a dangling symlink.
+
+> **Gotcha:** the interpreter has to be **Python 3.11–3.13**, and `python3` on
+> a current Mac is not in that window — Homebrew is on 3.14, and `numpy==2.2.6`
+> ships no cp314 wheel. A plain `pip install -r requirements.txt` there either
+> fails the version solve or starts building numpy and scipy from source. The
+> script searches `python3.13` → `3.12` → `3.11`, on `PATH` and in the
+> Homebrew, python.org and pyenv install roots, and if it finds none it prints
+> `brew install python@3.13` rather than guessing. Widen `PY_MIN_MINOR` /
+> `PY_MAX_MINOR` in the script when the pins in `requirements.txt` move.
+
+> **Gotcha:** an activated `$VIRTUAL_ENV` is used as-is and never modified —
+> `deactivate` first if you want the script to manage `./.venv` for you.
+
+**There is no EURECA vendor library for macOS**, so unlike Windows the
+detector is *only* ever reachable over the bench cable — `--net`, which is
+already the default here. No cable, no spectrum. One command sets it up and
+one checks it:
+
+```sh
+./setup_macos_net.sh --apply --service "USB 10/100/1000 LAN"   # asks for sudo
+./setup_macos_net.sh                                            # check, changes nothing
+./setup_macos_net.sh --list                                     # name the services
+```
+
+`--apply` sets `192.168.100.1/24` on that service **with no router**, which is
+the design and not an omission: with no gateway here the Mac keeps its default
+route over Wi-Fi, so internet, ssh and brew all keep working with the cable
+attached. Putting `192.168.100.10` in the Router field is the classic mistake —
+it installs a default route to a Pi that forwards nothing.
+
+With no arguments the script only *reports*: service and BSD device, address,
+whether a router crept in, link state, ping, TCP 4001/4010 to the Pi, the
+application firewall, and what is bound to UDP 4000. `--revert` puts the
+service back on DHCP. Run it without `--service` first and it lists the
+candidates rather than guessing.
+
+The launcher itself pings the Pi before it starts (unless you passed
+`--flight`, `--no-link`, `--mock` or your own `--net`) and points at this
+script if there is no reply — otherwise the window opens and sits in a
+reconnect loop with the reason buried in a status label.
+
+### Checks and packaging
+
+`requirements.txt` is what the operator interface needs to draw a spectrum,
+and nothing else. The documented pre-commit checks and `build_exe.py` need a
+little more, kept separate so a bench machine is not carrying a test runner:
+
+```sh
+.venv/bin/python -m pip install -r requirements-dev.txt   # pytest, pyserial, pyinstaller
+```
+
+`verify.py` and `verify_qt.py` need nothing beyond `requirements.txt`.
+
+### Windows, from a fresh machine
+
+The Duo's vendor library is a **Windows** DLL and it is already in the repo
+(`vendor/libe9u_LSMD_x64.dll`, with its mingw runtime DLLs beside it), so
+Windows is the one platform that runs the detector locally with nothing to
+build. Three steps:
+
+```bat
+py -3.13 -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+run_clouds_spectral.bat
+```
+
+`run_clouds_spectral.bat` takes the first interpreter it finds of
+`%CLOUDS_PYTHON%` → `.venv\Scripts\python.exe` → `%VIRTUAL_ENV%` → `py -3` →
+`python`, checks that it can import PyQt5 and matplotlib before it starts
+anything, and sets `PYTHONPATH` to the repo root + `gse` + `flight\pi`. All
+three entries are needed: `clouds_gse` and `clouds_fsw` are not on the root,
+and without them the app dies on `No module named 'clouds_gse'` the moment it
+opens the downlink.
+
+> **Gotcha:** the script also does `chcp 65001` and sets `PYTHONIOENCODING`.
+> The console is cp1252 by default, the UI prints `µ` and `Ω`, and
+> **PyQt5 aborts the process** on an unhandled exception in a slot — so a
+> `UnicodeEncodeError` inside a timer tick closes the window with no message.
+
+> **Gotcha:** PyQt5 has no wheel for the newest CPython. If pip starts
+> *building* it, you are on a too-new interpreter — use 3.13 in the repo venv.
+
+**Ethernet to the flight Pi** (`--net`, and the flight downlink) is one
+elevated command, then a re-check that needs no privileges:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File setup_windows_net.ps1 -Apply -InterfaceAlias Ethernet
+powershell -ExecutionPolicy Bypass -File setup_windows_net.ps1
+```
+
+`-Apply` sets `192.168.100.1/24` on that adapter (no gateway — see [Bench link to the flight
+Pi](#bench-link-to-the-flight-pi)) and adds an inbound **UDP 4000** firewall rule.
+With no switch it only *checks*, and prints why each part is down: adapter
+state, the address, the network profile, ping and TCP 4001/4010 to the Pi, the
+firewall rule, and what is bound to UDP 4000. `-Revert` puts the adapter back
+on DHCP and removes the rule. Run it without `-InterfaceAlias` first and it
+lists the candidate adapters rather than guessing — picking the wrong one
+takes the machine off its own network.
+
+Then: `run_clouds_spectral_pi.bat` for the live panel with the detector on the
+Pi, or `run_clouds_spectral.bat --flight` for the downlink-only ground station.
 
 ## Documentation
 
@@ -79,8 +202,12 @@ hardware-free checks (`verify.py`, `verify_qt.py`, `pytest`,
 | `drivers/e9u_LSMD_LIB_Linux/`                 | EURECA Duo**Linux** vendor source + build/udev installer (feature P-01)           |
 | `drivers/e9u_LSMD_EDU_LIB/`                   | EURECA EDU vendor SDK - **unused**, kept for reference (the EDU board was dropped)    |
 | `verify.py` / `verify_qt.py`                | headless driver/calibration checks / offscreen UI exercise — run before committing     |
-| `run_clouds_spectral.bat`                     | branded Windows launcher;**hardcodes the interpreter path**                       |
-| `run_clouds_ui.sh`                            | macOS/Linux launcher: repo venv +`PYTHONPATH`, args passed through                |
+| `run_clouds_spectral.bat`                     | branded Windows launcher: interpreter discovery +`PYTHONPATH`, args passed through |
+| `run_clouds_spectral_pi.bat`                  | the same, pointed at the Pi's frame stream (`--net`)                                 |
+| `setup_windows_net.ps1`                       | Windows bench Ethernet: check / apply / revert the static link + UDP 4000 rule        |
+| `run_clouds_ui.sh`                            | macOS/Linux launcher: builds`.venv` if missing, `PYTHONPATH`, args passed through |
+| `setup_macos_net.sh`                          | macOS bench Ethernet: check / apply / revert the static link                          |
+| `requirements-dev.txt`                        | pytest + pyserial + pyinstaller — the checks and the standalone build                 |
 | `assets/`                                     | logo, icon, Futura-Bold.ttf (shared with the engine)                                    |
 
 This is **ground / bench** software — the balloon spectrometer itself is run by

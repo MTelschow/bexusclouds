@@ -18,7 +18,167 @@ without re-deriving anything. Newest entries first.
 
 ---
 
-## 2026-09-11 (newest) - The sidebar packs into columns instead of scrolling
+## 2026-09-16 (newest) - The Mac launcher builds its own environment
+
+**What was broken.** `run_clouds_ui.sh` assumed an environment already
+existed. On a Mac with none it fell through to `python3`, failed the PyQt5
+import, and printed
+`python3 -m venv .venv && .venv/bin/pip install -r requirements.txt` - advice
+that does not work on a current Mac. `python3` from Homebrew is **3.14**, and
+`numpy==2.2.6` ships no cp314 wheel (checked: `pip download --only-binary`
+offers 2.3.2 upward and nothing pinned), so that command either fails the
+version solve or starts building numpy and scipy from source. PyQt5 is not the
+blocker on macOS that it is elsewhere - 5.15.11 is an `abi3` wheel and installs
+on 3.14 quite happily, which makes the failure land on numpy instead, one line
+further down, after a long wait.
+
+**The supported window is Python 3.11-3.13** and it comes from the pins, not
+from taste: scipy 1.16 needs >= 3.11, and numpy 2.2.6 / matplotlib 3.10.8 stop
+at cp313. The script searches `python3.13` → `3.12` → `3.11`, on `PATH` and by
+path in the Homebrew, python.org and pyenv roots (a python.org or pyenv install
+is routinely not on `PATH`, and finding it is the difference between "run one
+brew command" and "unsupported"). With none of them it says
+`brew install python@3.13` rather than guessing.
+
+Having found one it builds `./.venv` and installs `requirements.txt`. The
+boundary is deliberate: **nothing outside `./.venv` is touched and nothing is
+installed into a system interpreter**, so `rm -rf .venv` undoes the lot, and an
+activated `$VIRTUAL_ENV` is used as-is and never modified - that one belongs to
+the operator. `CLOUDS_NO_SETUP=1` turns the behaviour off.
+
+It also rebuilds a venv that has *stopped* working, which on a Mac is how one
+normally ends: `brew upgrade python` moves the base interpreter and leaves
+`bin/python` as a dangling symlink. That case needs `[ -d .venv ]`, not
+`[ -e .venv/bin/python ]` - `-e` follows the link, so the dead venv tested as
+absent and produced the wrong message. Caught by breaking one on purpose.
+
+**Verified by demolition, not by reading.** The venv was moved aside and the
+script run: it chose `/opt/homebrew/bin/python3.12` over the 3.14 on `PATH`,
+built `.venv`, installed, and opened the window. Then `bin/python` was replaced
+with a dangling symlink and it rebuilt. Both from the state a fresh clone is
+in.
+
+**`requirements-dev.txt`.** The fresh venv could not run `pytest tests/` - the
+old one had pytest installed by hand and `requirements.txt` never listed it, so
+the documented pre-commit check did not survive a rebuild. Split rather than
+merged: `requirements.txt` stays what the interface needs to draw a spectrum,
+and pytest / pyserial / pyinstaller move to `requirements-dev.txt`, so a bench
+machine is not carrying a test runner and PyInstaller. (`verify.py` and
+`verify_qt.py` need neither - they were already self-contained.)
+
+**The cable: `setup_macos_net.sh`.** macOS is the platform where this is not
+optional. There is no EURECA vendor library for it at all, so the detector is
+*only* reachable over the bench cable - `--net` is already the default here,
+and with no cable there is no spectrum. Same three modes as the Windows
+script: check by default, `--apply`, `--revert`.
+
+`--apply` runs `networksetup -setmanual "<service>" 192.168.100.1
+255.255.255.0` with **no router argument**, and the check flags a router if one
+appears. That is the whole design: with no gateway on this service the Mac
+keeps its default route over Wi-Fi, so internet, ssh and brew keep working with
+the cable attached, and a `192.168.100.10` in the Router field installs a
+default route to a Pi that forwards nothing.
+
+Two things the first version got wrong, both found by running it:
+`networksetup -listallhardwareports` keys on the **hardware port**, not the
+service name, so two of six services showed no device - a service can be
+renamed and the two only coincide by default. `-listnetworkserviceorder` is the
+mapping that actually holds. And the "no service named X" error was printed
+inside a `$( )`, where it was captured instead of shown, leaving a wrong
+message about an unconfigured adapter; the name is now validated before that
+substitution.
+
+The launcher pings the Pi before starting (skipped for `--flight`,
+`--no-link`, `--mock` and an explicit `--net`) and points at the script if
+there is no reply - otherwise the window opens and sits in a reconnect loop
+with the reason buried in a status label.
+
+**Checks.** Against a live bench - Pi answering on 192.168.100.10 at 0.5 ms,
+TCP 4001 and 4010 both open - `setup_macos_net.sh` reports every line
+correctly, and `--list`, an unknown service and a real-but-unconfigured service
+each behave. `pytest` 246 passed and `verify.py` `VERIFY OK` on the rebuilt
+venv. **`verify_qt.py` fails 10 checks**, all of them in the concurrent
+`--mock` work and none in this: `clouds_ui/main.py`'s new `_parse` overwrites
+`args.net` with `_default_net()` whenever `--mock` is absent, so an explicit
+`--net 1.2.3.4` comes back as `192.168.100.10` ("args: --net always wins"),
+and the nine `dark:` checks build a `CloudsWindow(mock=True)` and then assert
+the dark frame *was* stored, which the mock stack now deliberately refuses.
+Left for whoever is writing that feature.
+
+---
+
+## 2026-09-16 - Windows runs the GUI again, cable included
+
+**What was broken.** `run_clouds_spectral.bat` ran on exactly one machine. It
+pinned an absolute interpreter path under one developer's profile
+(`C:\Users\kai-w\AppData\Local\...\python.exe`) and set **no
+`PYTHONPATH`**, so on any other Windows box it either found no Python or found
+one and then died on `ModuleNotFoundError: No module named 'clouds_gse'`. That
+import is real and unavoidable: `clouds_gse` lives under `gse/` and
+`clouds_fsw` under `flight/pi/`, neither on the repo root, and
+`clouds_ui.main` imports `clouds_gse` on every start that is not `--no-link`.
+The POSIX launcher had solved this a while ago; the batch file had never been
+brought level with it.
+
+The same absolute path had a second copy in `spectro/eureca_driver.py` as the
+last Windows candidate for the vendor DLL. It never *helped* - `vendor/` is
+checked first and the DLL is in the repo - but when `vendor/` was missing it
+turned the error into "vendor DLL not found:
+`C:\Users\kai-w\projects\EURECA_e9u\...`", i.e. it sent the operator
+looking for a folder that had never existed on their machine.
+
+**What the launcher does now.** First interpreter of `%CLOUDS_PYTHON%` →
+`.venv\Scripts\python.exe` → `%VIRTUAL_ENV%` → `py -3` → `python`; then an
+import check for PyQt5 and matplotlib *before* anything starts, printing the
+pip line rather than a Qt traceback; then the three `PYTHONPATH` entries; then
+every argument straight through. Same shape and the same reasoning as
+`run_clouds_ui.sh`, which is the point - the two launchers now fail the same
+way for the same reasons.
+
+It also sets `chcp 65001` and `PYTHONIOENCODING=utf-8`, which is not cosmetic.
+The console is cp1252 by default, the UI prints `µ` and `Ω`, and **PyQt5 aborts
+the process** on an unhandled exception in a slot - so a `UnicodeEncodeError`
+inside a timer tick takes the window down with nothing on screen to say why.
+
+**The cable: `setup_windows_net.ps1`.** The bench link is deliberately
+gateway-less (README, "Bench link to the flight Pi") so both machines keep
+their normal default route. Windows classifies exactly that shape of link as a
+**Public** network, where inbound is blocked - and the symptom is the quiet
+one: the adapter is up, `ping 192.168.100.10` replies, TCP 4001 and 4010 work
+because they are outbound, and only the **UDP 4000 downlink** silently never
+arrives. The script's default mode changes nothing and reports each link in
+turn (adapter, address, network profile, ping, TCP 4001/4010, the firewall
+rule, what is bound to UDP 4000); `-Apply` sets `192.168.100.1/24` and adds the
+inbound UDP 4000 rule; `-Revert` puts the adapter back on DHCP. Without
+`-InterfaceAlias` it lists candidate adapters and stops rather than guessing,
+because guessing wrong takes the machine off its own network.
+
+It prefers a **port** rule over the "allow this app" inbound rules Windows
+creates for `python.exe`: those name one program, and a venv `python.exe` is a
+different program, so the bench stays working while a fresh checkout does not -
+the check reports that case as a warning rather than an OK.
+
+**Receiver hardening, same platform.** `Receiver` now clears
+`SIO_UDP_CONNRESET` on its socket and treats `ConnectionResetError` from
+`recvfrom` as continue-worthy. On Windows an ICMP port-unreachable for a
+datagram that already left is reported by failing the *next* `recvfrom` of a
+connectionless socket; the old `except OSError: return` took that as fatal and
+ended the downlink thread for the rest of the session, silently. A failed
+`bind` now also says what to do about it instead of surfacing WSAEADDRINUSE
+raw.
+
+**`build_exe.py`** got `--paths` for the same three entries plus
+`--collect-submodules`. The frozen exe had the launcher's bug in a worse form:
+PyInstaller's static analysis reaches neither `clouds_gse` nor the path it is
+on (the import is inside `main()`), so the build succeeded and the exe died on
+first start.
+
+**Checks.** `pytest` 246 passed, `verify.py` and `verify_qt.py` both
+`VERIFY OK`, `setup_windows_net.ps1` parses clean under `pwsh`. None of this is
+Windows-*verified* - it was written and checked on macOS, and the batch file
+and the PowerShell script have not been executed on Windows.
+
+## 2026-09-11 - The sidebar packs into columns instead of scrolling
 
 **What was asked.** "Rework the UI so open panels by default are visible all
 at once without scrolling."

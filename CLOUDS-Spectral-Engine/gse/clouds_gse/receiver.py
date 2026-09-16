@@ -15,14 +15,39 @@ from collections import deque
 from clouds_link import frames, hk
 from clouds_link.frames import GapStats, PacketType
 
+# Windows: SIO_UDP_CONNRESET. Off by default, a UDP socket is told about ICMP
+# port-unreachable replies by failing its next recvfrom with WSAECONNRESET -
+# an error about a datagram that already left, reported against a socket that
+# is fine. The receiver thread catches it too (belt and braces), but turning
+# the behaviour off is the documented fix. No-op everywhere else.
+_SIO_UDP_CONNRESET = 0x9800000C
+
+
+def _suppress_udp_conn_reset(sock: socket.socket) -> None:
+    if not hasattr(sock, "ioctl"):      # not Windows
+        return
+    try:
+        sock.ioctl(_SIO_UDP_CONNRESET, False)
+    except (OSError, AttributeError, ValueError):
+        pass                            # best-effort; the except clause covers us
+
 
 class Receiver:
     def __init__(self, bind: str = "0.0.0.0", port: int = 4000,
                  on_hk=None, on_quicklook=None, on_event=None,
                  on_pistatus=None):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self._sock.bind((bind, port))
+        try:
+            self._sock.bind((bind, port))
+        except OSError as exc:
+            self._sock.close()
+            raise OSError(
+                f"cannot bind UDP {bind}:{port} for the downlink ({exc}). "
+                f"Another GSE or GUI is probably already listening - close it, "
+                f"or start this one with --listen <other port>."
+            ) from exc
         self._sock.settimeout(0.2)
+        _suppress_udp_conn_reset(self._sock)
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
         self._cb = {"hk": on_hk, "ql": on_quicklook, "ev": on_event,
@@ -62,6 +87,13 @@ class Receiver:
             try:
                 raw, _ = self._sock.recvfrom(65536)
             except TimeoutError:
+                continue
+            except ConnectionResetError:
+                # Windows only: an ICMP port-unreachable for an earlier
+                # datagram surfaces as WSAECONNRESET on the *next* recvfrom of
+                # a connectionless socket. It says nothing about this socket's
+                # health, and treating it as fatal silently ends the downlink
+                # for the rest of the session. See _suppress_udp_conn_reset.
                 continue
             except OSError:
                 return

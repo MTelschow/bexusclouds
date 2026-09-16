@@ -7,8 +7,13 @@ and dependency-free; pefile (if present) gives the precise export table too.
 import os
 import re
 
-DLL = os.environ.get("CLOUDS_E9U_DLL",
-                     r"C:\Users\kai-w\projects\EURECA_e9u\e9u_LSMD_GTK_x64\libe9u_LSMD_x64.dll")
+_HERE = os.path.dirname(os.path.abspath(__file__))
+DLL = os.environ.get("CLOUDS_E9U_DLL") or os.path.join(
+    os.environ.get("CLOUDS_E9U_DLL_DIR") or os.path.join(_HERE, "vendor"),
+    "libe9u_LSMD_x64.dll")
+if not os.path.isfile(DLL):
+    raise SystemExit(f"no DLL at {DLL}\n"
+                     "set CLOUDS_E9U_DLL (full path) or CLOUDS_E9U_DLL_DIR.")
 
 data = open(DLL, "rb").read()
 print(f"DLL: {DLL}\nsize: {len(data):,} bytes\n")

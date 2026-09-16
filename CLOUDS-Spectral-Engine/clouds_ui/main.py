@@ -6,14 +6,24 @@
     python -m clouds_ui --net 192.168.100.10  # detector on the Pi (bench-stream)
     python -m clouds_ui --flight              # downlink only: HK, quick-look,
                                               # commanding. No detector.
+    python -m clouds_ui --mock                # nothing real: synthetic
+                                              # detector + simulated flight
+                                              # chain, for demo and training
 
-There is no synthetic detector here and no second instrument family: the
-operator interface either talks to the Duo (locally, or over the cable via
-``--net``) or it does not open a detector at all (``--flight``). A spectrum on
-this screen is therefore always a real measurement of real light. The mock
-driver still exists for the hardware-free checks (``tests/``, ``verify.py``,
-``verify_qt.py``, ``clouds_fsw.main --mock``) - it is reachable from code, not
-from this command line.
+Apart from ``--mock``, which announces itself everywhere it can, a spectrum
+on this screen is always a real measurement of real light: the interface
+either talks to the Duo (locally, or over the cable via ``--net``) or it
+opens no detector at all (``--flight``).
+
+``--mock`` exists because the window has to be learnable, and reviewable,
+away from the bench - there is one Duo and one Pi, and neither travels. It
+fakes exactly two things, the light on the detector and the silicon on the
+UART; everything between them is the real flight app, the real protocol and
+the real ground station (``clouds_ui/mock_stack.py``). Because a simulated
+spectrum that looked real would be the worst failure this app has, the mock
+says so in the window title, in the plot's source banner, and in the device
+line - and it never writes a dark frame or a flight-shaped session log that
+a later real session could pick up.
 
 This replaces both `clouds_spectral.py` (bench panel) and
 `clouds_gse.main --gui` (ground dashboard). The two halves are the same window
@@ -30,6 +40,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+import time
 
 from PyQt5 import QtGui, QtWidgets
 
@@ -64,11 +75,16 @@ def _parse(argv=None):
         prog="clouds_ui", description="CLOUDS operator interface "
                                       "(bench instrument + flight downlink)")
     det = ap.add_argument_group("detector (bench)")
-    det.add_argument("--net", metavar="HOST", default=_default_net(),
+    det.add_argument("--net", metavar="HOST", default=None,
                      help="detector on another machine (the Pi's "
                           "--bench-stream, or spectro.net_server). Defaults "
                           "to the bench Pi on macOS, which has no native "
                           "detector driver, and to this machine elsewhere")
+    det.add_argument("--mock", action="store_true",
+                     help="no hardware at all: synthetic detector plus a "
+                          "simulated flight chain (FSW + RP2350) on "
+                          "loopback. For demo and training, and labelled as "
+                          "such throughout the window")
     fl = ap.add_argument_group("flight link")
     fl.add_argument("--flight", action="store_true",
                     help="downlink only: open no detector, start on the "
@@ -86,7 +102,18 @@ def _parse(argv=None):
                     help="disable the ground interlock (S.10) at startup")
     fl.add_argument("--log-dir", default="./gse_sessions",
                     help="session log directory (G-05)")
-    return ap.parse_args(argv)
+    args = ap.parse_args(argv)
+    if args.mock:
+        # --net names a real detector on a real machine, which is the one
+        # thing --mock promises there is none of. Refuse rather than pick a
+        # winner: whichever we dropped, the operator would be looking at the
+        # other one.
+        if args.net:
+            ap.error("--mock and --net are contradictory: --mock opens no "
+                     "detector anywhere, --net names a real one")
+    else:
+        args.net = _default_net()
+    return args
 
 
 def main(argv=None) -> int:
@@ -111,7 +138,7 @@ def main(argv=None) -> int:
     if os.path.exists(ico):
         app.setWindowIcon(QtGui.QIcon(ico))
 
-    receiver = commander = session = None
+    receiver = commander = session = mock_stack = None
     if not args.no_link:
         # Imported here, not at module scope: --no-link must not need the gse
         # package on the path at all.
@@ -119,8 +146,17 @@ def main(argv=None) -> int:
         from clouds_gse.receiver import Receiver
         from clouds_gse.session_log import SessionLog
 
-        session = SessionLog(args.log_dir)
-        receiver = Receiver(port=args.listen)
+        # A mock session is logged like any other - it is what an operator
+        # practises reading - but its files say so in the name, so nobody
+        # later mistakes a simulated flight for a flown one.
+        stamp = ("mock_" + time.strftime("%Y%m%d_%H%M%S", time.gmtime())
+                 if args.mock else None)
+        session = SessionLog(args.log_dir, stamp=stamp)
+        # Loopback and an ephemeral port under --mock: the simulated downlink
+        # must not collide with a real GSE already on UDP 4000, and must not
+        # be reachable from off this machine.
+        receiver = Receiver(bind="127.0.0.1" if args.mock else "0.0.0.0",
+                            port=0 if args.mock else args.listen)
         # Session logging hangs off the receiver's own callbacks, so every
         # packet is recorded as it arrives rather than whenever the UI last
         # polled - a dropped frame stays a gap in the CSV.
@@ -128,14 +164,23 @@ def main(argv=None) -> int:
         receiver._cb["ev"] = session.log_event
         receiver._cb["ql"] = session.log_quicklook
         receiver.start()
+
+        cmd_host, cmd_port = args.experiment, args.cmd_port
+        if args.mock:
+            from .mock_stack import MockStack
+
+            mock_stack = MockStack(receiver.port)
+            mock_stack.start()
+            cmd_host, cmd_port = "127.0.0.1", mock_stack.cmd_port
+
         if not args.listen_only:
-            commander = Commander(args.experiment, args.cmd_port,
+            commander = Commander(cmd_host, cmd_port,
                                   flight_mode=args.flight_mode, log=print)
             commander.start_heartbeat()
 
     from .window import CloudsWindow
 
-    win = CloudsWindow(kind=kind, host=host,
+    win = CloudsWindow(mock=args.mock, kind=kind, host=host,
                        receiver=receiver, commander=commander,
                        session=session,
                        source="downlink" if args.flight else "detector")
@@ -143,6 +188,12 @@ def main(argv=None) -> int:
         win.flight.chk_flight_mode.setChecked(True)
     win.fold_for(flight=args.flight)
     win.show()
+
+    if mock_stack is not None:
+        # The simulated Pi and MCU are threads in this process: stop them
+        # with the window, or a closed window leaves an FSW writing frames
+        # and a temporary data directory behind it.
+        app.aboutToQuit.connect(mock_stack.stop)
 
     if not args.flight:
         win._connect()

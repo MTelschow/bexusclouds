@@ -1,0 +1,14 @@
+# CLOUDS Spectral Engine - checks and packaging, on top of requirements.txt.
+#
+#   ./run_clouds_ui.sh installs requirements.txt only: everything the operator
+#   interface needs to draw a spectrum, and nothing else. These are the extras
+#   the documented pre-commit checks and the standalone build need, and they
+#   are separate so a bench machine is not carrying a test runner and
+#   PyInstaller.
+#
+#   .venv/bin/python -m pip install -r requirements-dev.txt
+#
+pytest>=8.0             # python -m pytest tests/   (verify.py / verify_qt.py need nothing)
+pyserial>=3.5           # clouds_fsw.uart_link - the suite passes without it (the
+                        # UART is stubbed), but importing clouds_fsw by hand does not
+pyinstaller>=6.0        # python build_exe.py - the standalone executable
