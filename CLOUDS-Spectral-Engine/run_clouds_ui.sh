@@ -84,11 +84,29 @@ PYEOF
 
 py_version() { "$1" -c 'import sys;print("%d.%d.%d"%sys.version_info[:3])' 2>/dev/null; }
 
+# On macOS, PyQt5's Cocoa plugin needs the interpreter linked against
+# Python.framework to bring up a QApplication at all - a plain "python3.13"
+# resolved off PATH is often a conda (or similar) build that is not, and a
+# venv built from it installs and imports PyQt5 cleanly but aborts at startup
+# with "Could not find the Qt platform plugin 'cocoa'", which reads as a
+# broken Qt install rather than a wrong interpreter choice. Confirmed
+# 2026-09-16: conda's python3.13 vs. the python.org framework build, same
+# PyQt5/Qt5 wheel, same macOS - only the framework build starts a QApplication.
+# Not a concern on Linux, so this always passes there.
+py_is_framework_darwin() {
+    [ "$(uname -s)" = "Darwin" ] || return 0
+    "$1" -c "import sysconfig,sys; sys.exit(0 if sysconfig.get_config_var('PYTHONFRAMEWORK') else 1)" 2>/dev/null
+}
+
 # A base interpreter to build the venv from. Newest-supported first, and the
 # usual macOS install roots are searched by path as well as by PATH: a
 # python.org or pyenv install is often not on PATH at all, and finding it is
 # the difference between "run one brew command" and "this is unsupported".
-find_base_python() {
+# require_framework=1 restricts the search to interpreters known-good for a
+# macOS GUI; called twice (framework-only, then anything) so a framework
+# build is always preferred but a conda-only machine still gets *a* venv.
+_search_base_python() {
+    require_framework="$1"
     minor=$PY_MAX_MINOR
     while [ "$minor" -ge "$PY_MIN_MINOR" ]; do
         for cand in \
@@ -98,14 +116,16 @@ find_base_python() {
             "/Library/Frameworks/Python.framework/Versions/3.$minor/bin/python3" \
             "$HOME/.pyenv/versions/3.$minor.0/bin/python3"
         do
-            if py_works "$cand" && py_in_window "$cand"; then
+            if py_works "$cand" && py_in_window "$cand" \
+               && { [ "$require_framework" != 1 ] || py_is_framework_darwin "$cand"; }; then
                 printf '%s\n' "$cand"
                 return 0
             fi
         done
         # pyenv patch releases: 3.13.2, 3.13.7, ...
         for cand in "$HOME"/.pyenv/versions/3.$minor.*/bin/python3; do
-            if py_works "$cand" && py_in_window "$cand"; then
+            if py_works "$cand" && py_in_window "$cand" \
+               && { [ "$require_framework" != 1 ] || py_is_framework_darwin "$cand"; }; then
                 printf '%s\n' "$cand"
                 return 0
             fi
@@ -114,7 +134,25 @@ find_base_python() {
     done
     # Last resort: a bare python3 that happens to land in the window anyway.
     cand="$(command -v python3 2>/dev/null || true)"
-    if py_works "$cand" && py_in_window "$cand"; then
+    if py_works "$cand" && py_in_window "$cand" \
+       && { [ "$require_framework" != 1 ] || py_is_framework_darwin "$cand"; }; then
+        printf '%s\n' "$cand"
+        return 0
+    fi
+    return 1
+}
+
+find_base_python() {
+    if cand="$(_search_base_python 1)"; then
+        printf '%s\n' "$cand"
+        return 0
+    fi
+    if cand="$(_search_base_python 0)"; then
+        err "run_clouds_ui.sh: warning - no python.org/Homebrew framework build"
+        err "  found; using $cand instead. If the GUI aborts with"
+        err "  \"Could not find the Qt platform plugin 'cocoa'\", install one:"
+        err "      brew install python@$PY_MAX_MINOR"
+        err "  then rm -rf $VENV and re-run."
         printf '%s\n' "$cand"
         return 0
     fi
