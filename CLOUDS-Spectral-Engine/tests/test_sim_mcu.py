@@ -44,9 +44,9 @@ class Pi:
 
     def command(self, cmd, key=0, value=0, timeout=2.0):
         seq = self._seq.next()
-        self._t.write(cobs.encode(
-            Frame(type=PacketType.CMD, payload=frames.pack_cmd(cmd, key, value),
-                  seq=seq).stamp().encode()) + b"\x00")
+        frame = Frame(type=PacketType.CMD, seq=seq,
+                      payload=frames.pack_cmd(cmd, key, value)).stamp()
+        self._t.write(cobs.encode(frame.encode()) + b"\x00")
         t0 = time.time()
         while time.time() - t0 < timeout:
             for f in self._pump():
@@ -95,7 +95,7 @@ def test_sensor_picture_matches_the_carrier(sim):
     mcu, pi = sim
     h = mcu.housekeeping()
     assert h.error_flags & hk.HkErrors.NO_TEMP      # STLM20 pair not fitted
-    assert h.error_flags & hk.HkErrors.IMU_FAIL     # BNO055 electrically absent
+    assert h.error_flags & hk.HkErrors.IMU_FAIL     # BNO055 absent
     assert h.accel_mg == (0, 0, 0) and h.gyro_ddps == (0, 0, 0)
     # The 24 V monitor is not populated: sentinel, and no current derived.
     assert h.rail_mv[1] == hk.RAIL_MV_INVALID

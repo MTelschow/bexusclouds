@@ -66,8 +66,9 @@ class MockStack:
         self._thread = threading.Thread(target=self.app.run, daemon=True,
                                         name="mock-fsw")
         self._thread.start()
-        self._log(f"[CLOUDS] mock flight chain up: downlink -> 127.0.0.1:"
-                  f"{self._ground_port}, commands on 127.0.0.1:{self.cmd_port}")
+        self._log(f"[CLOUDS] mock flight chain up: downlink -> "
+                  f"127.0.0.1:{self._ground_port}, commands on "
+                  f"127.0.0.1:{self.cmd_port}")
         self._log(f"[CLOUDS] mock data (discarded on exit): {self._data_dir}")
 
     def stop(self) -> None:

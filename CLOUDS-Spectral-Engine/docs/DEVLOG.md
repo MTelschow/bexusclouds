@@ -164,6 +164,18 @@ The launcher pings the Pi before starting (skipped for `--flight`,
 there is no reply - otherwise the window opens and sits in a reconnect loop
 with the reason buried in a status label.
 
+**Picking the adapter.** First contact with a second Mac produced the one
+question the script could not answer: two wired services, `AX88179A` and
+`AX88179B`, neither configured, and no way to tell which had the cable. The
+order is now the service already holding the bench address, then the only
+wired service, then the only wired service whose device reads
+`status: active`. Link state is the signal that separates two identical USB
+adapters - a port with nothing in it is never active - and it is also the one
+that catches the other half of the question, since with the cable out
+*nothing* is active and the script can say so instead of listing six services
+and shrugging. `--list` shows the column, so the answer is visible rather than
+inferred. It still refuses to decide when two links are live.
+
 **Checks.** Against a live bench - Pi answering on 192.168.100.10 at 0.5 ms,
 TCP 4001 and 4010 both open - `setup_macos_net.sh` reports every line
 correctly, and `--list`, an unknown service and a real-but-unconfigured service

@@ -105,16 +105,28 @@ service_with_bench_ip() {
     done
 }
 
+# Does this service's device have a cable in it with something on the far end?
+# `status: active` on a wired interface means link, which is the one signal
+# that tells two identical-looking USB adapters apart.
+service_has_link() {
+    dev=$(service_device "$1")
+    [ -n "$dev" ] || return 1
+    ifconfig "$dev" 2>/dev/null | grep -q "status: active"
+}
+
 list_services() {
     head_ "network services (enabled)"
     services | while IFS= read -r s; do
         [ -n "$s" ] || continue
         dev=$(service_device "$s")
         ip=$(networksetup -getinfo "$s" 2>/dev/null | awk -F': ' '/^IP address: /{print $2; exit}')
-        printf '   %-28s %-8s %s\n' "$s" "${dev:--}" "${ip:-no address}"
+        link="no link"
+        service_has_link "$s" && link="LINK UP"
+        printf '   %-28s %-8s %-9s %s\n' "$s" "${dev:--}" "$link" "${ip:-no address}"
     done
     printf '\n'
-    info "the bench cable is a wired service - pass it as --service \"NAME\"."
+    info "the bench cable is the wired service showing LINK UP."
+    info "pass it as --service \"NAME\"."
 }
 
 resolve_service() {
@@ -134,6 +146,26 @@ resolve_service() {
     n=$(wired_services | grep -c .)
     if [ "$n" = "1" ]; then
         wired_services
+        return 0
+    fi
+    # Several wired services - the usual case with a dock, or with stale
+    # entries for adapters that are not plugged in. Link state separates them:
+    # a cable with a powered Pi on the far end is the only one that is active,
+    # and an adapter with nothing in it never is. Still only decides when the
+    # answer is unique.
+    linked=""
+    ln=0
+    while IFS= read -r s; do
+        [ -n "$s" ] || continue
+        if service_has_link "$s"; then
+            linked="$s"
+            ln=$((ln + 1))
+        fi
+    done <<LINKEOF
+$(wired_services)
+LINKEOF
+    if [ "$ln" = "1" ]; then
+        printf '%s\n' "$linked"
         return 0
     fi
     return 1
@@ -229,7 +261,14 @@ do_check() {
 do_apply() {
     svc=$(resolve_service) || {
         printf '\n'
-        bad "which service is the cable in? Pass --service \"NAME\"."
+        if wired_services | while IFS= read -r s; do
+               service_has_link "$s" && printf 'x'; done | grep -q x
+        then
+            bad "more than one wired service has a live link - pass --service \"NAME\"."
+        else
+            bad "no wired service has a live link, so the cable is not in any of"
+            bad "them (or the Pi is off). Plug it in, or pass --service \"NAME\"."
+        fi
         list_services
         exit 1
     }

@@ -104,8 +104,6 @@ class SimMcu:
         self._drive: tuple[int, float] | None = None   # (bit, ends_at)
 
         self._p_amb = float(P_GROUND_PA)
-        self._p_prev = self._p_amb
-        self._float_since: float | None = None
 
     # -- lifecycle -----------------------------------------------------------
 
@@ -299,19 +297,23 @@ class SimMcu:
             self._fire(1)
             self._enter(st.MEASURE_1)
         elif self.state == st.MEASURE_1:
-            if not self.hold and now - self._state_entered >= self._t_measure_s:
+            if not self.hold and self._phase_done(now):
                 self._enter(st.RELEASE_2)
         elif self.state == st.RELEASE_2:
             self._fire(2)
             self._enter(st.MEASURE_2)
         elif self.state == st.MEASURE_2:
-            if not self.hold and now - self._state_entered >= self._t_measure_s:
+            if not self.hold and self._phase_done(now):
                 self._enter(st.TERMINATION)
         elif self.state == st.TERMINATION:
             self.membrane_duty = 0
             self._drive_queue.clear()
             self._drive = None
             self._enter(st.SAFE)
+
+    def _phase_done(self, now: float) -> bool:
+        """Has this measurement phase run its length (PARAM_T_MEASURE_S)?"""
+        return now - self._state_entered >= self._t_measure_s
 
     def _queue_drive(self, bit: int) -> None:
         """Ask for one actuator line. It waits its turn: the MCU drives one
@@ -332,15 +334,17 @@ class SimMcu:
         ground reads - a fall that trips launch detection, then a float that
         stops falling - on a timescale someone can sit through.
         """
-        if self.state >= hk.SeqState.ASCENT and self.state < hk.SeqState.TERMINATION:
-            # tau chosen so the profile reaches P_FLOAT_PA at ascent_s.
+        st = hk.SeqState
+        if st.ASCENT <= self.state < st.TERMINATION:
+            # tau chosen so the profile reaches P_FLOAT_PA at ascent_s; past
+            # ASCENT it holds there, which is what float means.
             tau = self._ascent_s / math.log(P_GROUND_PA / P_FLOAT_PA)
-            dt = now - self._state_entered if self.state == hk.SeqState.ASCENT \
-                else self._ascent_s
-            target = max(P_CEILING_PA, P_GROUND_PA * math.exp(-dt / tau))
+            dt = (now - self._state_entered if self.state == st.ASCENT
+                  else self._ascent_s)
+            self._p_amb = max(P_CEILING_PA,
+                              P_GROUND_PA * math.exp(-dt / tau))
         else:
-            target = float(P_GROUND_PA)
-        self._p_prev, self._p_amb = self._p_amb, target
+            self._p_amb = float(P_GROUND_PA)
 
         if not self._launch_detected and \
                 self._p_amb < P_GROUND_PA - 5000:       # PARAM_LAUNCH_DP_PA
@@ -379,17 +383,18 @@ class SimMcu:
                          int(random.gauss(1000, 30)))
                 gyro = tuple(int(random.gauss(0, 50)) for _ in range(3))
             else:
-                err |= hk.HkErrors.IMU_FAIL    # electrically absent on the carrier
+                err |= hk.HkErrors.IMU_FAIL    # absent on the carrier
 
             # Three monitors fitted; the 24 V slot has no part (RAIL_I2C_ADDR),
             # so it carries the sentinel and no current is derived from it.
             rail_mv = (int(random.gauss(24_060, 15)), hk.RAIL_MV_INVALID,
-                       int(random.gauss(5_090, 5)), int(random.gauss(3_300, 3)))
+                       int(random.gauss(5_090, 5)),
+                       int(random.gauss(3_300, 3)))
+            # Amps are computed on the ground from shunt_raw, so the sim has
+            # to go the other way: pick a draw and emit the register.
             draw = 0.9 if (self._drive or self.membrane_duty) else 0.35
-            shunt = (int(draw * hk.RAIL_SHUNT_MOHM[0] * 1000 / hk.SHUNT_LSB_UV),
-                     0,
-                     int(0.4 * hk.RAIL_SHUNT_MOHM[2] * 1000 / hk.SHUNT_LSB_UV),
-                     int(0.2 * hk.RAIL_SHUNT_MOHM[3] * 1000 / hk.SHUNT_LSB_UV))
+            shunt = tuple(self._shunt_counts(a, i) for i, a in
+                          enumerate((draw, 0.0, 0.4, 0.2)))
 
             mission = 0 if self._mission_start is None \
                 else int(now - self._mission_start)
@@ -405,6 +410,12 @@ class SimMcu:
                 rail_mv=rail_mv, shunt_raw=shunt,
                 uptime_s=int(now - self._t0) & 0xFFFF,
                 mission_t_s=mission)
+
+    @staticmethod
+    def _shunt_counts(amps: float, rail: int) -> int:
+        """Amps -> the INA226 shunt register ground will read them back from
+        (I[mA] = U[uV] / R[mOhm], SHUNT_LSB_UV per count)."""
+        return int(amps * hk.RAIL_SHUNT_MOHM[rail] * 1000 / hk.SHUNT_LSB_UV)
 
     def _run(self) -> None:
         next_hk = 0.0

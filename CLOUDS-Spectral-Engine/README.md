@@ -110,10 +110,18 @@ already the default here. No cable, no spectrum. One command sets it up and
 one checks it:
 
 ```sh
-./setup_macos_net.sh --apply --service "USB 10/100/1000 LAN"   # asks for sudo
-./setup_macos_net.sh                                            # check, changes nothing
-./setup_macos_net.sh --list                                     # name the services
+./setup_macos_net.sh --apply     # asks for sudo
+./setup_macos_net.sh             # check, changes nothing
+./setup_macos_net.sh --list      # every service, its device, link state, address
 ```
+
+`--apply` picks the adapter itself when the answer is unambiguous: the service
+already holding the bench address, else the only wired one, else the only wired
+one with a **live link**. A dock or a pair of USB adapters shows two or three
+identical-looking wired services and only the one with the cable in it — and a
+powered Pi on the far end — reads `status: active`. When that is still
+ambiguous it lists the candidates and stops rather than guessing; name one with
+`--service "AX88179B"`.
 
 `--apply` sets `192.168.100.1/24` on that service **with no router**, which is
 the design and not an omission: with no gateway here the Mac keeps its default
@@ -124,8 +132,11 @@ it installs a default route to a Pi that forwards nothing.
 With no arguments the script only *reports*: service and BSD device, address,
 whether a router crept in, link state, ping, TCP 4001/4010 to the Pi, the
 application firewall, and what is bound to UDP 4000. `--revert` puts the
-service back on DHCP. Run it without `--service` first and it lists the
-candidates rather than guessing.
+service back on DHCP.
+
+> **Gotcha:** two Macs cannot both be `192.168.100.1` on the same cable, and
+> the Pi has one `eth0`. Move the cable, or give the second Mac
+> `--ip 192.168.100.2`.
 
 The launcher itself pings the Pi before it starts (unless you passed
 `--flight`, `--no-link`, `--mock` or your own `--net`) and points at this
