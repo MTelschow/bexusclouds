@@ -98,13 +98,20 @@ Three guards, in `spectro/dark.py`:
 real signal into the baseline, and nothing downstream can tell. That is why
 the check above exists - but it only names the frame, it does not refuse it:
 the pedestal is still right everywhere nothing leaked, and a bench mistake is
-not a corrupt file. On 2026-09-11 the stored dark had the reference channel
-~6.9 k **above** the gap in the mean (Ch2 +13.7 k, Ch1 +3.1 k on the 99th
-percentile), i.e. light was still reaching both fibres; it is a usable
-pedestal for Ch1 and an over-subtraction for Ch2 until it is retaken blocked.
-**That frame is the one committed as the baseline**, and the operator
-interface says so on every restore, in the hint and in the Dark frame
-section, until somebody retakes it with the fibres blocked.
+not a corrupt file. The first committed baseline was such a frame: on
+2026-09-11 the stored dark had the reference channel ~6.9 k **above** the gap
+in the mean (Ch2 +13.7 k, Ch1 +3.1 k on the 99th percentile), i.e. light was
+still reaching both fibres - a usable pedestal for Ch1 and an
+over-subtraction for Ch2.
+
+**It was retaken blocked on 2026-09-17** and that frame is the committed
+baseline now: 16 frames at 10 ms over the bench stream of the flight Pi
+(S/N 20260312-004, mean 23 742 ct), with both channel windows *below* the
+covered gap's 99th percentile - Ch1 -1.1 k, Ch2 -0.1 k against a +2 000 ct
+leak margin - so `light_leak()` names nothing and the operator interface
+restores it with no leak line. That comparison is the acceptance test for a
+dark: a window sitting above the gap it cannot see light through means a
+fibre was open.
 
 ## Validation
 
