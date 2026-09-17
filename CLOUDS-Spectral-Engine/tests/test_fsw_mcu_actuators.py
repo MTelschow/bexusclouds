@@ -435,10 +435,12 @@ class TestMembraneSense:
                          r"\s*NUM_BANK0_GPIOS\)", hw)
         for use in ("gpio_get(PIN_MEMBRANE_SENSE", "gpio_init(PIN_MEMBRANE_SENSE"):
             assert use in hw
-            before = hw.rsplit(use, 1)[0]
-            assert before.rstrip().splitlines()[-3:] and \
-                "HAVE_MEMBRANE_SENSE" in "\n".join(before.splitlines()[-8:]), (
-                    "%s must sit under #if HAVE_MEMBRANE_SENSE" % use)
+            # the nearest preprocessor line above each use must open the guard
+            preceding = [l for l in hw.split(use, 1)[0].splitlines()
+                         if l.lstrip().startswith("#")]
+            assert preceding and preceding[-1].strip() == "#if HAVE_MEMBRANE_SENSE", (
+                "%s must sit under #if HAVE_MEMBRANE_SENSE, found %r"
+                % (use, preceding[-1] if preceding else None))
         sensors = hw.split("void hw_read_sensors", 1)[1]
         assert re.search(r"#if\s+!HAVE_MEMBRANE_SENSE\s*\n(.*\n)*?\s*hk->error_flags"
                          r"\s*\|=\s*HKE_NO_MEMBRANE_SENSE", sensors)
@@ -526,10 +528,17 @@ class TestUnsourcedSensorsAreFlagged:
     reading from a floating input."""
 
     def test_no_adc_sampling_while_stlm20_is_unpopulated(self):
+        """The ADC has one legitimate input, the solenoid current sense on
+        PIN_HB_SENSE; every other channel is an unpopulated STLM20 footprint
+        and sampling it yields a confident wrong temperature."""
         hw = _read("src", "hw", "hw.c")
-        assert "adc_read()" not in hw, (
-            "sampling an unconnected pin yields a confident wrong temperature")
-        assert "adc_gpio_init" not in hw
+        assert re.findall(r"adc_gpio_init\((\w+)\)", hw) == ["PIN_HB_SENSE"]
+        assert re.findall(r"adc_select_input\((\w+)\)", hw) == ["HB_SENSE_ADC_CH"]
+        reads = [m.start() for m in re.finditer(r"adc_read\(\)", hw)]
+        sense = hw.index("uint16_t hw_hb_sense_raw")
+        sense_end = hw.index("\n}", sense)
+        assert reads and all(sense < r < sense_end for r in reads), (
+            "adc_read() belongs only in hw_hb_sense_raw()")
 
     def test_temperatures_are_flagged_unsourced(self):
         hw = _read("src", "hw", "hw.c")
@@ -545,6 +554,47 @@ class TestUnsourcedSensorsAreFlagged:
                 assert 26 + int(m.group(1)) != pin, (
                     "%s maps to GP%d, which is the membrane pin"
                     % (name, 26 + int(m.group(1))))
+
+
+class TestSolenoidCurrentSense:
+    """M-07/M-06: the push-pull solenoid's current sense on ACT_HB_SENS,
+    GP46, is the electrical half of the actuation check the GP30 switch is
+    the mechanical half of."""
+
+    def test_the_sense_pin_is_gp46_on_adc6(self):
+        board = _read("src", "hw", "board.h")
+        assert _define(board, "PIN_HB_SENSE") == 46
+        assert "ACT_HB_SENS" in board
+
+    def test_the_read_is_guarded_like_gp30_and_downlinks_raw(self):
+        """A pico2 build has no GP46: the SDK asserts on adc_gpio_init() for
+        a pin outside its ADC range, so the read is compiled out and the
+        field carries HB_SENSE_INVALID - never 0, which an idle solenoid
+        reads. No conversion in firmware: the gain is a ground constant."""
+        hw = _read("src", "hw", "hw.c")
+        assert re.search(r"#define\s+HAVE_HB_SENSE\s+\(PIN_HB_SENSE\s*<"
+                         r"\s*NUM_BANK0_GPIOS\)", hw)
+        for use in ("adc_gpio_init(PIN_HB_SENSE", "adc_select_input(HB_SENSE_ADC_CH"):
+            assert use in hw
+            preceding = [l for l in hw.split(use, 1)[0].splitlines()
+                         if l.lstrip().startswith("#")]
+            assert preceding and preceding[-1].strip() == "#if HAVE_HB_SENSE", (
+                "%s must sit under #if HAVE_HB_SENSE, found %r"
+                % (use, preceding[-1] if preceding else None))
+        body = hw.split("uint16_t hw_hb_sense_raw", 1)[1].split("\n}", 1)[0]
+        assert "#else" in body and "HB_SENSE_INVALID" in body.split("#else", 1)[1]
+        assert "A_PER_V" not in body and "/ 1000" not in body, (
+            "counts go down raw; amps are derived on the ground")
+        sensors = hw.split("void hw_read_sensors", 1)[1]
+        assert "hk->hb_sense_raw = hw_hb_sense_raw()" in sensors
+
+    def test_the_wire_field_and_sentinel_are_mirrored(self):
+        from clouds_link import hk
+        frame_h = _read("src", "core", "frame.h")
+        assert "uint16_t hb_sense_raw;" in frame_h
+        assert int(re.search(r"#define HB_SENSE_INVALID (0x[0-9A-Fa-f]+)u",
+                             frame_h).group(1), 16) == hk.HB_SENSE_INVALID
+        assert _define(frame_h, "HK_SIZE") == hk.SIZE == 56
 
 
 class TestRailMonitors:

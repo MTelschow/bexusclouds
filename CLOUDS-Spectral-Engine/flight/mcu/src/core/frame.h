@@ -61,7 +61,7 @@ typedef struct {
     uint16_t plen;
 } frame_view_t;
 
-/* Housekeeping payload - 54 bytes, mirror of clouds_link/hk.py.
+/* Housekeeping payload - 56 bytes, mirror of clouds_link/hk.py.
  *
  * No chamber pressure and no second humidity channel: the Keller 23SY pair
  * that was to source them is off the design (absent at every address on the
@@ -76,7 +76,7 @@ typedef struct {
  * a framed HK packet alongside a 1 Hz quick-look. Growing past that means
  * binning the quick-look harder or slowing its cadence, and
  * tests/test_fsw_telemetry.py::TestDownlinkBudget fails first, by design. */
-#define HK_SIZE 54
+#define HK_SIZE 56
 
 /* "No reading" for a rail_mv entry - mirror of RAIL_MV_INVALID in
  * clouds_link/hk.py. Not 0: a rail can legitimately *be* at 0 mV when its
@@ -91,6 +91,13 @@ typedef struct {
  * than needing a second sentinel for a bus-ok / shunt-failed split nobody
  * would chase on its own. */
 #define RAIL_MV_INVALID 0xFFFFu
+
+/* "No reading" for hk_t.hb_sense_raw - mirror of HB_SENSE_INVALID in
+ * clouds_link/hk.py. The ADC is 12-bit, so no real sample exceeds 4095 and
+ * 0xFFFF cannot be one. Downlinked by a build that cannot reach GP46 (pico2 /
+ * RP2350A), where 0 would read as "no current", a reading a de-energized
+ * solenoid legitimately produces. */
+#define HB_SENSE_INVALID 0xFFFFu
 
 /* Rails carried in hk_t, in wire order: V_in, 24 V, 5 V, 3.3 V. One more
  * than the monitors that exist - see the note above HK_SIZE. Indexed by
@@ -118,6 +125,14 @@ typedef struct {
      * where rail_mv is not RAIL_MV_INVALID. */
     int16_t shunt_raw[RAIL_COUNT];
     uint32_t uptime_s, mission_t_s;
+    /* Push-pull solenoid current sense (ACT_HB_SENS, GP46 / ADC6): the raw
+     * 12-bit ADC sample, 0..4095 over the ADC reference. Appended after
+     * mission_t_s so every older field keeps its offset. Sent raw and scaled
+     * on the ground (clouds_link/hk.py HB_SENSE_A_PER_V), like shunt_raw: the
+     * sense gain is a ground-side constant that can be corrected against a
+     * logged session. HB_SENSE_INVALID means the pin is not reachable in
+     * this build. */
+    uint16_t hb_sense_raw;
 } hk_t;
 
 /* MCU flag bits (hk_t.flags) - mirror of clouds_link/hk.py McuFlags. */

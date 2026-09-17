@@ -22,8 +22,8 @@ from PyQt5 import QtCore, QtWidgets
 
 from clouds_link.commands import Command, Param
 from clouds_link.frames import AckResult, event_name, severity_name
-from clouds_link.hk import (RAIL_I2C_ADDR, RAIL_NAMES, RAIL_SHUNT_MOHM,
-                            HkErrors, Housekeeping)
+from clouds_link.hk import (HB_SENSE_A_PER_V, RAIL_I2C_ADDR, RAIL_NAMES,
+                            RAIL_SHUNT_MOHM, HkErrors, Housekeeping)
 from clouds_gse.commander import CommandError, InterlockError
 
 from . import style
@@ -92,7 +92,7 @@ def _rail_row(i: int):
     return fmt
 
 
-#: One row per sensor reading in the 54-byte housekeeping packet: the label, the
+#: One row per sensor reading in the 56-byte housekeeping packet: the label, the
 #: part that produces it, how to render it, and the `HkErrors` bit that means
 #: **this number has no sensor behind it**.
 #:
@@ -137,6 +137,12 @@ SENSOR_FIELDS = [
      f"INA226 0x{addr:02X}" if addr is not None else "INA226 not fitted",
      _rail_row(i), None)
     for i, (name, addr) in enumerate(zip(RAIL_NAMES, RAIL_I2C_ADDR))
+] + [
+    # The push-pull solenoid's own current, from the ACT_HB_SENS net on GP46.
+    # Volts at the pin until the sense gain is measured (HB_SENSE_A_PER_V),
+    # amps after; `-` when the MCU build has no GP46. `None` for the flag:
+    # the field carries its own sentinel, like the rails.
+    ("Solenoid I", "ADC GP46", lambda h: h.hb_sense_text, None),
 ]
 
 #: What to say in place of a number, per unsourced flag. "no source" rather
@@ -298,8 +304,11 @@ class FlightPanel(QtCore.QObject):
         # assumption to doubt.
         shunts = ", ".join(f"{n} {r:g}" for n, r
                            in zip(RAIL_NAMES, RAIL_SHUNT_MOHM))
+        hb = ("solenoid sense gain not yet measured - pin volts shown"
+              if HB_SENSE_A_PER_V is None
+              else f"solenoid sense {HB_SENSE_A_PER_V:g} A/V")
         note = QtWidgets.QLabel(f"current derived: shunt voltage over "
-                                f"{shunts} mΩ")
+                                f"{shunts} mΩ; {hb}")
         note.setWordWrap(True)
         note.setStyleSheet(f"color:{style.SECTION}; font-size:10px;"
                            "font-style:italic;")

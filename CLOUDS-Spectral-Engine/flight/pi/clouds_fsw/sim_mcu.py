@@ -404,9 +404,16 @@ class SimMcu:
             # alternates between packets, as it does on the carrier. With the
             # drive off the plunger is released and the switch never closes.
             valves = self._drive[0] if self._drive else 0
-            if self.membrane_duty and \
-                    (now * 2.0) % 1.0 < self.membrane_duty / 100.0:
+            on_phase = bool(self.membrane_duty and
+                            (now * 2.0) % 1.0 < self.membrane_duty / 100.0)
+            if on_phase:
                 valves |= hk.ValveStatus.MEMBRANE_PULLED
+            # The current sense on GP46 sees the same phase the switch does:
+            # counts well up the ADC range while the solenoid is energized,
+            # near zero otherwise. The level is a plausible sense voltage
+            # (~1.2 V of 3.3 V), not a calibrated current - the gain is
+            # unknown on the real board too (hk.HB_SENSE_A_PER_V).
+            hb_sense = int(random.gauss(1500 if on_phase else 12, 8))
             return hk.Housekeeping(
                 state=int(self.state), flags=self._flags(now),
                 fired=self.fired,
@@ -418,7 +425,8 @@ class SimMcu:
                 accel_mg=accel, gyro_ddps=gyro,
                 rail_mv=rail_mv, shunt_raw=shunt,
                 uptime_s=int(now - self._t0) & 0xFFFF,
-                mission_t_s=mission)
+                mission_t_s=mission,
+                hb_sense_raw=max(0, min(4095, hb_sense)))
 
     @staticmethod
     def _shunt_counts(amps: float, rail: int) -> int:

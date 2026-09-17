@@ -109,8 +109,8 @@ class TestFrame:
 
 
 class TestHousekeeping:
-    def test_size_is_54(self):
-        assert hk.SIZE == 54
+    def test_size_is_56(self):
+        assert hk.SIZE == 56
 
     def test_roundtrip(self):
         h = hk.Housekeeping(state=hk.SeqState.MEASURE_1, fired=0b01,
@@ -229,11 +229,50 @@ class TestHousekeeping:
                        for e in hk.HkErrors)
 
     def test_an_older_logs_retired_error_bits_stay_readable(self):
-        """The surviving HKE_* bits kept their positions, and bits 2 and 3
-        (the retired Keller flags) render as a mask rather than vanishing, so
-        a session logged before the change still decodes."""
-        h = hk.Housekeeping(error_flags=0b0000_1100 | hk.HkErrors.NO_TEMP)
-        assert h.error_text == "NO_TEMP 0x000c"
+        """The surviving HKE_* bits kept their positions, and a bit with no
+        name (bit 3, the retired NO_RH2) renders as a mask rather than
+        vanishing, so a session logged before the change still decodes. Bit 2
+        was the retired NO_CHAMBER_P and has since been reused for the
+        membrane switch, so a pre-Keller-removal log now decodes that bit as
+        NO_MEMBRANE_SENSE - a known cost of reusing a slot, recorded here."""
+        h = hk.Housekeeping(error_flags=0b0000_1000 | hk.HkErrors.NO_TEMP)
+        assert h.error_text == "NO_TEMP 0x0008"
+        old = hk.Housekeeping(error_flags=0b0000_1100)
+        assert old.error_text == "NO_MEMBRANE_SENSE 0x0008"
+
+    def test_solenoid_sense_rides_the_wire_raw_and_scales_on_the_ground(self):
+        """The ACT_HB_SENS ADC counts go down raw; volts come from the ADC
+        reference and amps only once the sense gain is known. With the gain
+        unset there is no current - 0.0 would claim an idle solenoid."""
+        h = hk.Housekeeping(hb_sense_raw=2048)
+        g = hk.Housekeeping.unpack(h.pack())
+        assert g.hb_sense_raw == 2048
+        assert g.hb_sense_v() == pytest.approx(1.65)
+        assert hk.HB_SENSE_A_PER_V is None
+        assert g.hb_sense_a() is None
+        assert g.hb_sense_text == "1.650V"
+        row = g.to_row()
+        assert row["hb_sense_raw"] == 2048
+        assert row["hb_sense_v"] == pytest.approx(1.65) and row["hb_sense_a"] == ""
+        assert row["hb_sense_text"] == "1.650V"
+
+    def test_solenoid_sense_amps_appear_once_the_gain_is_set(self, monkeypatch):
+        monkeypatch.setattr(hk, "HB_SENSE_A_PER_V", 2.0)
+        h = hk.Housekeeping(hb_sense_raw=2048)
+        assert h.hb_sense_a() == pytest.approx(3.3)
+        assert h.hb_sense_text == "3.300A"
+        assert h.to_row()["hb_sense_a"] == pytest.approx(3.3)
+
+    def test_solenoid_sense_sentinel_is_no_reading_not_zero(self):
+        """A pico2 build cannot reach GP46 and sends the sentinel; 0 counts
+        is what a de-energized solenoid reads, so the two must differ."""
+        assert hk.HB_SENSE_INVALID == 0xFFFF and hk.HB_SENSE_INVALID > 4095
+        none = hk.Housekeeping()                       # default: no reading
+        assert none.hb_sense_v() is None and none.hb_sense_text == "-"
+        idle = hk.Housekeeping(hb_sense_raw=0)
+        assert idle.hb_sense_v() == 0.0 and idle.hb_sense_text == "0.000V"
+        g = hk.Housekeeping.unpack(none.pack())
+        assert g.hb_sense_raw == hk.HB_SENSE_INVALID
 
     def test_the_rail_sentinel_cannot_be_a_real_measurement(self):
         """0xFFFF is 65.535 V; the INA226's input rating is 36 V, so no real

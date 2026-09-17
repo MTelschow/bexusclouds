@@ -126,7 +126,7 @@ def _vec(attr: str, axis: int, scale: float = 1.0):
 _RAIL_C = ("#01386a", "#8a97a3", "#1D9E75", "#E8821E")
 _AXIS_C = ("#b0413e", "#1D9E75", "#4d8fd1")
 
-#: Everything the 54-byte housekeeping packet carries that varies over time.
+#: Everything the 56-byte housekeeping packet carries that varies over time.
 #: `state`, `fired` and the link flags are deliberately absent - they are
 #: enumerations, and a step plot of "SEAL = 3" invites reading the number.
 SERIES: tuple[Series, ...] = (
@@ -155,6 +155,13 @@ SERIES: tuple[Series, ...] = (
 ) + (
     Series("membrane", "Membrane duty", "%", "Actuators", "#1D9E75",
            lambda h: float(h.membrane_duty)),
+    # The solenoid's sensed current beside its commanded duty: the pair on
+    # one time axis is the actuation check. Plotted as the pin voltage until
+    # the sense gain is known (hk.HB_SENSE_A_PER_V) - the shape is what
+    # matters and the scale can be applied to the log later. A sentinel is
+    # a gap, like an unreadable rail.
+    Series("hb_sense", "Solenoid sense", "V", "Actuators", "#b0413e",
+           lambda h: h.hb_sense_v()),
 )
 
 SERIES_BY_KEY = {s.key: s for s in SERIES}

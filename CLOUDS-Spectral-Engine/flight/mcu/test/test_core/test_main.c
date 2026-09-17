@@ -131,6 +131,7 @@ static void test_hk_pack_layout(void)
     hk.rail_mv[2] = 5003;
     hk.shunt_raw[2] = -40;    /* current can flow either way: sign survives */
     hk.mission_t_s = 4210;
+    hk.hb_sense_raw = 1500;   /* ADC counts, ~1.2 V at the sense pin */
     hk_pack(&hk, out);
     TEST_ASSERT_EQUAL_UINT8(5, out[0]);
     TEST_ASSERT_EQUAL_UINT8(0x01, out[2]);
@@ -156,7 +157,11 @@ static void test_hk_pack_layout(void)
     /* mission_t_s at offset 50 */
     TEST_ASSERT_EQUAL_HEX8(0x72, out[50]); /* 4210 = 0x1072 */
     TEST_ASSERT_EQUAL_HEX8(0x10, out[51]);
-    TEST_ASSERT_EQUAL_UINT32(54, (uint32_t)HK_SIZE);
+    /* hb_sense_raw LE u16 at offset 54, appended after mission_t_s so no
+     * older field moved */
+    TEST_ASSERT_EQUAL_HEX8(0xDC, out[54]); /* 1500 = 0x05DC */
+    TEST_ASSERT_EQUAL_HEX8(0x05, out[55]);
+    TEST_ASSERT_EQUAL_UINT32(56, (uint32_t)HK_SIZE);
 }
 
 /* ---- config ------------------------------------------------------------ */

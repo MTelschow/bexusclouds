@@ -162,11 +162,11 @@ def test_membrane_switch_follows_the_drive(sim):
     """The simulated GP30 switch: never pulled with the membrane off, pulled
     for some of the samples with it on (2 Hz sampled at a random phase), and
     kept out of the Driving text like the real bit."""
-    mcu, cmd = sim
+    mcu, pi = sim
     for _ in range(5):
         assert not mcu.housekeeping().valve_status & hk.ValveStatus.MEMBRANE_PULLED
         assert mcu.housekeeping().membrane_pulled is False
-    cmd.membrane(60)
+    assert pi.command(Command.MEMBRANE, key=60) == AckResult.OK
     assert mcu.housekeeping().membrane_duty == 60
     seen = set()
     t_end = time.monotonic() + 1.5
@@ -175,8 +175,30 @@ def test_membrane_switch_follows_the_drive(sim):
         time.sleep(0.02)
     assert seen == {True, False}, "the switch should alternate under a 2 Hz drive"
     assert "MEMBRANE_PULLED" not in mcu.housekeeping().actuator_text
-    cmd.membrane(0)
+    assert pi.command(Command.MEMBRANE, key=0) == AckResult.OK
     assert mcu.housekeeping().membrane_pulled is False
+
+
+def test_solenoid_current_sense_follows_the_drive(sim):
+    """The simulated ACT_HB_SENS ADC: near zero with the membrane off, high
+    for the on-phase samples with it on, never the sentinel (the sim is the
+    RP2350B carrier, which has GP46)."""
+    mcu, pi = sim
+    for _ in range(5):
+        h = mcu.housekeeping()
+        assert h.hb_sense_raw != hk.HB_SENSE_INVALID
+        assert h.hb_sense_v() is not None and h.hb_sense_v() < 0.1
+    assert pi.command(Command.MEMBRANE, key=60) == AckResult.OK
+    highs = 0
+    t_end = time.monotonic() + 1.5
+    while time.monotonic() < t_end:
+        h = mcu.housekeeping()
+        assert 0 <= h.hb_sense_raw <= 4095
+        highs += h.hb_sense_v() > 1.0
+        time.sleep(0.02)
+    assert highs, "the sense should rise during the on-phase of the drive"
+    assert pi.command(Command.MEMBRANE, key=0) == AckResult.OK
+    assert mcu.housekeeping().hb_sense_v() < 0.1
 
 
 def test_abort_locks_the_actuators_out(sim):

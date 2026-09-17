@@ -9,6 +9,7 @@
 
 #include <string.h>
 
+#include "hardware/adc.h"
 #include "hardware/clocks.h"
 #include "hardware/gpio.h"
 #include "hardware/i2c.h"
@@ -94,6 +95,37 @@ void hw_actuators_service(uint64_t now_ms)
  * compiles the read out instead of poking a GPIO register the RP2350A does
  * not have - and says so in HK via HKE_NO_MEMBRANE_SENSE. */
 #define HAVE_MEMBRANE_SENSE (PIN_MEMBRANE_SENSE < NUM_BANK0_GPIOS)
+
+/* The push-pull solenoid's current sense (ACT_HB_SENS) is on GP46, an ADC
+ * pin that likewise exists only on the RP2350B. Same guard, same reason: a
+ * pico2 build must not call adc_gpio_init() on a pin outside its ADC range
+ * (the SDK asserts on it), so the read is compiled out and the field carries
+ * HB_SENSE_INVALID instead of a number. */
+#define HAVE_HB_SENSE (PIN_HB_SENSE < NUM_BANK0_GPIOS)
+#if HAVE_HB_SENSE
+#define HB_SENSE_ADC_CH (PIN_HB_SENSE - ADC_BASE_PIN)
+#endif
+
+/* Raw 12-bit sample of the solenoid current sense, or HB_SENSE_INVALID when
+ * this build cannot reach GP46. Eight conversions summed and divided, not
+ * one: a single 2 us sample rides the ADC's own noise, and the sum is cheap -
+ * ~16 us total, nowhere near the 2 s watchdog. It is still one point in the
+ * membrane's 2 Hz cycle, so with the drive on the value is expected to move
+ * between packets; averaging across the cycle is a ground-side job over
+ * the logged series, not something to hide in the sample. */
+uint16_t hw_hb_sense_raw(void)
+{
+#if HAVE_HB_SENSE
+    uint32_t sum = 0;
+
+    adc_select_input(HB_SENSE_ADC_CH);
+    for (unsigned i = 0; i < 8; i++)
+        sum += adc_read();
+    return (uint16_t)(sum / 8u);
+#else
+    return HB_SENSE_INVALID;
+#endif
+}
 
 bool hw_membrane_pulled(void)
 {
@@ -380,6 +412,10 @@ void hw_read_sensors(hk_t *hk)
     hk->error_flags |= HKE_NO_MEMBRANE_SENSE;
 #endif
 
+    /* Solenoid current, raw ADC counts; the sentinel says "no pin in this
+     * build", never 0, because 0 counts is what an idle solenoid reads. */
+    hk->hb_sense_raw = hw_hb_sense_raw();
+
     if (bme280_read(&bme_temp_cc, &rh_cpct, &p_pa)) {
         hk->bme_temp_cc = bme_temp_cc;
         hk->rh1_cpct = rh_cpct;
@@ -473,8 +509,15 @@ void hw_init(void)
     gpio_set_dir(PIN_MEMBRANE_SENSE, GPIO_IN);
     gpio_pull_up(PIN_MEMBRANE_SENSE);
 #endif
-    /* No adc_init(): the STLM20 pair is unpopulated, and the pin the old map
-     * gave to ADC_TEMP1 is the membrane solenoid. */
+#if HAVE_HB_SENSE
+    /* The ADC exists for one input: the solenoid current sense on GP46
+     * (ADC6). adc_gpio_init() disables the pin's digital input and pulls, so
+     * it cannot end up in out_pins by mistake and read back as something
+     * driven. The STLM20 channels are still not sampled - those pins are
+     * unpopulated, and a floating input yields a confident wrong number. */
+    adc_init();
+    adc_gpio_init(PIN_HB_SENSE);
+#endif
 
     /* i2c0 at 100 kHz: the speed the bus was surveyed and the devices
      * identified at. Internal pull-ups are belt-and-braces; the carrier has

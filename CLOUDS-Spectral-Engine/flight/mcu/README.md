@@ -46,10 +46,20 @@ and the S.7 rule that `core/link.c` cannot reach the sequencer.
 
 ```sh
 export PICO_SDK_PATH=~/pico-sdk        # SDK >= 2.0
-cmake -B build -DPICO_PLATFORM=rp2350 -DPICO_BOARD=pico2
+cmake -B build -DPICO_PLATFORM=rp2350  # PICO_BOARD defaults to clouds_carrier
 cmake --build build                    # -> clouds_fsw_mcu.uf2
 picotool load -f -x build/clouds_fsw_mcu.uf2   # -f forces BOOTSEL over USB
 ```
+
+**The board is the carrier, not a Pico 2.** The CLOUDS carrier is an RP2350B
+(QFN80, GP0..GP47); `boards/clouds_carrier.h` tells the SDK so
+(`PICO_RP2350A 0`), and `CMakeLists.txt` selects it by default. The old
+`-DPICO_BOARD=pico2` (RP2350A, GP0..GP29) still builds - for the bare Pico 2
+on the bench - but everything above GP29 is compiled out on it, starting with
+the membrane position switch on GP30, which then downlinks
+`HKE_NO_MEMBRANE_SENSE` instead of a position. `PICO_BOARD` is cached by
+CMake: an existing `build/` configured for pico2 must be deleted and
+reconfigured, not just rebuilt.
 
 **macOS: do not use Homebrew's `arm-none-eabi-gcc`.** It ships without newlib,
 so every link dies on `cannot find -lg` / `cannot find -lc` - the first failure
@@ -126,6 +136,14 @@ unplugged, and nothing on the link may delay a state transition (S.7).
   monitor fitted yet**, 5 V (0x44) and 3.3 V (0x45). The unfitted slot reads
   `RAIL_MV_INVALID` and is excluded from `HKE_RAIL_FAIL` by `ina226_fitted()`:
   a flag that is set on every packet stops being read.
+- **M-07 solenoid current sense**: `ACT_HB_SENS` on GP46 (ADC6 on the
+  RP2350B) is sampled once per HK sweep - eight conversions averaged - and
+  downlinked raw in `hb_sense_raw` (u16, 0..4095; `HB_SENSE_INVALID` 0xFFFF
+  from a pico2 build, which has no GP46). No conversion in firmware, for the
+  same reason as the shunts: the sense gain is not on the schematic page we
+  have, and `clouds_link/hk.py HB_SENSE_A_PER_V` stays `None` until it is
+  measured. Ground shows the pin voltage meanwhile. Guarded by
+  `HAVE_HB_SENSE`, like the GP30 switch.
 - **M-07 membrane**: the drive is done. GP26, measured, with
   `PARAM_MEMBRANE_HZ` reaching the driver through `seq_ops_t.ctx`, default
   **2 Hz**. Because 2 Hz is below the ~9 Hz PWM floor, edges are toggled from

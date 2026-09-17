@@ -48,7 +48,7 @@ flight/mcu/test/run_native.sh           # firmware core (C, host compiler)
 ```sh
 # RP2350 firmware (details + macOS toolchain trap in flight/mcu/README.md)
 export PICO_SDK_PATH=~/pico-sdk PICO_TOOLCHAIN_PATH=~/arm-gnu-toolchain
-cmake -S flight/mcu -B flight/mcu/build -DPICO_PLATFORM=rp2350 -DPICO_BOARD=pico2
+cmake -S flight/mcu -B flight/mcu/build -DPICO_PLATFORM=rp2350   # board defaults to clouds_carrier (RP2350B)
 cmake --build flight/mcu/build -j8
 picotool load -f -x flight/mcu/build/clouds_fsw_mcu.uf2   # -f: no BOOTSEL needed
 ```
@@ -155,9 +155,14 @@ board's actuator channels are `ACT_R_1..4` (GP26/25/24/23), `ACT_EC`
 (GP19..GP22) and `ACT_HB` (GP17/GP18/GP46), but the page names *channels, not
 loads*, and guessing which relay holds pinch 1 is how an actuator gets driven
 from the wrong pin. Needs the load side of the schematic or a measurement.
-Also: the carrier is an **RP2350B** (GP0..GP47) while the build is
-`-DPICO_BOARD=pico2` (RP2350A, 30 GPIOs), so the INA226 alert pins, the 24 V
-regulator enable, five ADC channels and `ACT_HB_SENS` are all unreachable.
+Also: the carrier is an **RP2350B** (GP0..GP47). The build was
+`-DPICO_BOARD=pico2` (RP2350A, 30 GPIOs) until 2026-09-17, which left the
+INA226 alert pins, the 24 V regulator enable, five ADC channels and
+`ACT_HB_SENS` unreachable; it now defaults to `flight/mcu/boards/clouds_carrier.h`
+(`PICO_RP2350A 0`), the first user being the membrane switch on **GP30**.
+`-DPICO_BOARD=pico2` still builds for the bare Pico 2, with GP30 compiled out
+and `HKE_NO_MEMBRANE_SENSE` set. **Reconfigure `flight/mcu/build` from
+scratch** after pulling this: `PICO_BOARD` is cached.
 
 | What | Where | State |
 |---|---|---|
@@ -166,12 +171,16 @@ regulator enable, five ADC channels and `ACT_HB_SENS` are all unreachable.
 | INA226 24 V | **not fitted** | the rail holds slot 1 of `rail_mv[]` / `shunt_raw[]` and downlinks `RAIL_MV_INVALID`; the panel says `not fitted`, and `HKE_RAIL_FAIL` is **not** raised for it - an absent part is not a fault to chase (`ina226_fitted()`) |
 | BNO055 IMU | `0x29` **or** `0x28` - the strap, not the part: 0x29 is the datasheet default and COM3 has an internal pull-up, so `hw/bno055.c` tries both and latches whichever returns a whole ID block | **does not answer (2026-09-11)**: 0/50 ACK at 0x28 *and* 0x29, read- and write-probe, in the same sweep where 0x40/0x44/0x45/0x76 all answer - electrically absent from i2c0, which is *not* the "sub-sensor dies dead" on record from 2026-08-31, when it answered `CHIP_ID 0xA0`. The board changed between those dates. Driven by `hw/bno055.c`: **400 ms start-up wait (TSup) before the bus is touched at all**, then reset, 650 ms boot (TPOR), ID check, 19 ms CONFIGMODE wait, 7 ms mode switch, `OPR_MODE` read-back, 30 s retry - five 1 Hz sweeps to a first sample, never sleeping. With no part it reports `HKE_IMU_FAIL` and zeroed vectors, verified on hardware. **`BNO_INT` is on GP27** and reads `pu=1 pd=0`, which **proves nothing** - `INT_EN`/`INT_MSK` reset to `0x00` and nothing enables an interrupt, so a *working* part may leave the line undriven too (only an actively driven pin says anything). What is *absent* cannot be told apart from unpowered, held in nRESET, or PS1/PS0 strapped to UART - that needs a meter, not firmware. HID-I2C is ruled out: `0x40` answers as a verified INA226. `src/tools/bno055_probe.c` (`-DCLOUDS_BUILD_TOOLS=ON`, USB CDC) discovers the strap; flash it first when a part is fitted. Verified on the carrier with no part: 119 HK in 120 s, uptime monotonic (no watchdog reset), `IMU_FAIL` set, vectors zero, rest of the bus undisturbed. **The success path has never run against real silicon** |
 | Membrane solenoid | **GP26** (not GP8, unconnected) | **2 Hz**, loop-toggled via `core/sqwave`; driven from the GSE panel end to end (`MEMBRANE` duty), duty read back in HK |
+| Membrane position switch | **GP30**, input, internal pull-up, switch to ground | **LOW = solenoid energized (pulled)**. Downlinked as `HKV_MEMBRANE_PULLED` (bit 5 of `valve_status`, a *sensed* bit that may sit beside a drive bit); the panel's `Membrane` row reads `60 %  pulled` / `pushed`, `actuator_text` leaves it out. At 2 Hz the 1 Hz HK sample catches a random phase, so with the drive on it alternates between packets - stuck either way against the drive is the fault it exists to show. Needs the RP2350B board header (above). **Not yet measured on the carrier** |
+| Push-pull solenoid current sense | **GP46** (`ACT_HB_SENS`), ADC6 on the RP2350B | **downlinked raw**: 12-bit counts in `hk.hb_sense_raw` (8-sample mean, one point per 1 Hz sweep, so it swings with the 2 Hz cycle like the switch). Ground shows the pin **voltage** (`hb_sense_v()`, 3.3 V reference assumed) - **amps need `HB_SENSE_A_PER_V`, which is `None` until the sense gain is measured**; no guessed number reaches the panel or the log. Sentinel `HB_SENSE_INVALID` (0xFFFF) from a pico2 build, never 0 (an idle solenoid reads 0). Panel row `Solenoid I`, timeline `Solenoid sense` beside the duty. **Not yet measured on the carrier** |
 | CaCO₃ dispersion motor | **GP17 fwd / GP18 rev** | one 5 s scheduled pulse per release or per `DISPERSE` command, commanded from the panel and seen in `valve_status` for ~5 s; runs concurrently with the membrane, measured; **not in the SED**, reverse sense untested, **current unmeasured - not on any monitored rail** |
 | STLM20 ×2 | none | **not populated**; the old `ADC_TEMP1` collided with GP26 |
 | Keller 23SY ×2 | none | **off the design** - absent at every address, and the HK fields they fed (`p_ch_pa`, `rh2_cpct`) went with them |
 | SD / SPI0 | **pinout now known** from the carrier schematic (2026-09-11): SPI_0 on GP4/GP6/GP7, `SD_1_CS` GP14 + `SD_1_SENS` GP5, `SD_2_CS` GP16 + `SD_2_SENS` GP15 | still no defines. **M-11 is no longer blocked on the schematic but on a pin conflict**: `board.h` currently gives GP4..GP7 to the equalisation valves, and an `spi_init()` would drive whatever the valve code thinks it owns |
 
-HK is **54 B** (framed 70 B against an 83 B allowance, ceiling 67 B payload).
+HK is **56 B** (framed 72 B against an 83 B allowance, ceiling 67 B payload):
+54 B as below plus `hb_sense_raw` (u16) appended after `mission_t_s`, so no
+older field moved.
 The Keller pair's 6 B (`p_ch_pa` + `rh2_cpct`) became `shunt_raw[]`; the four
 extra bytes over that are the reserved 24 V rail, whose monitor is not fitted
 yet - a slot costs 4 B once, a wire-format change on fit day costs the MCU,
@@ -184,8 +193,8 @@ ever shown against an unknown voltage.
 So `temp1/2_cc` has **no source**. It is declared
 through `error_flags` (`HKE_*` in `core/frame.h`, `HkErrors` in
 `clouds_link/hk.py`, kept in step by a mirror test) rather than filled with
-invented numbers; bits 2 and 3 are now free, having been the Keller pair's
-`NO_CHAMBER_P` / `NO_RH2`. The SED baselines no IMU at all while risk MS002 is
+invented numbers; bit 3 is free (it was the Keller pair's `NO_RH2`), bit 2
+(`NO_CHAMBER_P`) is now `HKE_NO_MEMBRANE_SENSE`. The SED baselines no IMU at all while risk MS002 is
 "IMU failure" - hardware and document disagree.
 
 **M-15 has no sensor.** Seal verification was to compare chamber against

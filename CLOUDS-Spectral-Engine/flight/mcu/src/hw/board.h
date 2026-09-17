@@ -102,6 +102,28 @@
  * RP2350A does not have. */
 #define PIN_MEMBRANE_SENSE 30
 
+/* Push-pull solenoid current sense: the ACT_HB_SENS net on GP46, an analog
+ * output proportional to the current through the solenoid, read on ADC
+ * channel 6 (the RP2350B's ADC base pin is GP40, so GP46 is ADC6). Sampled
+ * once per 1 Hz HK sweep and downlinked RAW, as 12-bit counts, in
+ * hk_t.hb_sense_raw - the conversion to amps happens on the ground
+ * (clouds_link/hk.py HB_SENSE_A_PER_V), for the same reason the INA226 shunt
+ * voltages go down raw: the sense gain (shunt and amplifier, or the driver's
+ * proportional-current output resistor) is not recorded in the schematic
+ * page we have, and a wrong value on the ground is correctable against a
+ * logged session where one baked into firmware is not.
+ *
+ * Like the position switch above, the 1 Hz sample lands at a random phase of
+ * the membrane's 2 Hz cycle, so while the drive runs the reading is expected
+ * to swing between the hold current and ~0 from packet to packet. A reading
+ * that never rises with the drive on, or never falls with it off, is the
+ * fault this exists to show - the same test as the switch, from the
+ * electrical side.
+ *
+ * GP46 exists only on the RP2350B carrier (boards/clouds_carrier.h); a pico2
+ * build compiles the read out and downlinks HB_SENSE_INVALID. */
+#define PIN_HB_SENSE 46
+
 /* CaCO3 dispersion motor (M-07): a two-line driver pair, GP17 forward and
  * GP18 reverse, measured on the carrier. Driving GP17 high with GP18 low ran
  * the motor; the reverse sense is UNVERIFIED, so only the forward drive is

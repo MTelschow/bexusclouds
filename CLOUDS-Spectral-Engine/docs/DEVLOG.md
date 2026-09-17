@@ -18,7 +18,65 @@ without re-deriving anything. Newest entries first.
 
 ---
 
-## 2026-09-17 (newest) - The stored dark frame is committed, and a lit dark now says so
+## 2026-09-17 (newest) - The push-pull solenoid's current is sensed on GP46
+
+**The change.** The carrier schematic names `ACT_HB_SENS` on **GP46**, the
+sense output of the actuator bridge, and it carries the current of the
+membrane push-pull solenoid. On the RP2350B GP46 is **ADC6** (ADC base pin
+GP40), so `hw.c` now runs `adc_init()`, `adc_gpio_init(PIN_HB_SENSE)` and, in
+each 1 Hz sweep, eight `adc_read()` conversions averaged into
+`hk_t.hb_sense_raw`. That is the second feedback the firmware has from that
+actuator, after the GP30 position switch of the same day: the switch says
+whether the plunger moved, the sense says whether the coil drew current. A
+drive whose switch reads pulled but whose current stays at zero, or the
+reverse, is one row disagreeing with itself.
+
+**Raw counts on the wire, scaling on the ground - again.** The field is the
+12-bit ADC value, appended as a u16 after `mission_t_s` (HK **54 → 56 B**,
+framed 72 B against the 83 B allowance; no older field moved, so a logged
+session decodes with the same offsets). It is not an amp value because the
+sense gain is not known: the schematic page we have names the net and
+nothing about the shunt, amplifier or proportional-output resistor behind
+it, and a guessed constant in firmware would put a confident wrong current
+on every panel and in every log with no way back. So
+`clouds_link/hk.py` carries `HB_SENSE_A_PER_V = None`; `hb_sense_v()`
+gives the pin voltage against the 3.3 V ADC reference (itself an
+assumption until measured), `hb_sense_a()` returns `None` until the gain is
+set, and the panel row `Solenoid I` and the timeline series `Solenoid sense`
+show volts meanwhile. When the gain is measured, setting one constant turns
+every logged `hb_sense_raw` into amps.
+
+**The sentinel is 0xFFFF, not 0.** A 12-bit sample cannot exceed 4095, and
+0 counts is exactly what an idle solenoid reads, so a build with no GP46
+(pico2 / RP2350A) downlinks `HB_SENSE_INVALID` and the ground shows `-`.
+Guarded by `HAVE_HB_SENSE (PIN_HB_SENSE < NUM_BANK0_GPIOS)`, the same
+pattern as the switch; the SDK asserts on `adc_gpio_init()` outside its
+ADC range, so the pico2 build compiles the read out rather than trip it.
+
+**What the reading is expected to do.** One sample per second against a
+2 Hz drive lands at a random phase, so with the membrane on the value should
+swing between the coil's hold current and ~0 from packet to packet - the
+same shape as the switch bit, and `sim_mcu.py` produces it (counts ~1500
+during the on-phase, ~12 otherwise) so `--mock` shows it. Averaging across
+the cycle is a job for the logged series, not for the sample.
+
+**Tests.** The STLM20 guard `test_no_adc_sampling_while_stlm20_is_unpopulated`
+used "no ADC at all" as its proxy; it now checks its intent - the only
+`adc_gpio_init` is `PIN_HB_SENSE`, the only `adc_read()` is inside
+`hw_hb_sense_raw()`. New: `TestSolenoidCurrentSense` (pin, guard, raw
+downlink, wire mirror), three `TestHousekeeping` cases (roundtrip and
+scaling, amps appear once the gain is set, sentinel vs idle), a `sim_mcu`
+case that the sense follows the drive, `test_main.c` checks offset 54, and
+`verify_qt.py` renders `1.208V` / `0.000V` / `-`.
+
+**Checks.** `run_native.sh` 56/56; `pytest` 293 passed, 1 skipped;
+`verify.py` and `verify_qt.py` `VERIFY OK`; firmware builds clean for both
+`clouds_carrier` (sense live) and `pico2` (sense compiled out). **Not yet run
+on the carrier**: the ADC reference, the sense gain and the polarity of the
+reading against a real drive are the three things a bench session has to
+fill in.
+
+## 2026-09-17 - The stored dark frame is committed, and a lit dark now says so
 
 **The problem, reported from a second machine.** `dark_frame.npz` was not in
 the repository, so a clone on another Mac came up with no dark at all. It was
@@ -74,6 +132,72 @@ channel named with its excess; the mean shown to miss what the percentile
 catches; no-gap and no-window cases claiming nothing; and the committed file
 asserted present, 2048 px, and carrying the `calibration.json` serial - so
 losing it again fails the suite instead of being discovered on another laptop.
+
+## 2026-09-17 - The membrane solenoid gets a position switch on GP30, and the build learns it is an RP2350B
+
+**The change.** A push button now sits against the membrane push-pull
+solenoid's plunger, one side on **GP30**, the other on ground: closed while
+the solenoid is energized (pulled), open while released (pushed). Read as an
+input with the internal pull-up, so **LOW means pulled**. This is the first
+feedback the firmware has from that actuator - until now `membrane_duty` in
+HK was the *commanded* duty echoed back, and the only proof the solenoid
+moved was watching it.
+
+**Where it goes in HK.** Bit 5 of `valve_status`, `HKV_MEMBRANE_PULLED`. The
+byte was "one drive line at a time" and this bit is not a drive, so the
+contract changed to "at most one *drive* bit, plus the sensed bit", written at
+the definition in `core/frame.h` and mirrored in `clouds_link.hk.ValveStatus`.
+On the ground it is deliberately kept out of `actuator_text` (the `Driving`
+row and the headless monitor's `drive=`), because a sensed plunger printed in
+a list of held lines reads as the MCU holding a line. It appears where the
+check is: the `Membrane` row now reads `60 %  pulled` / `60 %  pushed`
+(`Housekeeping.membrane_text`), duty and position side by side, so a drive
+above zero whose switch never reads pulled - or a duty of zero whose switch
+does - is visible as one row disagreeing with itself. At the membrane's 2 Hz
+the 1 Hz HK sample lands at a random phase of the cycle, so with the drive on
+the row is *expected* to alternate between packets, pulled about `duty_pct`
+of the time; `sim_mcu.py` does the same so `--mock` shows the real shape.
+
+**Why the build had to change.** GP30 does not exist on an RP2350A. The
+carrier is an RP2350B (QFN80, GP0..GP47 - schematic 2026-09-11, `picotool
+info` `package: QFN80`), but the firmware was built with
+`-DPICO_BOARD=pico2`, which is RP2350A: `NUM_BANK0_GPIOS` is 30, the ADC base
+pin is GP26, and `gpio_init(30)` either trips the SDK's parameter assert or
+writes past the bank. Nothing in use was above GP29, so this had cost nothing
+- the 2026-09-11 entry noted it and moved on. Now `flight/mcu/boards/
+clouds_carrier.h` sets `PICO_RP2350A 0` with the pico2 UART and flash
+defaults and *no* SDK default I2C/SPI/LED pins (pico2's default SPI chip
+select is GP17, the dispersion motor; nothing here uses those macros, and a
+board header that names an actuator as a bus default is a trap for the next
+`spi_init()`). `CMakeLists.txt` selects it by default and adds `boards/` to
+`PICO_BOARD_HEADER_DIRS` *before* the SDK import, because the header is
+resolved during `pico_sdk_init()`. The flash size is pico2's 4 MB and is an
+**assumption** about the carrier's QSPI part - it bounds the linker region
+only, and the image is ~200 kB; `picotool info -a` will settle it.
+
+`-DPICO_BOARD=pico2` still builds, for the bare Pico 2. On it the read is
+compiled out behind `#if PIN_MEMBRANE_SENSE < NUM_BANK0_GPIOS` and
+`hw_read_sensors()` raises **`HKE_NO_MEMBRANE_SENSE`** (error bit 2, the old
+`NO_CHAMBER_P` slot), so the ground side shows the duty alone rather than
+reading an always-clear bit as "pushed". Same rule as `HKE_NO_TEMP`: no
+source, say so, never a plausible number.
+
+**A cached `PICO_BOARD` is the trap.** `build/` configured for pico2 keeps
+building pico2 after this change; a `cmake --build` there succeeds and
+produces firmware that reports `NO_MEMBRANE_SENSE` on the carrier. Delete and
+reconfigure.
+
+**Checks.** Both boards, both targets (`clouds_fsw_mcu`, `bno055_probe`),
+`-Wall -Wextra` clean. `tests/test_fsw_mcu_actuators.py::TestMembraneSense`
+pins GP30, input + pull-up, active-low decode, the `NUM_BANK0_GPIOS` guard and
+the carrier default; the HKV/HKE mirror tests cover the new bits;
+`test_link.py` covers the row text and the unsourced case; `verify_qt.py`
+sends `DISPERSE | MEMBRANE_PULLED` and requires `Membrane = 70 %  pulled`,
+`Driving = DISPERSE`. **Not yet run against the real switch** - the first
+thing to look for on the carrier is the row alternating under `MEMBRANE 60`
+and reading `pushed` steadily under `MEMBRANE 0`.
+
+---
 
 ## 2026-09-17 - A detector that was late at startup stayed missing all session
 

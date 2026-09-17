@@ -360,6 +360,41 @@ win.driver._shape = _orig_shape; _settle(6)
 check("tracking is on before the manual drag", win._track)
 win.sp_exp.setValue(7.0); app.processEvents()     # simulate a user drag -> _on_exposure fires
 check("tracking: a manual slider drag disables tracking", not win._track and not win.chk_track.isChecked())
+# The integration controls must be visibly, not just functionally, handed over:
+# while the servo owns the exposure they are disabled AND say who has them.
+check("tracking off: the integration controls are live",
+      win.sl_exp.isEnabled() and win.sp_exp.isEnabled()
+      and win.lbl_exp.text() == win._EXP_LABEL, repr(win.lbl_exp.text()))
+win.chk_track.setChecked(True); _wait_auto(); win.timer.stop(); app.processEvents()
+check("tracking on: the integration controls are greyed and labelled",
+      not win.sl_exp.isEnabled() and not win.sp_exp.isEnabled()
+      and win.lbl_exp.text().endswith("auto") and "uncheck" in win.lbl_exp.toolTip(),
+      repr(win.lbl_exp.text()))
+check("tracking on: the disabled slider is drawn as disabled",
+      ":disabled" in win.sl_exp.styleSheet())
+# slider and spin box are two views of ONE value: what the servo set must be
+# what the spin box prints, and the slider must sit at that position.
+win.chk_track.setChecked(False); app.processEvents()
+for _ms in (0.01, 0.023, 7.0, 123.456, 1000.0):
+    win._show_exposure(_ms)
+    check(f"integration {_ms:g} ms: slider and spin agree",
+          abs(float(win.sp_exp.value()) - _ms) < 10 ** -win.sp_exp.decimals()
+          and win.sl_exp.value() == win.sl_exp.to_pos(_ms),
+          f"spin={win.sp_exp.value()} pos={win.sl_exp.value()}")
+# a slider step must hand the driver exactly the number on screen (it used to
+# pass the unrounded value while the spin box showed the rounded one)
+win.sl_exp.setValue(win.sl_exp.value() - 40); app.processEvents()
+check("integration: a slider move sets the exposure the spin box shows",
+      abs(win.exposure_ms - float(win.sp_exp.value())) < 1e-9,
+      f"exp={win.exposure_ms} spin={win.sp_exp.value()}")
+# one arrow click is ~10%, at both ends of the five-decade range
+win._show_exposure(0.01)
+check("integration: the spin step follows the decade (low end)",
+      abs(win.sp_exp.singleStep() - 0.001) < 1e-9, str(win.sp_exp.singleStep()))
+win._show_exposure(1000.0)
+check("integration: the spin step follows the decade (high end)",
+      abs(win.sp_exp.singleStep() - 100.0) < 1e-9, str(win.sp_exp.singleStep()))
+win.sp_exp.setValue(7.0); app.processEvents()
 win._stop(); win.driver._shape = _orig_shape; app.processEvents()
 
 # single-channel support: swap to a 1-channel calibration and exercise the no-reference path
@@ -746,7 +781,8 @@ try:
                            rh1_cpct=3050, accel_mg=(1, -2, 981),
                            gyro_ddps=(0, 1, -1),
                            rail_mv=(24062, _hk.RAIL_MV_INVALID, 5095, 3297),
-                           shunt_raw=(514, 0, -40, 6667), error_flags=0)
+                           shunt_raw=(514, 0, -40, 6667), error_flags=0,
+                           hb_sense_raw=1500)
     _gse._refresh_sensors(_ok)
     check("flight: a fully sourced packet renders every sensor row",
           all(any(c.isdigit() for c in _gse._sensor_labels[n].text())
@@ -754,6 +790,21 @@ try:
               if n != "Rail 24 V"),
           str({n: _gse._sensor_labels[n].text()
                for n, _p, _f, _fg in _fl.SENSOR_FIELDS}))
+
+    # The solenoid current sense: volts at the pin while the gain is unknown,
+    # `-` from a build with no GP46 - and 0 counts is a reading (idle), not
+    # the sentinel.
+    check("flight: the solenoid sense renders the pin voltage",
+          _gse._sensor_labels["Solenoid I"].text() == "1.208V",
+          _gse._sensor_labels["Solenoid I"].text())
+    _gse._refresh_sensors(_hk.Housekeeping(hb_sense_raw=0))
+    check("flight: an idle solenoid reads 0 V, not no reading",
+          _gse._sensor_labels["Solenoid I"].text() == "0.000V",
+          _gse._sensor_labels["Solenoid I"].text())
+    _gse._refresh_sensors(_hk.Housekeeping())
+    check("flight: a build without GP46 shows no solenoid reading",
+          _gse._sensor_labels["Solenoid I"].text() == "-",
+          _gse._sensor_labels["Solenoid I"].text())
 
     # A rail with no monitor must not render as 0.00 V: the 24 V bus reads a
     # genuine 0 mV on a USB-powered bench, so a dead monitor and a dead rail
@@ -1008,7 +1059,7 @@ try:
     _gse.refresh()
     app.processEvents()
     check("restart: housekeeping flows through the new receiver",
-          _gse._hk_labels["Membrane"].text() == "35 %",
+          _gse._hk_labels["Membrane"].text() == "35 %  pushed",
           _gse._hk_labels["Membrane"].text())
     _tx2.close()
     check("restart: the button is usable again", _win.btn_restart.isEnabled())

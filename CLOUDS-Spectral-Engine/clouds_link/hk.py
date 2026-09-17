@@ -1,4 +1,4 @@
-"""Housekeeping payload (PacketType.HK) - 54 bytes, little-endian.
+"""Housekeeping payload (PacketType.HK) - 56 bytes, little-endian.
 
 Produced by the RP2350 at 1 Hz (C mirror flight/mcu/src/core/frame.c),
 relayed unchanged by the Pi, decoded by the GSE.
@@ -15,6 +15,12 @@ INA226 is not on the carrier yet, so its slot is reserved here and reported
 as ``RAIL_MV_INVALID`` until the part is populated. A reserved slot is the
 cheaper mistake: the alternative is a wire format that changes on the day
 the part arrives, on an instrument that is already flying its protocol.
+
+The last two bytes are the push-pull solenoid's current sense, the
+``ACT_HB_SENS`` net on GP46 read by the RP2350B's ADC: raw 12-bit counts,
+scaled to volts and amps here (``hb_sense_v()`` / ``hb_sense_a()``), for the
+same reason the INA226 shunts come down raw. Appended after ``mission_t_s``
+so every older field keeps the offset a logged session was written with.
 """
 from __future__ import annotations
 
@@ -22,8 +28,8 @@ import struct
 from dataclasses import dataclass, field, asdict
 from enum import IntEnum
 
-_HK = struct.Struct("<BBBBBBhhhHIhhhhhhHHHHhhhhII")
-SIZE = _HK.size  # 54
+_HK = struct.Struct("<BBBBBBhhhHIhhhhhhHHHHhhhhIIH")
+SIZE = _HK.size  # 56
 
 
 class SeqState(IntEnum):
@@ -88,6 +94,32 @@ SHUNT_LSB_UV = 2.5
 #: the firmware had already computed could not. Ohm's law in these units is
 #: exactly ``I[mA] = U[uV] / R[mOhm]``; ``rail_a()`` scales that to amps.
 RAIL_SHUNT_MOHM = (10.0, 15.0, 50.0, 50.0)
+
+#: "No reading" for ``hb_sense_raw`` - mirror of HB_SENSE_INVALID in
+#: flight/mcu/src/core/frame.h. The ADC is 12-bit, so a real sample is
+#: 0..4095 and 0xFFFF cannot be one. It is what a build that cannot reach
+#: GP46 (pico2 / RP2350A) downlinks: not 0, because 0 counts is exactly what
+#: a de-energized solenoid reads, and the two must stay distinguishable.
+HB_SENSE_INVALID = 0xFFFF
+
+#: Full scale of the RP2350 ADC and the reference it is measured against, in
+#: volts. 3.3 V is the SDK's nominal ADC_VREF; the carrier's actual reference
+#: has not been measured, so a sense *voltage* shown on the panel carries
+#: that assumption.
+HB_SENSE_ADC_COUNTS = 4096
+HB_SENSE_VREF_V = 3.3
+
+#: Amps per volt at the ACT_HB_SENS pin - the solenoid current-sense gain.
+#:
+#: ``None`` until measured: the schematic page we have names the net and
+#: nothing else (no sense resistor, no amplifier gain, no proportional-output
+#: resistor), and a guessed number here would put a confident wrong current
+#: on the panel and in every session log. While it is ``None`` the ground
+#: shows the sense **voltage** only; set it and ``hb_sense_a()`` starts
+#: returning amps, for live packets and for every logged ``hb_sense_raw``
+#: alike - which is why the counts go down raw rather than an amp value the
+#: firmware computed.
+HB_SENSE_A_PER_V: float | None = None
 
 
 class ValveStatus(IntEnum):
@@ -169,6 +201,10 @@ class Housekeeping:
     shunt_raw: tuple = field(default=(0, 0, 0, 0))
     uptime_s: int = 0
     mission_t_s: int = 0      # 0 until launch detection
+    #: Push-pull solenoid current sense (ACT_HB_SENS, GP46 / ADC6): raw
+    #: 12-bit ADC counts, 0..4095. ``HB_SENSE_INVALID`` means this MCU build
+    #: cannot reach the pin. Defaults to "no reading" like ``rail_mv``.
+    hb_sense_raw: int = HB_SENSE_INVALID
 
     def pack(self) -> bytes:
         return _HK.pack(self.state, self.flags, self.fired, self.valve_status,
@@ -177,7 +213,8 @@ class Housekeeping:
                         self.rh1_cpct, self.p_amb_pa,
                         *self.accel_mg, *self.gyro_ddps,
                         *self.rail_mv, *self.shunt_raw,
-                        self.uptime_s, self.mission_t_s)
+                        self.uptime_s, self.mission_t_s,
+                        self.hb_sense_raw)
 
     @classmethod
     def unpack(cls, payload: bytes) -> "Housekeeping":
@@ -190,7 +227,8 @@ class Housekeeping:
                    gyro_ddps=(v[14], v[15], v[16]),
                    rail_mv=(v[17], v[18], v[19], v[20]),
                    shunt_raw=(v[21], v[22], v[23], v[24]),
-                   uptime_s=v[25], mission_t_s=v[26])
+                   uptime_s=v[25], mission_t_s=v[26],
+                   hb_sense_raw=v[27])
 
     def rail_uv(self, i: int) -> float | None:
         """Shunt voltage of rail ``i`` in microvolts, or None if that monitor
@@ -211,6 +249,35 @@ class Housekeeping:
         if uv is None:
             return None
         return uv / (RAIL_SHUNT_MOHM[i] * 1000.0)
+
+    def hb_sense_v(self) -> float | None:
+        """Voltage at the solenoid current-sense pin, or None if this MCU
+        build has no reading for it. Assumes ``HB_SENSE_VREF_V``."""
+        if self.hb_sense_raw == HB_SENSE_INVALID:
+            return None
+        return self.hb_sense_raw * HB_SENSE_VREF_V / HB_SENSE_ADC_COUNTS
+
+    def hb_sense_a(self) -> float | None:
+        """Push-pull solenoid current in amps, or None when there is no
+        reading **or no calibration**: with ``HB_SENSE_A_PER_V`` unset a
+        current cannot be derived, and 0.0 would claim an idle solenoid."""
+        v = self.hb_sense_v()
+        if v is None or HB_SENSE_A_PER_V is None:
+            return None
+        return v * HB_SENSE_A_PER_V
+
+    @property
+    def hb_sense_text(self) -> str:
+        """The solenoid current row for HK displays: amps once the sense gain
+        is known, the pin voltage until then, ``-`` for no reading. The
+        voltage is shown rather than nothing because it already answers the
+        question the sensor exists for - does the current rise with the
+        drive and fall without it - and the scale can be applied later."""
+        v = self.hb_sense_v()
+        if v is None:
+            return "-"
+        a = self.hb_sense_a()
+        return f"{v:.3f}V" if a is None else f"{a:.3f}A"
 
     @property
     def link_text(self) -> str:
@@ -315,6 +382,7 @@ class Housekeeping:
         d["membrane_pulled"] = self.membrane_pulled
         d["error_text"] = self.error_text
         d["rail_text"] = self.rail_text
+        d["hb_sense_text"] = self.hb_sense_text
         ax, ay, az = d.pop("accel_mg")
         gx, gy, gz = d.pop("gyro_ddps")
         d.update(accel_x_mg=ax, accel_y_mg=ay, accel_z_mg=az,
@@ -325,4 +393,10 @@ class Housekeeping:
         for i, name in enumerate(("vin", "24v", "5v", "3v3")):
             a = self.rail_a(i)
             d[f"rail_{name}_a"] = "" if a is None else round(a, 4)
+        # Same rule for the solenoid sense: the raw counts are in the row via
+        # asdict(); the derived volts and amps sit beside them, blank where
+        # there is no reading or (amps) no gain to apply yet.
+        v, a = self.hb_sense_v(), self.hb_sense_a()
+        d["hb_sense_v"] = "" if v is None else round(v, 4)
+        d["hb_sense_a"] = "" if a is None else round(a, 4)
         return d
