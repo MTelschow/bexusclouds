@@ -41,7 +41,13 @@ from spectro.net_protocol import (DEFAULT_PORT, ProtocolError, TAG_BYTES,
                                   read_request, send_error, send_json,
                                   send_response)
 
-_WAIT_TIMEOUT_S = 30.0
+#: How long a ``grab`` waits for the acquisition thread to publish. It must
+#: stay **below the client's socket timeout** (``NetDriver``: 10 s) or the
+#: client gives up first and a stalled detector reports as a network fault -
+#: "link failed during grab" - instead of as this server's own message, which
+#: is the one that names the real problem. Well above the 1 Hz flight cadence,
+#: so an ordinary sample never trips it.
+_WAIT_TIMEOUT_S = 5.0
 
 
 class FrameHub:
@@ -65,11 +71,22 @@ class FrameHub:
             self._cond.notify_all()
 
     def wait_for_new(self, since: int, timeout: float = _WAIT_TIMEOUT_S):
-        """Return (n, frame, exposure_us); blocks until n > since or timeout."""
+        """Block until a frame newer than ``since``; return
+        ``(n, frame, exposure_us, fresh)``.
+
+        ``fresh`` is False when the wait timed out, and then ``frame`` is the
+        *old* one - the caller must not send it. That flag is in the tuple
+        rather than left to the caller to infer from ``n``, because inferring
+        it is exactly what the first version did not do: it returned the stale
+        frame and the handler sent it as if it were new. Over this stream
+        ``frame_counter`` is ``None``, so the panel's duplicate detection
+        cannot catch that either - a stalled acquisition thread would show as
+        a frozen trace that still looked live.
+        """
         with self._cond:
             if self._n <= since:
                 self._cond.wait_for(lambda: self._n > since, timeout=timeout)
-            return self._n, self._frame, self._exposure_us
+            return self._n, self._frame, self._exposure_us, self._n > since
 
 
 class _Handler(socketserver.StreamRequestHandler):
@@ -91,6 +108,17 @@ class _Handler(socketserver.StreamRequestHandler):
                 op = req.get("op")
                 if op == "identity":
                     info = srv.info_provider()
+                    if info is None:
+                        # No successful driver connect on this Pi yet
+                        # (SpectroSource.info). Answering with an empty model
+                        # and a default 2048 px let a panel show "connected"
+                        # against an experiment that has no camera, and only
+                        # the first grab said otherwise.
+                        send_error(self.connection,
+                                   "the flight app has no detector yet: no "
+                                   "successful connect since it started "
+                                   "(USB cable, or the vendor library)")
+                        continue
                     send_json(self.connection, {
                         "model": getattr(info, "model", ""),
                         "serial": getattr(info, "serial", ""),
@@ -100,11 +128,23 @@ class _Handler(socketserver.StreamRequestHandler):
                         "raw": getattr(info, "raw", ""),
                     })
                 elif op == "grab":
-                    served, frame, _exp = srv.hub.wait_for_new(served)
+                    # Passed, not defaulted: a default argument is bound
+                    # at def time, so the tests could not shorten it.
+                    n, frame, _exp, fresh = srv.hub.wait_for_new(
+                        served, _WAIT_TIMEOUT_S)
                     if frame is None:
                         send_error(self.connection,
                                    "no frame acquired yet (spectrometer down?)")
                         continue
+                    if not fresh:
+                        # Never resend: a duplicate is indistinguishable from
+                        # a live trace on the client (see wait_for_new).
+                        send_error(self.connection,
+                                   f"no new frame in {_WAIT_TIMEOUT_S:g} s - "
+                                   f"the flight app's acquisition has stalled "
+                                   f"(it retries; the last frame is held)")
+                        continue
+                    served = n
                     send_response(self.connection, TAG_BYTES, frame.tobytes())
                 elif op == "set_times":
                     us = int(req["exposure_us"])

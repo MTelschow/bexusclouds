@@ -23,8 +23,17 @@ void hw_actuators_service(uint64_t now_ms);
 /* Which actuator line is energized right now, as HKV_* bits (core/frame.h),
  * for hk_t.valve_status. The drives are bounded pulses that finish between
  * two 1 Hz housekeeping packets, so this is the only way ground sees a
- * commanded valve or motor drive actually happen. */
+ * commanded valve or motor drive actually happen. Also carries
+ * HKV_MEMBRANE_PULLED, the one sensed bit: the membrane position switch on
+ * GP30, read at the moment of the call. */
 uint8_t hw_actuator_status(void);
+
+/* The membrane position switch (board.h PIN_MEMBRANE_SENSE), decoded: true
+ * while the switch says the solenoid is energized (pulled). False when the
+ * pin is not reachable in this build - hw_read_sensors() raises
+ * HKE_NO_MEMBRANE_SENSE in that case so ground does not read the false as
+ * "pushed". */
+bool hw_membrane_pulled(void);
 
 /* Persistence (S.3): mirrored raw sectors on both SD cards, whichever has
  * the newer valid CRC wins. Returns false on cold start. */

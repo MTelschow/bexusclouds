@@ -132,9 +132,13 @@ typedef struct {
  * so ground can tell a stale reading from a real one. */
 #define HKE_BME280_FAIL (1u << 0)   /* BME280 absent or read failed */
 #define HKE_P_AMB_STALE (1u << 1)   /* p_amb_pa is a held last-good value */
-/* Bits 2 and 3 are free: they were HKE_NO_CHAMBER_P and HKE_NO_RH2, and went
- * out with the Keller pair and the fields they flagged. The surviving bits
- * keep their positions so an older session log still decodes. */
+/* Bit 2 was HKE_NO_CHAMBER_P and bit 3 HKE_NO_RH2; both went out with the
+ * Keller pair and the fields they flagged. Bit 2 has since been reused for
+ * the membrane switch; bit 3 is free. The surviving bits keep their
+ * positions so an older session log still decodes. */
+#define HKE_NO_MEMBRANE_SENSE (1u << 2) /* GP30 is not reachable in this build
+                                         * (pico2 / RP2350A), so
+                                         * HKV_MEMBRANE_PULLED has no source */
 #define HKE_IMU_FAIL (1u << 4)      /* IMU absent or reporting a fault */
 #define HKE_NO_TEMP (1u << 5)       /* STLM20 pair not fitted: temps unsourced */
 #define HKE_RAIL_FAIL (1u << 6)     /* one or more INA226 rails unreadable;
@@ -146,14 +150,23 @@ typedef struct {
  * ground sees a manually commanded drive happen: the pinch valves and the
  * dispersion motor are bounded pulses that are over long before the next 1 Hz
  * HK, so an operator who cannot see this field cannot see them at all. Only
- * one bit is ever set at a time - core/pulse drives one line at a time to
- * cap peak actuator current. The membrane is not here; it is a repeating
- * waveform, reported as a percentage in hk_t.membrane_duty. */
+ * one *drive* bit is ever set at a time - core/pulse drives one line at a
+ * time to cap peak actuator current. The membrane drive is not here; it is a
+ * repeating waveform, reported as a percentage in hk_t.membrane_duty.
+ *
+ * Bit 5 is different in kind: it is an INPUT, the membrane position switch on
+ * GP30 (hw/board.h PIN_MEMBRANE_SENSE), set while the switch reads the
+ * solenoid as energized (pulled). It says what the plunger is doing, not what
+ * the MCU is driving, so it may be set alongside a drive bit - and it is what
+ * tells ground a commanded membrane drive is moving anything. When the sense
+ * pin is not reachable in the build, HKE_NO_MEMBRANE_SENSE says the bit is
+ * unsourced rather than "pushed". */
 #define HKV_PINCH_1 (1u << 0)
 #define HKV_PINCH_2 (1u << 1)
 #define HKV_EQ1_CLOSE (1u << 2)
 #define HKV_EQ2_CLOSE (1u << 3)
 #define HKV_DISPERSE (1u << 4)
+#define HKV_MEMBRANE_PULLED (1u << 5)
 
 size_t frame_encode(uint8_t type, uint16_t seq, uint32_t t_s, uint16_t t_ms,
                     const uint8_t *payload, uint16_t plen,

@@ -18,7 +18,211 @@ without re-deriving anything. Newest entries first.
 
 ---
 
-## 2026-09-16 (newest) - `--mock` is back, and it is the whole chain
+## 2026-09-17 (newest) - A detector that was late at startup stayed missing all session
+
+**The report.** "Sometimes the connection to all sensors and motors works but
+the spectrometer data is not displayed. A restart fixes this most of the
+time."
+
+That shape - flight half fine, instrument half blank, restart cures it - is
+the signature of a *one-shot* startup step, and there was exactly one:
+
+```python
+if not args.flight:
+    win._connect()          # clouds_ui/main.py
+    if win.connected:
+        win._start()
+```
+
+`_connect()` on a `DriverError` posted the reason in the sidebar label and
+returned. Every **other** driver failure in the window arms the 3 s retry
+(`_on_driver_error` -> `_reconnect_timer`), and `_connect()` deliberately
+*stops* that timer on the way in, so the one failure the app could not
+recover from was the first one. The flight half is on its own sockets - UDP
+4000, TCP 4001 - and comes up regardless, so HK, events, valves and the motor
+all looked healthy while the spectrum stayed empty. Restarting worked because
+whatever was late had arrived by then.
+
+Reproduced offscreen against a closed port, before the fix:
+
+```
+connected: False
+reconnect timer active: False        # <- nothing would ever try again
+conn err label: cannot reach spectrometer server at 127.0.0.1:9 ...
+```
+
+**What is late, and why it is intermittent.** On this bench the detector is
+reached over the cable (`--net`, the default on macOS), so the startup
+connect is a TCP connect to the Pi's `--bench-stream` on 4010 - a port that
+only exists once the flight app is up, and one the GUI races on every boot of
+the pair. The local path has its own version: the vendor library's
+`search_for_camera` can miss on the first call after a replug (`DRIVER.md`).
+Both are transient by nature, which is precisely why a terminal first attempt
+was the wrong policy.
+
+**The fix.** `CloudsWindow.start_detector()` is now the startup path, and
+`main()` calls it instead of the `_connect()`/`_start()` pair: it arms the
+same retry the rest of the app uses, and records live as the standing intent
+(`_resume_on_reconnect`), so the attempt that gets through connects *and*
+starts the trace with no operator action. `_connect(retry=False)` also hands
+back a retry it interrupted rather than dropping it - a Connect click that
+comes a second too early must not disarm the loop that would have got there
+on its own - and it prints the reason to the terminal the window was launched
+from, where the old red label was easy to miss.
+
+Verified end to end offscreen: window opened against a dead port (refused,
+retry armed), a `net_server` then started on that port, and the window
+reconnected by itself - `connected=True running=True frame=(2048,)`. Two new
+`verify_qt.py` checks hold the behaviour: the startup failure arms the retry,
+and a manual click does not disarm it. `pytest` 264 passed, `verify.py` and
+`verify_qt.py` both `VERIFY OK`.
+
+**Three more ways the same screen could lie, found next to it and fixed in
+the same pass.** All three are on the `--net` path, i.e. the only way this
+bench sees the detector at all.
+
+* **The stream could serve the same frame twice as if it were new.**
+  `FrameHub.wait_for_new` returned `(self._n, self._frame, ...)` even when the
+  wait timed out with `_n <= since`, and the handler sent it - so a stalled
+  acquisition thread showed as a *frozen trace that still looked live*. Over
+  this stream `frame_counter` is `None`, so the panel's own duplicate
+  detection could not catch it either, and nothing else on screen would have
+  moved. `wait_for_new` now returns `(n, frame, exposure_us, fresh)`: the flag
+  is in the tuple rather than left to the caller to infer from `n`, because
+  inferring it is exactly what the first version failed to do. A stale wait is
+  answered with an error naming the stall, never with a frame; the client
+  reconnects and recovers by itself when acquisition resumes.
+* **The client gave up before the server answered.** `NetDriver`'s socket
+  timeout is 10 s; `bench_stream._WAIT_TIMEOUT_S` was 30 s. Every stalled
+  detector therefore reported as "link failed during grab" - a *network*
+  fault, pointing at the cable - instead of the server's own message, which
+  names the detector. The wait is now **5 s**, comfortably over the 1 Hz
+  flight cadence and well under the client's timeout, and a test asserts that
+  ordering rather than leaving it to two constants in two packages
+  (`test_the_wait_is_shorter_than_the_client_timeout`). The handler also
+  passes the timeout explicitly instead of taking the default argument, which
+  is bound at `def` time and could not be shortened from a test.
+* **`identity` succeeded when there was no detector.** `info_provider` is
+  `lambda: self.source.info`, `None` until the FSW's first successful connect;
+  the handler `getattr`ed past it and answered with an empty model/serial and
+  a default 2048 px. The panel therefore said "connected" against a Pi with no
+  camera and only the first `grab` said otherwise. It now refuses, naming the
+  cause, so the panel stays visibly disconnected and retries - which is the
+  honest state and, with the fix above, a self-healing one.
+
+While fixing the last of those, two socket bugs in `NetDriver` that it makes
+reachable: a `connect()` whose identity exchange fails left the socket open
+(one leaked descriptor per 3 s retry against a server behaving correctly), and
+a transport failure - a timeout mid-exchange - left a half-finished exchange
+in the socket. `dark_value()` and `frame_counter()` swallow `DriverError` by
+design, so that one would have desynced every later response by one, and a
+JSON body read as a frame is silent garbage until the tag check trips.
+Both now close the socket on the way out; the next call fails cleanly and the
+panel's retry opens a new one.
+
+`pytest` 268 passed, `verify.py` and `verify_qt.py` `VERIFY OK`.
+
+---
+
+## 2026-09-17 - Auto integration time froze the window, and the Auto button never converged
+
+**The report.** "Auto Integration time crashes the GUI or takes really long."
+Two independent bugs, plus a third found next to them that is worse than
+either.
+
+**1. The `Auto` button passed its own `checked` flag as the target.**
+
+```python
+self.btn_auto.clicked.connect(self._auto_expose)      # the bug
+```
+
+`QPushButton.clicked` carries a `bool checked`, and PyQt5 binds a signal
+argument to the first parameter of any slot that will accept one. Verified in
+this repo's venv against a slot with the same shape as `_auto_expose`:
+
+```
+args passed: [(False, 0.02, 1000.0, 8)]
+```
+
+So the hunt ran with `target=False`, `tgt = saturation_count * 0 = 0`, and its
+proportional step
+
+```python
+new = exp * min(max(tgt / max(pk, 1.0), 0.2), 8.0)
+```
+
+clamped to the **0.2 floor on every iteration**. The factor could never exceed
+1: the hunt could only divide. From any starting point outside 60-80 % FS it
+ran all 8 iterations down to the 0.02 ms rail and returned a black spectrum -
+including in a scene that was too *dim*, where the correct move is up. Only a
+first probe that happened to land in the band ever stopped it. The checkbox
+path (`_on_track` -> `_auto_expose()`, no arguments) was always correct, which
+is why the servo behaved and the button did not.
+
+The fix is `lambda: self._auto_expose()`, with the trap written beside it. The
+signature stays usable from code, and `verify_qt.py` now clicks the real button
+rather than calling the method, so the binding is what is checked.
+
+**2. The hunt ran on the GUI thread.** It is not one driver call. Each probe is
+`set_times_us` + settle discards + a median stack, and the loop is up to
+`iters` probes, each of which may take a second confirm probe - at the old
+2 + 7 frames that is **9 grabs per probe, 144 per hunt**.
+
+Over `--net` against the FSW's `--bench-stream`, every `grab()` blocks on
+`FrameHub.wait_for_new`, paced to `sample_interval_s` - **1 Hz, the flight
+cadence, never tuned up for bench use**. 144 grabs is ~144 s with the main
+thread never returning to the event loop. macOS marks the process
+unresponsive; the operator force-quits; the report says "crashes". The local
+Duo is no safer: `set_times_us` sets `frame_us = exposure_us`, so a grab costs
+about one integration time and a hunt near the 1000 ms rail lands in the same
+place.
+
+The live tick already solved this - `_AcquisitionWorker` exists because calling
+a bench-stream `grab()` straight from the 60 ms timer slot froze the window
+between frames. The hunt now uses it too, and:
+
+- the live loop is **paused for the duration**, because `_track_exposure` would
+  otherwise be steering the same exposure from the other direction, and resumed
+  when the hunt lands (carrying the result hint past `_start()`'s own);
+- a `budget_s=15` wall-clock bound sits on top of `iters`, so a scene that
+  cannot be solved gives back the best exposure found **and says so** instead
+  of holding the detector;
+- the probe stack drops 7 median frames to 3 (`_AUTO_STACK`; `robust_peak`
+  already despikes) - 5 grabs per probe, not 9;
+- `_single()` and `Capture dark` decline while a hunt is in flight rather than
+  blocking the GUI thread on the driver lock, and `Auto` / `Single` grey out.
+
+`verify_qt.py` checks the freeze directly: with `grab()` slowed to 50 ms the
+event loop must keep turning during a hunt (1456 turns, vs. 0 before).
+
+**3. `_disconnect_ui()` closed the driver out from under the live worker.**
+Found while tracing the error path. `_stop()` only stops the QTimer - a tick
+already handed to `_AcquisitionWorker` is still inside `grab()`. The close then
+ran unlocked:
+
+```python
+self._stop()
+try:
+    self.driver.close()          # no lock
+```
+
+`EurecaDriver.close()` calls `e9u_LSMD_stop_camera` / `close_camera` and nulls
+`_lib` and the pixel-buffer pointer, so a worker mid-`get_next_frame()` is a
+ctypes call into a stopped camera reading a freed buffer - a segfault with no
+Python traceback, and one that only appears where the vendor library is real
+(Pi, Windows), not on the Mac's `--net`. `closeEvent()` already waits on the
+worker for exactly this reason; `_disconnect_ui()` did not. It now takes the
+(re-entrant) driver lock, which serialises against the worker without waiting
+on a hunt that may have seconds left.
+
+**Not changed.** The hunt's algorithm - despiked peak, proportional jump,
+confirm-before-accept - is untouched; so is the 60-80 % band, the 1 Hz bench
+cadence, and the servo. `verify_qt.py` still reports the same convergence
+(48.7 ms, sat 0.01) from the same saturated start.
+
+---
+
+## 2026-09-16 - `--mock` is back, and it is the whole chain
 
 **The ask.** `./run_clouds_ui.sh --mock` should run the interface with no
 connection to any hardware. The flag was deliberately removed on 2026-09-11

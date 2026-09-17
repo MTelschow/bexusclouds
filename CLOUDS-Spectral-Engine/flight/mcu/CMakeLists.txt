@@ -2,10 +2,19 @@
 #
 #   export PICO_SDK_PATH=/path/to/pico-sdk   (SDK >= 2.0 for rp2350)
 #   mkdir build && cd build
-#   cmake -DPICO_PLATFORM=rp2350 -DPICO_BOARD=pico2 ..
+#   cmake -DPICO_PLATFORM=rp2350 ..            (PICO_BOARD defaults to clouds_carrier)
 #   make
 #   -> clouds_fsw_mcu.uf2 (drag onto the BOOTSEL drive)
 cmake_minimum_required(VERSION 3.13)
+
+# The carrier is an RP2350B (GP0..GP47); boards/clouds_carrier.h says so to
+# the SDK, which pico2 (RP2350A, GP0..GP29) does not - and GP30 carries the
+# membrane position switch. -DPICO_BOARD=pico2 still builds for a bare Pico 2,
+# with everything above GP29 compiled out (src/hw/board.h explains what that
+# costs). Both must be set before the SDK is imported: the board header is
+# resolved during pico_sdk_init().
+set(PICO_BOARD clouds_carrier CACHE STRING "Board type")
+list(APPEND PICO_BOARD_HEADER_DIRS ${CMAKE_CURRENT_LIST_DIR}/boards)
 
 include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 

@@ -157,6 +157,28 @@ def test_manual_drives_show_up_in_valve_status(sim):
     assert pi.command(Command.DISPERSE, key=2) == AckResult.INVALID
 
 
+
+def test_membrane_switch_follows_the_drive(sim):
+    """The simulated GP30 switch: never pulled with the membrane off, pulled
+    for some of the samples with it on (2 Hz sampled at a random phase), and
+    kept out of the Driving text like the real bit."""
+    mcu, cmd = sim
+    for _ in range(5):
+        assert not mcu.housekeeping().valve_status & hk.ValveStatus.MEMBRANE_PULLED
+        assert mcu.housekeeping().membrane_pulled is False
+    cmd.membrane(60)
+    assert mcu.housekeeping().membrane_duty == 60
+    seen = set()
+    t_end = time.monotonic() + 1.5
+    while time.monotonic() < t_end and len(seen) < 2:
+        seen.add(mcu.housekeeping().membrane_pulled)
+        time.sleep(0.02)
+    assert seen == {True, False}, "the switch should alternate under a 2 Hz drive"
+    assert "MEMBRANE_PULLED" not in mcu.housekeeping().actuator_text
+    cmd.membrane(0)
+    assert mcu.housekeeping().membrane_pulled is False
+
+
 def test_abort_locks_the_actuators_out(sim):
     """TERMINATION/SAFE mean off and stay off - an abort is not reversible
     from the panel."""

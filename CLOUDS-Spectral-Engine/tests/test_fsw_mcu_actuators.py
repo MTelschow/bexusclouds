@@ -388,6 +388,77 @@ class TestMembraneDrive:
         assert "pwm_set_enabled" in helper
 
 
+class TestMembraneSense:
+    """The membrane position switch on GP30: a push button the solenoid
+    plunger presses, wired to ground, read with the internal pull-up, so LOW
+    means the solenoid is energized (pulled).
+
+    GP30 exists only on the RP2350B carrier. The firmware was built for pico2
+    (RP2350A, GP0..GP29) until this pin arrived, so the build now defaults to
+    the carrier board header, and the read is compiled out - and flagged - on
+    a build that cannot reach the pin, rather than poking a register the
+    RP2350A does not have.
+    """
+
+    def test_sense_pin_is_gp30(self, board):
+        assert _define(board, "PIN_MEMBRANE_SENSE") == 30
+
+    def test_sense_pin_is_an_input_with_the_internal_pull_up(self):
+        hw = _read("src", "hw", "hw.c")
+        body = hw.split("void hw_init", 1)[1]
+        out_pins = body.split("out_pins[] = {", 1)[1].split("}", 1)[0]
+        assert "PIN_MEMBRANE_SENSE" not in out_pins, (
+            "driving the switch line low reads exactly like a pulled solenoid")
+        assert re.search(r"gpio_set_dir\s*\(\s*PIN_MEMBRANE_SENSE\s*,\s*GPIO_IN",
+                         body), "the switch must be an input"
+        assert re.search(r"gpio_pull_up\s*\(\s*PIN_MEMBRANE_SENSE\s*\)", body), (
+            "the switch is to ground: without the pull-up the open state floats")
+        assert not re.search(r"gpio_pull_down\s*\(\s*PIN_MEMBRANE_SENSE", hw)
+
+    def test_active_low_means_pulled(self):
+        hw = _read("src", "hw", "hw.c")
+        body = hw.split("bool hw_membrane_pulled", 1)[1].split("\n}", 1)[0]
+        assert re.search(r"return\s+!\s*gpio_get\s*\(\s*PIN_MEMBRANE_SENSE", body), (
+            "the closed switch reads LOW, and LOW is the energized solenoid")
+
+    def test_sense_reaches_housekeeping_as_a_status_bit(self):
+        hw = _read("src", "hw", "hw.c")
+        body = hw.split("uint8_t hw_actuator_status", 1)[1].split("\n}", 1)[0]
+        assert "HKV_MEMBRANE_PULLED" in body and "hw_membrane_pulled()" in body
+
+    def test_a_build_without_gp30_flags_the_bit_unsourced(self):
+        """On pico2 NUM_BANK0_GPIOS is 30. The read must be compiled out
+        behind that, and HKE_NO_MEMBRANE_SENSE raised, so a clear bit is
+        never shown as a released plunger."""
+        hw = _read("src", "hw", "hw.c")
+        assert re.search(r"#define\s+HAVE_MEMBRANE_SENSE\s+\(PIN_MEMBRANE_SENSE\s*<"
+                         r"\s*NUM_BANK0_GPIOS\)", hw)
+        for use in ("gpio_get(PIN_MEMBRANE_SENSE", "gpio_init(PIN_MEMBRANE_SENSE"):
+            assert use in hw
+            before = hw.rsplit(use, 1)[0]
+            assert before.rstrip().splitlines()[-3:] and \
+                "HAVE_MEMBRANE_SENSE" in "\n".join(before.splitlines()[-8:]), (
+                    "%s must sit under #if HAVE_MEMBRANE_SENSE" % use)
+        sensors = hw.split("void hw_read_sensors", 1)[1]
+        assert re.search(r"#if\s+!HAVE_MEMBRANE_SENSE\s*\n(.*\n)*?\s*hk->error_flags"
+                         r"\s*\|=\s*HKE_NO_MEMBRANE_SENSE", sensors)
+
+    def test_the_build_targets_the_rp2350b_carrier(self):
+        """pico2 is RP2350A: GP30 does not exist there, and the SDK's gpio
+        calls would either assert or write past the bank. The default board
+        must be the carrier header, and that header must say RP2350B."""
+        cmake = _read("CMakeLists.txt")
+        assert re.search(r"set\s*\(\s*PICO_BOARD\s+clouds_carrier\s+CACHE", cmake)
+        assert "PICO_BOARD_HEADER_DIRS" in cmake
+        assert cmake.index("PICO_BOARD_HEADER_DIRS") < cmake.index(
+            "pico_sdk_import.cmake"), "the board is resolved during SDK import"
+        header = _read("boards", "clouds_carrier.h")
+        assert re.search(r"^#define\s+PICO_RP2350A\s+0\s*$", header, re.M)
+        # the downlink UART stays where uart_io.c and the stdio test expect it
+        assert re.search(r"#define\s+PICO_DEFAULT_UART_TX_PIN\s+0\b", header)
+        assert re.search(r"#define\s+PICO_DEFAULT_UART_RX_PIN\s+1\b", header)
+
+
 class TestDispersionMotor:
     """The CaCO3 dispersion motor on GP17/GP18, measured on the carrier.
 

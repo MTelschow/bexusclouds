@@ -1,0 +1,30 @@
+Regler
+
+Gyro sensor
+
+partical sensor
+
+on HB_SENS there is an additinal current sensor for the push pull, confure it and add it to the sensors
+
+Integration time slider seems wrong (especially when auto integration time on, so in that case diable it)
+
+Add speed adjustment for the motor and create a slider in the GUI for it
+
+dark measurement is seemingly not in git repository, on a differnt mac it was not present
+
+
+IN PROGRESS:
+
+
+
+
+
+
+
+Done:
+
+Add Push Pull button
+
+Investigate Spectro data not appearing until restart
+
+Auto Integration time crashes (takes really long)

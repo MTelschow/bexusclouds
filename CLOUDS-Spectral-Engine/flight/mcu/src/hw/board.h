@@ -20,7 +20,8 @@
  *   GP10 SPI_1_SCK       GP27 BNO_INT         GP43 ADC_3
  *   GP11 SPI_1_MOSI      GP28 SDA_0           GP44 ADC_4
  *   GP12 SPI_1_CS2       GP29 SCL_0           GP45 ADC_5
- *   GP13 SPI_1_CS3       GP30/31/32 unnamed   GP46 ACT_HB_SENS
+ *   GP13 SPI_1_CS3       GP30 (see below)     GP46 ACT_HB_SENS
+ *                        GP31/32 unnamed
  *   GP14 SD_1_CS                              GP47 SPI_1_CS4
  *   GP15 SD_2_SENS
  *   GP16 SD_2_CS
@@ -41,11 +42,18 @@
  * header already carries. These need the load side of the schematic, or a
  * measurement in the manner of DEVLOG 2026-08-31, before they move.
  *
- * It also says the carrier is an RP2350B (80-pin, GP0..GP47). The build is
- * -DPICO_BOARD=pico2, i.e. RP2350A with 30 GPIOs, so everything from GP33 up
- * in that table - both debug lines, all four INA226 alerts, the 24 V
- * regulator enable, five ADC channels and the H-bridge current sense - is
- * unreachable from this firmware.
+ * It also says the carrier is an RP2350B (80-pin, GP0..GP47). Since
+ * 2026-09-17 the build says so too: PICO_BOARD defaults to clouds_carrier
+ * (boards/clouds_carrier.h, PICO_RP2350A 0), so GP30..GP47 are reachable. The
+ * old -DPICO_BOARD=pico2 build (RP2350A, 30 GPIOs) still works for a bare
+ * Pico 2; on it, every use of a pin above GP29 is compiled out behind
+ * NUM_BANK0_GPIOS and reported as unsourced, never read from a register that
+ * is not there.
+ *
+ * GP30 is not named on that schematic page. It carries the membrane position
+ * switch added on 2026-09-17: a push button mechanically actuated by the
+ * push-pull solenoid's plunger, wired to ground, closed while the solenoid is
+ * energized (pulled). See PIN_MEMBRANE_SENSE.
  * --------------------------------------------------------------------------- */
 #ifndef CLOUDS_BOARD_H
 #define CLOUDS_BOARD_H
@@ -76,6 +84,23 @@
  * input carries an external pull-down (GP26 reads pu=0 pd=0), so the solenoid
  * is de-energized whenever the MCU is not driving it. DEVLOG 2026-08-31. */
 #define PIN_MEMBRANE_PWM 26
+
+/* Membrane position switch: a push button pressed by the solenoid plunger,
+ * one side on GP30, the other on ground. Input with the internal pull-up, so
+ * open reads 1 and the closed switch reads 0 - LOW means the solenoid is
+ * energized (pulled), HIGH means released (pushed). It is read into HK as
+ * HKV_MEMBRANE_PULLED, a sensed state and not a drive: it can coexist with a
+ * drive bit, and at the membrane's 2 Hz the 1 Hz HK sample lands at a random
+ * phase of the cycle, so over many packets it should read pulled about
+ * duty_pct of the time while the drive is on and never while it is off. A
+ * bit that is stuck either way against the drive is the fault this exists
+ * to show.
+ *
+ * GP30 exists only on the RP2350B carrier (boards/clouds_carrier.h). A
+ * pico2 build has NUM_BANK0_GPIOS 30, so hw.c compiles the read out and
+ * raises HKE_NO_MEMBRANE_SENSE instead of touching GPIO registers that the
+ * RP2350A does not have. */
+#define PIN_MEMBRANE_SENSE 30
 
 /* CaCO3 dispersion motor (M-07): a two-line driver pair, GP17 forward and
  * GP18 reverse, measured on the carrier. Driving GP17 high with GP18 low ran

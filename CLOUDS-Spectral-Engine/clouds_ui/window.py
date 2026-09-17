@@ -182,7 +182,8 @@ class CloudsWindow(QtWidgets.QMainWindow):
 
     def __init__(self, mock=False, kind=None, host=None,
                  receiver=None, commander=None, session=None,
-                 source="detector", persist_dark=True):
+                 source="detector", persist_dark=True,
+                 mock_stack=None, link_factory=None):
         super().__init__()
         # The title is the one label that is on screen even when the window is
         # behind something else or in a screenshot someone later argues from,
@@ -224,7 +225,10 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self._driver_lock = threading.RLock()   # serializes driver I/O vs. the live-tick worker
         self._acq_worker = None
         self._resume_on_reconnect = False   # was live when the link dropped -> resume on reconnect
+        self._ever_connected = False        # has the detector ever answered this session
         self._reconnect_worker = None
+        self._auto_worker = None        # exposure hunt, off the GUI thread (see _auto_expose)
+        self._auto_resume = False       # was live when the hunt took the detector over
         self._reconnect_timer = QtCore.QTimer(self)
         self._reconnect_timer.setInterval(RECONNECT_INTERVAL_MS)
         self._reconnect_timer.timeout.connect(self._try_reconnect)
@@ -278,6 +282,18 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self.rx = receiver
         self.commander = commander
         self.session = session
+        #: The simulated flight chain under --mock (clouds_ui.mock_stack), or
+        #: None. Owned here so that Restart can stop and re-create it with
+        #: the receiver it downlinks to.
+        self.mock_stack = mock_stack
+        #: Zero-argument callable returning an object with `receiver`,
+        #: `commander`, `session` and `mock_stack` attributes (main.Links).
+        #: Restart uses it to build the flight half again from the flags the
+        #: session started with; None means Restart can only re-open the
+        #: detector and the flight half stays as it is (there is none, or the
+        #: caller built it by hand, as verify_qt.py does).
+        self._link_factory = link_factory
+        self._restarting = False
         #: "detector" | "downlink" - what the spectrum view is drawing.
         self.source = source
         self._src_bin = None        # quick-look bin factor, for the x axis
@@ -573,8 +589,27 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self.logo_label = logo
         sub = QtWidgets.QLabel(f"Spectral Engine   v{VERSION}")
         sub.setStyleSheet("color:#5a6b7a; font-size:13px;")
+        # Restart sits in the header, not in Device or in a flight section,
+        # because it is the one control that acts on both halves: the
+        # detector link and the downlink, uplink, session log and (mock)
+        # flight chain all come back as if the app had just been launched -
+        # with the window, its layout and the operator's settings intact.
+        self.btn_restart = QtWidgets.QPushButton("Restart")
+        self.btn_restart.setStyleSheet(self._flat_btn())
+        self.btn_restart.setToolTip(
+            "Restart everything without closing the window: reopen the "
+            "detector, and bring the downlink receiver, the command link and "
+            "the session log up again as a fresh session. Exposure, dark, "
+            "reference, view and zoom are kept; the housekeeping timeline "
+            "and event list start over with the new session.")
+        self.btn_restart.clicked.connect(lambda: self.restart())
+        ver = QtWidgets.QHBoxLayout()
+        ver.setContentsMargins(0, 0, 0, 0)
+        ver.setSpacing(8)
+        ver.addWidget(sub, 1)
+        ver.addWidget(self.btn_restart, 0)
         v.addWidget(logo)
-        v.addWidget(sub)
+        v.addLayout(ver)
         rule = QtWidgets.QFrame()
         rule.setFrameShape(QtWidgets.QFrame.HLine)
         rule.setStyleSheet("color:#dde3e9;")
@@ -651,7 +686,14 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self.btn_auto.setStyleSheet(self._flat_btn())
         self.btn_auto.setToolTip("Auto-set the integration time to ~70% of full scale\n"
                                  "(brightest of both channels, without saturating).")
-        self.btn_auto.clicked.connect(self._auto_expose)
+        # The lambda is load-bearing: `clicked` carries a `checked` bool, and
+        # PyQt5 binds it to the first parameter of any slot that will take one -
+        # so a direct connect called _auto_expose(target=False). tgt then came
+        # out 0, the proportional step clamped to its 0.2 floor every iteration,
+        # and the hunt could only ever DIVIDE the exposure: it ran all `iters`
+        # probes down to the 0.02 ms rail and returned a black spectrum, unless
+        # the very first probe happened to land in the band.
+        self.btn_auto.clicked.connect(lambda: self._auto_expose())
         run.addWidget(self.btn_run)
         run.addWidget(self.btn_single)
         run.addWidget(self.btn_auto)
@@ -662,7 +704,8 @@ class CloudsWindow(QtWidgets.QMainWindow):
                                   "frame from the recent measurements so the brightest channel's peak\n"
                                   "stays between 60-80% of full scale - for scenes whose brightness\n"
                                   "changes, e.g. sweeping the fibre around the room.\n"
-                                  "Dragging the integration slider hands control back to you.")
+                                  "The integration controls are greyed while this is on - uncheck\n"
+                                  "it to set the integration time by hand.")
         self.chk_track.toggled.connect(self._on_track)
         self.chk_track.setChecked(True)             # auto integration time is on by default
         v.addWidget(self.chk_track)
@@ -1108,13 +1151,42 @@ class CloudsWindow(QtWidgets.QMainWindow):
 
         sl.valueChanged.connect(from_slider)
         sp.valueChanged.connect(from_spin)
+        # The servo and the auto hunt set the exposure from code, and they have
+        # to move BOTH widgets (see _show_exposure) - the spin box alone leaves
+        # the slider parked at a stale position that contradicts it.
+        sl.to_pos = to_pos
         return w, sl, sp
+
+    # ------------------------------------------------------- programmatic set
+    def _show_exposure(self, ms):
+        """Put `ms` on the integration widgets without re-entering `_on_exposure`.
+
+        Both of them: the spin box and the log slider are two views of one
+        value, and every code path that moved only the spin box (auto hunt,
+        tracking servo, stored-dark restore) left the slider showing the
+        exposure from before - which then looked like the slider was wrong,
+        and a drag from that stale position jumped the exposure."""
+        for wdg, val in ((self.sp_exp, ms), (self.sl_exp, self.sl_exp.to_pos(ms))):
+            wdg.blockSignals(True)
+            wdg.setValue(val)
+            wdg.blockSignals(False)
+
+    def _set_exposure_enabled(self, on):
+        """Grey the integration controls while something else owns the exposure.
+
+        While `auto integration time` is on the servo rewrites the exposure
+        every frame, so a manual value survives at most one frame - a live
+        control that does nothing is worse than a greyed one."""
+        for wdg in (self.sl_exp, self.sp_exp):
+            wdg.setEnabled(bool(on))
 
     # -------------------------------------------------------------- callbacks
     def _on_exposure(self, v):
         self.exposure_ms = float(v)
-        if self._track:                     # a manual slider drag takes back control
-            self.chk_track.setChecked(False)
+        if self._track:                     # belt and braces: the controls are
+            self.chk_track.setChecked(False)   # greyed while tracking, and the
+                                            # servo's own writes go through
+                                            # _show_exposure with signals blocked
         if self.dark is not None and not self._dark_exposure_ok():
             self._set_hint(f"dark is for {self._dark_meta.exposure_ms:g} ms - held back "
                            f"at {self.exposure_ms:g} ms; recapture to use it here")
@@ -1126,12 +1198,16 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self._track = bool(on)
         self._track_msg = ""
         self._oob_count = 0
+        self._set_exposure_enabled(not self._track)
+        self._set_hint("auto integration time ON - holding 60-80% full scale"
+                       if on else "auto integration time off")
         if on and self.connected:
             if not self.running:
                 self._start()               # tracking only does anything live
-            self._auto_expose()             # snap from cold once, then the servo tracks smoothly
-        self._set_hint("auto integration time ON - holding 60-80% full scale"
-                       if on else "auto integration time off")
+            # Snap from cold once, then the servo tracks smoothly. The hint goes
+            # up first because this now returns immediately - the hunt runs on a
+            # worker and posts its own progress and result.
+            self._auto_expose()
 
     def _on_navg(self, v):
         self.navg = int(v)
@@ -1240,8 +1316,16 @@ class CloudsWindow(QtWidgets.QMainWindow):
         the bottom hint line gets overwritten by whatever the operator does
         next, so it alone isn't a reliable place to notice a dropped link."""
         self._stop()
+        # _stop() only stops the QTimer - a live tick already handed to
+        # _AcquisitionWorker is still inside grab(). close() nulls the vendor
+        # library handle and the pixel-buffer pointer, so closing under that
+        # thread is a ctypes call into a stopped camera: a segfault with no
+        # Python traceback. closeEvent() waits on the worker for exactly this
+        # reason; here the (re-entrant) driver lock does the same job without
+        # blocking on a hunt that may have seconds left to run.
         try:
-            self.driver.close()
+            with self._driver_lock:
+                self.driver.close()
         except Exception:
             pass
         self.connected = False
@@ -1291,33 +1375,68 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self._update_source_banner()
         if self._resume_on_reconnect:
             # was live when the link died (Ethernet or USB pull, either can
-            # crash/drop the far end) - resume without waiting for the
-            # operator to notice and press Run again.
+            # crash/drop the far end), or is the startup path's standing
+            # intent to be live - resume without waiting for the operator to
+            # notice and press Run again.
+            first = not self._ever_connected
             self._resume_on_reconnect = False
             self._start()
-            self._set_hint("reconnected - live resumed")
+            self._set_hint("connected - live" if first
+                           else "reconnected - live resumed")
         else:
             self._set_hint("connected - press Run for live, or Single")
+        self._ever_connected = True
         # No eager _auto_expose() snap here: it hunts over several blocking
         # driver round-trips (settle grabs + a 7-frame average per probe,
         # up to 8 iterations) - fine for a manual toggle, but over --net or
         # slow hardware it would stall startup for seconds. The continuous
         # servo (_track_exposure) converges gradually once live instead.
 
-    def _connect(self):
-        self._reconnect_timer.stop()   # a manual click takes over from any auto-retry in flight
+    def start_detector(self) -> None:
+        """Startup path: connect and go live, and keep trying if the detector
+        is not there yet.
+
+        The detector can be seconds behind the window at start - the Pi's
+        --bench-stream comes up with the flight app, and a USB Duo can lose
+        the first ``search_for_camera`` after a replug. Every *later* driver
+        error arms the 3 s retry; the one at startup did not, so a transient
+        left the instrument half dead for the whole session with only a label
+        to say so, and restarting the app was the operator's fix. Same retry
+        here, with live remembered as the intent so the attempt that gets
+        through starts it.
+        """
+        self._resume_on_reconnect = True
+        self._connect(retry=True)
+
+    def _connect(self, retry: bool = False):
+        # A manual click takes over from any auto-retry in flight - but if it
+        # fails, hand the retry back rather than dropping it: a click that
+        # came a second too early must not disarm the loop that would have
+        # got there on its own.
+        was_retrying = self._reconnect_timer.isActive()
+        self._reconnect_timer.stop()
         try:
             with self._driver_lock:
                 info = self.driver.connect()
         except DriverError as e:
             self.connected = False
+            msg = str(e).split('\n')[0]
             self.lbl_device.setText("connection failed")
-            self.lbl_conn_error.setText(str(e).split('\n')[0][:200])
-            self._set_hint(str(e).split('\n')[0])
+            self.lbl_conn_error.setText(msg[:200])
             try:
                 self.driver.close()        # release a half-opened device
             except Exception:
                 pass
+            if retry or was_retrying:
+                retry_s = RECONNECT_INTERVAL_MS // 1000
+                self._set_hint(f"{msg[:80]} - retrying every {retry_s}s ...")
+                self._reconnect_timer.start()
+            else:
+                self._resume_on_reconnect = False
+                self._set_hint(msg)
+            # The window is launched from a terminal and the reason is
+            # otherwise a small red label in the sidebar.
+            print(f"[CLOUDS] detector: {msg}")
             return
         self._on_connected(info)
 
@@ -1361,35 +1480,161 @@ class CloudsWindow(QtWidgets.QMainWindow):
             self.flight_timer.stop()
             if self._acq_worker is not None:
                 self._acq_worker.wait()
+            if self._auto_worker is not None:
+                self._auto_worker.wait()
             if self._reconnect_worker is not None:
                 self._reconnect_worker.wait()
             if self.connected:
                 self.driver.close()
         except Exception:
             pass
-        # The flight half owns sockets and a session log; the summary is
-        # written here because it needs the receiver's gap counters, which die
-        # with the receiver.
-        try:
-            if self.session is not None:
-                gaps = self.rx.gaps if self.rx is not None else None
-                self.session.export_summary(
-                    self.session.hk_path.replace("_hk.csv", "_summary.json"),
-                    gaps)
-                self.session.close()
-            if self.commander is not None:
-                self.commander.close()
-            if self.rx is not None:
-                self.rx.stop()
-        except Exception:
-            pass
+        self.close_links()
         super().closeEvent(ev)
+
+    def close_links(self) -> None:
+        """Shut the flight half down: command link, mock chain, receiver,
+        then the session log. Shared by closeEvent and Restart, and safe to
+        call twice - everything is set to None once closed.
+
+        The order is the data's: the receiver's thread writes into the
+        session log from its callbacks, so the log closes only after the
+        receiver has stopped, or a packet landing in between hits a closed
+        file from the receiver's thread. The summary is written here because
+        it needs the receiver's gap counters, which die with the receiver.
+        """
+        rx, cmd, session, stack = (self.rx, self.commander, self.session,
+                                   self.mock_stack)
+        self.rx = self.commander = self.session = self.mock_stack = None
+        gaps = rx.gaps if rx is not None else None
+        for step in ((lambda: cmd.close()) if cmd is not None else None,
+                     (lambda: stack.stop()) if stack is not None else None,
+                     (lambda: rx.stop()) if rx is not None else None):
+            if step is None:
+                continue
+            try:
+                step()
+            except Exception:
+                pass
+        if session is not None:
+            try:
+                session.export_summary(
+                    session.hk_path.replace("_hk.csv", "_summary.json"), gaps)
+            except Exception:
+                pass
+            try:
+                session.close()
+            except Exception:
+                pass
+
+    def restart(self) -> None:
+        """Restart everything the window talks to, without closing the window.
+
+        The detector driver is closed and re-opened; the downlink receiver,
+        the command link, the session log and the mock flight chain are torn
+        down and built again from the session's own flags (`link_factory`);
+        then the startup sequence runs as `main` ran it. What the operator
+        set - exposure, averaging, dark, reference, view, axis, zoom, fold
+        state, the interlock checkbox - is kept, because none of it belonged
+        to a connection. What the connections produced - housekeeping,
+        events, the timeline, the gap counters, the session file - starts
+        over, and the old session is closed with its summary like any other.
+
+        Why not re-exec the process: the window is the thing the operator
+        does not want to lose. Re-plugging the cable or power-cycling the
+        Pi is what this is for, and the software following that should not
+        cost the layout and the last ten minutes of context on screen.
+
+        Runs on the GUI thread and blocks it while in-flight workers finish
+        (the same wait closeEvent does); the hint says so first. Their
+        finished slots still fire when the event loop is pumped below, so
+        the instrument half is torn down only after they have run, against
+        the driver and state they expect - `_restarting` keeps those slots
+        from starting the live loop again in between.
+        """
+        if self._restarting:
+            return
+        self._restarting = True
+        self.btn_restart.setEnabled(False)
+        self._set_hint("restarting ...")
+        QtWidgets.QApplication.processEvents()
+        try:
+            # -- instrument half down -----------------------------------------
+            # was_connected also covers a link that dropped and is mid-retry:
+            # that operator wants the detector back just as much.
+            was_connected = self.connected or self._reconnect_timer.isActive()
+            self._reconnect_timer.stop()
+            self._resume_on_reconnect = False
+            self._stop()
+            for w in (self._acq_worker, self._auto_worker, self._reconnect_worker):
+                if w is not None:
+                    w.wait()
+            for _ in range(50):
+                if (self._acq_worker is None and self._auto_worker is None
+                        and self._reconnect_worker is None):
+                    break
+                QtWidgets.QApplication.processEvents()
+            self._auto_resume = False
+            self._stop()
+            self._disconnect_ui("restarting ...")
+            extra = {"host": self.host} if self.kind == "net" else {}
+            self.driver = open_driver(mock=self.mock, kind=self.kind, **extra)
+
+            # -- flight half down, then up --------------------------------------
+            link_error = ""
+            if self._link_factory is not None:
+                self.close_links()
+                try:
+                    links = self._link_factory()
+                except Exception as e:      # e.g. the UDP port taken meanwhile
+                    link_error = str(e).split("\n")[0]
+                else:
+                    self.rx = links.receiver
+                    self.commander = links.commander
+                    self.session = links.session
+                    self.mock_stack = links.mock_stack
+            self.flight.rebind(self.rx, self.commander, self.session)
+            self.rb_downlink.setEnabled(self.rx is not None)
+            self.rb_downlink.setToolTip(
+                "" if self.rx is not None else "No downlink receiver in this session")
+            self.timeline.set_note("waiting for housekeeping" if self.rx is not None
+                                   else "no downlink in this session")
+            self._clear_timeline()
+            self._src_bin = self._src_exp_ms = None
+            if self.source == "downlink":
+                self.last_proc = None        # the old link's frame, not this one's
+                self._frame_n = 0
+                self._render_plot()
+                self._update_stats()
+            self._update_source_banner()
+            if self.rx is not None:
+                self.flight_timer.start()
+
+            # -- and up again, the way main() starts ----------------------------
+            self._restarting = False
+            if was_connected or self.source == "detector":
+                self._connect()
+                if self.connected:
+                    self._start()
+            if link_error:
+                self._set_hint(f"restarted, but no downlink: {link_error}")
+            elif self.connected:
+                self._set_hint("restarted - live" if self.running
+                               else "restarted - connected")
+            elif not (was_connected or self.source == "detector"):
+                self._set_hint("restarted" + (" - waiting for the downlink"
+                                              if self.rx is not None else ""))
+            # else: _connect() posted why the detector did not come back
+        finally:
+            self._restarting = False
+            self.btn_restart.setEnabled(True)
 
     # ------------------------------------------------------------ acquisition
     def _toggle_run(self):
         self._stop() if self.running else self._start()
 
     def _start(self):
+        if self._restarting:
+            return          # a worker slot draining mid-restart (see restart)
         if not self.connected:
             self._set_hint("connect first")
             return
@@ -1404,9 +1649,17 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self.timer.stop()
 
     def _single(self):
-        """Internal one-frame refresh (parameter changes, dark capture)."""
+        """Internal one-frame refresh (parameter changes, dark capture).
+
+        `_tick_once` grabs on the GUI thread, so it waits on the driver lock.
+        During an exposure hunt that lock is held a probe at a time - over
+        ``--net`` seconds at a stretch - and a slider nudge would freeze the
+        window for as long. The hunt ends with its own refresh, so skipping is
+        not a lost frame."""
         if not self.connected:
             self._set_hint("connect first")
+            return
+        if self._auto_worker is not None or self._restarting:
             return
         self._tick_once()
 
@@ -1422,30 +1675,69 @@ class CloudsWindow(QtWidgets.QMainWindow):
         if self.connected:                       # _tick_once may have dropped the link
             self._set_hint("single frame captured" + (" - live stopped" if was_running else ""))
 
-    def _auto_expose(self, target=0.70, lo_ms=0.02, hi_ms=1000.0, iters=8):
+    #: Frames a probe grabs per exposure candidate: discards that let the new
+    #: timing settle, then a median stack. Every one of them is a full driver
+    #: round-trip, so this number times `_AUTO_ITERS` times two (the confirm
+    #: probe) is what the hunt can cost - see `_auto_expose`.
+    _AUTO_SETTLE = 2
+    _AUTO_STACK = 3
+
+    def _auto_expose(self, target=0.70, lo_ms=0.02, hi_ms=1000.0, iters=8,
+                     budget_s=15.0):
         """Hunt the integration time so the brightest channel peaks near `target` of
         full scale, without saturating. Uses a GLITCH-DESPIKED peak (so a stray spike
         can't stop it early) and a PROPORTIONAL jump (signal ~ linear in exposure), so
         it converges in a couple of steps and from any starting exposure. A candidate
         in the sweet spot is CONFIRMED with a second probe (conservative min) before it
         is accepted, so a brief flicker on a fluctuating source - e.g. daylight through
-        the shutter - can't stop the hunt early."""
+        the shutter - can't stop the hunt early.
+
+        **The hunt runs off the GUI thread**, for the reason `_AcquisitionWorker`
+        exists at all. It is not one driver call but up to `iters` x 2 probes of
+        `_AUTO_SETTLE + _AUTO_STACK` grabs each, and over ``--net`` against the
+        FSW's ``--bench-stream`` every grab is paced to the flight cadence of
+        1 Hz - so on the GUI thread this froze the window for minutes and macOS
+        showed the app as hung. `budget_s` bounds it on top of `iters`: a scene
+        that needs more probes than that gets the best exposure found so far and
+        is told, rather than holding the detector indefinitely.
+
+        The live loop is paused for the duration - the `_track_exposure` servo
+        would otherwise be steering the same exposure from the other direction -
+        and resumed when the hunt lands."""
         if not self.connected:
             self._set_hint("connect first")
             return
+        if self._auto_worker is not None:
+            return                          # a hunt is already in flight
+        self._auto_resume = self.running
+        if self.running:
+            self._stop()
+        # Run is greyed too, and honestly: the live loop is already stopped, so
+        # there is nothing for Stop to stop, and letting it restart mid-hunt puts
+        # the servo and the hunt on the same exposure through the same lock.
+        for b in (self.btn_auto, self.btn_single, self.btn_run):
+            b.setEnabled(False)
+        self._set_exposure_enabled(False)   # the hunt owns the exposure until it lands
+        self._set_hint("auto exposure - hunting ...")
         sat = self.cal.saturation_count
-        tgt = sat * target
+        tgt = sat * float(target)
+        settle, stack = self._AUTO_SETTLE, self._AUTO_STACK
 
-        def probe(exp_ms):
-            with self._driver_lock:
-                self.driver.set_times_us(int(round(exp_ms * 1000)))
-                for _ in range(2):
-                    self.driver.grab()                              # let the new timing settle
-                frame = P.average_frames([self.driver.grab() for _ in range(7)], method="median")
-            return max(P.robust_peak(ch.slice(frame)) for ch in self.cal.channels)
+        def hunt():
+            """Runs on `_AcquisitionWorker`: driver + calibration only, no widgets."""
+            import time as _time
 
-        exp, pk = min(max(self.exposure_ms, lo_ms), hi_ms), 0.0
-        try:
+            def probe(exp_ms):
+                with self._driver_lock:
+                    self.driver.set_times_us(int(round(exp_ms * 1000)))
+                    for _ in range(settle):
+                        self.driver.grab()                          # let the new timing settle
+                    frame = P.average_frames([self.driver.grab() for _ in range(stack)],
+                                             method="median")
+                return max(P.robust_peak(ch.slice(frame)) for ch in self.cal.channels)
+
+            deadline = _time.monotonic() + budget_s
+            exp, pk, spent = min(max(self.exposure_ms, lo_ms), hi_ms), 0.0, False
             for _ in range(iters):
                 pk = probe(exp)
                 if sat * 0.60 <= pk <= sat * 0.80:                  # candidate -> confirm it holds
@@ -1458,17 +1750,57 @@ class CloudsWindow(QtWidgets.QMainWindow):
                     exp = new
                     break
                 exp = new
-        except (DriverError, OSError) as e:
-            self._on_driver_error(e)
-            return
+                if _time.monotonic() >= deadline:
+                    spent = True
+                    break
+            return exp, pk, spent
+
+        w = _AcquisitionWorker(hunt, self)
+        w.done.connect(self._on_auto_done)
+        w.failed.connect(self._on_auto_failed)
+        w.finished.connect(self._on_auto_worker_finished)
+        self._auto_worker = w
+        w.start()
+
+    def _on_auto_done(self, payload):
+        exp, pk, spent = payload
+        sat = self.cal.saturation_count
         self.exposure_ms = round(exp, 3)
-        self.sp_exp.blockSignals(True); self.sp_exp.setValue(self.exposure_ms); self.sp_exp.blockSignals(False)
+        self._show_exposure(self.exposure_ms)
         self._applied_us = None
-        ok = sat * 0.45 <= pk <= sat * 0.97
-        self._set_hint(f"auto exposure -> {self.exposure_ms:g} ms ({pk / sat * 100:.0f}% FS)"
-                       + ("" if ok else " - source too dim/bright for the target"))
-        if not self.running:
-            self._single()
+        if spent:
+            note = " - stopped at the time budget"
+        elif sat * 0.45 <= pk <= sat * 0.97:
+            note = ""
+        else:
+            note = " - source too dim/bright for the target"
+        self._set_hint(f"auto exposure -> {self.exposure_ms:g} ms "
+                       f"({pk / sat * 100:.0f}% FS){note}")
+
+    def _on_auto_failed(self, msg):
+        self._on_driver_error(msg)
+        # The hunt had already paused the live loop, so `running` was False by
+        # the time the link dropped and _on_driver_error read it. Carry the
+        # operator's actual intent across instead, or a hunt that hits an
+        # unplugged cable comes back connected but stopped.
+        self._resume_on_reconnect = self._auto_resume
+        self._auto_resume = False
+
+    def _on_auto_worker_finished(self):
+        w, self._auto_worker = self._auto_worker, None
+        w.deleteLater()
+        for b in (self.btn_auto, self.btn_single, self.btn_run):
+            b.setEnabled(True)
+        self._set_exposure_enabled(not self._track)
+        resume, self._auto_resume = self._auto_resume, False
+        if not self.connected:
+            return
+        if resume:
+            hint = self.hint.text()     # _start()'s "running - live" would bury the result
+            self._start()
+            self._set_hint(hint)
+        elif not self.running:
+            self._single()              # show the frame the new exposure produces
 
     def _track_exposure(self, lo_ms=0.02, hi_ms=1000.0):
         """Continuous auto-exposure servo - one nudge per live frame so the brightest
@@ -1491,7 +1823,7 @@ class CloudsWindow(QtWidgets.QMainWindow):
             if abs(new - self.exposure_ms) < 1e-4:
                 return False
             self.exposure_ms = round(new, 3)
-            self.sp_exp.blockSignals(True); self.sp_exp.setValue(self.exposure_ms); self.sp_exp.blockSignals(False)
+            self._show_exposure(self.exposure_ms)
             return True
 
         # 1. true clipping: frac is pinned and useless -> scale the cut by HOW MANY pixels
@@ -1832,14 +2164,13 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self._dark_meta = stored
         self.exposure_ms = round(stored.exposure_ms, 3)
         if hasattr(self, "sp_exp"):
-            self.sp_exp.blockSignals(True)
-            self.sp_exp.setValue(self.exposure_ms)
-            self.sp_exp.blockSignals(False)
+            self._show_exposure(self.exposure_ms)
         if hasattr(self, "chk_track") and self.chk_track.isChecked():
             self.chk_track.blockSignals(True)
             self.chk_track.setChecked(False)
             self.chk_track.blockSignals(False)
             self._track = False
+            self._set_exposure_enabled(True)
         self.chk_dark.setChecked(True)
         self._update_dark_label()
         self._set_hint(f"stored dark loaded ({stored.summary()}) - exposure "
@@ -1848,6 +2179,12 @@ class CloudsWindow(QtWidgets.QMainWindow):
     def _capture_dark(self):
         if not self.connected:
             self._set_hint("connect first")
+            return
+        if self._auto_worker is not None:
+            # Grabs on the GUI thread, and the hunt owns the driver lock a probe
+            # at a time. Waiting it out would freeze the window; the exposure is
+            # also still moving, and a dark is only valid at one exposure.
+            self._set_hint("auto exposure is running - capture the dark when it lands")
             return
         try:
             self._apply_exposure_if_changed()

@@ -62,6 +62,13 @@ class NetDriver(SpectrometerDriver):
             send_request(self._sock, obj)
             tag, body = recv_response(self._sock)
         except (OSError, ProtocolError) as exc:
+            # Transport failure, not a refusal from the far end: the request
+            # may be sent and its response still on the wire. Drop the socket
+            # rather than leave a half-exchange in it - dark_value() and
+            # frame_counter() swallow DriverError, so a timeout there would
+            # otherwise desync every later response by one, and a JSON body
+            # read as a frame is silent garbage until the tag check trips.
+            self.close()
             raise DriverError(
                 f"{self.host}:{self.port} link failed during {obj.get('op')}: "
                 f"{exc}"
@@ -93,7 +100,16 @@ class NetDriver(SpectrometerDriver):
                 f"and is the FSW stopped so the USB device is free?"
             ) from exc
         self._sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        d = self._json({"op": "identity"})
+        try:
+            d = self._json({"op": "identity"})
+        except Exception:
+            # The socket is up but the far end refused to identify itself -
+            # the FSW bench stream says so while it has no detector. Close it
+            # here or a caller that retries (the panel, every 3 s) leaks one
+            # socket per attempt against a server that is answering exactly as
+            # it should.
+            self.close()
+            raise
         self._info = DeviceInfo(
             model=d.get("model", ""), serial=d.get("serial", ""),
             com_port=d.get("com_port", ""),

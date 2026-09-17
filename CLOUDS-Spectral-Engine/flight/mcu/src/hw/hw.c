@@ -88,25 +88,56 @@ void hw_actuators_service(uint64_t now_ms)
         gpio_put(PIN_MEMBRANE_PWM, sqwave_level(&membrane_wave));
 }
 
+/* The membrane position switch is the one pin above GP29 in use, and GP30
+ * exists only on the RP2350B carrier. NUM_BANK0_GPIOS comes from the board
+ * header (48 for boards/clouds_carrier.h, 30 for pico2), so a pico2 build
+ * compiles the read out instead of poking a GPIO register the RP2350A does
+ * not have - and says so in HK via HKE_NO_MEMBRANE_SENSE. */
+#define HAVE_MEMBRANE_SENSE (PIN_MEMBRANE_SENSE < NUM_BANK0_GPIOS)
+
+bool hw_membrane_pulled(void)
+{
+#if HAVE_MEMBRANE_SENSE
+    /* Internal pull-up, switch to ground: closed (solenoid energized,
+     * plunger pulled) reads LOW. */
+    return !gpio_get(PIN_MEMBRANE_SENSE);
+#else
+    return false;
+#endif
+}
+
 uint8_t hw_actuator_status(void)
 {
-    /* core/pulse drives one line at a time, so at most one bit is set. The
-     * open lines are never energized (they are interlocks forced low), and
-     * the membrane is a waveform, reported as a duty instead. */
+    uint8_t bits;
+
+    /* core/pulse drives one line at a time, so at most one drive bit is set.
+     * The open lines are never energized (they are interlocks forced low),
+     * and the membrane drive is a waveform, reported as a duty instead. */
     switch (pulses.active_pin) {
     case PIN_PINCH_1:
-        return HKV_PINCH_1;
+        bits = HKV_PINCH_1;
+        break;
     case PIN_PINCH_2:
-        return HKV_PINCH_2;
+        bits = HKV_PINCH_2;
+        break;
     case PIN_EQ1_CLOSE:
-        return HKV_EQ1_CLOSE;
+        bits = HKV_EQ1_CLOSE;
+        break;
     case PIN_EQ2_CLOSE:
-        return HKV_EQ2_CLOSE;
+        bits = HKV_EQ2_CLOSE;
+        break;
     case PIN_DISPERSE_FWD:
-        return HKV_DISPERSE;
+        bits = HKV_DISPERSE;
+        break;
     default:
-        return 0;
+        bits = 0;
+        break;
     }
+    /* Plus the one sensed bit, which is allowed alongside a drive: it reports
+     * the plunger, not a line the MCU is holding. */
+    if (hw_membrane_pulled())
+        bits |= HKV_MEMBRANE_PULLED;
+    return bits;
 }
 
 static void ops_fire_pinch(void *ctx, uint8_t n)
@@ -343,6 +374,12 @@ void hw_read_sensors(hk_t *hk)
     hk->temp2_cc = 0;
     hk->error_flags |= HKE_NO_TEMP;
 
+#if !HAVE_MEMBRANE_SENSE
+    /* A pico2 build has no GP30: HKV_MEMBRANE_PULLED is then always clear,
+     * and without this flag ground would read that as "pushed". */
+    hk->error_flags |= HKE_NO_MEMBRANE_SENSE;
+#endif
+
     if (bme280_read(&bme_temp_cc, &rh_cpct, &p_pa)) {
         hk->bme_temp_cc = bme_temp_cc;
         hk->rh1_cpct = rh_cpct;
@@ -426,6 +463,16 @@ void hw_init(void)
     }
     pulse_init(&pulses);
     sqwave_init(&membrane_wave);
+
+#if HAVE_MEMBRANE_SENSE
+    /* Membrane position switch: input, internal pull-up, switch to ground.
+     * Open (solenoid released) reads 1, closed (energized, pulled) reads 0.
+     * Not in out_pins above and must never be: driving it low would look
+     * exactly like a permanently pulled solenoid. */
+    gpio_init(PIN_MEMBRANE_SENSE);
+    gpio_set_dir(PIN_MEMBRANE_SENSE, GPIO_IN);
+    gpio_pull_up(PIN_MEMBRANE_SENSE);
+#endif
     /* No adc_init(): the STLM20 pair is unpopulated, and the pin the old map
      * gave to ADC_TEMP1 is the membrane solenoid. */
 

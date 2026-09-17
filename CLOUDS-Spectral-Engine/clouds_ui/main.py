@@ -116,6 +116,79 @@ def _parse(argv=None):
     return args
 
 
+class Links:
+    """The flight half's live objects, as one unit.
+
+    They are built together (the mock stack needs the receiver's port, the
+    commander needs the mock stack's) and torn down together, and the
+    window's Restart button does both again without closing the window - so
+    the construction lives in `open_links`, not inline in `main`, and the
+    window gets a factory rather than the objects alone.
+    """
+
+    def __init__(self, receiver=None, commander=None, session=None,
+                 mock_stack=None):
+        self.receiver = receiver
+        self.commander = commander
+        self.session = session
+        self.mock_stack = mock_stack
+
+
+def open_links(args) -> Links:
+    """Open the downlink receiver, the command link, the session log and,
+    under ``--mock``, the simulated flight chain - or none of them under
+    ``--no-link``. Every call is a fresh session: new sockets, a new log
+    file with its own stamp, a new mock data directory."""
+    links = Links()
+    if args.no_link:
+        return links
+    # Imported here, not at module scope: --no-link must not need the gse
+    # package on the path at all.
+    from clouds_gse.commander import Commander
+    from clouds_gse.receiver import Receiver
+    from clouds_gse.session_log import SessionLog
+
+    # A mock session is logged like any other - it is what an operator
+    # practises reading - but its files say so in the name, so nobody
+    # later mistakes a simulated flight for a flown one.
+    stamp = ("mock_" + time.strftime("%Y%m%d_%H%M%S", time.gmtime())
+             if args.mock else None)
+    session = SessionLog(args.log_dir, stamp=stamp)
+    # Loopback and an ephemeral port under --mock: the simulated downlink
+    # must not collide with a real GSE already on UDP 4000, and must not
+    # be reachable from off this machine.
+    try:
+        receiver = Receiver(bind="127.0.0.1" if args.mock else "0.0.0.0",
+                            port=0 if args.mock else args.listen)
+    except OSError:
+        session.close()
+        raise
+    # Session logging hangs off the receiver's own callbacks, so every
+    # packet is recorded as it arrives rather than whenever the UI last
+    # polled - a dropped frame stays a gap in the CSV.
+    receiver._cb["hk"] = session.log_hk
+    receiver._cb["ev"] = session.log_event
+    receiver._cb["ql"] = session.log_quicklook
+    receiver.start()
+    links.receiver, links.session = receiver, session
+
+    cmd_host, cmd_port = args.experiment, args.cmd_port
+    if args.mock:
+        from .mock_stack import MockStack
+
+        mock_stack = MockStack(receiver.port)
+        mock_stack.start()
+        cmd_host, cmd_port = "127.0.0.1", mock_stack.cmd_port
+        links.mock_stack = mock_stack
+
+    if not args.listen_only:
+        commander = Commander(cmd_host, cmd_port,
+                              flight_mode=args.flight_mode, log=print)
+        commander.start_heartbeat()
+        links.commander = commander
+    return links
+
+
 def main(argv=None) -> int:
     args = _parse(argv)
 
@@ -138,68 +211,38 @@ def main(argv=None) -> int:
     if os.path.exists(ico):
         app.setWindowIcon(QtGui.QIcon(ico))
 
-    receiver = commander = session = mock_stack = None
-    if not args.no_link:
-        # Imported here, not at module scope: --no-link must not need the gse
-        # package on the path at all.
-        from clouds_gse.commander import Commander
-        from clouds_gse.receiver import Receiver
-        from clouds_gse.session_log import SessionLog
-
-        # A mock session is logged like any other - it is what an operator
-        # practises reading - but its files say so in the name, so nobody
-        # later mistakes a simulated flight for a flown one.
-        stamp = ("mock_" + time.strftime("%Y%m%d_%H%M%S", time.gmtime())
-                 if args.mock else None)
-        session = SessionLog(args.log_dir, stamp=stamp)
-        # Loopback and an ephemeral port under --mock: the simulated downlink
-        # must not collide with a real GSE already on UDP 4000, and must not
-        # be reachable from off this machine.
-        receiver = Receiver(bind="127.0.0.1" if args.mock else "0.0.0.0",
-                            port=0 if args.mock else args.listen)
-        # Session logging hangs off the receiver's own callbacks, so every
-        # packet is recorded as it arrives rather than whenever the UI last
-        # polled - a dropped frame stays a gap in the CSV.
-        receiver._cb["hk"] = session.log_hk
-        receiver._cb["ev"] = session.log_event
-        receiver._cb["ql"] = session.log_quicklook
-        receiver.start()
-
-        cmd_host, cmd_port = args.experiment, args.cmd_port
-        if args.mock:
-            from .mock_stack import MockStack
-
-            mock_stack = MockStack(receiver.port)
-            mock_stack.start()
-            cmd_host, cmd_port = "127.0.0.1", mock_stack.cmd_port
-
-        if not args.listen_only:
-            commander = Commander(cmd_host, cmd_port,
-                                  flight_mode=args.flight_mode, log=print)
-            commander.start_heartbeat()
+    links = open_links(args)
 
     from .window import CloudsWindow
 
     win = CloudsWindow(mock=args.mock, persist_dark=not args.mock,
                        kind=kind, host=host,
-                       receiver=receiver, commander=commander,
-                       session=session,
+                       receiver=links.receiver, commander=links.commander,
+                       session=links.session, mock_stack=links.mock_stack,
+                       # Restart rebuilds the flight half from the same flags
+                       # the session started with - same ports, same log
+                       # directory, same mock-or-not.
+                       link_factory=lambda: open_links(args),
                        source="downlink" if args.flight else "detector")
-    if args.flight_mode and commander is not None:
+    if args.flight_mode and links.commander is not None:
         win.flight.chk_flight_mode.setChecked(True)
     win.fold_for(flight=args.flight)
     win.show()
 
-    if mock_stack is not None:
-        # The simulated Pi and MCU are threads in this process: stop them
-        # with the window, or a closed window leaves an FSW writing frames
-        # and a temporary data directory behind it.
-        app.aboutToQuit.connect(mock_stack.stop)
+    # The window closes its links in closeEvent; this is the backstop for a
+    # quit that bypasses it. Under --mock the simulated Pi and MCU are
+    # threads in this process and must not outlive the window, or a closed
+    # window leaves an FSW writing frames and a temporary data directory
+    # behind it. Idempotent, so running after closeEvent is a no-op.
+    app.aboutToQuit.connect(win.close_links)
 
     if not args.flight:
-        win._connect()
-        if win.connected:
-            win._start()
+        # Connect and go live - and if the detector is not up yet, keep
+        # trying instead of leaving the instrument half dead for the session.
+        # The flight half is on its own sockets and comes up regardless, which
+        # is why a startup-only detector failure read as "the spectrum just
+        # doesn't show" and got fixed by restarting the app.
+        win.start_detector()
     print("[CLOUDS] ready - window open.")
     return app.exec_()
 

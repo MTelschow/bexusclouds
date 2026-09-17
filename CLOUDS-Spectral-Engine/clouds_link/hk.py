@@ -96,15 +96,29 @@ class ValveStatus(IntEnum):
     A set bit means that actuator line is energized *now*. The drives are
     bounded pulses (5 s) that can finish between two 1 Hz packets, so this is
     where ground sees a commanded valve or motor drive actually happen. Only
-    one bit is ever set at a time: the MCU drives one line at a time to cap
-    peak actuator current. The membrane is not here - it is a repeating
-    waveform, reported as ``membrane_duty``.
+    one *drive* bit is ever set at a time: the MCU drives one line at a time
+    to cap peak actuator current. The membrane drive is not here - it is a
+    repeating waveform, reported as ``membrane_duty``.
+
+    ``MEMBRANE_PULLED`` is the exception in kind: it is an **input**, the
+    position switch on GP30 that the solenoid plunger presses while it is
+    energized. It reports what the plunger is doing, not what the MCU is
+    driving, so it can be set alongside a drive bit, and it is the only
+    evidence ground has that a commanded membrane drive moves anything. When
+    the MCU build cannot reach GP30 it raises ``HkErrors.NO_MEMBRANE_SENSE``
+    and the bit means nothing; ``Housekeeping.membrane_pulled`` folds that in.
     """
     PINCH_1 = 1 << 0
     PINCH_2 = 1 << 1
     EQ1_CLOSE = 1 << 2
     EQ2_CLOSE = 1 << 3
     DISPERSE = 1 << 4        # CaCO3 dispersion motor, forward line
+    MEMBRANE_PULLED = 1 << 5  # sensed, not driven: GP30 switch reads LOW
+
+
+#: The ``ValveStatus`` bits that are drives - what ``actuator_text`` lists.
+#: ``MEMBRANE_PULLED`` is a sensed position and belongs with the membrane row.
+DRIVE_BITS = tuple(v for v in ValveStatus if v is not ValveStatus.MEMBRANE_PULLED)
 
 
 class HkErrors(IntEnum):
@@ -113,12 +127,15 @@ class HkErrors(IntEnum):
     A set bit means the matching field is not a live measurement, so ground
     can distinguish a held or absent reading from a real one.
 
-    Bits 2 and 3 are free: they were NO_CHAMBER_P and NO_RH2, which went out
-    with the Keller pair and the fields those flagged. The surviving bits keep
-    the positions they had, so an older session log still decodes.
+    Bit 2 was NO_CHAMBER_P and bit 3 NO_RH2; both went out with the Keller
+    pair and the fields those flagged. Bit 2 has since been reused for the
+    membrane switch; bit 3 is free. The surviving bits keep the positions
+    they had, so an older session log still decodes.
     """
     BME280_FAIL = 1 << 0    # BME280 absent or read failed
     P_AMB_STALE = 1 << 1    # p_amb_pa is a held last-good value
+    NO_MEMBRANE_SENSE = 1 << 2  # GP30 unreachable in this MCU build (pico2):
+                                # ValveStatus.MEMBRANE_PULLED has no source
     IMU_FAIL = 1 << 4       # IMU absent or reporting a fault
     NO_TEMP = 1 << 5        # STLM20 pair not fitted, temps unsourced
     RAIL_FAIL = 1 << 6      # an INA226 rail is unreadable (see RAIL_MV_INVALID)
@@ -215,9 +232,35 @@ class Housekeeping:
     def actuator_text(self) -> str:
         """Which actuator lines ``valve_status`` says are driven, for HK
         displays. A commanded drive is a 5 s pulse, so this is what tells an
-        operator the command reached the hardware."""
-        names = [v.name for v in ValveStatus if self.valve_status & v]
+        operator the command reached the hardware. The sensed
+        ``MEMBRANE_PULLED`` bit is left out: it is not a drive, and it is
+        shown with the membrane duty (``membrane_text``) instead."""
+        names = [v.name for v in DRIVE_BITS if self.valve_status & v]
         return " ".join(names) if names else "-"
+
+    @property
+    def membrane_pulled(self) -> bool | None:
+        """What the position switch on GP30 says the solenoid plunger is
+        doing: ``True`` pulled (energized), ``False`` pushed (released), or
+        ``None`` when this MCU build cannot read the switch
+        (``HkErrors.NO_MEMBRANE_SENSE``) - a clear bit then means nothing,
+        and reporting it as "pushed" would be an invented reading."""
+        if self.error_flags & HkErrors.NO_MEMBRANE_SENSE:
+            return None
+        return bool(self.valve_status & ValveStatus.MEMBRANE_PULLED)
+
+    @property
+    def membrane_text(self) -> str:
+        """The membrane row for HK displays: the commanded duty and, next to
+        it, the sensed plunger position. The two together are the check - a
+        duty above zero with a switch that never reads pulled, or a duty of
+        zero with one that does, is a solenoid or a switch to look at. At the
+        membrane's 2 Hz the 1 Hz HK sample lands at a random phase, so with
+        the drive on the position is expected to alternate between packets."""
+        pulled = self.membrane_pulled
+        if pulled is None:
+            return f"{self.membrane_duty} %"
+        return f"{self.membrane_duty} %  {'pulled' if pulled else 'pushed'}"
 
     @property
     def rail_text(self) -> str:
@@ -269,6 +312,7 @@ class Housekeeping:
         d["state_name"] = self.state_name
         d["link_text"] = self.link_text
         d["actuator_text"] = self.actuator_text
+        d["membrane_pulled"] = self.membrane_pulled
         d["error_text"] = self.error_text
         d["rail_text"] = self.rail_text
         ax, ay, az = d.pop("accel_mg")

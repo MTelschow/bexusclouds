@@ -24,4 +24,8 @@ gse_sessions/
 drivers/e9u_LSMD_LIB_Linux/e9u_lsmd_camera_library-*/
 
 .DS_Store
-dark_frame.npz
+
+# dark_frame.npz is TRACKED on purpose (see spectro/dark.py): the bench
+# dark of S/N 20260312-004 travels with the repo so a fresh checkout is
+# not a machine with no dark. Scratch darks live under output/ via
+# CLOUDS_DARK and are ignored with it.

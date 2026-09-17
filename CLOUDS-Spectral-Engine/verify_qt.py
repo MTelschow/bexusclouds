@@ -16,6 +16,7 @@ os.environ["CLOUDS_DARK"] = os.path.join("output", "verify_dark.npz")
 import csv
 import glob as _glob
 import sys
+import time
 
 import numpy as np
 from PyQt5 import QtCore, QtWidgets
@@ -52,6 +53,26 @@ check("starts disconnected", not win.connected)
 win._connect()
 app.processEvents()
 check("connects to mock", win.connected and win.info.mock, win.info.summary())
+
+# A detector that is not up at startup must not be a dead session. Every
+# *later* driver error arms the 3 s retry; the one at startup did not, so a
+# Pi whose --bench-stream was a second behind the window, or a Duo that lost
+# its first search_for_camera, left the instrument half dead with the flight
+# half running - which reads as "the spectrum just doesn't show" and got
+# fixed by restarting the app. Own window on a closed port: refused at once.
+import socket as _socket
+_probe = _socket.socket(); _probe.bind(("127.0.0.1", 0))
+_dead_port = _probe.getsockname()[1]; _probe.close()
+_cold = clouds_ui_window.CloudsWindow(kind="net", host=f"127.0.0.1:{_dead_port}")
+_cold.start_detector()
+app.processEvents()
+check("startup with no detector arms the retry",
+      not _cold.connected and _cold._reconnect_timer.isActive()
+      and _cold._resume_on_reconnect,
+      "connect refused -> retrying, live still the standing intent")
+check("a manual Connect click does not disarm that retry",
+      (_cold._connect() or True) and _cold._reconnect_timer.isActive())
+_cold.close()
 
 win.sp_exp.setValue(5)
 win._single()
@@ -222,10 +243,56 @@ win.yscale_combo.setCurrentIndex(2); app.processEvents()
 check("sqrt y-scale renders", win.yscale == "sqrt")
 win.yscale_combo.setCurrentIndex(0); app.processEvents()
 # auto-exposure: start saturated, expect it to back off into range
+def _wait_auto(timeout_s=30.0):
+    """Drain the event loop until the exposure hunt has landed.
+
+    The hunt runs on _AcquisitionWorker (over --net every probe is paced to the
+    FSW's 1 Hz, and on the GUI thread that froze the window for minutes), so
+    _auto_expose returns before the exposure has moved. Without this the checks
+    below read the spinbox mid-hunt.
+    """
+    import time as _t
+    t0 = _t.monotonic()
+    while win._auto_worker is not None and _t.monotonic() - t0 < timeout_s:
+        app.processEvents(); _t.sleep(0.005)
+    app.processEvents()
+
+
 win.sp_exp.setValue(1000); app.processEvents()
-win._auto_expose(); app.processEvents()
+win._auto_expose(); _wait_auto()
 check("auto-exposure converges below saturation", 0.01 < win.exposure_ms < 300 and win._last_sat < 0.5,
       f"{win.exposure_ms} ms, sat {win._last_sat:.2f}")
+# the Auto button's own path: `clicked` carries a checked bool and PyQt5 binds
+# it to the first slot parameter, which once made this _auto_expose(target=False)
+# - the hunt could then only divide and always ended at the 0.02 ms rail.
+win.sp_exp.setValue(1000); app.processEvents()
+win.btn_auto.click(); _wait_auto()
+check("Auto button does not pass its checked flag as the target",
+      0.01 < win.exposure_ms < 300 and win._last_sat < 0.5,
+      f"{win.exposure_ms} ms, sat {win._last_sat:.2f}")
+# ... and the hunt must not hold the GUI thread while it does it. The mock
+# driver returns instantly, so slow it to something like the --net case, where
+# every grab is paced to the FSW's 1 Hz and the old synchronous hunt froze the
+# window for minutes.
+_real_grab = win.driver.grab
+
+
+def _slow_grab(*a, **kw):
+    import time as _t
+    _t.sleep(0.05)
+    return _real_grab(*a, **kw)
+
+
+win.driver.grab = _slow_grab
+win.sp_exp.setValue(1000); app.processEvents()
+_t0, _spins = time.monotonic(), 0
+win._auto_expose()
+while win._auto_worker is not None and time.monotonic() - _t0 < 30.0:
+    app.processEvents(); _spins += 1; time.sleep(0.001)
+win.driver.grab = _real_grab
+app.processEvents()
+check("auto-exposure hunt leaves the GUI thread free", _spins > 50,
+      f"{_spins} event-loop turns while the hunt ran")
 
 # ---- continuous auto-exposure tracking (the servo: follow a changing scene) ----
 win.chk_dark.setChecked(False); win.chk_flat.setChecked(False)
@@ -244,7 +311,9 @@ def _settle(n=12):
 # ticks now run on a worker thread and would otherwise land asynchronously,
 # out of step with this section's tick-by-tick accounting (_esc, _ch, ...).
 win.sp_exp.setValue(10); win._start(); win.timer.stop(); app.processEvents()
-win.chk_track.setChecked(True); app.processEvents()
+# the toggle snaps with a hunt first; wait it out, then re-stop the timer the
+# hunt's resume restarted, so only the explicit _tick_once() calls drive frames
+win.chk_track.setChecked(True); _wait_auto(); win.timer.stop(); app.processEvents()
 _settle(8)
 _frac = win._last_peak / _sat
 check("tracking: converges into band on a static scene", 0.56 <= _frac <= 0.84, f"frac={_frac:.3f}")
@@ -513,10 +582,14 @@ try:
     # housekeeping feedback: without it a 5 s pulse is invisible to ground
     import socket as _socket
     _tx = _socket.socket(_socket.AF_INET, _socket.SOCK_DGRAM)
+    # The GP30 position switch rides in the same byte as the drive: it must
+    # land in the Membrane row, not in Driving, or a sensed plunger reads as
+    # a line the MCU is holding.
     _tx.sendto(_Frame(type=_Pkt.HK,
                       payload=_hk.Housekeeping(state=_hk.SeqState.STANDBY,
                                                membrane_duty=70,
                                                valve_status=_mcu["valves"]
+                                               | _hk.ValveStatus.MEMBRANE_PULLED
                                                ).pack(),
                       seq=0).stamp().encode(), ("127.0.0.1", _rx.port))
     for _ in range(60):
@@ -524,8 +597,8 @@ try:
         QtCore.QThread.msleep(5)
     _gse.refresh()
     app.processEvents()
-    check("flight: renders the commanded drive",
-          _gse._hk_labels["Membrane"].text() == "70 %"
+    check("flight: renders the commanded drive and the sensed plunger",
+          _gse._hk_labels["Membrane"].text() == "70 %  pulled"
           and _gse._hk_labels["Driving"].text() == "DISPERSE",
           f'{_gse._hk_labels["Membrane"].text()} / '
           f'{_gse._hk_labels["Driving"].text()}')
@@ -872,11 +945,103 @@ try:
     _gse.sec_sensors.set_open(True)
     app.processEvents()
     _win.grab().save("output/qt_merged_flight.png")
+
+    # -- Restart: everything live comes back, the window does not go away ---
+    # The flight half is rebuilt from a factory, as main() hands the window
+    # one; here it hands out a fresh receiver on loopback and a fresh
+    # commander to the same command server, so the restart can be watched
+    # from both ends.
+    class _Links:
+        pass
+
+    _rebuilt = []
+
+    def _factory():
+        L = _Links()
+        L.receiver = _Receiver(bind="127.0.0.1", port=0)
+        L.receiver.start()
+        L.commander = _Commander("127.0.0.1", _server.port, timeout=2.0)
+        L.session = _SessionLog("output", stamp="verify_gse_restart")
+        L.mock_stack = None
+        _rebuilt.append(L)
+        return L
+
+    _win._link_factory = _factory
+    _old_rx, _old_cmd, _old_session = _win.rx, _win.commander, _win.session
+    _gse._cmd = _old_cmd                    # put the link back the earlier check took away
+    _gse.chk_flight_mode.setChecked(True)
+    _win.rb_downlink.setChecked(True)
+    app.processEvents()
+    _win.restart()
+    app.processEvents()
+    check("restart: the window is still open", _win.isVisible())
+    check("restart: the flight half was rebuilt once", len(_rebuilt) == 1)
+    check("restart: the window holds the new receiver",
+          _win.rx is _rebuilt[0].receiver and _win.rx is not _old_rx)
+    check("restart: the flight sections follow the new receiver",
+          _gse._rx is _win.rx and _gse._cmd is _win.commander)
+    check("restart: the old receiver's socket is closed",
+          _old_rx._sock.fileno() == -1)
+    check("restart: the old command link is closed", not _old_cmd.connected)
+    check("restart: the old session wrote its summary",
+          os.path.isfile("output/session_verify_gse_summary.json"))
+    check("restart: the new session logs to its own file",
+          _win.session.hk_path != _old_session.hk_path)
+    check("restart: the event list and readouts start over",
+          _gse.event_list.count() == 0 and _gse.banner.text() == "NO TELEMETRY"
+          and _gse._hk_labels["Membrane"].text() == "-")
+    check("restart: the interlock setting survives and reaches the new link",
+          _gse.chk_flight_mode.isChecked() and _win.commander.flight_mode)
+    check("restart: the flight tick is running again", _win.flight_timer.isActive())
+    check("restart: a downlink source stays on the downlink",
+          _win.source == "downlink" and _win.rb_downlink.isChecked())
+    # New housekeeping lands in the new receiver and is rendered: the proof
+    # that the rebuilt chain is wired end to end, not merely swapped in.
+    _tx2 = _socket.socket(_socket.AF_INET, _socket.SOCK_DGRAM)
+    _tx2.sendto(_Frame(type=_Pkt.HK,
+                       payload=_hk.Housekeeping(state=_hk.SeqState.STANDBY,
+                                                membrane_duty=35).pack(),
+                       seq=0).stamp().encode(), ("127.0.0.1", _win.rx.port))
+    for _ in range(60):
+        app.processEvents()
+        QtCore.QThread.msleep(5)
+    _gse.refresh()
+    app.processEvents()
+    check("restart: housekeeping flows through the new receiver",
+          _gse._hk_labels["Membrane"].text() == "35 %",
+          _gse._hk_labels["Membrane"].text())
+    _tx2.close()
+    check("restart: the button is usable again", _win.btn_restart.isEnabled())
 finally:
     _commander.close()
     _server.stop()
     _rx.stop()
+    for L in _rebuilt:
+        L.commander.close()
+        L.receiver.stop()
+        L.session.close()
 
+
+# -- Restart on the bench window: the detector is re-opened and live resumes,
+# with the operator's settings intact --------------------------------------
+_old_driver = win.driver
+win.sp_exp.setValue(7)
+win._connect()
+app.processEvents()
+win.restart()
+app.processEvents()
+check("restart: a new driver is opened", win.driver is not _old_driver)
+check("restart: the detector reconnects and goes live", win.connected and win.running,
+      f"connected={win.connected} running={win.running}")
+check("restart: the exposure setting is kept", abs(win.exposure_ms - 7) < 1e-6,
+      str(win.exposure_ms))
+check("restart: no downlink stays no downlink", win.rx is None
+      and not win.rb_downlink.isEnabled())
+win._stop()
+win._single()
+app.processEvents()
+check("restart: the new driver delivers frames",
+      win.last_frame is not None and win.last_frame.shape == (2048,))
 
 if "--live" in sys.argv:
     print("\n-- live hardware through the full UI (real EURECA Duo) --")

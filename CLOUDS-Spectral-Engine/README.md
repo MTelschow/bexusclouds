@@ -143,6 +143,16 @@ The launcher itself pings the Pi before it starts (unless you passed
 script if there is no reply — otherwise the window opens and sits in a
 reconnect loop with the reason buried in a status label.
 
+Once the window is open, **Restart** (top of the sidebar, next to the version)
+brings everything the window talks to back up without closing it: the
+detector driver is re-opened, and the downlink receiver, command link,
+session log and (under `--mock`) the simulated flight chain are torn down and
+rebuilt from the flags the session was started with. Use it after re-plugging
+the cable or power-cycling the Pi. Exposure, dark, reference, view, zoom and
+the sidebar layout are kept; the housekeeping timeline, event list and gap
+counters start over with the new session, and the old session is closed with
+its summary like any other.
+
 ### Checks and packaging
 
 `requirements.txt` is what the operator interface needs to draw a spectrum,

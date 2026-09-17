@@ -53,6 +53,11 @@ fallback, not the layout. The **wordmark is a flow item**, not a header above
 the flow, so the columns get that ~100 px; a run of folded sections packs at
 `TIGHT_GAP` (4 px) because it is a list of one-line headings rather than a
 stack of blocks; only the hint line sits outside, spanning the panel.
+The wordmark's version line carries the one control that acts on both
+halves, **Restart** (`CloudsWindow.restart`): it re-opens the detector and
+rebuilds receiver, commander, session log and mock chain in place, keeping
+the window and the operator's settings. It is in the header rather than in
+Device or a flight section because it belongs to neither half.
 Sidebar order: branding; then the
 group that steers the plot and the experiment - Spectrum source; Timeline
 (which housekeeping series the lower plot draws); Sensors; Commands;

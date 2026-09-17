@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 
 from clouds_fsw.bench_stream import BenchStream, FrameHub
-from spectro.driver import DeviceInfo
+from spectro.driver import DeviceInfo, DriverError
 from spectro.net_driver import NetDriver
 
 
@@ -40,14 +40,16 @@ class TestFrameHub:
     def test_wait_returns_the_new_frame(self):
         hub = FrameHub()
         hub.publish(np.arange(4, dtype=np.uint16), 1234)
-        n, frame, exp = hub.wait_for_new(0)
+        n, frame, exp, fresh = hub.wait_for_new(0)
         assert n == 1 and exp == 1234 and list(frame) == [0, 1, 2, 3]
+        assert fresh
 
     def test_wait_times_out_without_a_new_frame(self):
         hub = FrameHub()
         hub.publish(np.zeros(2, dtype=np.uint16), 10)
-        n, _f, _e = hub.wait_for_new(1, timeout=0.05)   # nothing newer
-        assert n == 1                                   # returns stale, no hang
+        n, frame, _e, fresh = hub.wait_for_new(1, timeout=0.05)  # nothing newer
+        assert n == 1 and not fresh              # no hang, and says it is stale
+        assert frame is not None                 # the old one is still there...
 
 
 class TestBenchStream:
@@ -70,6 +72,30 @@ class TestBenchStream:
         bs.publish(np.full(2048, 2, dtype=np.uint16), 20_000)
         assert int(drv.grab()[0]) == 2
 
+    def test_a_stalled_acquisition_is_an_error_not_a_repeat(self, client,
+                                                            monkeypatch):
+        """...and the handler must never send it.
+
+        A duplicate frame is indistinguishable from a live one on the client:
+        `frame_counter` is None over this stream, so the panel's drop
+        detection cannot see it either, and the trace would sit frozen while
+        still looking live.
+        """
+        drv, bs, _applied = client
+        monkeypatch.setattr("clouds_fsw.bench_stream._WAIT_TIMEOUT_S", 0.1)
+        bs.publish(np.full(2048, 7, dtype=np.uint16), 20_000)
+        assert int(drv.grab()[0]) == 7            # the frame itself is fine
+        with pytest.raises(DriverError, match="no new frame"):
+            drv.grab()                            # nothing published since
+        bs.publish(np.full(2048, 8, dtype=np.uint16), 20_000)
+        assert int(drv.grab()[0]) == 8            # and it recovers on its own
+
+    def test_the_wait_is_shorter_than_the_client_timeout(self):
+        """Or a stalled detector reports as a network fault instead of as the
+        server's own message, which is the one that names the problem."""
+        from clouds_fsw import bench_stream
+        assert bench_stream._WAIT_TIMEOUT_S < NetDriver().timeout
+
     def test_set_times_is_only_requested_not_applied_here(self, client):
         drv, _bs, applied = client
         drv.set_times_us(7_500)
@@ -78,6 +104,39 @@ class TestBenchStream:
     def test_client_count_tracked(self, client):
         _drv, bs, _applied = client
         assert bs.clients == 1
+
+
+class TestNoDetectorOnTheExperiment:
+    """`SpectroSource.info` is None until the flight app's first successful
+    connect. Identity used to `getattr` past that and answer with an empty
+    model and a default 2048 px, so the panel showed "connected" against a Pi
+    with no camera and only the first grab said otherwise."""
+
+    @pytest.fixture
+    def stream_without_detector(self):
+        bs = BenchStream(info_provider=lambda: None,
+                         exposure_setter=lambda _us: None, port=0)
+        bs.start()
+        yield bs
+        bs.stop()
+
+    def test_connect_is_refused_and_says_why(self, stream_without_detector):
+        drv = NetDriver(f"127.0.0.1:{stream_without_detector.port}")
+        with pytest.raises(DriverError, match="no detector"):
+            drv.connect()
+
+    def test_the_refused_connect_leaks_no_socket(self, stream_without_detector):
+        """The panel retries every 3 s; one leaked socket per attempt is a
+        file-descriptor leak against a server behaving exactly as it should."""
+        drv = NetDriver(f"127.0.0.1:{stream_without_detector.port}")
+        for _ in range(3):
+            with pytest.raises(DriverError):
+                drv.connect()
+            assert drv._sock is None
+        deadline = time.time() + 3.0
+        while stream_without_detector.clients and time.time() < deadline:
+            time.sleep(0.02)
+        assert stream_without_detector.clients == 0
 
 
 class TestFlightSettingsRestored:

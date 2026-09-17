@@ -37,7 +37,11 @@ HK_FIELDS = [
     ("Mission t", lambda h: f"{h.mission_t_s} s"),
     ("Uptime", lambda h: f"{h.uptime_s} s"),
     ("Fired", lambda h: f"{h.fired:02b}"),
-    ("Membrane", lambda h: f"{h.membrane_duty} %"),
+    # Commanded duty plus the sensed plunger position from the GP30 switch:
+    # the pair is what shows a drive that moves nothing, or a switch that
+    # says pulled with the drive off. `pushed`/`pulled` is omitted when the
+    # MCU build cannot read the switch (HKE_NO_MEMBRANE_SENSE).
+    ("Membrane", lambda h: h.membrane_text),
     ("Driving", lambda h: h.actuator_text),
     ("Link", lambda h: h.link_text),
     # Named, not the raw mask: most of these bits are permanently set on this
@@ -184,6 +188,39 @@ class FlightPanel(QtCore.QObject):
 
         self.sections = [self.sec_sensors, self.sec_cmd, self.sec_act,
                          self.sec_events, self.sec_hk]
+
+    # -- lifecycle -----------------------------------------------------------
+
+    def rebind(self, receiver, commander, session) -> None:
+        """Point the sections at a new receiver / commander / session (the
+        window's Restart) and put every readout back to its startup text.
+
+        The widgets are kept, not rebuilt: the sidebar has already laid them
+        out, and the operator's fold state is theirs to keep. But everything
+        the widgets *show* came from the old receiver - the event list in
+        particular is filled by index against `receiver.events`, so left as
+        it is it would sit on the old count and show nothing new until the
+        fresh receiver had caught up with it.
+
+        The interlock checkbox is the operator's setting, not the link's, so
+        it survives and is pushed onto the new commander rather than reset.
+        """
+        self._rx = receiver
+        self._cmd = commander
+        self._session = session
+        self._on_flight_mode(self.chk_flight_mode.isChecked())
+
+        self.banner.setText("NO TELEMETRY")
+        self._set_banner_style(None)
+        for lab in self._hk_labels.values():
+            lab.setText("-")
+        for lab in self._sensor_labels.values():
+            lab.setText("-")
+            lab.setStyleSheet("")
+        self.lbl_downlink.setText("-")
+        self.lbl_cmd_status.setText("-")
+        self.lbl_act_status.setText("-")
+        self.event_list.clear()
 
     # -- layout --------------------------------------------------------------
 

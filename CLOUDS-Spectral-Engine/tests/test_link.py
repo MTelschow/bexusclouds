@@ -144,6 +144,29 @@ class TestHousekeeping:
         assert hk.Housekeeping(valve_status=0).actuator_text == "-"
         assert h.to_row()["actuator_text"] == "DISPERSE"
 
+    def test_membrane_switch_is_shown_with_the_duty_not_as_a_drive(self):
+        """The GP30 position switch shares `valve_status` but is an input:
+        it belongs next to the commanded duty, where duty-vs-position is the
+        check, and must not appear in the Driving row as a held line."""
+        both = hk.ValveStatus.DISPERSE | hk.ValveStatus.MEMBRANE_PULLED
+        h = hk.Housekeeping(membrane_duty=60, valve_status=both)
+        assert h.actuator_text == "DISPERSE"
+        assert h.membrane_pulled is True
+        assert h.membrane_text == "60 %  pulled"
+        off = hk.Housekeeping(membrane_duty=0, valve_status=0)
+        assert off.membrane_pulled is False
+        assert off.membrane_text == "0 %  pushed"
+        assert h.to_row()["membrane_pulled"] is True
+
+    def test_unreadable_membrane_switch_is_not_reported_as_pushed(self):
+        """A pico2 build has no GP30 and says so with NO_MEMBRANE_SENSE; a
+        clear bit is then no reading at all, not a released plunger."""
+        h = hk.Housekeeping(membrane_duty=60,
+                            error_flags=hk.HkErrors.NO_MEMBRANE_SENSE)
+        assert h.membrane_pulled is None
+        assert h.membrane_text == "60 %"
+        assert "NO_MEMBRANE_SENSE" in h.error_text
+
     def test_rail_voltages_are_rendered_for_displays(self):
         """The rails are the health of the power tree; an operator has to be
         able to read them without converting mV in their head."""

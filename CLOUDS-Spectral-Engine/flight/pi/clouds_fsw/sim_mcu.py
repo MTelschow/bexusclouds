@@ -398,10 +398,19 @@ class SimMcu:
 
             mission = 0 if self._mission_start is None \
                 else int(now - self._mission_start)
+            # The position switch on GP30 follows the solenoid: with the
+            # drive on it reads pulled for the on-phase of each 2 Hz cycle,
+            # which a 1 Hz HK sample catches at a random phase - so the bit
+            # alternates between packets, as it does on the carrier. With the
+            # drive off the plunger is released and the switch never closes.
+            valves = self._drive[0] if self._drive else 0
+            if self.membrane_duty and \
+                    (now * 2.0) % 1.0 < self.membrane_duty / 100.0:
+                valves |= hk.ValveStatus.MEMBRANE_PULLED
             return hk.Housekeeping(
                 state=int(self.state), flags=self._flags(now),
                 fired=self.fired,
-                valve_status=self._drive[0] if self._drive else 0,
+                valve_status=valves,
                 membrane_duty=self.membrane_duty, error_flags=int(err),
                 bme_temp_cc=int(random.gauss(2200, 20)),
                 rh1_cpct=int(random.gauss(4500, 50)),
