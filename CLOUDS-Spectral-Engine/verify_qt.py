@@ -19,7 +19,7 @@ import sys
 import time
 
 import numpy as np
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore, QtTest, QtWidgets
 
 
 def _qt_msg(mode, ctx, msg):
@@ -674,6 +674,23 @@ try:
     check("flight: a running motor takes the new speed on slider release",
           _mcu["log"] == [(int(_Cmd.SET_PARAM), int(_Param.DISPERSE_DUTY), 30)]
           and _mcu["motor_duty"] == 30, str(_mcu["log"]))
+    # The release is only one of the ways the handle moves. Arrow keys, the
+    # wheel and a click on the groove emit no `sliderReleased` at all, so a
+    # panel that listened for that alone showed a speed the motor was not
+    # turning at. Drive the key the way the operator does, through the widget.
+    _mcu["log"].clear()
+    QtTest.QTest.keyClick(_gse.sl_motor, QtCore.Qt.Key_Left)
+    check("flight: a running motor takes a speed dialled by keyboard",
+          _mcu["log"] == [(int(_Cmd.SET_PARAM), int(_Param.DISPERSE_DUTY), 29)]
+          and _mcu["motor_duty"] == 29 and _gse.lbl_motor_speed.text() == "29 %",
+          f'{_mcu["log"]} / {_gse.lbl_motor_speed.text()}')
+    # ...and the same value is not sent twice: a release after the keyboard
+    # already pushed it, or a drag that ends where it started, is not a new
+    # setting and must not spend a second SET_PARAM.
+    _mcu["log"].clear()
+    _gse._on_motor_speed_released()
+    check("flight: an unchanged speed is not re-sent",
+          _mcu["log"] == [], str(_mcu["log"]))
     _mcu["log"].clear()
     _gse._motor_stop()
     check("flight: Stop commands DISPERSE stop",

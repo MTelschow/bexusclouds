@@ -18,7 +18,63 @@ without re-deriving anything. Newest entries first.
 
 ---
 
-## 2026-09-17 (newest) - A second BME280, in the test chamber, on SPI_1
+## 2026-09-17 (newest) - The dispersion motor's Speed slider only worked if you dragged it
+
+**Asked for:** the control of the dispersion motor is broken in the GUI, fix it.
+
+**The slider listened for the wrong signal.** `FlightPanel._build_actuators`
+wired the speed live-update to `sliderReleased` alone:
+
+```python
+self.sl_motor.valueChanged.connect(self._on_motor_speed)          # label only
+self.sl_motor.sliderReleased.connect(self._on_motor_speed_released)  # the send
+```
+
+`sliderReleased` is emitted by `QAbstractSlider` **only for a drag of the
+handle**. Every other way a slider moves - the arrow keys, PageUp/PageDown,
+the mouse wheel, a click on the groove, a programmatic `setValue` - goes
+through `triggerAction()`/`setValue()` and emits `valueChanged` and nothing
+else. So dialling the speed by any of those updated the number beside the
+slider and sent no `SET_PARAM DISPERSE_DUTY` at all: the panel read `40 %`
+while the motor kept turning at whatever duty the last drag or the last Start
+had latched. That is precisely the failure `_send_motor_speed`'s own docstring
+says the control exists to prevent - "the speed the panel shows must be the
+speed that runs".
+
+It survived review because `verify_qt.py` drove the slot directly
+(`_gse.sl_motor.setValue(30); _gse._on_motor_speed_released()`), which is the
+one path that works. A check that calls the handler by hand cannot see a
+signal that was never connected, so the new check drives the widget the way an
+operator does, with `QTest.keyClick(_gse.sl_motor, Qt.Key_Left)`.
+
+**The fix listens on both signals and de-duplicates.** `valueChanged` now
+pushes the speed too, unless the handle is being held (`isSliderDown()`), in
+which case the send waits for the release - so a drag still spends one
+`SET_PARAM` instead of one per intermediate step, which was the reason
+`sliderReleased` was chosen in the first place. Both paths go through
+`_push_motor_speed()`, which skips a duty equal to the last one the MCU
+accepted (`_motor_speed_sent`): that stops the release at the end of a drag
+from re-sending what `valueChanged` already pushed, and stops a drag that ends
+where it started from spending uplink on a setting nobody changed.
+
+**`reset()` now also clears `_motor_running`.** The panel's belief that a run
+is up belonged to the old link; after a restart a slider move would otherwise
+push a speed for a run this panel never commanded. Nothing here stops the
+motor - only `DISPERSE STOP` does - but the panel stops claiming to know, and
+Start or Stop re-establishes the fact.
+
+**Evidence:** `verify_qt.py` ends `VERIFY OK` (188 checks), two of them new -
+`flight: a running motor takes a speed dialled by keyboard` (one `SET_PARAM
+DISPERSE_DUTY 29` on a `Key_Left`, label `29 %`, sim MCU duty 29) and `flight:
+an unchanged speed is not re-sent` (the following release sends nothing). The
+three existing motor checks are unchanged and still pass. `pytest tests/`:
+322 passed, 1 skipped. No firmware change - the MCU already re-latched
+`PARAM_DISPERSE_DUTY` on a `SET_PARAM` while running (`sequencer.c`,
+`ops_disperse_run`); it was never being told.
+
+---
+
+## 2026-09-17 - A second BME280, in the test chamber, on SPI_1
 
 **Asked for:** configure the additional BME280 in the test chamber, which is
 wired over SPI, and put its readings in the GUI's Sensors section.

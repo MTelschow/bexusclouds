@@ -282,6 +282,12 @@ class FlightPanel(QtCore.QObject):
         self.lbl_cmd_status.setText("-")
         self.lbl_act_status.setText("-")
         self._membrane_hz = MEMBRANE_HZ_DEFAULT
+        # The run this panel started belonged to the old link. Nothing here
+        # stops the motor - only DISPERSE STOP does - but the panel no longer
+        # claims to know it is turning, so a slider move does not push a speed
+        # for a run it never commanded. Start or Stop re-establishes the fact.
+        self._motor_running = False
+        self._motor_speed_sent = self.sl_motor.value()
         self._set_switch(None, None, 0, "no telemetry")
         self.event_list.clear()
 
@@ -524,8 +530,22 @@ class FlightPanel(QtCore.QObject):
         self.sl_motor.setStyleSheet(style.slider_style())
         self.sl_motor.setToolTip("Motor PWM duty, sent as SET_PARAM "
                                  "DISPERSE_DUTY before a drive starts, and "
-                                 "on release of the handle while the motor "
-                                 "is running")
+                                 "again whenever it is changed while the "
+                                 "motor is running")
+        #: Set by an accepted Start, cleared by Stop. What the live speed
+        #: updates key off; the MCU's own state is in HK.
+        self._motor_running = False
+        #: The duty the MCU last accepted, so the same value is never sent
+        #: twice - a drag that ends where it started is not a new setting.
+        self._motor_speed_sent = self.sl_motor.value()
+        # Both signals, because neither alone covers the ways a slider moves.
+        # `sliderReleased` is emitted only for a drag of the handle, so on its
+        # own the keyboard, the wheel and a click on the groove changed the
+        # number beside the slider and never told the MCU - the panel then
+        # showed a speed the motor was not turning at, which is the one thing
+        # this control must not do. `valueChanged` covers all of those, and
+        # defers to the release while the handle is actually held down so a
+        # drag still spends one SET_PARAM rather than one per step.
         self.sl_motor.valueChanged.connect(self._on_motor_speed)
         self.sl_motor.sliderReleased.connect(self._on_motor_speed_released)
         speed.addWidget(self.sl_motor, 1)
@@ -567,9 +587,6 @@ class FlightPanel(QtCore.QObject):
                                   "while the motor is running")
         self.btn_pulse.clicked.connect(self._disperse)
         sec.add(self.btn_pulse)
-        #: Set by an accepted Start, cleared by Stop or a refused speed. What
-        #: the slider release keys off; the MCU's own state is in HK.
-        self._motor_running = False
 
         self.lbl_act_status = QtWidgets.QLabel("-")
         self.lbl_act_status.setWordWrap(True)
@@ -664,21 +681,40 @@ class FlightPanel(QtCore.QObject):
             self.lbl_act_status.setText(str(e))
 
     def _on_motor_speed(self, value: int) -> None:
-        """Track the handle only. The speed goes to the MCU when a drive is
-        asked for, or once per drag while the motor runs (below), not on
-        every intermediate value: a SET_PARAM per step spends uplink on
-        settings nobody chose."""
+        """The number beside the handle, always - and the MCU too, unless the
+        handle is being dragged right now.
+
+        Mid-drag the send waits for `sliderReleased`, so a drag costs one
+        SET_PARAM instead of one per intermediate step: uplink is not spent on
+        settings nobody chose. Every other way the value moves - arrow keys,
+        the wheel, a click on the groove, `setValue` - emits no release at
+        all, so for those this is the only chance to tell the MCU, and it
+        takes it.
+        """
         self.lbl_motor_speed.setText(f"{value} %")
+        if not self.sl_motor.isSliderDown():
+            self._push_motor_speed()
 
     def _on_motor_speed_released(self) -> None:
-        """A running motor takes its new speed when the handle is let go -
-        the MCU re-latches PARAM_DISPERSE_DUTY at once while it runs. Idle,
-        nothing is sent; the next Start or pulse carries the speed."""
+        """The end of a drag: the value it settled on goes to the MCU now."""
+        self._push_motor_speed()
+
+    def _push_motor_speed(self) -> None:
+        """A running motor takes its new speed as soon as the operator has
+        chosen one - the MCU re-latches PARAM_DISPERSE_DUTY at once while it
+        runs. Idle, nothing is sent; the next Start or pulse carries the
+        speed. An unchanged value is not re-sent: a drag that ends where it
+        started, or a release after `valueChanged` already pushed, is not a
+        new setting."""
         if not self._motor_running or self._cmd is None:
             return
         speed = self.sl_motor.value()
+        if speed == self._motor_speed_sent:
+            return
         try:
             r = self._cmd.set_param(int(Param.DISPERSE_DUTY), speed)
+            if r == AckResult.OK:
+                self._motor_speed_sent = speed
             self.lbl_act_status.setText(f"motor speed {speed} % -> {r.name}")
         except (InterlockError, CommandError, ValueError) as e:
             self.lbl_act_status.setText(str(e))
@@ -693,6 +729,7 @@ class FlightPanel(QtCore.QObject):
             self.lbl_act_status.setText(
                 f"DISPERSE_DUTY -> {r.name}, not {what}")
             return None
+        self._motor_speed_sent = speed
         return speed
 
     def _motor_start(self) -> None:
