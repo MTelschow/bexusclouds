@@ -16,11 +16,14 @@ as ``RAIL_MV_INVALID`` until the part is populated. A reserved slot is the
 cheaper mistake: the alternative is a wire format that changes on the day
 the part arrives, on an instrument that is already flying its protocol.
 
-The last two bytes are the push-pull solenoid's current sense, the
+The last two bytes are the CaCO3 dispersion motor's current sense, the
 ``ACT_HB_SENS`` net on GP46 read by the RP2350B's ADC: raw 12-bit counts,
 scaled to volts and amps here (``hb_sense_v()`` / ``hb_sense_a()``), for the
-same reason the INA226 shunts come down raw. Appended after ``mission_t_s``
-so every older field keeps the offset a logged session was written with.
+same reason the INA226 shunts come down raw. It is the IPROPI output of the
+motor's DRV8251A H-bridge, not the membrane solenoid - ``ACT_HB`` is the
+driver channel that carries GP17/GP18 (drive) and GP46 (sense) together.
+Appended after ``mission_t_s`` so every older field keeps the offset a logged
+session was written with.
 """
 from __future__ import annotations
 
@@ -99,27 +102,43 @@ RAIL_SHUNT_MOHM = (10.0, 15.0, 50.0, 50.0)
 #: flight/mcu/src/core/frame.h. The ADC is 12-bit, so a real sample is
 #: 0..4095 and 0xFFFF cannot be one. It is what a build that cannot reach
 #: GP46 (pico2 / RP2350A) downlinks: not 0, because 0 counts is exactly what
-#: a de-energized solenoid reads, and the two must stay distinguishable.
+#: an idle motor reads, and the two must stay distinguishable.
 HB_SENSE_INVALID = 0xFFFF
 
 #: Full scale of the RP2350 ADC and the reference it is measured against, in
 #: volts. 3.3 V is the SDK's nominal ADC_VREF; the carrier's actual reference
-#: has not been measured, so a sense *voltage* shown on the panel carries
-#: that assumption.
+#: has not been measured, so an amp value carries that assumption too.
 HB_SENSE_ADC_COUNTS = 4096
 HB_SENSE_VREF_V = 3.3
 
-#: Amps per volt at the ACT_HB_SENS pin - the solenoid current-sense gain.
+#: The DRV8251A current-sense chain on the dispersion motor's H-bridge.
 #:
-#: ``None`` until measured: the schematic page we have names the net and
-#: nothing else (no sense resistor, no amplifier gain, no proportional-output
-#: resistor), and a guessed number here would put a confident wrong current
-#: on the panel and in every session log. While it is ``None`` the ground
-#: shows the sense **voltage** only; set it and ``hb_sense_a()`` starts
-#: returning amps, for live packets and for every logged ``hb_sense_raw``
-#: alike - which is why the counts go down raw rather than an amp value the
-#: firmware computed.
-HB_SENSE_A_PER_V: float | None = None
+#: The part has no external power shunt: an internal current mirror on the
+#: low-side FETs drives the IPROPI pin with a current proportional to the
+#: motor current, ``I_IPROPI = I_motor x AIPROPI``, and the carrier turns that
+#: back into a voltage across ``R_IPROPI`` to ground, which is what GP46
+#: measures. ``AIPROPI`` is the datasheet's 1500 uA/A typical (the AERR spec
+#: covers offset and gain error together); ``R_IPROPI`` is the 1.5 kOhm fitted
+#: on the carrier.
+IPROPI_GAIN_A_PER_A = 1.5e-3
+IPROPI_R_OHM = 1500.0
+
+#: Amps of motor current per volt at the ACT_HB_SENS pin, from the chain
+#: above: ``1 / (R_IPROPI * AIPROPI)`` = 0.444 A/V, i.e. a 3.3 V full-scale
+#: ADC reading is 1.47 A.
+#:
+#: The counts still go down the link raw and are scaled here, as the INA226
+#: shunts are: if the resistor turns out to be a different value, or the
+#: measured AIPROPI of this part differs, every logged session can be
+#: re-derived, which an amp value the firmware had already computed could not.
+#:
+#: **A reading of 0 is not proof of no current.** IPROPI only sees current
+#: flowing drain-to-source in a low-side FET, so it is valid while the bridge
+#: drives or brakes and reads zero in coast, where the winding current
+#: freewheels through the body diodes. The dispersion motor is driven forward
+#: (GP17 high, GP18 low) in bounded 5 s pulses and coasts the rest of the
+#: time, so a run shows a few in-pulse samples at 1 Hz and 0 between them.
+HB_SENSE_A_PER_V: float | None = 1.0 / (IPROPI_R_OHM * IPROPI_GAIN_A_PER_A)
 
 
 class ValveStatus(IntEnum):
@@ -133,24 +152,34 @@ class ValveStatus(IntEnum):
     repeating waveform, reported as ``membrane_duty``.
 
     ``MEMBRANE_PULLED`` is the exception in kind: it is an **input**, the
-    position switch on GP30 that the solenoid plunger presses while it is
-    energized. It reports what the plunger is doing, not what the MCU is
-    driving, so it can be set alongside a drive bit, and it is the only
-    evidence ground has that a commanded membrane drive moves anything. When
-    the MCU build cannot reach GP30 it raises ``HkErrors.NO_MEMBRANE_SENSE``
-    and the bit means nothing; ``Housekeeping.membrane_pulled`` folds that in.
+    position switch on GP30 under the solenoid plunger - pressed while the
+    solenoid rests, lifted (bit set) while it is actuated. It reports what
+    the plunger is doing, not what the MCU is
+    driving, so it can be set alongside a drive bit. When the MCU build
+    cannot reach GP30 it raises ``HkErrors.NO_MEMBRANE_SENSE`` and the bit
+    means nothing; ``Housekeeping.membrane_pulled`` folds that in.
+
+    ``MEMBRANE_CYCLING`` is the switch's history: set when it changed state
+    at least once since the previous HK packet. It is the evidence that a
+    commanded drive moves anything, because ``MEMBRANE_PULLED`` alone cannot
+    be: HK is sent every 1000 ms and the membrane's 500 ms cycle is timed by
+    the same MCU loop, so the 1 Hz sample sits at a fixed phase and reads the
+    same value packet after packet whether the plunger moves or not. The MCU
+    samples the switch every 10 ms pass and latches any edge into this bit.
     """
     PINCH_1 = 1 << 0
     PINCH_2 = 1 << 1
     EQ1_CLOSE = 1 << 2
     EQ2_CLOSE = 1 << 3
     DISPERSE = 1 << 4        # CaCO3 dispersion motor, forward line
-    MEMBRANE_PULLED = 1 << 5  # sensed, not driven: GP30 switch reads LOW
+    MEMBRANE_PULLED = 1 << 5  # sensed, not driven: GP30 switch lifted (HIGH) now
+    MEMBRANE_CYCLING = 1 << 6  # sensed: GP30 switch changed since the last HK
 
 
 #: The ``ValveStatus`` bits that are drives - what ``actuator_text`` lists.
-#: ``MEMBRANE_PULLED`` is a sensed position and belongs with the membrane row.
-DRIVE_BITS = tuple(v for v in ValveStatus if v is not ValveStatus.MEMBRANE_PULLED)
+#: The two membrane sense bits are positions, and belong with the membrane row.
+SENSE_BITS = (ValveStatus.MEMBRANE_PULLED, ValveStatus.MEMBRANE_CYCLING)
+DRIVE_BITS = tuple(v for v in ValveStatus if v not in SENSE_BITS)
 
 
 class HkErrors(IntEnum):
@@ -201,7 +230,7 @@ class Housekeeping:
     shunt_raw: tuple = field(default=(0, 0, 0, 0))
     uptime_s: int = 0
     mission_t_s: int = 0      # 0 until launch detection
-    #: Push-pull solenoid current sense (ACT_HB_SENS, GP46 / ADC6): raw
+    #: Dispersion motor current sense (ACT_HB_SENS, GP46 / ADC6): raw
     #: 12-bit ADC counts, 0..4095. ``HB_SENSE_INVALID`` means this MCU build
     #: cannot reach the pin. Defaults to "no reading" like ``rail_mv``.
     hb_sense_raw: int = HB_SENSE_INVALID
@@ -251,16 +280,20 @@ class Housekeeping:
         return uv / (RAIL_SHUNT_MOHM[i] * 1000.0)
 
     def hb_sense_v(self) -> float | None:
-        """Voltage at the solenoid current-sense pin, or None if this MCU
-        build has no reading for it. Assumes ``HB_SENSE_VREF_V``."""
+        """Voltage across R_IPROPI at the motor current-sense pin, or None if
+        this MCU build has no reading for it. Assumes ``HB_SENSE_VREF_V``."""
         if self.hb_sense_raw == HB_SENSE_INVALID:
             return None
         return self.hb_sense_raw * HB_SENSE_VREF_V / HB_SENSE_ADC_COUNTS
 
     def hb_sense_a(self) -> float | None:
-        """Push-pull solenoid current in amps, or None when there is no
+        """CaCO3 dispersion motor current in amps, or None when there is no
         reading **or no calibration**: with ``HB_SENSE_A_PER_V`` unset a
-        current cannot be derived, and 0.0 would claim an idle solenoid."""
+        current cannot be derived, and 0.0 would claim an idle motor.
+
+        0.0 A is a real reading, but it means "no current through a low-side
+        FET", which is also what coast looks like - see ``HB_SENSE_A_PER_V``.
+        """
         v = self.hb_sense_v()
         if v is None or HB_SENSE_A_PER_V is None:
             return None
@@ -268,11 +301,11 @@ class Housekeeping:
 
     @property
     def hb_sense_text(self) -> str:
-        """The solenoid current row for HK displays: amps once the sense gain
-        is known, the pin voltage until then, ``-`` for no reading. The
-        voltage is shown rather than nothing because it already answers the
-        question the sensor exists for - does the current rise with the
-        drive and fall without it - and the scale can be applied later."""
+        """The motor current row for HK displays: amps from the DRV8251A
+        IPROPI chain, or the bare pin voltage if ``HB_SENSE_A_PER_V`` is ever
+        cleared, ``-`` for no reading. A voltage rather than nothing in that
+        case, because it still answers the question the sensor exists for -
+        does the current rise with the drive and fall without it."""
         v = self.hb_sense_v()
         if v is None:
             return "-"
@@ -317,17 +350,32 @@ class Housekeeping:
         return bool(self.valve_status & ValveStatus.MEMBRANE_PULLED)
 
     @property
+    def membrane_cycling(self) -> bool | None:
+        """Whether the GP30 switch changed state since the previous HK packet,
+        or ``None`` when the switch is unsourced in this MCU build."""
+        if self.error_flags & HkErrors.NO_MEMBRANE_SENSE:
+            return None
+        return bool(self.valve_status & ValveStatus.MEMBRANE_CYCLING)
+
+    @property
     def membrane_text(self) -> str:
-        """The membrane row for HK displays: the commanded duty and, next to
-        it, the sensed plunger position. The two together are the check - a
-        duty above zero with a switch that never reads pulled, or a duty of
-        zero with one that does, is a solenoid or a switch to look at. At the
-        membrane's 2 Hz the 1 Hz HK sample lands at a random phase, so with
-        the drive on the position is expected to alternate between packets."""
+        """The membrane row for HK displays: the commanded duty, the sensed
+        plunger position at the sample, and whether it moved during the last
+        second. The row is the check: ``60 %  pulled, cycling`` is a working
+        drive; ``60 %  pushed, not cycling`` is a solenoid, a driver or a
+        switch to look at; ``0 %  pushed`` is rest. The position alone is
+        one fixed-phase sample of a 2 Hz cycle and says nothing about
+        motion, which is why ``cycling`` is printed with it whenever the
+        drive is on."""
         pulled = self.membrane_pulled
         if pulled is None:
             return f"{self.membrane_duty} %"
-        return f"{self.membrane_duty} %  {'pulled' if pulled else 'pushed'}"
+        text = f"{self.membrane_duty} %  {'pulled' if pulled else 'pushed'}"
+        if self.membrane_cycling:
+            text += ", cycling"
+        elif self.membrane_duty:
+            text += ", not cycling"
+        return text
 
     @property
     def rail_text(self) -> str:
@@ -380,6 +428,7 @@ class Housekeeping:
         d["link_text"] = self.link_text
         d["actuator_text"] = self.actuator_text
         d["membrane_pulled"] = self.membrane_pulled
+        d["membrane_cycling"] = self.membrane_cycling
         d["error_text"] = self.error_text
         d["rail_text"] = self.rail_text
         d["hb_sense_text"] = self.hb_sense_text
@@ -393,7 +442,7 @@ class Housekeeping:
         for i, name in enumerate(("vin", "24v", "5v", "3v3")):
             a = self.rail_a(i)
             d[f"rail_{name}_a"] = "" if a is None else round(a, 4)
-        # Same rule for the solenoid sense: the raw counts are in the row via
+        # Same rule for the motor sense: the raw counts are in the row via
         # asdict(); the derived volts and amps sit beside them, blank where
         # there is no reading or (amps) no gain to apply yet.
         v, a = self.hb_sense_v(), self.hb_sense_a()

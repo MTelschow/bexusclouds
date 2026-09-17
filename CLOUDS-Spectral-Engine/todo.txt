@@ -1,16 +1,14 @@
-Regler
-
+TODO:
 Gyro sensor
 
 partical sensor
 
-on HB_SENS there is an additinal current sensor for the push pull, confure it and add it to the sensors
-
-Integration time slider seems wrong (especially when auto integration time on, so in that case diable it)
+Regler
 
 Add speed adjustment for the motor and create a slider in the GUI for it
 
-dark measurement is seemingly not in git repository, on a differnt mac it was not present
+Sensor data is not displayed anymore
+
 
 
 IN PROGRESS:
@@ -20,10 +18,24 @@ IN PROGRESS:
 
 
 
-
-Done:
-
 Add Push Pull button
+
+
+
+
+VALIDATE:
+
+on HB_SENS there is an additinal current sensor for the push pull, confure it and add it to the sensors
+
+
+
+
+
+DONE:
+
+Integration time slider seems wrong (especially when auto integration time on, so in that case diable it)
+
+dark measurement is seemingly not in git repository, on a differnt mac it was not present
 
 Investigate Spectro data not appearing until restart
 

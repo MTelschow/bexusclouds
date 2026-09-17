@@ -12,7 +12,7 @@ import pytest
 from clouds_fsw.sim_mcu import SimMcu
 from clouds_fsw.uart_link import PipeTransport
 from clouds_link import cobs, frames, hk
-from clouds_link.commands import Command
+from clouds_link.commands import Command, Param
 from clouds_link.frames import AckResult, Frame, PacketType, SeqCounter
 
 
@@ -157,17 +157,33 @@ def test_manual_drives_show_up_in_valve_status(sim):
     assert pi.command(Command.DISPERSE, key=2) == AckResult.INVALID
 
 
+def test_motor_speed_is_a_parameter_not_the_disperse_key(sim):
+    """What the panel's Speed slider does: SET_PARAM first, then the pulse.
+    The key stays the request (1), so a speed sent as the key is a bad
+    command rather than a 2 % drive nobody asked for."""
+    mcu, pi = sim
+    assert mcu.disperse_duty == 100                # full-on by default
+    assert pi.command(Command.SET_PARAM, key=Param.DISPERSE_DUTY,
+                      value=40) == AckResult.OK
+    assert mcu.disperse_duty == 40
+    assert pi.command(Command.DISPERSE, key=1) == AckResult.OK
+    assert pi.command(Command.DISPERSE, key=40) == AckResult.INVALID
+
+
 
 def test_membrane_switch_follows_the_drive(sim):
-    """The simulated GP30 switch: never pulled with the membrane off, pulled
-    for some of the samples with it on (2 Hz sampled at a random phase), and
-    kept out of the Driving text like the real bit."""
+    """The simulated GP30 switch: never pulled and never cycling with the
+    membrane off; cycling on every packet with it on, and (polled here much
+    faster than 1 Hz) pulled for some samples and pushed for others; kept out
+    of the Driving text like the real bits."""
     mcu, pi = sim
     for _ in range(5):
         assert not mcu.housekeeping().valve_status & hk.ValveStatus.MEMBRANE_PULLED
         assert mcu.housekeeping().membrane_pulled is False
+        assert mcu.housekeeping().membrane_cycling is False
     assert pi.command(Command.MEMBRANE, key=60) == AckResult.OK
     assert mcu.housekeeping().membrane_duty == 60
+    assert mcu.housekeeping().membrane_cycling is True
     seen = set()
     t_end = time.monotonic() + 1.5
     while time.monotonic() < t_end and len(seen) < 2:
@@ -177,28 +193,31 @@ def test_membrane_switch_follows_the_drive(sim):
     assert "MEMBRANE_PULLED" not in mcu.housekeeping().actuator_text
     assert pi.command(Command.MEMBRANE, key=0) == AckResult.OK
     assert mcu.housekeeping().membrane_pulled is False
+    assert mcu.housekeeping().membrane_cycling is False
 
 
-def test_solenoid_current_sense_follows_the_drive(sim):
-    """The simulated ACT_HB_SENS ADC: near zero with the membrane off, high
-    for the on-phase samples with it on, never the sentinel (the sim is the
-    RP2350B carrier, which has GP46)."""
+def test_motor_current_sense_follows_the_dispersion_drive(sim):
+    """The simulated ACT_HB_SENS ADC: near zero with the motor idle, amps
+    while the DISPERSE drive is up, never the sentinel (the sim is the
+    RP2350B carrier, which has GP46). It follows the motor, not the
+    membrane - they are different actuators on different pins."""
     mcu, pi = sim
     for _ in range(5):
         h = mcu.housekeeping()
         assert h.hb_sense_raw != hk.HB_SENSE_INVALID
-        assert h.hb_sense_v() is not None and h.hb_sense_v() < 0.1
+        assert h.hb_sense_a() is not None and h.hb_sense_a() < 0.05
     assert pi.command(Command.MEMBRANE, key=60) == AckResult.OK
+    assert mcu.housekeeping().hb_sense_a() < 0.05, \
+        "the membrane must not move the motor's current sense"
+    assert pi.command(Command.DISPERSE, key=1) == AckResult.OK
     highs = 0
     t_end = time.monotonic() + 1.5
     while time.monotonic() < t_end:
         h = mcu.housekeeping()
         assert 0 <= h.hb_sense_raw <= 4095
-        highs += h.hb_sense_v() > 1.0
+        highs += h.hb_sense_a() > 0.2
         time.sleep(0.02)
-    assert highs, "the sense should rise during the on-phase of the drive"
-    assert pi.command(Command.MEMBRANE, key=0) == AckResult.OK
-    assert mcu.housekeeping().hb_sense_v() < 0.1
+    assert highs, "the sense should rise while the motor drive is up"
 
 
 def test_abort_locks_the_actuators_out(sim):

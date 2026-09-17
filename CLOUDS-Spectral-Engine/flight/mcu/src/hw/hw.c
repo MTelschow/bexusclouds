@@ -73,20 +73,100 @@ void hw_watchdog_kick(void)
 static pulse_sched_t pulses;
 static sqwave_t membrane_wave; /* used below the PWM frequency floor */
 
+/* CaCO3 motor speed, latched from PARAM_DISPERSE_DUTY when the pulse is
+ * queued rather than read when it starts: the drive is one 5 s shot with no
+ * way to change it mid-run, so the speed the panel showed at the press is
+ * the speed that runs. Initialised to the compiled-in default so a pulse
+ * before any cfg reaches ops_disperse() still turns the motor. */
+static uint8_t disperse_duty_pct = 100;
+
+/* True while the operator holds the motor on (DISPERSE_RUN .. DISPERSE_STOP).
+ * A hold is a state like the membrane's, not a pulse: it lives beside
+ * core/pulse rather than in its one-at-a-time queue, so a running motor can
+ * neither delay a release's pinch valve nor keep ops_busy() true and stall
+ * the SEAL step. While held, the pulse scheduler's release edge on the
+ * forward line is ignored (drive_pin) and a new motor pulse is not queued
+ * (ops_disperse) - the motor is already turning. */
+static bool motor_held;
+
+/* Motor PWM frequency. Well above the ~9 Hz hardware floor (so this is real
+ * PWM, not core/sqwave) and above audible - a brushed motor chopped at a few
+ * hundred Hz whines and heats the driver without turning any faster. The
+ * speed is the duty against this period. */
+#define DISPERSE_PWM_HZ 20000u
+
+/* Drive or release the motor's forward line. It is the one pulse output that
+ * is not a plain GPIO: its level carries the speed, so the pin is handed to
+ * the PWM slice for the length of the drive and taken back as an SIO output
+ * driven low afterwards - de-energized by the MCU, not merely by whatever
+ * pull the driver input has (see hw_init, GP17/GP18 have no measured one).
+ *
+ * At 100 % the compare level equals the wrap+1 the counter never reaches, so
+ * the line is held high exactly as the pre-PWM drive held it. */
+static void disperse_drive(bool on)
+{
+    uint slice = pwm_gpio_to_slice_num(PIN_DISPERSE_FWD);
+    uint32_t div16, period;
+
+    if (!on) {
+        pwm_set_enabled(slice, false);
+        gpio_set_function(PIN_DISPERSE_FWD, GPIO_FUNC_SIO);
+        gpio_set_dir(PIN_DISPERSE_FWD, GPIO_OUT);
+        gpio_put(PIN_DISPERSE_FWD, 0);
+        return;
+    }
+    pwmdiv_solve(clock_get_hz(clk_sys), DISPERSE_PWM_HZ, &div16, &period);
+    pwm_set_clkdiv_int_frac(slice, (uint8_t)(div16 / 16u),
+                            (uint8_t)(div16 % 16u));
+    pwm_set_wrap(slice, (uint16_t)(period - 1u));
+    pwm_set_gpio_level(PIN_DISPERSE_FWD,
+                       (uint16_t)((uint64_t)period * disperse_duty_pct / 100u));
+    gpio_set_function(PIN_DISPERSE_FWD, GPIO_FUNC_PWM);
+    pwm_set_enabled(slice, true);
+}
+
 static void drive_pin(void *ctx, uint8_t pin, bool level)
 {
     (void)ctx;
+    /* The motor's forward line is speed-controlled; every other output is a
+     * solenoid that is either energized or not. */
+    if (pin == PIN_DISPERSE_FWD) {
+        /* The end of a pulse must not release a motor the operator is
+         * holding on; the hold ends only through ops_disperse_run(false). */
+        if (!level && motor_held)
+            return;
+        disperse_drive(level);
+        return;
+    }
     gpio_put(pin, level);
 }
 
+/* Membrane switch history between two HK packets (board.h, frame.h
+ * HKV_MEMBRANE_CYCLING): sampled every loop pass below, consumed by
+ * hw_actuator_status(). Both start "released": a switch that is closed at
+ * boot then registers its first read as a change, which is what happened. */
+static bool sense_last_pulled;
+static bool sense_changed;
+
 void hw_actuators_service(uint64_t now_ms)
 {
+    bool pulled;
+
     pulse_service(&pulses, now_ms, VALVE_PULSE_MS, drive_pin, NULL);
     /* The membrane's low-frequency edges are released here too, for the same
      * reason the valve pulses are: a hung loop must not be able to leave a
      * solenoid energized. Only touch the pin when an edge actually falls due. */
     if (sqwave_service(&membrane_wave, now_ms))
         gpio_put(PIN_MEMBRANE_PWM, sqwave_level(&membrane_wave));
+
+    /* Sample the position switch on every pass (~10 ms): at 2 Hz the 1 Hz HK
+     * sample alone sits at a fixed phase of the cycle and cannot tell a
+     * moving plunger from a stuck one. Any edge since the last HK is latched. */
+    pulled = hw_membrane_pulled();
+    if (pulled != sense_last_pulled) {
+        sense_changed = true;
+        sense_last_pulled = pulled;
+    }
 }
 
 /* The membrane position switch is the one pin above GP29 in use, and GP30
@@ -106,13 +186,14 @@ void hw_actuators_service(uint64_t now_ms)
 #define HB_SENSE_ADC_CH (PIN_HB_SENSE - ADC_BASE_PIN)
 #endif
 
-/* Raw 12-bit sample of the solenoid current sense, or HB_SENSE_INVALID when
- * this build cannot reach GP46. Eight conversions summed and divided, not
- * one: a single 2 us sample rides the ADC's own noise, and the sum is cheap -
- * ~16 us total, nowhere near the 2 s watchdog. It is still one point in the
- * membrane's 2 Hz cycle, so with the drive on the value is expected to move
- * between packets; averaging across the cycle is a ground-side job over
- * the logged series, not something to hide in the sample. */
+/* Raw 12-bit sample of the dispersion motor's current sense, or
+ * HB_SENSE_INVALID when this build cannot reach GP46. Eight conversions
+ * summed and divided, not one: a single 2 us sample rides the ADC's own
+ * noise, and the sum is cheap - ~16 us total, nowhere near the 2 s watchdog.
+ * It is still one point per 1 Hz sweep of a drive that lasts 5 s, so a run
+ * shows a handful of in-pulse samples and nothing between releases;
+ * averaging or integrating is a ground-side job over the logged series, not
+ * something to hide in the sample. */
 uint16_t hw_hb_sense_raw(void)
 {
 #if HAVE_HB_SENSE
@@ -130,9 +211,11 @@ uint16_t hw_hb_sense_raw(void)
 bool hw_membrane_pulled(void)
 {
 #if HAVE_MEMBRANE_SENSE
-    /* Internal pull-up, switch to ground: closed (solenoid energized,
-     * plunger pulled) reads LOW. */
-    return !gpio_get(PIN_MEMBRANE_SENSE);
+    /* Internal pull-up, switch to ground. The button sits under the plunger
+     * and is PRESSED (closed, LOW) while the solenoid rests; actuating the
+     * solenoid lifts the plunger off it (open, HIGH). So HIGH = actuated.
+     * Measured 2026-09-17: LOW at rest, as described. */
+    return gpio_get(PIN_MEMBRANE_SENSE);
 #else
     return false;
 #endif
@@ -142,9 +225,11 @@ uint8_t hw_actuator_status(void)
 {
     uint8_t bits;
 
-    /* core/pulse drives one line at a time, so at most one drive bit is set.
-     * The open lines are never energized (they are interlocks forced low),
-     * and the membrane drive is a waveform, reported as a duty instead. */
+    /* core/pulse drives one line at a time, so at most one pulsed drive bit
+     * is set. The open lines are never energized (they are interlocks forced
+     * low), and the membrane drive is a waveform, reported as a duty instead.
+     * A held motor (DISPERSE_RUN) is not a pulse and is added below, so it
+     * may sit beside a pinch bit if a release fires while it runs. */
     switch (pulses.active_pin) {
     case PIN_PINCH_1:
         bits = HKV_PINCH_1;
@@ -165,10 +250,18 @@ uint8_t hw_actuator_status(void)
         bits = 0;
         break;
     }
-    /* Plus the one sensed bit, which is allowed alongside a drive: it reports
-     * the plunger, not a line the MCU is holding. */
+    if (motor_held)
+        bits |= HKV_DISPERSE;
+    /* Plus the sensed bits, which are allowed alongside a drive: they report
+     * the plunger, not a line the MCU is holding. PULLED is the switch now;
+     * CYCLING is whether it moved since the last HK, latched by
+     * hw_actuators_service() and consumed here, once per packet. */
     if (hw_membrane_pulled())
         bits |= HKV_MEMBRANE_PULLED;
+    if (sense_changed) {
+        bits |= HKV_MEMBRANE_CYCLING;
+        sense_changed = false;
+    }
     return bits;
 }
 
@@ -195,11 +288,46 @@ static void ops_close_eq_valves(void *ctx)
  * Scheduled, not slept: the drive is 5 s and the watchdog bites at 2 s. It
  * shares the one-at-a-time queue with the pinch valve fired in the same
  * step, so the motor runs after that valve rather than alongside it, which
- * keeps peak actuator current at one drive. */
+ * keeps peak actuator current at one drive.
+ *
+ * Speed is PARAM_DISPERSE_DUTY, latched here and applied by disperse_drive()
+ * when the queue reaches this pulse. The automatic release path and the
+ * manual CMD_DISPERSE both arrive through here, so both run the motor at the
+ * one configured speed - there is no separate bench setting to forget. */
 static void ops_disperse(void *ctx)
 {
-    (void)ctx;
+    const cfg_t *c = (const cfg_t *)ctx;
+
+    if (motor_held)
+        return; /* already turning under the operator's hold */
+    disperse_duty_pct = (uint8_t)(c ? cfg_get(c, PARAM_DISPERSE_DUTY)
+                                    : cfg_default(PARAM_DISPERSE_DUTY));
     pulse_request(&pulses, PIN_DISPERSE_FWD, PIN_DISPERSE_REV);
+}
+
+/* The operator's Start/Stop for the same motor (DISPERSE_RUN / STOP). Start
+ * latches the speed like a pulse does and drives the line directly, with the
+ * reverse line forced low first for the same interlock reason; a repeat
+ * Start (the sequencer sends one on SET_PARAM DISPERSE_DUTY while running)
+ * only reprograms the duty. Stop releases the hold and also cancels any
+ * motor pulse that is driving or queued - a Stop that left a 5 s pulse
+ * running would be a button that does nothing for up to 5 s. The pinch and
+ * equalisation pulses in the same queue are untouched. */
+static void ops_disperse_run(void *ctx, bool on)
+{
+    const cfg_t *c = (const cfg_t *)ctx;
+
+    if (!on) {
+        motor_held = false;
+        pulse_cancel(&pulses, PIN_DISPERSE_FWD, drive_pin, NULL);
+        disperse_drive(false);
+        return;
+    }
+    disperse_duty_pct = (uint8_t)(c ? cfg_get(c, PARAM_DISPERSE_DUTY)
+                                    : cfg_default(PARAM_DISPERSE_DUTY));
+    gpio_put(PIN_DISPERSE_REV, 0);
+    motor_held = true;
+    disperse_drive(true);
 }
 
 static bool ops_busy(void *ctx)
@@ -341,6 +469,7 @@ const seq_ops_t hw_seq_ops = {
     .fire_pinch = ops_fire_pinch,
     .close_eq_valves = ops_close_eq_valves,
     .disperse = ops_disperse,
+    .disperse_run = ops_disperse_run,
     .membrane = ops_membrane,
     .busy = ops_busy,
     .seal_ok = ops_seal_ok,
@@ -502,15 +631,15 @@ void hw_init(void)
 
 #if HAVE_MEMBRANE_SENSE
     /* Membrane position switch: input, internal pull-up, switch to ground.
-     * Open (solenoid released) reads 1, closed (energized, pulled) reads 0.
-     * Not in out_pins above and must never be: driving it low would look
-     * exactly like a permanently pulled solenoid. */
+     * Pressed by the resting plunger (closed) reads 0; lifted when the
+     * solenoid actuates (open) reads 1. Not in out_pins above and must never
+     * be: driving it would look exactly like a stuck solenoid. */
     gpio_init(PIN_MEMBRANE_SENSE);
     gpio_set_dir(PIN_MEMBRANE_SENSE, GPIO_IN);
     gpio_pull_up(PIN_MEMBRANE_SENSE);
 #endif
 #if HAVE_HB_SENSE
-    /* The ADC exists for one input: the solenoid current sense on GP46
+    /* The ADC exists for one input: the motor current sense on GP46
      * (ADC6). adc_gpio_init() disables the pin's digital input and pulls, so
      * it cannot end up in out_pins by mistake and read back as something
      * driven. The STLM20 channels are still not sampled - those pins are

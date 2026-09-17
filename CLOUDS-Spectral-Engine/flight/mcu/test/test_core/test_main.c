@@ -131,7 +131,7 @@ static void test_hk_pack_layout(void)
     hk.rail_mv[2] = 5003;
     hk.shunt_raw[2] = -40;    /* current can flow either way: sign survives */
     hk.mission_t_s = 4210;
-    hk.hb_sense_raw = 1500;   /* ADC counts, ~1.2 V at the sense pin */
+    hk.hb_sense_raw = 1500;   /* ADC counts, ~1.2 V at IPROPI = ~0.54 A */
     hk_pack(&hk, out);
     TEST_ASSERT_EQUAL_UINT8(5, out[0]);
     TEST_ASSERT_EQUAL_UINT8(0x01, out[2]);
@@ -379,6 +379,45 @@ static void test_queue_holds_every_drivable_line(void)
     TEST_ASSERT_EQUAL_UINT16(0, p.dropped);
 }
 
+static void test_cancel_cuts_one_line_short_and_leaves_the_rest(void)
+{
+    pulse_sched_t p;
+
+    rec_reset();
+    pulse_init(&p);
+    /* a release with the operator's Stop landing mid-motor: valve first,
+     * motor after it, then a second valve queued behind the motor */
+    pulse_request(&p, PIN_PINCH_1, PULSE_PIN_NONE);
+    pulse_request(&p, PIN_DISPERSE_FWD, PIN_DISPERSE_REV);
+    pulse_request(&p, PIN_PINCH_2, PULSE_PIN_NONE);
+
+    for (SIM_MS = 0; SIM_MS <= VALVE_PULSE_MS + 500; SIM_MS += LOOP_MS)
+        pulse_service(&p, SIM_MS, VALVE_PULSE_MS, rec_drive, NULL);
+    TEST_ASSERT_EQUAL_UINT8(PIN_DISPERSE_FWD, p.active_pin);
+
+    /* Stop: the motor line goes low now, not at its deadline */
+    TEST_ASSERT_TRUE(pulse_cancel(&p, PIN_DISPERSE_FWD, rec_drive, NULL));
+    TEST_ASSERT_EQUAL_UINT8(PIN_DISPERSE_FWD, E.pin[E.n - 1]);
+    TEST_ASSERT_FALSE(E.level[E.n - 1]);
+    TEST_ASSERT_EQUAL_UINT8(PULSE_PIN_NONE, p.active_pin);
+    TEST_ASSERT_EQUAL_INT(0, E.n_high);
+    /* the second valve still waits its turn, untouched */
+    TEST_ASSERT_EQUAL_UINT8(1, p.count);
+    pulse_service(&p, SIM_MS, VALVE_PULSE_MS, rec_drive, NULL);
+    TEST_ASSERT_EQUAL_UINT8(PIN_PINCH_2, p.active_pin);
+
+    /* a queued (not yet driving) motor pulse is dropped the same way */
+    pulse_request(&p, PIN_DISPERSE_FWD, PIN_DISPERSE_REV);
+    TEST_ASSERT_EQUAL_UINT8(1, p.count);
+    TEST_ASSERT_TRUE(pulse_cancel(&p, PIN_DISPERSE_FWD, rec_drive, NULL));
+    TEST_ASSERT_EQUAL_UINT8(0, p.count);
+    TEST_ASSERT_EQUAL_UINT8(PIN_PINCH_2, p.active_pin); /* still driving */
+    /* nothing to cancel is not an error, and drives nothing */
+    TEST_ASSERT_FALSE(pulse_cancel(&p, PIN_DISPERSE_FWD, rec_drive, NULL));
+    TEST_ASSERT_EQUAL_UINT8(PIN_PINCH_2, E.pin[E.n - 1]);
+    TEST_ASSERT_TRUE(E.level[E.n - 1]);
+}
+
 /* ---- mock ops + simulated flight harness (X-03) ------------------------ */
 
 typedef struct {
@@ -390,6 +429,8 @@ typedef struct {
     int fires[3];
     int membrane_duty;
     int disperse_calls;
+    bool motor_on;        /* last disperse_run(on) */
+    int motor_run_calls;  /* disperse_run(true) count: a re-latch is one */
     int eq_close_calls;
     int seal_calls;
     uint64_t first_seal_ms;
@@ -437,6 +478,14 @@ static void m_disperse(void *ctx)
     M.disperse_calls++;
 }
 
+static void m_disperse_run(void *ctx, bool on)
+{
+    (void)ctx;
+    M.motor_on = on;
+    if (on)
+        M.motor_run_calls++;
+}
+
 static void m_membrane(void *ctx, uint8_t duty)
 {
     (void)ctx;
@@ -469,6 +518,7 @@ static const seq_ops_t mock_ops = {
     .fire_pinch = m_fire,
     .close_eq_valves = m_close_eq,
     .disperse = m_disperse,
+    .disperse_run = m_disperse_run,
     .membrane = m_membrane,
     .seal_ok = m_seal_ok,
     .self_test = m_self_test,
@@ -511,6 +561,7 @@ static const seq_ops_t mock_ops_pulsed = {
     .fire_pinch = m_fire_pulsed,
     .close_eq_valves = m_close_eq_pulsed,
     .disperse = m_disperse_pulsed,
+    .disperse_run = m_disperse_run,
     .membrane = m_membrane,
     .busy = m_busy,
     .seal_ok = m_seal_ok,
@@ -1211,12 +1262,14 @@ static void test_manual_disperse_runs_one_motor_pulse(void)
     TEST_ASSERT_EQUAL_INT(1, M.disperse_calls);
     TEST_ASSERT_EQUAL_UINT8(EV_MANUAL_DRIVE, M.last_event);
 
-    /* key is the request, not a duty: anything but 1 is a bad command. */
+    /* key is the request, not a duty: anything past DISPERSE_RUN is a bad
+     * command (a speed sent as the key must not become a drive). */
     TEST_ASSERT_EQUAL_UINT8(ACK_INVALID, seq_command(&s, 2100, 2, CMD_DISPERSE,
-                                                     0, 0, &cfg));
+                                                     3, 0, &cfg));
     TEST_ASSERT_EQUAL_UINT8(ACK_INVALID, seq_command(&s, 2200, 2, CMD_DISPERSE,
-                                                     2, 0, &cfg));
+                                                     40, 0, &cfg));
     TEST_ASSERT_EQUAL_INT(1, M.disperse_calls);
+    TEST_ASSERT_EQUAL_INT(0, M.motor_run_calls);
 
     /* A board without the motor must refuse, not answer OK for a drive no
      * line can make (the carrier grew the motor after the SED). */
@@ -1229,6 +1282,151 @@ static void test_manual_disperse_runs_one_motor_pulse(void)
                                                       CMD_DISPERSE, 1, 0,
                                                       &cfg));
     TEST_ASSERT_EQUAL_INT(0, M.disperse_calls);
+}
+
+static void test_manual_disperse_run_and_stop(void)
+{
+    cfg_t cfg;
+    sequencer_t s;
+    seq_ops_t no_motor;
+
+    mock_reset();
+    cfg_defaults(&cfg);
+    seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
+    seq_step(&s, 1000, 1, 101325);
+
+    /* Start: the motor is held on, HK will say so, and the event names it */
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 2000, 2, CMD_DISPERSE,
+                                                DISPERSE_RUN, 0, &cfg));
+    TEST_ASSERT_TRUE(M.motor_on);
+    TEST_ASSERT_TRUE(s.motor_running);
+    TEST_ASSERT_EQUAL_INT(1, M.motor_run_calls);
+    TEST_ASSERT_EQUAL_UINT8(EV_MANUAL_DRIVE, M.last_event);
+
+    /* a pulse while it runs cannot be the bounded drive it asks for */
+    TEST_ASSERT_EQUAL_UINT8(ACK_REJECTED, seq_command(&s, 2100, 2, CMD_DISPERSE,
+                                                      DISPERSE_PULSE, 0,
+                                                      &cfg));
+    TEST_ASSERT_EQUAL_INT(0, M.disperse_calls);
+    TEST_ASSERT_TRUE(M.motor_on);
+
+    /* a new speed reaches a running motor at once, via one more run(true) */
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 2200, 2, CMD_SET_PARAM,
+                                                PARAM_DISPERSE_DUTY, 40,
+                                                &cfg));
+    TEST_ASSERT_EQUAL_INT(2, M.motor_run_calls);
+    TEST_ASSERT_EQUAL_INT32(40, cfg_get(&cfg, PARAM_DISPERSE_DUTY));
+    /* ...but an out-of-range speed touches neither cfg nor motor */
+    TEST_ASSERT_EQUAL_UINT8(ACK_INVALID, seq_command(&s, 2250, 2,
+                                                     CMD_SET_PARAM,
+                                                     PARAM_DISPERSE_DUTY, 5,
+                                                     &cfg));
+    TEST_ASSERT_EQUAL_INT(2, M.motor_run_calls);
+    /* and another parameter does not re-latch it */
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 2260, 2, CMD_SET_PARAM,
+                                                PARAM_MEMBRANE_HZ, 3, &cfg));
+    TEST_ASSERT_EQUAL_INT(2, M.motor_run_calls);
+
+    /* a second Start is idempotent: re-latch, still running */
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 2300, 2, CMD_DISPERSE,
+                                                DISPERSE_RUN, 0, &cfg));
+    TEST_ASSERT_TRUE(s.motor_running);
+
+    /* Stop */
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 3000, 3, CMD_DISPERSE,
+                                                DISPERSE_STOP, 0, &cfg));
+    TEST_ASSERT_FALSE(M.motor_on);
+    TEST_ASSERT_FALSE(s.motor_running);
+    TEST_ASSERT_EQUAL_UINT8(EV_MANUAL_DRIVE, M.last_event);
+    /* speed changes with the motor off do not start it */
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 3100, 3, CMD_SET_PARAM,
+                                                PARAM_DISPERSE_DUTY, 60,
+                                                &cfg));
+    TEST_ASSERT_FALSE(M.motor_on);
+    /* a Stop with nothing running is harmless */
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 3200, 3, CMD_DISPERSE,
+                                                DISPERSE_STOP, 0, &cfg));
+    /* and a pulse is possible again */
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 3300, 3, CMD_DISPERSE,
+                                                DISPERSE_PULSE, 0, &cfg));
+    TEST_ASSERT_EQUAL_INT(1, M.disperse_calls);
+
+    /* a release while the operator runs the motor still fires its valve and
+     * still asks for its pulse - hw.c decides that pulse is redundant */
+    seq_command(&s, 4000, 4, CMD_DISPERSE, DISPERSE_RUN, 0, &cfg);
+    seq_command(&s, 4100, 4, CMD_START, 0, 0, &cfg);
+    seq_command(&s, 4200, 4, CMD_RELEASE, 1, 0, &cfg);
+    seq_step(&s, 5000, 5, 5000);
+    TEST_ASSERT_EQUAL_INT(1, M.fires[1]);
+    TEST_ASSERT_TRUE(s.motor_running);
+
+    /* No motor on the board: neither Start nor Stop can be answered OK. */
+    mock_reset();
+    no_motor = mock_ops;
+    no_motor.disperse = NULL;
+    no_motor.disperse_run = NULL;
+    seq_init(&s, &cfg, &no_motor, NULL, 0, 0);
+    seq_step(&s, 1000, 1, 101325);
+    TEST_ASSERT_EQUAL_UINT8(ACK_REJECTED, seq_command(&s, 2000, 2,
+                                                      CMD_DISPERSE,
+                                                      DISPERSE_RUN, 0, &cfg));
+    TEST_ASSERT_EQUAL_UINT8(ACK_REJECTED, seq_command(&s, 2100, 2,
+                                                      CMD_DISPERSE,
+                                                      DISPERSE_STOP, 0,
+                                                      &cfg));
+    TEST_ASSERT_FALSE(s.motor_running);
+}
+
+static void test_termination_stops_a_running_motor(void)
+{
+    cfg_t cfg;
+    sequencer_t s;
+
+    mock_reset();
+    cfg_defaults(&cfg);
+    seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
+    seq_step(&s, 1000, 1, 101325);
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 2000, 2, CMD_DISPERSE,
+                                                DISPERSE_RUN, 0, &cfg));
+    TEST_ASSERT_TRUE(M.motor_on);
+
+    /* an abort takes the held motor down with the membrane */
+    seq_command(&s, 3000, 3, CMD_ABORT, 0, 0, &cfg);
+    seq_step(&s, 4000, 4, 101325); /* TERMINATION -> SAFE */
+    TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
+    TEST_ASSERT_FALSE(M.motor_on);
+    TEST_ASSERT_FALSE(s.motor_running);
+
+    /* SAFE: Start is refused like every other drive, Stop is still honoured
+     * because it can only de-energize */
+    TEST_ASSERT_EQUAL_UINT8(ACK_REJECTED, seq_command(&s, 5000, 5,
+                                                      CMD_DISPERSE,
+                                                      DISPERSE_RUN, 0, &cfg));
+    TEST_ASSERT_FALSE(M.motor_on);
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 5100, 5, CMD_DISPERSE,
+                                                DISPERSE_STOP, 0, &cfg));
+    TEST_ASSERT_FALSE(M.motor_on);
+}
+
+/* Motor speed (PARAM_DISPERSE_DUTY). The PWM programming itself lives in
+ * hw.c and needs the SDK, so what is guarded here is the envelope: the
+ * default must still be the full-on drive GP17 had before it was a PWM, and
+ * no SET_PARAM may take the motor to a duty that draws current without
+ * turning it. */
+static void test_disperse_duty_defaults_to_full_and_is_bounded(void)
+{
+    cfg_t cfg;
+
+    cfg_defaults(&cfg);
+    TEST_ASSERT_EQUAL_INT32(100, cfg_default(PARAM_DISPERSE_DUTY));
+    TEST_ASSERT_EQUAL_INT32(100, cfg_get(&cfg, PARAM_DISPERSE_DUTY));
+
+    TEST_ASSERT_TRUE(cfg_set(&cfg, PARAM_DISPERSE_DUTY, 20));
+    TEST_ASSERT_EQUAL_INT32(20, cfg_get(&cfg, PARAM_DISPERSE_DUTY));
+    TEST_ASSERT_FALSE(cfg_set(&cfg, PARAM_DISPERSE_DUTY, 19));
+    TEST_ASSERT_FALSE(cfg_set(&cfg, PARAM_DISPERSE_DUTY, 0));
+    TEST_ASSERT_FALSE(cfg_set(&cfg, PARAM_DISPERSE_DUTY, 101));
+    TEST_ASSERT_EQUAL_INT32(20, cfg_get(&cfg, PARAM_DISPERSE_DUTY));
 }
 
 static void test_manual_drives_are_refused_after_an_abort(void)
@@ -1374,6 +1572,7 @@ int main(void)
     RUN_TEST(test_disperse_motor_drive_is_interlocked_and_timed);
     RUN_TEST(test_release_serialises_the_pinch_valve_and_the_motor);
     RUN_TEST(test_queue_holds_every_drivable_line);
+    RUN_TEST(test_cancel_cuts_one_line_short_and_leaves_the_rest);
     RUN_TEST(test_full_autonomous_flight);
     RUN_TEST(test_release_works_without_a_dispersion_motor);
     RUN_TEST(test_persist_before_fire_ordering);
@@ -1408,6 +1607,9 @@ int main(void)
     RUN_TEST(test_release_already_fired_is_rejected_not_silent);
     RUN_TEST(test_manual_membrane_drive_and_stop);
     RUN_TEST(test_manual_disperse_runs_one_motor_pulse);
+    RUN_TEST(test_manual_disperse_run_and_stop);
+    RUN_TEST(test_termination_stops_a_running_motor);
+    RUN_TEST(test_disperse_duty_defaults_to_full_and_is_bounded);
     RUN_TEST(test_manual_drives_are_refused_after_an_abort);
     RUN_TEST(test_sequencer_membrane_duty_tracks_the_automatic_drive);
     RUN_TEST(test_ground_link_latch_refreshes_without_the_sequencer);

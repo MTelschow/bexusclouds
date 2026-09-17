@@ -389,9 +389,10 @@ class TestMembraneDrive:
 
 
 class TestMembraneSense:
-    """The membrane position switch on GP30: a push button the solenoid
-    plunger presses, wired to ground, read with the internal pull-up, so LOW
-    means the solenoid is energized (pulled).
+    """The membrane position switch on GP30: a push button under the
+    solenoid plunger, wired to ground, read with the internal pull-up. The
+    resting plunger presses it (LOW); actuating the solenoid lifts it (HIGH),
+    so HIGH means actuated (pulled).
 
     GP30 exists only on the RP2350B carrier. The firmware was built for pico2
     (RP2350A, GP0..GP29) until this pin arrived, so the build now defaults to
@@ -415,16 +416,40 @@ class TestMembraneSense:
             "the switch is to ground: without the pull-up the open state floats")
         assert not re.search(r"gpio_pull_down\s*\(\s*PIN_MEMBRANE_SENSE", hw)
 
-    def test_active_low_means_pulled(self):
+    def test_lifted_switch_means_pulled(self):
+        """The button is pressed by the resting plunger (LOW) and lifted when
+        the solenoid actuates (HIGH) - so HIGH is the actuated state. This was
+        decoded the other way round on the first pass; the mechanics say
+        otherwise, and the bench read LOW at rest."""
         hw = _read("src", "hw", "hw.c")
         body = hw.split("bool hw_membrane_pulled", 1)[1].split("\n}", 1)[0]
-        assert re.search(r"return\s+!\s*gpio_get\s*\(\s*PIN_MEMBRANE_SENSE", body), (
-            "the closed switch reads LOW, and LOW is the energized solenoid")
+        assert re.search(r"return\s+gpio_get\s*\(\s*PIN_MEMBRANE_SENSE", body), (
+            "the lifted (open, HIGH) switch is the actuated solenoid")
+        assert not re.search(r"!\s*gpio_get\s*\(\s*PIN_MEMBRANE_SENSE", body)
 
     def test_sense_reaches_housekeeping_as_a_status_bit(self):
         hw = _read("src", "hw", "hw.c")
         body = hw.split("uint8_t hw_actuator_status", 1)[1].split("\n}", 1)[0]
         assert "HKV_MEMBRANE_PULLED" in body and "hw_membrane_pulled()" in body
+
+    def test_motion_is_latched_every_loop_pass_not_sampled_at_hk_time(self):
+        """HK at 1 Hz and the 2 Hz wave share one loop, so a sample taken
+        only when HK is built lands at a fixed phase and reads a constant.
+        The switch must be sampled in the per-pass service and any edge
+        latched into HKV_MEMBRANE_CYCLING, which HK consumes and clears."""
+        hw = _read("src", "hw", "hw.c")
+        service = hw.split("void hw_actuators_service", 1)[1].split("\n}", 1)[0]
+        assert "hw_membrane_pulled()" in service, (
+            "the switch must be sampled on every loop pass")
+        assert "sense_changed = true" in service
+        status = hw.split("uint8_t hw_actuator_status", 1)[1].split("\n}", 1)[0]
+        assert "HKV_MEMBRANE_CYCLING" in status
+        assert "sense_changed = false" in status, (
+            "the latch must be cleared per HK, or one edge reads as cycling "
+            "forever")
+        main = _read("src", "main.c")
+        loop = main.split("for (;;)", 1)[1]
+        assert "hw_actuators_service(" in loop
 
     def test_a_build_without_gp30_flags_the_bit_unsourced(self):
         """On pico2 NUM_BANK0_GPIOS is 30. The read must be compiled out
@@ -528,7 +553,7 @@ class TestUnsourcedSensorsAreFlagged:
     reading from a floating input."""
 
     def test_no_adc_sampling_while_stlm20_is_unpopulated(self):
-        """The ADC has one legitimate input, the solenoid current sense on
+        """The ADC has one legitimate input, the motor current sense on
         PIN_HB_SENSE; every other channel is an unpopulated STLM20 footprint
         and sampling it yields a confident wrong temperature."""
         hw = _read("src", "hw", "hw.c")
@@ -556,10 +581,11 @@ class TestUnsourcedSensorsAreFlagged:
                     % (name, 26 + int(m.group(1))))
 
 
-class TestSolenoidCurrentSense:
-    """M-07/M-06: the push-pull solenoid's current sense on ACT_HB_SENS,
-    GP46, is the electrical half of the actuation check the GP30 switch is
-    the mechanical half of."""
+class TestMotorCurrentSense:
+    """M-07: the CaCO3 dispersion motor's current sense on ACT_HB_SENS, GP46
+    - the IPROPI output of its DRV8251A. ACT_HB is one driver channel
+    carrying GP17/GP18 and this pin, so it measures the motor, not the
+    membrane solenoid (GP26, which has no current sense)."""
 
     def test_the_sense_pin_is_gp46_on_adc6(self):
         board = _read("src", "hw", "board.h")
@@ -569,8 +595,9 @@ class TestSolenoidCurrentSense:
     def test_the_read_is_guarded_like_gp30_and_downlinks_raw(self):
         """A pico2 build has no GP46: the SDK asserts on adc_gpio_init() for
         a pin outside its ADC range, so the read is compiled out and the
-        field carries HB_SENSE_INVALID - never 0, which an idle solenoid
-        reads. No conversion in firmware: the gain is a ground constant."""
+        field carries HB_SENSE_INVALID - never 0, which an idle or coasting
+        motor reads. No conversion in firmware: the IPROPI gain and its sense
+        resistor are ground constants."""
         hw = _read("src", "hw", "hw.c")
         assert re.search(r"#define\s+HAVE_HB_SENSE\s+\(PIN_HB_SENSE\s*<"
                          r"\s*NUM_BANK0_GPIOS\)", hw)
@@ -595,6 +622,16 @@ class TestSolenoidCurrentSense:
         assert int(re.search(r"#define HB_SENSE_INVALID (0x[0-9A-Fa-f]+)u",
                              frame_h).group(1), 16) == hk.HB_SENSE_INVALID
         assert _define(frame_h, "HK_SIZE") == hk.SIZE == 56
+
+    def test_the_ground_scale_is_the_ipropi_chain(self):
+        """The board comment and the ground constant have to agree on which
+        actuator this is and what turns its counts into amps: R_IPROPI on the
+        carrier against the DRV8251A's AIPROPI."""
+        from clouds_link import hk
+        board = _read("src", "hw", "board.h")
+        assert "DRV8251A" in board and "dispersion motor" in board.lower()
+        assert hk.HB_SENSE_A_PER_V == pytest.approx(
+            1.0 / (hk.IPROPI_R_OHM * hk.IPROPI_GAIN_A_PER_A))
 
 
 class TestRailMonitors:

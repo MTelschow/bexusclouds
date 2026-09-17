@@ -25,7 +25,18 @@ class Command(IntEnum):
     STATUS_REQ = 0x07
     ARM = 0x08         # key = command code being armed
     MEMBRANE = 0x09    # key = duty percent, 0 = off (M-07 manual drive)
-    DISPERSE = 0x0A    # key = 1 -> one dispersion-motor pulse
+    DISPERSE = 0x0A    # key = DisperseKey: stop / one pulse / run
+
+
+class DisperseKey(IntEnum):
+    """DISPERSE keys - mirror of DISPERSE_* in frame.h. The key is the
+    request, never the speed (that is Param.DISPERSE_DUTY): PULSE is the
+    bounded 5 s drive a release also schedules, RUN holds the motor on until
+    STOP, and STOP ends either - it can only de-energize, so the MCU honours
+    it in every state, TERMINATION and SAFE included."""
+    STOP = 0
+    PULSE = 1
+    RUN = 2
 
 
 #: Commands that require a prior ARM within ARM_WINDOW_S.
@@ -34,8 +45,9 @@ ARMED_COMMANDS = frozenset({Command.RELEASE})
 #: Direct actuator drives for the dispersion hardware (M-07). Deliberately
 #: outside ARMED_COMMANDS and GROUND_INTERLOCKED: unlike RELEASE, neither is
 #: irreversible - the membrane solenoid oscillates while it is told to and
-#: stops on MEMBRANE key=0, and the motor runs one bounded pulse - and driving
-#: them on the bench is the whole point of having them on the panel. The MCU
+#: stops on MEMBRANE key=0, and the motor runs one bounded pulse or runs until
+#: DISPERSE STOP - and driving them on the bench is the whole point of having
+#: them on the panel. The MCU
 #: still refuses both in TERMINATION and SAFE, so an abort cannot be undone
 #: from the panel.
 MANUAL_ACTUATORS = frozenset({Command.MEMBRANE, Command.DISPERSE})
@@ -74,3 +86,4 @@ class Param(IntEnum):
     MEMBRANE_DUTY = 10        # percent (default 60)
     SEAL_RETRY = 11           # seal verification retries (default 3)
     PI_SILENT_S = 12          # MCU declares the Pi lost after this (default 60)
+    DISPERSE_DUTY = 13        # CaCO3 motor speed, percent (default 100)

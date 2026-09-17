@@ -136,13 +136,17 @@ unplugged, and nothing on the link may delay a state transition (S.7).
   monitor fitted yet**, 5 V (0x44) and 3.3 V (0x45). The unfitted slot reads
   `RAIL_MV_INVALID` and is excluded from `HKE_RAIL_FAIL` by `ina226_fitted()`:
   a flag that is set on every packet stops being read.
-- **M-07 solenoid current sense**: `ACT_HB_SENS` on GP46 (ADC6 on the
+- **M-07 dispersion motor current sense**: `ACT_HB_SENS` on GP46 (ADC6 on the
   RP2350B) is sampled once per HK sweep - eight conversions averaged - and
   downlinked raw in `hb_sense_raw` (u16, 0..4095; `HB_SENSE_INVALID` 0xFFFF
-  from a pico2 build, which has no GP46). No conversion in firmware, for the
-  same reason as the shunts: the sense gain is not on the schematic page we
-  have, and `clouds_link/hk.py HB_SENSE_A_PER_V` stays `None` until it is
-  measured. Ground shows the pin voltage meanwhile. Guarded by
+  from a pico2 build, which has no GP46). It belongs to the **CaCO3 motor**,
+  not the membrane solenoid: `ACT_HB` is one driver channel carrying GP17/GP18
+  and this pin. The driver is a **DRV8251A**, whose IPROPI output mirrors the
+  low-side current at 1500 uA/A into a 1.5 kOhm resistor, so ground scales the
+  counts by `clouds_link/hk.py HB_SENSE_A_PER_V` = 0.444 A/V (3.3 V full scale
+  = 1.47 A). No conversion in firmware, for the same reason as the shunts.
+  **IPROPI reads 0 in coast** - it only sees low-side current - and the motor
+  runs in 5 s pulses, so zeros between releases are expected. Guarded by
   `HAVE_HB_SENSE`, like the GP30 switch.
 - **M-07 membrane**: the drive is done. GP26, measured, with
   `PARAM_MEMBRANE_HZ` reaching the driver through `seq_ops_t.ctx`, default

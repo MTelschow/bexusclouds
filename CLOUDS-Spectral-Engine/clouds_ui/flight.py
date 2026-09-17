@@ -37,10 +37,11 @@ HK_FIELDS = [
     ("Mission t", lambda h: f"{h.mission_t_s} s"),
     ("Uptime", lambda h: f"{h.uptime_s} s"),
     ("Fired", lambda h: f"{h.fired:02b}"),
-    # Commanded duty plus the sensed plunger position from the GP30 switch:
-    # the pair is what shows a drive that moves nothing, or a switch that
-    # says pulled with the drive off. `pushed`/`pulled` is omitted when the
-    # MCU build cannot read the switch (HKE_NO_MEMBRANE_SENSE).
+    # Commanded duty plus the GP30 switch: plunger position at the sample and
+    # whether it moved in the last second (`cycling`). The row is what shows
+    # a drive that moves nothing (`60 %  pushed, not cycling`), or a switch
+    # that says pulled with the drive off. Position and motion are omitted
+    # when the MCU build cannot read the switch (HKE_NO_MEMBRANE_SENSE).
     ("Membrane", lambda h: h.membrane_text),
     ("Driving", lambda h: h.actuator_text),
     ("Link", lambda h: h.link_text),
@@ -138,11 +139,11 @@ SENSOR_FIELDS = [
      _rail_row(i), None)
     for i, (name, addr) in enumerate(zip(RAIL_NAMES, RAIL_I2C_ADDR))
 ] + [
-    # The push-pull solenoid's own current, from the ACT_HB_SENS net on GP46.
-    # Volts at the pin until the sense gain is measured (HB_SENSE_A_PER_V),
-    # amps after; `-` when the MCU build has no GP46. `None` for the flag:
-    # the field carries its own sentinel, like the rails.
-    ("Solenoid I", "ADC GP46", lambda h: h.hb_sense_text, None),
+    # The CaCO3 dispersion motor's own current, from the ACT_HB_SENS net on
+    # GP46 - the IPROPI output of its DRV8251A, not the membrane solenoid.
+    # Amps via HB_SENSE_A_PER_V; `-` when the MCU build has no GP46. `None`
+    # for the flag: the field carries its own sentinel, like the rails.
+    ("Motor I", "DRV8251A IPROPI, ADC GP46", lambda h: h.hb_sense_text, None),
 ]
 
 #: What to say in place of a number, per unsourced flag. "no source" rather
@@ -304,9 +305,10 @@ class FlightPanel(QtCore.QObject):
         # assumption to doubt.
         shunts = ", ".join(f"{n} {r:g}" for n, r
                            in zip(RAIL_NAMES, RAIL_SHUNT_MOHM))
-        hb = ("solenoid sense gain not yet measured - pin volts shown"
+        hb = ("motor sense gain not set - pin volts shown"
               if HB_SENSE_A_PER_V is None
-              else f"solenoid sense {HB_SENSE_A_PER_V:g} A/V")
+              else f"motor IPROPI {HB_SENSE_A_PER_V:.3g} A/V "
+                   f"(0 in coast, not 0 A)")
         note = QtWidgets.QLabel(f"current derived: shunt voltage over "
                                 f"{shunts} mΩ; {hb}")
         note.setWordWrap(True)
@@ -413,10 +415,35 @@ class FlightPanel(QtCore.QObject):
         sec.add(row2)
 
         sec.add(group_label("CaCO₃ dispersion motor"))
+        # Speed is a slider, not a spin box: it is a continuous mechanical
+        # setting an operator dials while watching the motor, and the value
+        # lives beside it so the panel never shows a handle without a number.
+        speed = QtWidgets.QHBoxLayout()
+        speed.setContentsMargins(0, 0, 0, 0)
+        speed.setSpacing(6)
+        speed.addWidget(QtWidgets.QLabel("Speed"))
+        self.sl_motor = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.sl_motor.setRange(20, 100)      # PARAM_DISPERSE_DUTY limits
+        self.sl_motor.setValue(100)
+        self.sl_motor.setStyleSheet(style.slider_style())
+        self.sl_motor.setToolTip("Motor PWM duty, sent as SET_PARAM "
+                                 "DISPERSE_DUTY before the pulse starts")
+        self.sl_motor.valueChanged.connect(self._on_motor_speed)
+        speed.addWidget(self.sl_motor, 1)
+        self.lbl_motor_speed = QtWidgets.QLabel("100 %")
+        self.lbl_motor_speed.setMinimumWidth(42)
+        self.lbl_motor_speed.setAlignment(QtCore.Qt.AlignRight
+                                          | QtCore.Qt.AlignVCenter)
+        self.lbl_motor_speed.setStyleSheet(f"color:{style.MUTED};"
+                                           " font-size:11px;")
+        speed.addWidget(self.lbl_motor_speed)
+        sec.add(speed)
+
         self.btn_pulse = QtWidgets.QPushButton("Run one pulse")
         self.btn_pulse.setStyleSheet(style.primary_btn())
-        self.btn_pulse.setToolTip("One forward pulse, timed on the MCU (5 s) "
-                                  "and not interruptible from here")
+        self.btn_pulse.setToolTip("One forward pulse at the speed above, "
+                                  "timed on the MCU (5 s) and not "
+                                  "interruptible from here")
         self.btn_pulse.clicked.connect(self._disperse)
         sec.add(self.btn_pulse)
 
@@ -508,14 +535,31 @@ class FlightPanel(QtCore.QObject):
         except (InterlockError, CommandError, ValueError) as e:
             self.lbl_act_status.setText(str(e))
 
+    def _on_motor_speed(self, value: int) -> None:
+        """Track the handle only. The speed goes to the MCU when the pulse is
+        asked for, not while the operator drags: a SET_PARAM per intermediate
+        value spends uplink on settings nobody chose, and the MCU latches the
+        duty at the start of the 5 s drive anyway."""
+        self.lbl_motor_speed.setText(f"{value} %")
+
     def _disperse(self) -> None:
+        """Speed first, then the pulse - the same order as the membrane, and
+        for the same reason: PARAM_DISPERSE_DUTY is latched when the drive is
+        queued, so setting it afterwards would run the motor at the old speed
+        while the panel showed the new one."""
         if self._cmd is None:
             self.lbl_act_status.setText("no command link")
             return
+        speed = self.sl_motor.value()
         try:
+            r = self._cmd.set_param(int(Param.DISPERSE_DUTY), speed)
+            if r != AckResult.OK:
+                self.lbl_act_status.setText(
+                    f"DISPERSE_DUTY -> {r.name}, not pulsing")
+                return
             r = self._cmd.disperse()
-            self.lbl_act_status.setText(f"disperse -> {r.name}")
-        except (InterlockError, CommandError) as e:
+            self.lbl_act_status.setText(f"disperse {speed} % -> {r.name}")
+        except (InterlockError, CommandError, ValueError) as e:
             self.lbl_act_status.setText(str(e))
 
     # -- refresh -------------------------------------------------------------

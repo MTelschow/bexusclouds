@@ -20,6 +20,12 @@ static const int32_t limits[PARAM_COUNT_][3] = {
      * beats before it is called lost. Losing it changes nothing the sequence
      * does (S.7) - it only clears MCUF_PI_OK and raises one event. */
     [PARAM_PI_SILENT_S] = {60, 5, 600},
+    /* M-07 motor speed. Default 100 % = the full-on drive this pin had
+     * before it was a PWM, so no configured system changes behaviour. The
+     * 20 % floor is not a safety limit but a usefulness one: a brushed motor
+     * below that draws current and does not turn, which reads on the panel
+     * as a drive that ran and dispersed nothing. */
+    [PARAM_DISPERSE_DUTY] = {100, 20, 100},
 };
 
 void cfg_defaults(cfg_t *cfg)

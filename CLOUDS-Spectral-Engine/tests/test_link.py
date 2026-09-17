@@ -152,11 +152,18 @@ class TestHousekeeping:
         h = hk.Housekeeping(membrane_duty=60, valve_status=both)
         assert h.actuator_text == "DISPERSE"
         assert h.membrane_pulled is True
-        assert h.membrane_text == "60 %  pulled"
+        assert h.membrane_cycling is False
+        # position without motion under a drive is the fault, and says so
+        assert h.membrane_text == "60 %  pulled, not cycling"
+        moving = hk.Housekeeping(membrane_duty=60, valve_status=(
+            hk.ValveStatus.MEMBRANE_PULLED | hk.ValveStatus.MEMBRANE_CYCLING))
+        assert moving.actuator_text == "-"
+        assert moving.membrane_text == "60 %  pulled, cycling"
         off = hk.Housekeeping(membrane_duty=0, valve_status=0)
         assert off.membrane_pulled is False
         assert off.membrane_text == "0 %  pushed"
         assert h.to_row()["membrane_pulled"] is True
+        assert moving.to_row()["membrane_cycling"] is True
 
     def test_unreadable_membrane_switch_is_not_reported_as_pushed(self):
         """A pico2 build has no GP30 and says so with NO_MEMBRANE_SENSE; a
@@ -164,6 +171,7 @@ class TestHousekeeping:
         h = hk.Housekeeping(membrane_duty=60,
                             error_flags=hk.HkErrors.NO_MEMBRANE_SENSE)
         assert h.membrane_pulled is None
+        assert h.membrane_cycling is None
         assert h.membrane_text == "60 %"
         assert "NO_MEMBRANE_SENSE" in h.error_text
 
@@ -240,37 +248,49 @@ class TestHousekeeping:
         old = hk.Housekeeping(error_flags=0b0000_1100)
         assert old.error_text == "NO_MEMBRANE_SENSE 0x0008"
 
-    def test_solenoid_sense_rides_the_wire_raw_and_scales_on_the_ground(self):
-        """The ACT_HB_SENS ADC counts go down raw; volts come from the ADC
-        reference and amps only once the sense gain is known. With the gain
-        unset there is no current - 0.0 would claim an idle solenoid."""
+    def test_motor_sense_rides_the_wire_raw_and_scales_on_the_ground(self):
+        """The ACT_HB_SENS ADC counts go down raw; the DRV8251A IPROPI chain
+        turns them into the dispersion motor's amps here, on the ground, so a
+        wrong resistor or gain is correctable against a logged session."""
         h = hk.Housekeeping(hb_sense_raw=2048)
         g = hk.Housekeeping.unpack(h.pack())
         assert g.hb_sense_raw == 2048
         assert g.hb_sense_v() == pytest.approx(1.65)
-        assert hk.HB_SENSE_A_PER_V is None
-        assert g.hb_sense_a() is None
-        assert g.hb_sense_text == "1.650V"
+        assert g.hb_sense_a() == pytest.approx(1.65 * hk.HB_SENSE_A_PER_V)
+        assert g.hb_sense_text == "0.733A"
         row = g.to_row()
         assert row["hb_sense_raw"] == 2048
-        assert row["hb_sense_v"] == pytest.approx(1.65) and row["hb_sense_a"] == ""
-        assert row["hb_sense_text"] == "1.650V"
+        assert row["hb_sense_v"] == pytest.approx(1.65)
+        assert row["hb_sense_a"] == pytest.approx(0.7333, abs=1e-4)
+        assert row["hb_sense_text"] == "0.733A"
 
-    def test_solenoid_sense_amps_appear_once_the_gain_is_set(self, monkeypatch):
-        monkeypatch.setattr(hk, "HB_SENSE_A_PER_V", 2.0)
+    def test_the_ipropi_gain_is_the_datasheet_chain_not_a_guess(self):
+        """1 / (R_IPROPI * AIPROPI): 1.5 kOhm on the carrier against the
+        DRV8251A's 1500 uA/A, so full scale (3.3 V) is 1.47 A."""
+        assert hk.IPROPI_R_OHM == 1500.0
+        assert hk.IPROPI_GAIN_A_PER_A == pytest.approx(1.5e-3)
+        assert hk.HB_SENSE_A_PER_V == pytest.approx(0.4444, abs=1e-4)
+        full = hk.Housekeeping(hb_sense_raw=4095)
+        assert full.hb_sense_a() == pytest.approx(1.466, abs=1e-3)
+
+    def test_motor_sense_falls_back_to_volts_without_a_gain(self, monkeypatch):
+        """Clear the gain and the panel shows the pin voltage rather than a
+        current it cannot derive - 0.0 A would claim an idle motor."""
+        monkeypatch.setattr(hk, "HB_SENSE_A_PER_V", None)
         h = hk.Housekeeping(hb_sense_raw=2048)
-        assert h.hb_sense_a() == pytest.approx(3.3)
-        assert h.hb_sense_text == "3.300A"
-        assert h.to_row()["hb_sense_a"] == pytest.approx(3.3)
+        assert h.hb_sense_a() is None
+        assert h.hb_sense_text == "1.650V"
+        assert h.to_row()["hb_sense_a"] == ""
 
-    def test_solenoid_sense_sentinel_is_no_reading_not_zero(self):
+    def test_motor_sense_sentinel_is_no_reading_not_zero(self):
         """A pico2 build cannot reach GP46 and sends the sentinel; 0 counts
-        is what a de-energized solenoid reads, so the two must differ."""
+        is what an idle motor reads - and what a coasting one reads, since
+        IPROPI only mirrors low-side current - so the two must differ."""
         assert hk.HB_SENSE_INVALID == 0xFFFF and hk.HB_SENSE_INVALID > 4095
         none = hk.Housekeeping()                       # default: no reading
         assert none.hb_sense_v() is None and none.hb_sense_text == "-"
         idle = hk.Housekeeping(hb_sense_raw=0)
-        assert idle.hb_sense_v() == 0.0 and idle.hb_sense_text == "0.000V"
+        assert idle.hb_sense_v() == 0.0 and idle.hb_sense_text == "0.000A"
         g = hk.Housekeeping.unpack(none.pack())
         assert g.hb_sense_raw == hk.HB_SENSE_INVALID
 

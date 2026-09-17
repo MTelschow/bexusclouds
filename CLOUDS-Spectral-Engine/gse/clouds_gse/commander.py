@@ -88,11 +88,27 @@ class Commander:
     def disperse(self) -> AckResult:
         """One pulse of the CaCO3 dispersion motor (M-07).
 
-        The drive is timed on the MCU (VALVE_PULSE_MS, 5 s) and cannot be cut
-        short from here, so this is a fire-and-forget request; watch
-        ``valve_status`` for the line actually being energized.
+        The drive is timed on the MCU (VALVE_PULSE_MS, 5 s); ``disperse_stop``
+        cuts it short. Watch ``valve_status`` for the line actually being
+        energized. Refused (REJECTED) while ``disperse_run`` has the motor on.
         """
-        return self._transact(Command.DISPERSE, key=1)
+        return self._transact(Command.DISPERSE, key=int(DisperseKey.PULSE))
+
+    def disperse_run(self) -> AckResult:
+        """Hold the dispersion motor on until ``disperse_stop`` (M-07).
+
+        Speed is ``Param.DISPERSE_DUTY``; a SET_PARAM of it while the motor
+        runs takes effect at once on the MCU. Like the membrane drive this is
+        a state, not a pulse: it is not armed or interlocked, and the MCU
+        refuses it in TERMINATION/SAFE. Note that nothing on the MCU times it
+        out - a run lasts until Stop, an abort, or a reset.
+        """
+        return self._transact(Command.DISPERSE, key=int(DisperseKey.RUN))
+
+    def disperse_stop(self) -> AckResult:
+        """Stop the dispersion motor - ends a run and cuts a pulse short.
+        Always accepted by the MCU (it can only de-energize)."""
+        return self._transact(Command.DISPERSE, key=int(DisperseKey.STOP))
 
     def ping(self) -> AckResult:
         return self._transact(Command.PING)

@@ -113,4 +113,38 @@ if(CLOUDS_BUILD_TOOLS)
     pico_enable_stdio_uart(bno055_probe 0)
     pico_enable_stdio_usb(bno055_probe 1)
     pico_add_extra_outputs(bno055_probe)
+
+    # membrane_switch_probe: is the GP30 position switch wired, and does it
+    # follow the GP26 solenoid drive? Drives the membrane, so it is a bench
+    # tool by the same rule as the IMU probe.
+    add_executable(membrane_switch_probe
+        src/tools/membrane_switch_probe.c
+        src/core/crc16.c
+        src/core/cobs.c
+        src/core/frame.c
+        src/core/config.c
+        src/core/link.c
+        src/core/autonomy.c
+        src/core/sequencer.c
+        src/core/pulse.c
+        src/core/pwmdiv.c
+        src/core/sqwave.c
+        src/hw/hw.c
+        src/hw/bme280.c
+        src/hw/bno055.c
+        src/hw/ina226.c
+        src/hw/uart_io.c
+    )
+    target_compile_options(membrane_switch_probe PRIVATE -Wall -Wextra)
+    target_link_libraries(membrane_switch_probe
+        pico_stdlib
+        hardware_adc
+        hardware_i2c
+        hardware_pwm
+        hardware_uart
+        hardware_watchdog
+    )
+    pico_enable_stdio_uart(membrane_switch_probe 0)
+    pico_enable_stdio_usb(membrane_switch_probe 1)
+    pico_add_extra_outputs(membrane_switch_probe)
 endif()

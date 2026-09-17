@@ -106,7 +106,14 @@ def slider_style() -> str:
             f"QSlider::handle:horizontal{{background:#ffffff;"
             f"border:2px solid {NAVY}; width:14px; height:14px;"
             "margin:-6px 0; border-radius:7px;}"
-            "QSlider::handle:horizontal:hover{background:#eef3f8;}")
+            # A stylesheet that names only the enabled sub-controls replaces the
+            # native painting in every state, so a disabled slider stayed
+            # indistinguishable from a live one - see window._slider_style.
+            "QSlider::handle:horizontal:enabled:hover{background:#eef3f8;}"
+            "QSlider::groove:horizontal:disabled{background:#e8ecf0;}"
+            "QSlider::sub-page:horizontal:disabled{background:#c2ccd6;}"
+            "QSlider::handle:horizontal:disabled{background:#f0f3f6;"
+            "border:2px solid #c2ccd6;}")
 
 
 def list_style() -> str:

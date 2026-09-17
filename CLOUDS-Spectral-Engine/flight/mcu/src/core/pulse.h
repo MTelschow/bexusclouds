@@ -62,4 +62,12 @@ void pulse_service(pulse_sched_t *s, uint64_t now_ms, uint32_t pulse_ms,
  * finished moving, so nothing downstream should judge their effect yet. */
 bool pulse_busy(const pulse_sched_t *s);
 
+/* Cut `pin` short: release it now if it is the one driving (one edge, low),
+ * and drop any queued request for it. Other pins are untouched, and the
+ * queue moves on at the next pulse_service. Returns true if anything was
+ * ended or dropped. Exists for the dispersion motor's STOP - a solenoid
+ * pulse is always run to its end. */
+bool pulse_cancel(pulse_sched_t *s, uint8_t pin, pulse_drive_fn drive,
+                  void *ctx);
+
 #endif

@@ -59,3 +59,34 @@ void pulse_service(pulse_sched_t *s, uint64_t now_ms, uint32_t pulse_ms,
     s->active_pin = next.pin;
     s->active_until_ms = now_ms + pulse_ms;
 }
+
+bool pulse_cancel(pulse_sched_t *s, uint8_t pin, pulse_drive_fn drive,
+                  void *ctx)
+{
+    bool hit = false;
+    uint8_t kept = 0;
+    pulse_req_t q[PULSE_SLOTS];
+
+    if (pin == PULSE_PIN_NONE)
+        return false;
+    if (s->active_pin == pin) {
+        drive(ctx, pin, false);
+        s->active_pin = PULSE_PIN_NONE;
+        hit = true;
+    }
+    /* compact the queue without the cancelled pin, order preserved */
+    for (uint8_t i = 0; i < s->count; i++) {
+        pulse_req_t r = s->q[(uint8_t)((s->head + i) % PULSE_SLOTS)];
+
+        if (r.pin == pin) {
+            hit = true;
+            continue;
+        }
+        q[kept++] = r;
+    }
+    for (uint8_t i = 0; i < kept; i++)
+        s->q[i] = q[i];
+    s->head = 0;
+    s->count = kept;
+    return hit;
+}

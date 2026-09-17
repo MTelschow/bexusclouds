@@ -51,9 +51,9 @@
  * is not there.
  *
  * GP30 is not named on that schematic page. It carries the membrane position
- * switch added on 2026-09-17: a push button mechanically actuated by the
- * push-pull solenoid's plunger, wired to ground, closed while the solenoid is
- * energized (pulled). See PIN_MEMBRANE_SENSE.
+ * switch added on 2026-09-17: a push button under the push-pull solenoid's
+ * plunger, wired to ground, pressed (closed) while the solenoid rests and
+ * lifted (open) when it actuates. See PIN_MEMBRANE_SENSE.
  * --------------------------------------------------------------------------- */
 #ifndef CLOUDS_BOARD_H
 #define CLOUDS_BOARD_H
@@ -85,40 +85,60 @@
  * is de-energized whenever the MCU is not driving it. DEVLOG 2026-08-31. */
 #define PIN_MEMBRANE_PWM 26
 
-/* Membrane position switch: a push button pressed by the solenoid plunger,
- * one side on GP30, the other on ground. Input with the internal pull-up, so
- * open reads 1 and the closed switch reads 0 - LOW means the solenoid is
- * energized (pulled), HIGH means released (pushed). It is read into HK as
+/* Membrane position switch: a push button under the solenoid plunger, one
+ * side on GP30, the other on ground. Input with the internal pull-up. The
+ * resting plunger PRESSES the button (closed, LOW); actuating the solenoid
+ * lifts the plunger off it (open, HIGH). So HIGH means actuated (pulled),
+ * LOW means resting (pushed). It is read into HK as
  * HKV_MEMBRANE_PULLED, a sensed state and not a drive: it can coexist with a
- * drive bit, and at the membrane's 2 Hz the 1 Hz HK sample lands at a random
- * phase of the cycle, so over many packets it should read pulled about
- * duty_pct of the time while the drive is on and never while it is off. A
- * bit that is stuck either way against the drive is the fault this exists
- * to show.
+ * drive bit. At the membrane's 2 Hz that one bit is NOT enough to see motion:
+ * HK is sent every 1000 ms and the 500 ms cycle is timed by the same loop, so
+ * the 1 Hz sample lands at the same phase every time and reads one constant
+ * value whether the plunger moves or not (found on the loopback mock,
+ * DEVLOG 2026-09-17). So the loop also samples the switch every 10 ms pass
+ * and latches any change into HKV_MEMBRANE_CYCLING, cleared when HK is
+ * built. Drive on: CYCLING every packet. Drive off: neither bit. Drive on
+ * without CYCLING is the fault this switch exists to show.
  *
  * GP30 exists only on the RP2350B carrier (boards/clouds_carrier.h). A
  * pico2 build has NUM_BANK0_GPIOS 30, so hw.c compiles the read out and
  * raises HKE_NO_MEMBRANE_SENSE instead of touching GPIO registers that the
- * RP2350A does not have. */
+ * RP2350A does not have.
+ *
+ * MEASURED 2026-09-17 on the carrier: LOW at rest, as the mechanics say
+ * (pu=0 pd=0, tools/membrane_switch_probe.c). It stayed LOW with GP26 held
+ * high and cycling at 2 Hz, i.e. the GP26 drive did not lift the plunger.
+ * The read path is verified to the ground display; which output actually
+ * moves this solenoid is the open question. DEVLOG 2026-09-17. */
 #define PIN_MEMBRANE_SENSE 30
 
-/* Push-pull solenoid current sense: the ACT_HB_SENS net on GP46, an analog
- * output proportional to the current through the solenoid, read on ADC
- * channel 6 (the RP2350B's ADC base pin is GP40, so GP46 is ADC6). Sampled
- * once per 1 Hz HK sweep and downlinked RAW, as 12-bit counts, in
- * hk_t.hb_sense_raw - the conversion to amps happens on the ground
- * (clouds_link/hk.py HB_SENSE_A_PER_V), for the same reason the INA226 shunt
- * voltages go down raw: the sense gain (shunt and amplifier, or the driver's
- * proportional-current output resistor) is not recorded in the schematic
- * page we have, and a wrong value on the ground is correctable against a
- * logged session where one baked into firmware is not.
+/* CaCO3 dispersion motor current sense: the ACT_HB_SENS net on GP46, read on
+ * ADC channel 6 (the RP2350B's ADC base pin is GP40, so GP46 is ADC6).
  *
- * Like the position switch above, the 1 Hz sample lands at a random phase of
- * the membrane's 2 Hz cycle, so while the drive runs the reading is expected
- * to swing between the hold current and ~0 from packet to packet. A reading
- * that never rises with the drive on, or never falls with it off, is the
- * fault this exists to show - the same test as the switch, from the
- * electrical side.
+ * It belongs to the DISPERSION MOTOR, not the membrane solenoid: ACT_HB is
+ * one driver channel on the carrier and it carries GP17/GP18 (the motor's
+ * two drive lines, PIN_DISPERSE_FWD/REV below) together with this sense pin.
+ * The membrane solenoid is GP26 and has no current sense of its own.
+ *
+ * The driver is a DRV8251A H-bridge with integrated current sensing: no power
+ * shunt in the load path, an internal current mirror on the low-side FETs
+ * instead, whose IPROPI pin sources I_motor x AIPROPI (1500 uA/A typ) into an
+ * external resistor to ground. The carrier fits 1.5 kOhm, so the pin reads
+ * 0.444 A/V and the ADC's 3.3 V full scale is 1.47 A. Sampled once per 1 Hz
+ * HK sweep and downlinked RAW, as 12-bit counts, in hk_t.hb_sense_raw - the
+ * conversion to amps happens on the ground (clouds_link/hk.py
+ * HB_SENSE_A_PER_V), for the same reason the INA226 shunt voltages go down
+ * raw: a resistor value or a measured gain that turns out to be wrong is
+ * correctable against a logged session, where one baked into firmware is not.
+ *
+ * TWO THINGS THE READING DOES NOT SAY. IPROPI only mirrors current flowing
+ * drain-to-source through a low-side FET, so it is valid in drive and brake
+ * and reads ZERO IN COAST, while the winding current freewheels through the
+ * body diodes - 0 counts is "no low-side current", not "no current". And the
+ * motor runs in bounded 5 s pulses (one per release or DISPERSE command), so
+ * at 1 Hz a run is a handful of samples and everything between releases is a
+ * legitimate zero. A pulse whose samples never rise is the fault this exists
+ * to show.
  *
  * GP46 exists only on the RP2350B carrier (boards/clouds_carrier.h); a pico2
  * build compiles the read out and downlinks HB_SENSE_INVALID. */
@@ -130,7 +150,9 @@
  * used. Not in the SED - undocumented hardware, see DEVLOG 2026-08-31.
  * Driven through core/pulse like the valves, with the opposite line held low
  * as its interlock, so the pair can never be energized together and no drive
- * can outlive the watchdog. */
+ * can outlive the watchdog. Its driver is the DRV8251A whose current sense
+ * is PIN_HB_SENSE above - same ACT_HB channel, so that ADC reading is this
+ * motor's current. */
 #define PIN_DISPERSE_FWD 17
 #define PIN_DISPERSE_REV 18
 

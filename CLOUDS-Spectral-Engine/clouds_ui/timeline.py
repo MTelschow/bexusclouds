@@ -155,13 +155,13 @@ SERIES: tuple[Series, ...] = (
 ) + (
     Series("membrane", "Membrane duty", "%", "Actuators", "#1D9E75",
            lambda h: float(h.membrane_duty)),
-    # The solenoid's sensed current beside its commanded duty: the pair on
-    # one time axis is the actuation check. Plotted as the pin voltage until
-    # the sense gain is known (hk.HB_SENSE_A_PER_V) - the shape is what
-    # matters and the scale can be applied to the log later. A sentinel is
-    # a gap, like an unreadable rail.
-    Series("hb_sense", "Solenoid sense", "V", "Actuators", "#b0413e",
-           lambda h: h.hb_sense_v()),
+    # The dispersion motor's sensed current beside the membrane duty: the
+    # DRV8251A IPROPI chain on GP46, scaled to amps by hk.HB_SENSE_A_PER_V.
+    # It moves only during the bounded 5 s motor pulses and reads 0 in coast
+    # (see HB_SENSE_A_PER_V), so a flat trace between releases is expected.
+    # A sentinel is a gap, like an unreadable rail.
+    Series("hb_sense", "Dispersion motor current", "A", "Actuators", "#b0413e",
+           lambda h: h.hb_sense_a()),
 )
 
 SERIES_BY_KEY = {s.key: s for s in SERIES}

@@ -49,8 +49,16 @@ enum command {
     CMD_STATUS_REQ = 0x07,
     CMD_ARM = 0x08,
     CMD_MEMBRANE = 0x09, /* key = duty percent, 0 = off */
-    CMD_DISPERSE = 0x0A, /* key = 1 -> one dispersion-motor pulse */
+    CMD_DISPERSE = 0x0A, /* key = DISPERSE_* below: stop / pulse / run */
 };
+
+/* CMD_DISPERSE keys - mirror of clouds_link/commands.py DisperseKey. The key
+ * is the request, never the speed (that is PARAM_DISPERSE_DUTY): PULSE is the
+ * bounded 5 s drive a release also schedules, RUN holds the motor on until
+ * STOP, and STOP ends whichever of the two is under way. */
+#define DISPERSE_STOP 0u
+#define DISPERSE_PULSE 1u
+#define DISPERSE_RUN 2u
 
 typedef struct {
     uint8_t type;
@@ -95,8 +103,8 @@ typedef struct {
 /* "No reading" for hk_t.hb_sense_raw - mirror of HB_SENSE_INVALID in
  * clouds_link/hk.py. The ADC is 12-bit, so no real sample exceeds 4095 and
  * 0xFFFF cannot be one. Downlinked by a build that cannot reach GP46 (pico2 /
- * RP2350A), where 0 would read as "no current", a reading a de-energized
- * solenoid legitimately produces. */
+ * RP2350A), where 0 would read as "no current", a reading an idle motor
+ * legitimately produces. */
 #define HB_SENSE_INVALID 0xFFFFu
 
 /* Rails carried in hk_t, in wire order: V_in, 24 V, 5 V, 3.3 V. One more
@@ -125,13 +133,15 @@ typedef struct {
      * where rail_mv is not RAIL_MV_INVALID. */
     int16_t shunt_raw[RAIL_COUNT];
     uint32_t uptime_s, mission_t_s;
-    /* Push-pull solenoid current sense (ACT_HB_SENS, GP46 / ADC6): the raw
-     * 12-bit ADC sample, 0..4095 over the ADC reference. Appended after
+    /* CaCO3 dispersion motor current sense (ACT_HB_SENS, GP46 / ADC6): the
+     * raw 12-bit ADC sample, 0..4095 over the ADC reference, of the IPROPI
+     * output of the motor's DRV8251A - the ACT_HB channel is GP17/GP18 drive
+     * plus this sense, and it is NOT the membrane solenoid. Appended after
      * mission_t_s so every older field keeps its offset. Sent raw and scaled
      * on the ground (clouds_link/hk.py HB_SENSE_A_PER_V), like shunt_raw: the
-     * sense gain is a ground-side constant that can be corrected against a
-     * logged session. HB_SENSE_INVALID means the pin is not reachable in
-     * this build. */
+     * IPROPI gain and its sense resistor are ground-side constants that can
+     * be corrected against a logged session. HB_SENSE_INVALID means the pin
+     * is not reachable in this build. */
     uint16_t hb_sense_raw;
 } hk_t;
 
@@ -163,25 +173,40 @@ typedef struct {
 /* Actuator drive bits (hk_t.valve_status) - mirror of clouds_link/hk.py
  * ValveStatus. A set bit means that line is energized *now*, which is how
  * ground sees a manually commanded drive happen: the pinch valves and the
- * dispersion motor are bounded pulses that are over long before the next 1 Hz
- * HK, so an operator who cannot see this field cannot see them at all. Only
- * one *drive* bit is ever set at a time - core/pulse drives one line at a
- * time to cap peak actuator current. The membrane drive is not here; it is a
- * repeating waveform, reported as a percentage in hk_t.membrane_duty.
+ * dispersion motor's pulse are bounded drives that are over long before the
+ * next 1 Hz HK, so an operator who cannot see this field cannot see them at
+ * all. core/pulse drives one line at a time to cap peak actuator current, so
+ * at most one *pulsed* drive bit is set; HKV_DISPERSE is also set for the
+ * length of a DISPERSE_RUN hold, which is not a pulse and may sit beside a
+ * pinch bit if a release fires while the operator has the motor running.
+ * The membrane drive is not here; it is a repeating waveform, reported as a
+ * percentage in hk_t.membrane_duty.
  *
  * Bit 5 is different in kind: it is an INPUT, the membrane position switch on
- * GP30 (hw/board.h PIN_MEMBRANE_SENSE), set while the switch reads the
- * solenoid as energized (pulled). It says what the plunger is doing, not what
+ * GP30 (hw/board.h PIN_MEMBRANE_SENSE), set while the plunger has lifted
+ * off the button, i.e. the solenoid is actuated (pulled); clear while the
+ * resting plunger holds the button pressed. It says what the plunger is doing, not what
  * the MCU is driving, so it may be set alongside a drive bit - and it is what
  * tells ground a commanded membrane drive is moving anything. When the sense
  * pin is not reachable in the build, HKE_NO_MEMBRANE_SENSE says the bit is
- * unsourced rather than "pushed". */
+ * unsourced rather than "pushed".
+ *
+ * Bit 6 is the switch's history over the last HK period: set when it changed
+ * state at least once since the previous HK packet. It exists because bit 5
+ * alone cannot show motion at 2 Hz: HK goes out every 1000 ms and the
+ * membrane's 500 ms cycle is timed by the same 10 ms loop, so the 1 Hz sample
+ * sits at a fixed phase and reads the same value packet after packet - a
+ * running solenoid and a stuck one look identical in bit 5. The loop samples
+ * the switch every pass and latches any edge into this bit. Drive on: CYCLING
+ * set every packet. Drive off: clear, with PULLED clear too. Drive on and
+ * CYCLING clear: the plunger is not moving. */
 #define HKV_PINCH_1 (1u << 0)
 #define HKV_PINCH_2 (1u << 1)
 #define HKV_EQ1_CLOSE (1u << 2)
 #define HKV_EQ2_CLOSE (1u << 3)
 #define HKV_DISPERSE (1u << 4)
 #define HKV_MEMBRANE_PULLED (1u << 5)
+#define HKV_MEMBRANE_CYCLING (1u << 6)
 
 size_t frame_encode(uint8_t type, uint16_t seq, uint32_t t_s, uint16_t t_ms,
                     const uint8_t *payload, uint16_t plen,

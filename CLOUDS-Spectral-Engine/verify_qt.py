@@ -294,6 +294,26 @@ app.processEvents()
 check("auto-exposure hunt leaves the GUI thread free", _spins > 50,
       f"{_spins} event-loop turns while the hunt ran")
 
+# The hunt owns the detector for its whole run: unchecking `auto integration
+# time` mid-hunt must NOT hand the controls back, or a value typed there is
+# overwritten by the hunt's result seconds later.
+win.driver.grab = _slow_grab
+win.chk_track.blockSignals(True); win.chk_track.setChecked(True); win.chk_track.blockSignals(False)
+win._track = True
+win._auto_expose()
+app.processEvents()
+win.chk_track.setChecked(False)          # operator takes over mid-hunt
+app.processEvents()
+check("auto-exposure: unchecking auto mid-hunt does not free the controls",
+      not win.sl_exp.isEnabled() and not win.sp_exp.isEnabled()
+      and win.lbl_exp.text().endswith("busy"), repr(win.lbl_exp.text()))
+_wait_auto()
+win.driver.grab = _real_grab
+app.processEvents()
+check("auto-exposure: the controls come back when the hunt lands",
+      win.sl_exp.isEnabled() and win.sp_exp.isEnabled()
+      and win.lbl_exp.text() == win._EXP_LABEL, repr(win.lbl_exp.text()))
+
 # ---- continuous auto-exposure tracking (the servo: follow a changing scene) ----
 win.chk_dark.setChecked(False); win.chk_flat.setChecked(False)
 win.reference_proc = None; win.flat = False
@@ -387,6 +407,18 @@ win.sl_exp.setValue(win.sl_exp.value() - 40); app.processEvents()
 check("integration: a slider move sets the exposure the spin box shows",
       abs(win.exposure_ms - float(win.sp_exp.value())) < 1e-9,
       f"exp={win.exposure_ms} spin={win.sp_exp.value()}")
+# ... and the handle must sit where that number is. In the bottom decade the
+# spin box has fewer distinct values than the slider has steps, so without the
+# snap the handle parks up to two steps off the value it printed.
+_off = []
+for _pos in range(0, 121, 3):
+    win.sl_exp.setValue(_pos)
+    win.sl_exp.sliderReleased.emit()        # a drag ends in a release
+    app.processEvents()
+    if win.sl_exp.value() != win.sl_exp.to_pos(win.sp_exp.value()):
+        _off.append(_pos)
+check("integration: the handle sits at the value it shows, decade by decade",
+      not _off, f"{len(_off)} positions disagree, first {_off[:3]}")
 # one arrow click is ~10%, at both ends of the five-decade range
 win._show_exposure(0.01)
 check("integration: the spin step follows the decade (low end)",
@@ -564,7 +596,7 @@ from clouds_gse.commander import Commander as _Commander
 from clouds_gse.receiver import Receiver as _Receiver
 from clouds_gse.session_log import SessionLog as _SessionLog
 
-_mcu = {"duty": 0, "valves": 0, "hz": 0, "log": []}
+_mcu = {"duty": 0, "valves": 0, "hz": 0, "motor_duty": 100, "log": []}
 
 
 def _forward(cmd, key, value):
@@ -577,6 +609,8 @@ def _forward(cmd, key, value):
         _mcu["valves"] = int(_hk.ValveStatus.DISPERSE)
     elif cmd == _Cmd.SET_PARAM and key == _Param.MEMBRANE_HZ:
         _mcu["hz"] = value
+    elif cmd == _Cmd.SET_PARAM and key == _Param.DISPERSE_DUTY:
+        _mcu["motor_duty"] = value
     return _Ack.OK
 
 
@@ -610,9 +644,14 @@ try:
           _mcu["log"] == [(int(_Cmd.MEMBRANE), 0, 0)] and _mcu["duty"] == 0,
           str(_mcu["log"]))
     _mcu["log"].clear()
+    _gse.sl_motor.setValue(40)
     _gse._disperse()
-    check("flight: motor button asks for one pulse",
-          _mcu["log"] == [(int(_Cmd.DISPERSE), 1, 0)], str(_mcu["log"]))
+    check("flight: motor button sets the speed, then asks for one pulse",
+          _mcu["log"] == [(int(_Cmd.SET_PARAM), int(_Param.DISPERSE_DUTY), 40),
+                          (int(_Cmd.DISPERSE), 1, 0)]
+          and _mcu["motor_duty"] == 40, str(_mcu["log"]))
+    check("flight: the speed slider shows its value",
+          _gse.lbl_motor_speed.text() == "40 %", _gse.lbl_motor_speed.text())
 
     # housekeeping feedback: without it a 5 s pulse is invisible to ground
     import socket as _socket
@@ -625,6 +664,7 @@ try:
                                                membrane_duty=70,
                                                valve_status=_mcu["valves"]
                                                | _hk.ValveStatus.MEMBRANE_PULLED
+                                               | _hk.ValveStatus.MEMBRANE_CYCLING
                                                ).pack(),
                       seq=0).stamp().encode(), ("127.0.0.1", _rx.port))
     for _ in range(60):
@@ -633,7 +673,7 @@ try:
     _gse.refresh()
     app.processEvents()
     check("flight: renders the commanded drive and the sensed plunger",
-          _gse._hk_labels["Membrane"].text() == "70 %  pulled"
+          _gse._hk_labels["Membrane"].text() == "70 %  pulled, cycling"
           and _gse._hk_labels["Driving"].text() == "DISPERSE",
           f'{_gse._hk_labels["Membrane"].text()} / '
           f'{_gse._hk_labels["Driving"].text()}')
@@ -791,20 +831,20 @@ try:
           str({n: _gse._sensor_labels[n].text()
                for n, _p, _f, _fg in _fl.SENSOR_FIELDS}))
 
-    # The solenoid current sense: volts at the pin while the gain is unknown,
-    # `-` from a build with no GP46 - and 0 counts is a reading (idle), not
-    # the sentinel.
-    check("flight: the solenoid sense renders the pin voltage",
-          _gse._sensor_labels["Solenoid I"].text() == "1.208V",
-          _gse._sensor_labels["Solenoid I"].text())
+    # The dispersion motor's current sense: amps through the DRV8251A IPROPI
+    # chain, `-` from a build with no GP46 - and 0 counts is a reading (idle
+    # or coasting), not the sentinel.
+    check("flight: the motor sense renders amps",
+          _gse._sensor_labels["Motor I"].text() == "0.537A",
+          _gse._sensor_labels["Motor I"].text())
     _gse._refresh_sensors(_hk.Housekeeping(hb_sense_raw=0))
-    check("flight: an idle solenoid reads 0 V, not no reading",
-          _gse._sensor_labels["Solenoid I"].text() == "0.000V",
-          _gse._sensor_labels["Solenoid I"].text())
+    check("flight: an idle motor reads 0 A, not no reading",
+          _gse._sensor_labels["Motor I"].text() == "0.000A",
+          _gse._sensor_labels["Motor I"].text())
     _gse._refresh_sensors(_hk.Housekeeping())
-    check("flight: a build without GP46 shows no solenoid reading",
-          _gse._sensor_labels["Solenoid I"].text() == "-",
-          _gse._sensor_labels["Solenoid I"].text())
+    check("flight: a build without GP46 shows no motor current reading",
+          _gse._sensor_labels["Motor I"].text() == "-",
+          _gse._sensor_labels["Motor I"].text())
 
     # A rail with no monitor must not render as 0.00 V: the 24 V bus reads a
     # genuine 0 mV on a USB-powered bench, so a dead monitor and a dead rail
@@ -1059,7 +1099,7 @@ try:
     _gse.refresh()
     app.processEvents()
     check("restart: housekeeping flows through the new receiver",
-          _gse._hk_labels["Membrane"].text() == "35 %  pushed",
+          _gse._hk_labels["Membrane"].text() == "35 %  pushed, not cycling",
           _gse._hk_labels["Membrane"].text())
     _tx2.close()
     check("restart: the button is usable again", _win.btn_restart.isEnabled())

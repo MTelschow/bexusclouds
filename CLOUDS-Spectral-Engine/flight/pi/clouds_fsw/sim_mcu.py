@@ -84,6 +84,7 @@ class SimMcu:
         self.fired = 0
         self.hold = False
         self.membrane_duty = 0
+        self.disperse_duty = 100         # PARAM_DISPERSE_DUTY, motor speed
         self.seal_verified = False
         self._t0 = time.monotonic()
         self._state_entered = self._t0
@@ -239,13 +240,17 @@ class SimMcu:
             return AckResult.OK
         if cmd == Command.SET_PARAM:
             # The real MCU range-checks each key against config.c; the sim
-            # only knows the key space, and honours the two knobs it models.
+            # only knows the key space, and honours the three knobs it models.
             if key not in {int(p) for p in Param}:
                 return AckResult.INVALID
             if key == Param.T_MEASURE_S:
                 self._t_measure_s = float(value)
             elif key == Param.MEMBRANE_DUTY and self.membrane_duty:
                 self.membrane_duty = int(value)
+            elif key == Param.DISPERSE_DUTY:
+                # Latched for the *next* pulse, like the MCU: a running 5 s
+                # drive keeps the speed it started at.
+                self.disperse_duty = int(value)
             return AckResult.OK
         return AckResult.INVALID
 
@@ -399,21 +404,27 @@ class SimMcu:
             mission = 0 if self._mission_start is None \
                 else int(now - self._mission_start)
             # The position switch on GP30 follows the solenoid: with the
-            # drive on it reads pulled for the on-phase of each 2 Hz cycle,
-            # which a 1 Hz HK sample catches at a random phase - so the bit
-            # alternates between packets, as it does on the carrier. With the
-            # drive off the plunger is released and the switch never closes.
+            # drive on it reads pulled during the on-phase of each 2 Hz
+            # cycle. HK is sampled at 1 Hz, i.e. at a fixed phase of that
+            # cycle, so PULLED reads one constant value across packets - as
+            # on the carrier - and CYCLING is what says the plunger moved
+            # during the last second. With the drive off the plunger is
+            # released: the switch never closes and nothing cycles.
             valves = self._drive[0] if self._drive else 0
             on_phase = bool(self.membrane_duty and
                             (now * 2.0) % 1.0 < self.membrane_duty / 100.0)
             if on_phase:
                 valves |= hk.ValveStatus.MEMBRANE_PULLED
-            # The current sense on GP46 sees the same phase the switch does:
-            # counts well up the ADC range while the solenoid is energized,
-            # near zero otherwise. The level is a plausible sense voltage
-            # (~1.2 V of 3.3 V), not a calibrated current - the gain is
-            # unknown on the real board too (hk.HB_SENSE_A_PER_V).
-            hb_sense = int(random.gauss(1500 if on_phase else 12, 8))
+            if self.membrane_duty:
+                valves |= hk.ValveStatus.MEMBRANE_CYCLING
+            # The current sense on GP46 is the dispersion motor's, not the
+            # membrane's: it reads while the DISPERSE drive is up and ~0
+            # otherwise, including every second between releases. ~980 counts
+            # is 0.79 V over the 1.5 kOhm IPROPI resistor, i.e. ~0.35 A of
+            # motor current through hk.HB_SENSE_A_PER_V - a plausible draw,
+            # not a measured one.
+            hb_sense = int(random.gauss(
+                980 if valves & hk.ValveStatus.DISPERSE else 3, 8))
             return hk.Housekeeping(
                 state=int(self.state), flags=self._flags(now),
                 fired=self.fired,

@@ -78,6 +78,12 @@ typedef struct {
      * (may be NULL): the carrier grew it after the SED was written, so a
      * board without it still sequences. */
     void (*disperse)(void *ctx);
+    /* The same motor held on (true) or released (false) for as long as the
+     * operator says - DISPERSE_RUN / DISPERSE_STOP. Not a pulse: it sits
+     * beside core/pulse rather than in its one-at-a-time queue, so a run
+     * can neither delay a release's pinch valve nor keep busy() true. STOP
+     * also cuts a running pulse short. Optional, like disperse. */
+    void (*disperse_run)(void *ctx, bool on);
     void (*membrane)(void *ctx, uint8_t duty_pct); /* 0 = off */
     /* Optional (may be NULL): true while a scheduled drive is still
      * running. Used to hold off seal_ok until the lines stopped moving. */
@@ -94,6 +100,9 @@ typedef struct {
      * now. Kept here so HK reports the drive rather than a constant 0 - the
      * membrane is the one actuator whose state is not a short pulse. */
     uint8_t membrane_duty;
+    /* True between DISPERSE_RUN and DISPERSE_STOP (or TERMINATION): the
+     * motor is held on by the operator, not by a release. */
+    bool motor_running;
     bool hold;
     bool seal_verified;
     uint8_t seal_attempts;
@@ -122,11 +131,17 @@ void seq_step(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
  * ACK_INVALID for an unknown command or an out-of-range parameter. Ground
  * gets the MCU's own verdict, not merely "the Pi wrote to the UART".
  *
- * CMD_MEMBRANE (key = duty percent, 0 = off) and CMD_DISPERSE (key = 1) are
- * direct operator drives of the dispersion hardware, for bench bring-up and
- * as a fallback if the drive a release step starts does not do its job. Both
- * are refused in TERMINATION and SAFE: after an abort the actuators stay
- * off, and no ground command may undo that. */
+ * CMD_MEMBRANE (key = duty percent, 0 = off) and CMD_DISPERSE (key =
+ * DISPERSE_PULSE for the bounded 5 s drive, DISPERSE_RUN to hold the motor
+ * on, DISPERSE_STOP to end either) are direct operator drives of the
+ * dispersion hardware, for bench bring-up and as a fallback if the drive a
+ * release step starts does not do its job. The motor's speed is not in its
+ * key - it is PARAM_DISPERSE_DUTY, so the pulse a release schedules runs at
+ * the same speed as one commanded here; a SET_PARAM of it while the motor
+ * is running re-latches the speed at once. Every drive that energizes
+ * something is refused in TERMINATION and SAFE: after an abort the
+ * actuators stay off, and no ground command may undo that. DISPERSE_STOP
+ * is the exception - it can only de-energize, so it is always honoured. */
 uint8_t seq_command(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
                     uint8_t cmd, uint8_t key, int32_t value, cfg_t *cfg);
 /* Any valid ground command refreshes the link-loss latch (O.2), including

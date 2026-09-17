@@ -18,7 +18,118 @@ without re-deriving anything. Newest entries first.
 
 ---
 
-## 2026-09-17 (newest) - The push-pull solenoid's current is sensed on GP46
+## 2026-09-17 (newest) - ACT_HB_SENS is the CaCO3 motor's current, in amps
+
+**The correction.** The GP46 sense added earlier today was written up, named
+and displayed as the **push-pull membrane solenoid's** current. It is not: on
+the carrier `ACT_HB` is one driver channel that carries **GP17/GP18 (the
+dispersion motor's drive lines) together with GP46**, so the ADC pin measures
+the motor. The membrane solenoid is GP26 and has no current sense at all. Every
+comment that reasoned about the sense "swinging with the membrane's 2 Hz cycle"
+was reasoning about the wrong actuator - the motor runs in bounded 5 s pulses,
+so at 1 Hz a run is a handful of in-pulse samples and a legitimate zero between
+releases.
+
+**And the scale exists.** The driver is a **DRV8251A**, which has integrated
+current sensing rather than a power shunt: an internal current mirror on the
+low-side FETs drives IPROPI with `I_motor x AIPROPI` (**1500 uA/A** typ, the
+`AERR` spec covering offset and gain together), and the carrier turns that into
+a voltage across **R_IPROPI = 1.5 kOhm** to ground, which GP46 reads. So
+
+    I_motor [A] = V_pin / (R_IPROPI * AIPROPI) = V_pin * 0.444
+
+and the ADC's 3.3 V full scale is **1.47 A**. `HB_SENSE_A_PER_V` is no longer
+`None`; the panel row (`Motor I`), the timeline series (`Dispersion motor
+current`, A) and `to_row()` all carry amps. Counts still ride the wire raw, as
+the INA226 shunts do: if the resistor is a different value than the schematic
+says, or this part's gain is measured, every logged session is re-derivable.
+The volts path stays in place and `hb_sense_text` falls back to it if the gain
+is ever cleared - a wrong current is worse than an honest voltage.
+
+**The one thing the reading does not say.** IPROPI mirrors only current
+flowing drain-to-source through a **low-side** FET. In coast, where the winding
+current freewheels through the body diodes, it reads **zero with current still
+flowing**. The dispersion drive is forward (GP17 PWM high side, GP18 low) and
+coasts between pulses, so 0 A means "no low-side current", not "no current" -
+recorded in `board.h`, `hk.py` and on the panel note, because that is exactly
+the number an operator would otherwise read as a dead motor.
+
+**What this does not fix.** Nothing is measured yet: the gain is a datasheet
+typ and a schematic resistor, the ADC reference is the SDK's nominal 3.3 V, and
+GP46 has still never been read against a running motor. The first real pulse is
+what turns this from plumbing into a measurement. The entry below - "the
+motor's current is still unmeasured, on no monitored rail" - is superseded in
+its first half only: the motor is still on no INA226 rail.
+
+**Verified.** `pytest tests/` 297 passed (`TestMotorCurrentSense`, the IPROPI
+chain test, the sim now driving the sense from `DISPERSE` instead of the
+membrane phase), `verify_qt.py` VERIFY OK (`Motor I` reads `0.537A` for 1500
+counts, `0.000A` idle, `-` from a pico2 build), `run_native.sh` 57 tests. No
+wire-format change: `hb_sense_raw` is the same u16 in the same place.
+
+---
+
+## 2026-09-17 - The CaCO3 motor has a speed, and the panel a slider
+
+**The change.** The dispersion motor's forward line (GP17) was driven fully on
+for the 5 s of its pulse - a motor with one speed, and no way to find out on
+the bench how fast it has to turn to disperse the powder rather than throw it.
+It is now a PWM output: `hw.c` hands GP17 to its PWM slice for the length of
+the drive at **20 kHz**, with the duty taken from the new
+**`PARAM_DISPERSE_DUTY`** (percent), and takes the pin back as an SIO output
+driven low when the pulse ends. The GSE panel grew a **Speed slider** in the
+CaCO3 group; pressing *Run one pulse* sends `SET_PARAM DISPERSE_DUTY` and then
+`DISPERSE`, the same order (and for the same reason) as the membrane's
+`SET_PARAM MEMBRANE_HZ` before its drive.
+
+**Why 20 kHz and not the membrane's mechanism.** The membrane runs at 2 Hz,
+below the ~9 Hz PWM floor, which is why `core/sqwave` toggles it from the loop.
+A motor is the opposite case: chopping a brushed motor at a few hundred Hz
+whines, heats the driver and does not turn it any faster, so the drive wants to
+be well above audible and the hardware PWM is the right mechanism. At 20 kHz on
+a 150 MHz `clk_sys` `pwmdiv_solve()` lands on a period of a few thousand
+counts, so the duty resolution is far finer than the 1 % the parameter carries.
+
+**Why a parameter and not the command key.** `CMD_DISPERSE`'s key stays `1`.
+The speed sits in the config instead, so the pulse the **release path**
+schedules runs at the same speed as one commanded from the panel - there is no
+bench-only setting to forget before flight. The duty is latched in
+`ops_disperse()` when the pulse is *queued*, not read when it starts: the drive
+is one 5 s shot that cannot be changed mid-run, so the speed the panel showed
+at the press is the speed that runs.
+
+**Envelope.** `{default 100, min 20, max 100}`. The default is the full-on
+drive the pin had before it was a PWM, so an unconfigured system behaves
+exactly as it did. The 20 % floor is not a safety limit but a usefulness one -
+below it a brushed motor draws current and does not turn, which on the panel
+reads as a drive that ran and dispersed nothing.
+
+**What is not in this.** HK carries no motor-duty field: the speed is confirmed
+by the `SET_PARAM` ACK and echoed in the panel's status line
+(`disperse 40 % -> OK`), and a byte on the wire costs the MCU, the Pi and every
+logged session. If the motor turns out to need in-flight verification of its
+speed, that is the moment to spend it. The motor's **current is still
+unmeasured** and it is on no monitored rail, so what a given duty does to the
+draw is not observable from the ground - unchanged by this.
+
+**Verified.** `flight/mcu/test/run_native.sh` 57 tests (new:
+`test_disperse_duty_defaults_to_full_and_is_bounded`), `pytest tests/` 294
+passed, `verify_qt.py` VERIFY OK with two new checks - the button sends
+`SET_PARAM DISPERSE_DUTY 40` before `DISPERSE 1`, and the slider's label
+follows the handle. Firmware builds clean for `clouds_carrier`. **Not yet run
+against the motor on the bench**: the PWM path is untested on real silicon, and
+the speed at which the powder actually disperses is unknown.
+
+---
+
+## 2026-09-17 - The push-pull solenoid's current is sensed on GP46
+
+> **Superseded the same day**: the sensed actuator is the **CaCO3 dispersion
+> motor**, not the membrane solenoid, and the scale is known (DRV8251A IPROPI,
+> 0.444 A/V) - see the entry at the top. The mechanism below (raw counts, 8
+> sample mean, `HAVE_HB_SENSE` guard, sentinel) is unchanged and still
+> accurate; the actuator it is attributed to, and every "2 Hz phase" argument
+> in it, are not.
 
 **The change.** The carrier schematic names `ACT_HB_SENS` on **GP46**, the
 sense output of the actuator bridge, and it carries the current of the
@@ -193,9 +304,58 @@ pins GP30, input + pull-up, active-low decode, the `NUM_BANK0_GPIOS` guard and
 the carrier default; the HKV/HKE mirror tests cover the new bits;
 `test_link.py` covers the row text and the unsourced case; `verify_qt.py`
 sends `DISPERSE | MEMBRANE_PULLED` and requires `Membrane = 70 %  pulled`,
-`Driving = DISPERSE`. **Not yet run against the real switch** - the first
-thing to look for on the carrier is the row alternating under `MEMBRANE 60`
-and reading `pushed` steadily under `MEMBRANE 0`.
+`Driving = DISPERSE`.
+
+**Measured on the carrier (`21DD2AE08840C863`), same evening.** Firmware from
+HEAD (carrier board header, HK 56 B) flashed over USB; the Pi's `/opt/clouds`
+brought up to the same commit (its `clouds_link` was still the 50-byte
+Keller-era layout, so nothing it decoded would have been right) and the
+service restarted. Ground side was the running `clouds_ui`, whose session log
+`gse_sessions/session_20260917_185712_hk.csv` records every HK row; commands
+went in over a second TCP 4001 client.
+
+```
+baseline, MEMBRANE 0        10 HK   membrane_pulled True 10/10   duty 0
+MEMBRANE 60  -> ACK OK      25 HK   membrane_pulled True 25/25   duty 60
+MEMBRANE 0   -> ACK OK      10 HK   membrane_pulled True 10/10   duty 0
+error_text                  IMU_FAIL NO_TEMP  (no NO_MEMBRANE_SENSE: the build reaches GP30)
+valve_status                0b100000 in all 200 rows of the session
+V_in                        23.95 V, 0.195 A flat through all three phases
+```
+
+The chain is right: the bit is read, packed, relayed, decoded and rendered,
+and the duty follows each command. The *reading* is wrong: LOW in every
+packet, drive on or off. HK alone cannot say why, so
+`src/tools/membrane_switch_probe.c` (built with `-DCLOUDS_BUILD_TOOLS=ON`,
+USB CDC, same pattern as the IMU probe) was flashed for one run:
+
+```
+GP30: pu=0 pd=0 -> held LOW externally      GP31: pu=1 pd=0 floating   GP32: pu=1 pd=0 floating
+GP26=0 (released):  GP30 high  0/20   x3
+GP26=1 (energized): GP30 high  0/20   x3
+2 Hz / 60 % on GP26, 6 s, 20 ms samples: GP26 ###############.......... GP30 .................. every line
+```
+
+**What this establishes.** GP30 is not floating and not on the wrong pin -
+with the internal pull-up it still reads 0, so something on the board sinks
+it to ground harder than ~50 kOhm: a closed contact, a short, or a fitted
+pull-down. It does not change when GP26 goes high, low, or oscillates. So
+either the contact is closed in *both* plunger positions - a normally-closed
+switch, a button pressed at rest that the plunger does not release, a
+button the plunger never reaches - or the line is shorted, or the solenoid
+is not moving at all (GP26 visibly actuated it on 2026-08-31, and V_in is
+present, but the actuator supply is not on a monitored rail, so a flat 0.195 A
+proves nothing). The firmware reading is correct for what the pin sees; the
+fix is on the bench. **Phase 4 of the probe is a live watch for exactly this:
+flash it, open the CDC port, and press the button by hand.** A toggle there
+means the wiring is fine and the plunger is not working the switch; no toggle
+means the line is shorted or the button is on another pin.
+
+Flight image restored afterwards (`picotool load -f -x`). While the probe
+ran the Pi saw no HK for ~40 s; its comms log shows the MCU answering PINGs
+again straight after the reflash, with no service restart - S.7 / M-13 on a
+small scale. (The operator restarted `clouds_ui` at 21:03 for their own
+reasons, so the ground log of the run is split across two session files.)
 
 ---
 

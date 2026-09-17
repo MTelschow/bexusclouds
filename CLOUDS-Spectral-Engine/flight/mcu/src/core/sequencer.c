@@ -65,6 +65,15 @@ static void set_membrane(sequencer_t *s, uint8_t duty_pct)
     s->ops->membrane(s->ops->ctx, duty_pct);
 }
 
+/* Same idea for the held motor drive: s->motor_running is what HK and the
+ * PULSE refusal key off, so it changes only here, together with the line. */
+static void set_motor(sequencer_t *s, bool on)
+{
+    s->motor_running = on;
+    if (s->ops->disperse_run != NULL)
+        s->ops->disperse_run(s->ops->ctx, on);
+}
+
 static void close_eq_valves(sequencer_t *s, uint64_t t_ms)
 {
     s->ops->close_eq_valves(s->ops->ctx);
@@ -242,6 +251,7 @@ void seq_step(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
 
     case ST_TERMINATION:
         set_membrane(s, 0);
+        set_motor(s, false);
         s->ops->close_eq_valves(s->ops->ctx);
         enter(s, ST_SAFE, t_ms);
         break;
@@ -310,20 +320,43 @@ uint8_t seq_command(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
         s->ops->event(s->ops->ctx, EV_MANUAL_DRIVE,
                       key ? "membrane on" : "membrane off");
         return ACK_OK;
-    case CMD_DISPERSE: /* one bounded pulse of the CaCO3 motor */
-        if (key != 1)
+    case CMD_DISPERSE: /* the CaCO3 motor: stop, one bounded pulse, or run */
+        if (key > DISPERSE_RUN)
             return ACK_INVALID;
         /* A board without the motor must say so rather than answer OK for a
          * drive that no line can make. */
-        if (s->ops->disperse == NULL)
+        if (s->ops->disperse == NULL || s->ops->disperse_run == NULL)
             return ACK_REJECTED;
+        if (key == DISPERSE_STOP) {
+            /* Always honoured, TERMINATION and SAFE included: it can only
+             * de-energize. Ends a run and cuts a pulse short alike. */
+            set_motor(s, false);
+            s->ops->event(s->ops->ctx, EV_MANUAL_DRIVE, "disperse stop");
+            return ACK_OK;
+        }
         if (!actuators_commandable(s))
+            return ACK_REJECTED;
+        if (key == DISPERSE_RUN) {
+            /* Idempotent: a second RUN re-latches the speed, nothing else. */
+            set_motor(s, true);
+            s->ops->event(s->ops->ctx, EV_MANUAL_DRIVE, "disperse run");
+            return ACK_OK;
+        }
+        /* PULSE while the operator holds the motor on: the bounded drive it
+         * asks for cannot happen, so ground hears that it did nothing. */
+        if (s->motor_running)
             return ACK_REJECTED;
         s->ops->disperse(s->ops->ctx);
         s->ops->event(s->ops->ctx, EV_MANUAL_DRIVE, "disperse");
         return ACK_OK;
     case CMD_SET_PARAM:
-        return cfg_set(cfg, key, value) ? ACK_OK : ACK_INVALID;
+        if (!cfg_set(cfg, key, value))
+            return ACK_INVALID;
+        /* A running motor takes a new speed at once, or the panel would show
+         * a speed the motor is not turning at until the next STOP/RUN. */
+        if (key == PARAM_DISPERSE_DUTY && s->motor_running)
+            set_motor(s, true);
+        return ACK_OK;
     case CMD_STATUS_REQ:
         return ACK_OK; /* answered by the Pi's PISTATUS, nothing to do here */
     default:

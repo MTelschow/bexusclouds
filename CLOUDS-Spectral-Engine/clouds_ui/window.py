@@ -663,7 +663,8 @@ class CloudsWindow(QtWidgets.QMainWindow):
         # --- Acquisition ---
         v = sec("Acquisition")
         row, self.sl_exp, self.sp_exp = self._log_slider_row(
-            "Integration  [ms]", 0.01, 1000, self.exposure_ms, self._on_exposure)
+            self._EXP_LABEL, 0.01, 1000, self.exposure_ms, self._on_exposure)
+        self.lbl_exp = row.label
         v.addWidget(row)
         row, self.sl_avg, self.sp_avg = self._lin_slider_row(
             "Averaging  [frames]", 1, 64, self.navg, self._on_navg)
@@ -1040,12 +1041,24 @@ class CloudsWindow(QtWidgets.QMainWindow):
 
     def _slider_style(self):
         """Same native-rendering gap as combo boxes (see _combo_style) - the
-        groove/handle silently fail to draw on recent macOS without this."""
+        groove/handle silently fail to draw on recent macOS without this.
+
+        The `:disabled` rules are not decoration. A stylesheet that names only
+        the enabled sub-controls replaces the native painting for EVERY state,
+        so `setEnabled(False)` left the slider looking exactly like a live one -
+        which is what `_set_exposure_enabled` relies on to say "the servo owns
+        this now". A control that ignores the drag while looking draggable is
+        the failure, not the greying. `:hover` is pinned to `:enabled` for the
+        same reason: Qt still matches it on a disabled widget."""
         return (f"QSlider::groove:horizontal{{height:4px; background:#dde3e9; border-radius:2px;}}"
                 f"QSlider::sub-page:horizontal{{background:{NAVY}; border-radius:2px;}}"
                 f"QSlider::handle:horizontal{{background:#ffffff; border:2px solid {NAVY};"
                 "width:14px; height:14px; margin:-6px 0; border-radius:7px;}"
-                "QSlider::handle:horizontal:hover{background:#eef3f8;}")
+                "QSlider::handle:horizontal:enabled:hover{background:#eef3f8;}"
+                "QSlider::groove:horizontal:disabled{background:#e8ecf0;}"
+                "QSlider::sub-page:horizontal:disabled{background:#c2ccd6;}"
+                "QSlider::handle:horizontal:disabled{background:#f0f3f6;"
+                "border:2px solid #c2ccd6;}")
 
     # ----------------------------------------------------------- slider rows
     def _lin_slider_row(self, label, lo, hi, val, cb):
@@ -1091,11 +1104,18 @@ class CloudsWindow(QtWidgets.QMainWindow):
         sp.valueChanged.connect(from_spin)
         return w, sl, sp
 
-    def _log_slider_row(self, label, lo, hi, val, cb, decimals=2):
+    def _log_slider_row(self, label, lo, hi, val, cb, decimals=3):
         """Logarithmic slider over [lo, hi] with an exact (float) spin box.
 
         Used for integration time; lo can be sub-ms (0.01 ms = 10 us) to match the
         EURECA range.
+
+        `decimals` is 3, not 2, because the exposure this feeds is rounded to
+        3 decimals everywhere else (`_auto_expose`, `_track_exposure`): at 2 the
+        spin box could not show what the servo had actually set, and near the
+        0.01 ms floor a whole octave of slider travel printed the same number.
+        The step follows the decade for the same reason - a fixed 1.00 ms step
+        jumps from 0.01 to 1.01 on one arrow click.
         """
         import math
         STEPS = 600
@@ -1111,7 +1131,18 @@ class CloudsWindow(QtWidgets.QMainWindow):
         sp.setDecimals(decimals)
         sp.setRange(lo, hi)
         sp.setValue(val)
-        sp.setFixedWidth(90)
+        sp.setFixedWidth(96)
+        sp.setKeyboardTracking(False)   # don't fire a driver round-trip per keystroke
+
+        def restep(v):
+            """One arrow click moves the value by ~10 %, at 0.01 ms and at 1000 ms
+            alike - a linear step is meaningless on a five-decade log control."""
+            dec = math.floor(math.log10(max(float(v), lo)))
+            sp.setSingleStep(max(10.0 ** (dec - 1), 10.0 ** -decimals))
+
+        restep(val)
+        sp.valueChanged.connect(restep)
+        sp.restep = restep      # _show_exposure writes with signals blocked
         top.addWidget(lab)
         top.addStretch(1)
         top.addWidget(sp)
@@ -1136,10 +1167,30 @@ class CloudsWindow(QtWidgets.QMainWindow):
             if guard["busy"]:
                 return
             guard["busy"] = True
-            v = to_val(pos)
-            sp.setValue(v)
+            sp.setValue(to_val(pos))
+            v = sp.value()      # the spin box ROUNDS - take its value back, or the
+                                # exposure the driver gets is not the one on screen
+            if not sl.isSliderDown():
+                sl.setValue(to_pos(v))      # see snap()
             guard["busy"] = False
             cb(v)
+
+        def snap():
+            """Put the handle where the number it printed actually is.
+
+            The spin box has `decimals` digits, the slider has STEPS positions,
+            and in the bottom decade there are FEWER distinct values than
+            positions (0.01..0.1 ms is 90 values over 120 steps). So several
+            neighbouring positions print the same integration time, the handle
+            ends up as much as two steps away from where that value sits on the
+            scale, and the control reads as wrong: dragging it moves the handle
+            without moving the number, and the next `_show_exposure` from the
+            servo then jumps the handle back on its own. Snapping on release -
+            never mid-drag, which would fight the mouse - keeps handle and
+            number one value."""
+            guard["busy"] = True
+            sl.setValue(to_pos(sp.value()))
+            guard["busy"] = False
 
         def from_spin(v):
             if guard["busy"]:
@@ -1150,11 +1201,14 @@ class CloudsWindow(QtWidgets.QMainWindow):
             cb(v)
 
         sl.valueChanged.connect(from_slider)
+        sl.sliderReleased.connect(snap)
         sp.valueChanged.connect(from_spin)
         # The servo and the auto hunt set the exposure from code, and they have
         # to move BOTH widgets (see _show_exposure) - the spin box alone leaves
         # the slider parked at a stale position that contradicts it.
         sl.to_pos = to_pos
+        w.label = lab           # so a caller can say who owns the control (see
+                                # _set_exposure_enabled)
         return w, sl, sp
 
     # ------------------------------------------------------- programmatic set
@@ -1170,15 +1224,31 @@ class CloudsWindow(QtWidgets.QMainWindow):
             wdg.blockSignals(True)
             wdg.setValue(val)
             wdg.blockSignals(False)
+        self.sp_exp.restep(ms)      # blockSignals skipped its own valueChanged
 
     def _set_exposure_enabled(self, on):
         """Grey the integration controls while something else owns the exposure.
 
         While `auto integration time` is on the servo rewrites the exposure
         every frame, so a manual value survives at most one frame - a live
-        control that does nothing is worse than a greyed one."""
+        control that does nothing is worse than a greyed one.
+
+        Greying is only half of it: the label says WHO owns the exposure, and
+        the tooltip says how to take it back. `setEnabled(False)` on its own
+        was invisible until `_slider_style` grew its `:disabled` rules."""
+        on = bool(on)
         for wdg in (self.sl_exp, self.sp_exp):
-            wdg.setEnabled(bool(on))
+            wdg.setEnabled(on)
+        owner = "" if on else ("  - auto" if self._track else "  - busy")
+        self.lbl_exp.setText(f"{self._EXP_LABEL}{owner}")
+        self.lbl_exp.setStyleSheet("color:#33414d; font-size:13px;" if on else
+                                   "color:#8b98a5; font-size:13px;")
+        tip = ("" if on else
+               ("the auto integration servo is setting this every frame - "
+                "uncheck 'auto integration time' to set it by hand"
+                if self._track else "the auto exposure hunt owns the detector"))
+        for wdg in (self.sl_exp, self.sp_exp, self.lbl_exp):
+            wdg.setToolTip(tip)
 
     # -------------------------------------------------------------- callbacks
     def _on_exposure(self, v):
@@ -1198,7 +1268,12 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self._track = bool(on)
         self._track_msg = ""
         self._oob_count = 0
-        self._set_exposure_enabled(not self._track)
+        # `and no hunt in flight`: unchecking the box while the Auto hunt is
+        # running handed the controls back to the operator while the worker
+        # still owned the detector - a value set there was silently overwritten
+        # by the hunt's result a few seconds later. _on_auto_worker_finished
+        # re-enables them when the hunt actually lets go.
+        self._set_exposure_enabled(not self._track and self._auto_worker is None)
         self._set_hint("auto integration time ON - holding 60-80% full scale"
                        if on else "auto integration time off")
         if on and self.connected:
@@ -1682,6 +1757,10 @@ class CloudsWindow(QtWidgets.QMainWindow):
     #: probe) is what the hunt can cost - see `_auto_expose`.
     _AUTO_SETTLE = 2
     _AUTO_STACK = 3
+
+    #: Base text of the integration-time row. `_set_exposure_enabled` appends
+    #: who owns the control when it greys it.
+    _EXP_LABEL = "Integration  [ms]"
 
     def _auto_expose(self, target=0.70, lo_ms=0.02, hi_ms=1000.0, iters=8,
                      budget_s=15.0):

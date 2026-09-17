@@ -35,10 +35,11 @@ uint8_t hw_actuator_status(void);
  * "pushed". */
 bool hw_membrane_pulled(void);
 
-/* The push-pull solenoid current sense (board.h PIN_HB_SENSE, ACT_HB_SENS on
- * GP46 / ADC6): the raw 12-bit ADC sample, or HB_SENSE_INVALID when the pin
- * is not reachable in this build. Not converted here - the sense gain is a
- * ground-side constant (clouds_link/hk.py HB_SENSE_A_PER_V). */
+/* The CaCO3 dispersion motor's current sense (board.h PIN_HB_SENSE,
+ * ACT_HB_SENS on GP46 / ADC6): the raw 12-bit ADC sample, or
+ * HB_SENSE_INVALID when the pin is not reachable in this build. Not
+ * converted here - the DRV8251A IPROPI gain and its sense resistor are
+ * ground-side constants (clouds_link/hk.py HB_SENSE_A_PER_V). */
 uint16_t hw_hb_sense_raw(void);
 
 /* Persistence (S.3): mirrored raw sectors on both SD cards, whichever has
