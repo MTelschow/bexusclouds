@@ -24,6 +24,12 @@ Qt patterns of the *CLOUDS Raytracing Engine*.
   stored as the default (`dark_frame.npz`, `CLOUDS_DARK` to move it) and comes
   back with the exposure it was taken at; at any other exposure it is withheld
   rather than silently applied. `Clear` drops it and the stored file.
+  `dark_frame.npz` is **committed**, so a fresh clone starts with the bench
+  dark of SN 20260312-004 instead of none - capturing one needs the Duo and a
+  darkened room, which a second machine does not have. It is a baseline, not a
+  measurement to keep: a dark from another detector is dropped at Connect, and
+  one taken with a fibre unblocked (the committed one is) is named as a light
+  leak every time it loads.
 * Live per-channel saturation/clipping flag.
 * Factory INSION pixel -> wavelength calibration (Ch1/Ch2 polynomials).
 * Views: Counts, Transmission (meas/ref), Absorbance (-log10); nm or pixel axis.

@@ -1373,6 +1373,7 @@ class CloudsWindow(QtWidgets.QMainWindow):
             f"{self.info.pixels}px  {port}".strip())
         # The banner names the detector's state, so it follows it.
         self._update_source_banner()
+        self._drop_dark_from_another_detector()
         if self._resume_on_reconnect:
             # was live when the link died (Ethernet or USB pull, either can
             # crash/drop the far end), or is the startup path's standing
@@ -2124,6 +2125,20 @@ class CloudsWindow(QtWidgets.QMainWindow):
             return None
         return self.dark
 
+    def _dark_windows(self):
+        """`[(name, lo, hi)]` for the leak check - the calibration's windows."""
+        return [(ch.name, ch.pixel_window[0], ch.pixel_window[1])
+                for ch in self.cal.channels]
+
+    def _dark_leak_note(self) -> str:
+        """Why the current dark looks lit, or ``""`` (never raises: a label)."""
+        if self._dark_meta is None:
+            return ""
+        try:
+            return self._dark_meta.leak_note(self._dark_windows())
+        except Exception:
+            return ""
+
     def _dark_exposure_ok(self) -> bool:
         return (self.dark is None or self._dark_meta is None
                 or self._dark_meta.matches_exposure(
@@ -2139,9 +2154,35 @@ class CloudsWindow(QtWidgets.QMainWindow):
                 f"held back: dark is {self._dark_meta.exposure_ms:g} ms, "
                 f"exposure is {self.exposure_ms:g} ms")
         elif self._dark_meta is not None:
-            self.lbl_dark.setText(self._dark_meta.summary())
+            # A lit dark subtracts real signal out of the baseline and nothing
+            # downstream can tell, so it is said here every time, not once in
+            # a hint that scrolls away.
+            leak = self._dark_leak_note()
+            self.lbl_dark.setText(self._dark_meta.summary()
+                                  + (f"\nlight leak: {leak}" if leak else ""))
         else:
             self.lbl_dark.setText(f"dark @ {self.exposure_ms:g} ms")
+
+    def _drop_dark_from_another_detector(self):
+        """Discard a stored dark that belongs to a different instrument.
+
+        The restore at startup runs before Connect, so all it can check is the
+        pixel count - and the repo ships a dark of SN 20260312-004, which is
+        exactly the frame that must not be subtracted off somebody else's Duo
+        (or off the mock, which answers MOCK-0001). The serial is only known
+        once the detector has answered, so the second half of the check is
+        here.
+        """
+        if self._dark_meta is None:
+            return
+        why = self._dark_meta.serial_conflict(getattr(self.info, "serial", ""))
+        if not why:
+            return
+        self.dark = None
+        self._dark_meta = None
+        self.chk_dark.setChecked(False)
+        self._update_dark_label()
+        self._set_hint(why)
 
     def _restore_stored_dark(self):
         """Load the dark captured in an earlier session, if there is one.
@@ -2173,8 +2214,10 @@ class CloudsWindow(QtWidgets.QMainWindow):
             self._set_exposure_enabled(True)
         self.chk_dark.setChecked(True)
         self._update_dark_label()
+        leak = self._dark_leak_note()
         self._set_hint(f"stored dark loaded ({stored.summary()}) - exposure "
-                       f"set to {self.exposure_ms:g} ms, auto integration off")
+                       f"set to {self.exposure_ms:g} ms, auto integration off"
+                       + (f" - {leak}" if leak else ""))
 
     def _capture_dark(self):
         if not self.connected:
@@ -2222,7 +2265,9 @@ class CloudsWindow(QtWidgets.QMainWindow):
             except OSError as e:
                 saved = f" - could not save it as the default: {e}"
         self._update_dark_label()
-        self._set_hint(f"dark captured ({n} frames @ {self.exposure_ms:g} ms){saved}")
+        leak = self._dark_leak_note()
+        self._set_hint(f"dark captured ({n} frames @ {self.exposure_ms:g} ms){saved}"
+                       + (f" - {leak}" if leak else ""))
         if not self.running:
             self._single()
 

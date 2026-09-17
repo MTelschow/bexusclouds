@@ -56,11 +56,22 @@ refinement, it is what makes a count mean anything.
 
 Capturing one needs a darkened bench, so the operator interface keeps the last
 capture: `Capture dark` writes `dark_frame.npz` (numpy, no pickle, beside
-`calibration.json`; `CLOUDS_DARK` moves it, `.gitignore`d as instrument state)
-and the next start loads it back. `Clear` drops it and deletes the file, so
-what is on screen is what comes back.
+`calibration.json`; `CLOUDS_DARK` moves it) and the next start loads it back.
+`Clear` drops it and deletes the file, so what is on screen is what comes back.
 
-Two guards, in `spectro/dark.py`:
+**`dark_frame.npz` is committed** (2026-09-17). It was `.gitignore`d as
+instrument state, on the argument that it is regenerable in one button press -
+true on the bench, false anywhere else, because that button needs the Duo and a
+darkened room. A second machine cloned the repo and had no dark at all. The
+tracked file is the bench dark of S/N 20260312-004 at 10 ms, x16: a baseline to
+start from, not a measurement anybody is obliged to keep - a capture overwrites
+it, `Clear` deletes it, `git checkout dark_frame.npz` brings it back. Every
+guard below applies to it exactly as to a fresh one, so the committed frame
+cannot be used at the wrong exposure or on the wrong instrument. Scratch darks
+(`verify_qt.py`, `qc_live.py`) still go to `output/` via `CLOUDS_DARK`, and
+`--mock` keeps `persist_dark=False`.
+
+Three guards, in `spectro/dark.py`:
 
 * **The exposure travels with the counts.** Dark current scales with
   integration time, so a 10 ms dark subtracted off a 200 ms frame removes the
@@ -72,14 +83,28 @@ Two guards, in `spectro/dark.py`:
   describe.
 * **So do `pixels`, `model` and `serial`.** A stored frame whose length does
   not match the detector in front of you raises `DarkError` instead of being
-  broadcast onto the wrong geometry.
+  broadcast onto the wrong geometry. Length only proves geometry - two 2048 px
+  Duos pass it - so `serial_conflict()` is checked as well, at Connect, where
+  the detector has finally said who it is: a mismatch drops the dark and says
+  which serial it came from. The mock (`MOCK-0001`) is dropped by the same
+  rule, which is what keeps the committed bench dark out of a mock session.
+* **A lit dark is named.** `light_leak()` compares each channel window's 99th
+  percentile against the covered gap's; more than `LEAK_MARGIN_CT` = 2000 ct
+  over it means a fibre was not blocked. It is on the 99th percentile because
+  a leak is *lines*: 40 lit pixels of 251 move the window mean ~1.9 k while a
+  peak lands 12 k over the gap.
 
 **A dark captured with light on the bench is worse than no dark**: it absorbs
-real signal into the baseline, and nothing downstream can tell. Check it after
-capture - the channel windows should sit at the covered gap's level. On
-2026-09-11 the stored dark had the reference channel ~6.9 k **above** the gap,
-i.e. light was still reaching that fibre; it is a usable pedestal for Ch1 and
-an over-subtraction for Ch2 until it is retaken blocked.
+real signal into the baseline, and nothing downstream can tell. That is why
+the check above exists - but it only names the frame, it does not refuse it:
+the pedestal is still right everywhere nothing leaked, and a bench mistake is
+not a corrupt file. On 2026-09-11 the stored dark had the reference channel
+~6.9 k **above** the gap in the mean (Ch2 +13.7 k, Ch1 +3.1 k on the 99th
+percentile), i.e. light was still reaching both fibres; it is a usable
+pedestal for Ch1 and an over-subtraction for Ch2 until it is retaken blocked.
+**That frame is the one committed as the baseline**, and the operator
+interface says so on every restore, in the hint and in the Dark frame
+section, until somebody retakes it with the fibres blocked.
 
 ## Validation
 

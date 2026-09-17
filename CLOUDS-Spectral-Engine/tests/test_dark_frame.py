@@ -71,6 +71,23 @@ class TestGuards:
         with pytest.raises(darkstore.DarkError, match="unreadable"):
             darkstore.load(str(path))
 
+    def test_a_different_serial_is_a_conflict(self):
+        d = darkstore.DarkFrame(_frame(), 10_000, serial="20260312-004")
+        why = d.serial_conflict("MOCK-0001")
+        assert "20260312-004" in why and "MOCK-0001" in why
+
+    def test_same_serial_is_no_conflict(self):
+        d = darkstore.DarkFrame(_frame(), 10_000, serial="20260312-004")
+        assert d.serial_conflict("20260312-004") == ""
+        assert d.serial_conflict(" 20260312-004 ") == ""
+
+    def test_unknown_serial_on_either_side_is_no_conflict(self):
+        # darks captured before the serial travelled with them, and drivers
+        # that report none, must not start refusing themselves
+        assert darkstore.DarkFrame(_frame(), 10_000).serial_conflict("20260312-004") == ""
+        d = darkstore.DarkFrame(_frame(), 10_000, serial="20260312-004")
+        assert d.serial_conflict("") == ""
+
     def test_exposure_match_is_exact_within_a_microsecond(self):
         d = darkstore.DarkFrame(_frame(), 10_000)
         assert d.matches_exposure(10_000)
@@ -95,3 +112,82 @@ class TestDefaultPath:
     def test_captured_t_defaults_to_now(self):
         d = darkstore.DarkFrame(_frame(), 10_000)
         assert abs(d.captured_t - time.time()) < 5.0
+
+
+class TestRepoDefault:
+    """The committed baseline dark.
+
+    `dark_frame.npz` is tracked (2026-09-17) so a fresh checkout is not a
+    machine with no dark: capturing one needs the Duo and a darkened bench,
+    which a second laptop does not have. If this suite fails, the file was
+    lost or re-ignored - not a reason to delete the test.
+    """
+
+    def test_it_is_there_and_loads_against_this_detector(self, monkeypatch):
+        monkeypatch.delenv("CLOUDS_DARK", raising=False)
+        path = darkstore.default_path()
+        assert os.path.isfile(path), f"{path} is missing - is it .gitignore'd again?"
+        d = darkstore.load(path, pixels=2048)
+        assert d is not None
+        assert d.pixels == 2048
+        assert d.exposure_us > 0
+        assert d.counts.min() >= 0.0
+
+    def test_it_names_the_flight_detector(self, monkeypatch):
+        import json
+        monkeypatch.delenv("CLOUDS_DARK", raising=False)
+        d = darkstore.load(darkstore.default_path(), pixels=2048)
+        root = os.path.dirname(os.path.dirname(os.path.abspath(darkstore.__file__)))
+        with open(os.path.join(root, "calibration.json")) as f:
+            want = json.load(f)["instrument"]["serials"]["eureca"]
+        # a baseline from another instrument would be dropped on connect
+        assert d.serial == want
+        assert d.serial_conflict(want) == ""
+
+
+class TestLightLeak:
+    """A dark taken with a fibre unblocked, caught against the covered gap.
+
+    Worse than no dark: it subtracts real signal out of the baseline and
+    nothing downstream can tell, so it is named rather than refused - the
+    pedestal is still right everywhere nothing leaked.
+    """
+
+    WINDOWS = [("Ch1", 0, 235), ("Ch2", 1516, 1766)]
+
+    def _lit(self, gap=24000.0, ch2_peak=None):
+        c = np.full(2048, gap, dtype=float)
+        rng = np.random.default_rng(7)
+        c += rng.normal(0.0, 60.0, 2048)          # read noise
+        c[236:1516:97] += 6000.0                  # hot pixels in the gap too
+        if ch2_peak:
+            c[1700:1740] += ch2_peak              # a leak is lines, not a level
+        return c
+
+    def test_a_blocked_dark_is_clean(self):
+        d = darkstore.DarkFrame(self._lit(), 10_000)
+        assert d.light_leak(self.WINDOWS) == {}
+        assert d.leak_note(self.WINDOWS) == ""
+
+    def test_a_lit_channel_is_named_with_its_excess(self):
+        d = darkstore.DarkFrame(self._lit(ch2_peak=12_000.0), 10_000)
+        lit = d.light_leak(self.WINDOWS)
+        assert set(lit) == {"Ch2"}
+        assert lit["Ch2"] > 2000.0
+        note = d.leak_note(self.WINDOWS)
+        assert "Ch2" in note and "blocked" in note
+        assert "Ch1" not in note
+
+    def test_the_mean_would_have_missed_it(self):
+        # 40 lit pixels of 251: the window mean moves ~1.9 k, the check is on
+        # the 99th percentile for exactly this reason
+        c = self._lit(ch2_peak=12_000.0)
+        w = c[1516:1767]
+        assert w.mean() - np.median(c[236:1516]) < 2500.0
+        assert darkstore.DarkFrame(c, 10_000).light_leak(self.WINDOWS)
+
+    def test_no_windows_means_no_reference_and_no_claim(self):
+        d = darkstore.DarkFrame(self._lit(ch2_peak=12_000.0), 10_000)
+        assert d.light_leak([]) == {}
+        # a window covering the whole detector leaves no gap to compare to
+        assert d.light_leak([("all", 0, 2047)]) == {}

@@ -18,7 +18,64 @@ without re-deriving anything. Newest entries first.
 
 ---
 
-## 2026-09-17 (newest) - A detector that was late at startup stayed missing all session
+## 2026-09-17 (newest) - The stored dark frame is committed, and a lit dark now says so
+
+**The problem, reported from a second machine.** `dark_frame.npz` was not in
+the repository, so a clone on another Mac came up with no dark at all. It was
+`.gitignore`d on purpose, with the argument written into `spectro/dark.py`:
+instrument state, regenerable in one button press. That argument holds on the
+bench and nowhere else - the button needs the EURECA Duo *and* a darkened room,
+neither of which a laptop has. The result was the failure mode the dark store
+was built to prevent, one machine at a time: counts with a ~24 000 ct pedestal
+(37 % of full scale) left in them.
+
+**The change.** `dark_frame.npz` is tracked (10 kB, npz, no pickle). The
+committed frame is the bench dark of S/N 20260312-004, 10 ms, x16, captured
+2026-09-11. A capture overwrites it, `Clear` deletes it, `git checkout
+dark_frame.npz` brings the baseline back. Nothing else moves: `--mock` still
+runs `persist_dark=False`, `verify_qt.py` and `qc_live.py` still point
+`CLOUDS_DARK` at scratch files under `output/`, so neither can write the
+tracked one.
+
+**Two guards had to come with it, because a shared file is a file that reaches
+an instrument it was not taken on.**
+
+* **Serial.** The startup restore runs before Connect, so the only check it
+  could make was the pixel count - and two 2048 px Duos pass that. `serial`
+  already travelled with the frame; `DarkFrame.serial_conflict()` now compares
+  it, and `_drop_dark_from_another_detector()` runs it at Connect, where the
+  detector has finally said who it is. A mismatch drops the dark, clears the
+  checkbox and names both serials. Unknown on either side is *not* a conflict -
+  darks captured before the field existed, and drivers that report no serial,
+  must not start refusing themselves. The mock answers `MOCK-0001`, so the same
+  rule is what keeps the committed bench dark out of a mock session.
+* **Light leak.** The committed frame is the one 2026-09-11 already caught with
+  room light reaching both fibres - it is the only one there is, and shipping
+  it silently would be shipping a lie. `DarkFrame.light_leak()` compares each
+  channel window's 99th percentile against the covered inter-channel gap's
+  (px 236-1515 cannot see light by construction, so it is the reference for
+  what "no light" costs on this detector): **Ch1 +3.1 k, Ch2 +13.7 k** over it.
+  The 99th percentile, not the mean, because **a leak is lines, not a level** -
+  40 lit pixels out of 251 move the window mean by ~1.9 k, which reads as
+  noise. `LEAK_MARGIN_CT` is 2000 ct: the gap's own 99th percentile runs ~2.5 k
+  over its median here (hot pixels at the window edges), so a tighter margin
+  would call every good dark a leak.
+
+It **names** the frame rather than refusing it. A leak is a bench mistake, not
+a corrupt file, and the pedestal is still right everywhere nothing leaked - Ch1
+is usable, Ch2 is an over-subtraction. So the Dark frame section carries
+`light leak: ... - retake it with the fibres blocked` on every load, and the
+hint says it on restore and on capture. It goes away the moment somebody
+retakes it blocked.
+
+**Evidence.** 20 tests in `tests/test_dark_frame.py` (9 new): serial conflict
+both ways and both unknown-side cases; a clean dark reported clean; a lit
+channel named with its excess; the mean shown to miss what the percentile
+catches; no-gap and no-window cases claiming nothing; and the committed file
+asserted present, 2048 px, and carrying the `calibration.json` serial - so
+losing it again fails the suite instead of being discovered on another laptop.
+
+## 2026-09-17 - A detector that was late at startup stayed missing all session
 
 **The report.** "Sometimes the connection to all sensors and motors works but
 the spectrometer data is not displayed. A restart fixes this most of the
