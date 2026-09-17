@@ -92,8 +92,8 @@ class Series:
     with their toggle disabled, because the operator needs to find out that
     the monitor is missing, and the slot is expected to be filled. A part
     that is simply not part of the experiment gets no entry at all (the
-    STLM20 pair, the Keller 23SY pair): a row that can never draw anything,
-    ever, teaches nothing that `error_flags` does not already say.
+    STLM20 pair): a row that can never draw anything, ever, teaches nothing
+    that `error_flags` does not already say.
     """
     key: str
     label: str

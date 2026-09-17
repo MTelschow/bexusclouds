@@ -119,8 +119,7 @@ void seq_init(sequencer_t *s, const cfg_t *cfg, const seq_ops_t *ops,
               const seq_persist_t *restored, uint64_t t_ms, uint32_t wall_s);
 /* Call at ~1 Hz with fresh sensor data. Ambient pressure is the only reading
  * the sequence needs: it drives launch and float detection (core/autonomy).
- * The chamber pressure this used to take went out with the Keller pair - it
- * was already unused, and a parameter no sensor can fill invites a caller to
+ * Deliberately nothing else - a parameter no caller reads invites one to
  * pass something plausible instead. When M-15 gets a real seal check, it
  * takes whatever source that check actually has. */
 void seq_step(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,

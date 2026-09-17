@@ -4,12 +4,8 @@ Produced by the RP2350 at 1 Hz (C mirror flight/mcu/src/core/frame.c),
 relayed unchanged by the Pi, decoded by the GSE.
 
 **Chamber temperature, humidity and pressure are the last eight bytes**, from
-a second BME280 on the carrier's SPI_1 bus behind the chip select on GP9.
-They are not the Keller 23SY fields coming back: those were ``p_ch_pa`` and
-``rh2_cpct``, they were deleted when the parts came off the design (they
-answered at no address on the carrier, DEVLOG 2026-08-31), and the six bytes
-they held went to the INA226 shunt voltages. These are new fields at the end
-of the packet, with an error bit of their own, from a part that answers.
+a second BME280 on the carrier's SPI_1 bus behind the chip select on GP9,
+with an error bit of their own.
 
 The chamber part is **instrumentation, not a control input**: the MCU's
 launch and float detection reads ``p_amb_pa``, the ambient part on i2c0, and
@@ -42,6 +38,28 @@ from enum import IntEnum
 
 _HK = struct.Struct("<BBBBBBhhhHIhhhhhhHHHHhhhhIIHhHI")
 SIZE = _HK.size  # 64
+
+#: The layout before the chamber BME280's eight bytes were appended
+#: (2026-09-17), and the size an MCU flashed before that date still sends.
+#:
+#: This packet has only ever grown by appending, so a shorter payload is not a
+#: corrupt one - it is an older one, and every field it does carry is at the
+#: offset this decoder expects. ``unpack`` therefore accepts it rather than
+#: raising, because the alternative is what actually happened on the bench:
+#: the ground software was updated, the MCU was not, every HK packet failed to
+#: decode, and the operator panel went blank in both its sections with no
+#: message saying why. A wire-format change must degrade to "these fields have
+#: no source", never to "there is no telemetry".
+#:
+#: The fields the older packet does not carry are filled the way the MCU
+#: itself fills them when the part does not answer - zeros behind
+#: ``HkErrors.BME280_CHM_FAIL`` - so nothing on screen is a number that no
+#: hardware produced.
+_HK_PRE_CHAMBER = struct.Struct("<BBBBBBhhhHIhhhhhhHHHHhhhhIIH")
+SIZE_PRE_CHAMBER = _HK_PRE_CHAMBER.size  # 56
+
+#: Payload sizes this decoder understands, smallest first.
+KNOWN_SIZES = (SIZE_PRE_CHAMBER, SIZE)
 
 
 class SeqState(IntEnum):
@@ -197,12 +215,11 @@ class HkErrors(IntEnum):
     A set bit means the matching field is not a live measurement, so ground
     can distinguish a held or absent reading from a real one.
 
-    Bit 2 was NO_CHAMBER_P and bit 3 NO_RH2; both went out with the Keller
-    pair and the fields those flagged. Both have since been reused - bit 2
-    for the membrane switch, bit 3 for the chamber BME280. The surviving
-    bits keep the positions they had, so an older session log still decodes
-    on those; the two reused bits do not, which is why a log has to be read
-    against the ``SIZE`` its frames carry.
+    Bits 2 and 3 carried two retired sensor flags before 2026-09-11 and
+    have been reused since - bit 2 for the membrane switch, bit 3 for the
+    chamber BME280. Every other bit has kept the position it had, so an
+    older session log still decodes on those; these two do not, which is why
+    a log has to be read against the ``SIZE`` its frames carry.
     """
     BME280_FAIL = 1 << 0    # BME280 absent or read failed
     P_AMB_STALE = 1 << 1    # p_amb_pa is a held last-good value
@@ -277,9 +294,37 @@ class Housekeeping:
 
     @classmethod
     def unpack(cls, payload: bytes) -> "Housekeeping":
-        v = _HK.unpack_from(payload)
+        """Decode an HK payload, of this version or of an older, shorter one.
+
+        A payload at least ``SIZE`` bytes long is decoded in full. One that is
+        ``SIZE_PRE_CHAMBER`` long comes from an MCU flashed before the chamber
+        BME280 was added: its fields are all at the offsets this decoder
+        expects, because the packet has only ever grown by appending, so it is
+        decoded and the chamber fields are reported as having no source rather
+        than the whole packet being thrown away. See ``_HK_PRE_CHAMBER``.
+
+        Anything shorter than that is genuinely undecodable and raises, as
+        before - a truncated frame is not an old one.
+        """
+        n = len(payload)
+        if n < SIZE:
+            if n < SIZE_PRE_CHAMBER:
+                raise struct.error(
+                    f"HK payload is {n} B, shorter than any known layout "
+                    f"{KNOWN_SIZES}")
+            v = _HK_PRE_CHAMBER.unpack_from(payload)
+            # Zeros behind the flag, exactly as the MCU sends when the chamber
+            # part does not answer: the dataclass defaults include a sea-level
+            # chm_p_pa, and defaulting to that here would put a pressure on
+            # screen that no sensor produced.
+            chm = dict(chm_temp_cc=0, chm_rh_cpct=0, chm_p_pa=0)
+            err = v[5] | HkErrors.BME280_CHM_FAIL
+        else:
+            v = _HK.unpack_from(payload)
+            chm = dict(chm_temp_cc=v[28], chm_rh_cpct=v[29], chm_p_pa=v[30])
+            err = v[5]
         return cls(state=v[0], flags=v[1], fired=v[2], valve_status=v[3],
-                   membrane_duty=v[4], error_flags=v[5],
+                   membrane_duty=v[4], error_flags=err,
                    temp1_cc=v[6], temp2_cc=v[7], bme_temp_cc=v[8],
                    rh1_cpct=v[9], p_amb_pa=v[10],
                    accel_mg=(v[11], v[12], v[13]),
@@ -287,8 +332,7 @@ class Housekeeping:
                    rail_mv=(v[17], v[18], v[19], v[20]),
                    shunt_raw=(v[21], v[22], v[23], v[24]),
                    uptime_s=v[25], mission_t_s=v[26],
-                   hb_sense_raw=v[27],
-                   chm_temp_cc=v[28], chm_rh_cpct=v[29], chm_p_pa=v[30])
+                   hb_sense_raw=v[27], **chm)
 
     def rail_uv(self, i: int) -> float | None:
         """Shunt voltage of rail ``i`` in microvolts, or None if that monitor
@@ -433,9 +477,8 @@ class Housekeeping:
         Some of these bits are permanently set on this hardware (the STLM20
         pair is not populated), so the field is the operator's list of what
         has no source - and ``0x0030`` is not a list.
-        An unknown bit is kept visible as its mask rather than dropped: a
-        newer MCU, or an older log written when the Keller bits still
-        existed, must stay readable here.
+        An unknown bit is kept visible as its mask rather than dropped, so
+        a log written by a newer MCU stays readable here.
         """
         names = [e.name for e in HkErrors if self.error_flags & e]
         known = 0

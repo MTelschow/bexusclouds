@@ -65,6 +65,57 @@ class TestReceiver:
         assert _wait(lambda: rx.gaps.received == 1)
         assert rx.decode_errors == 1
 
+    def test_an_hk_of_the_wrong_length_is_named_not_just_counted(self,
+                                                                receiver):
+        """An MCU running a different firmware version sends an HK this build
+        cannot unpack. Everything else on the downlink still decodes, so the
+        link reads healthy while every sensor row, valve bit and actuator
+        readout stays blank - which on the bench looks like dead hardware.
+
+        This is not hypothetical: on 2026-09-17 a carrier two commits behind
+        sent 56 B against a ground that reads 64 B, and a whole session's HK
+        was dropped without a word while the dispersion motor was being
+        blamed. The receiver says which packet and which lengths, so the next
+        one is a reflash and not an afternoon.
+        """
+        rx, send = receiver
+        # An older *known* layout: decoded, because the packet only ever grew
+        # by appending and those 56 bytes are all at the offsets this build
+        # expects. Dropping them would leave the panel blank under a correct
+        # diagnosis, which is the half-fix this test also guards against.
+        # Distinctive values, so this proves the older layout's fields really
+        # survive the decode rather than matching a dataclass default.
+        short = hk.Housekeeping(state=hk.SeqState.MEASURE_1,
+                                p_amb_pa=5_300).pack()[:hk.SIZE_PRE_CHAMBER]
+        send(Frame(type=PacketType.HK, payload=short, seq=0).stamp().encode())
+        assert _wait(lambda: rx.last_hk is not None)
+        assert rx.hk_rejected == 0                 # decoded, not discarded
+        assert rx.last_hk.state_name == "MEASURE_1"
+        assert rx.last_hk.p_amb_pa == 5_300
+        # ...and the fields that layout cannot carry are declared unsourced
+        # rather than defaulted onto the panel as readings.
+        assert rx.last_hk.error_flags & hk.HkErrors.BME280_CHM_FAIL
+        assert rx.last_hk.chm_p_pa == 0
+        # The operator is still told to reflash: the missing rows would
+        # otherwise look like dead sensors.
+        assert f"{len(short)} B" in rx.hk_reject_reason
+        assert f"{hk.SIZE} B" in rx.hk_reject_reason
+
+        # A length no layout ever had is a different thing: discarded, named,
+        # and never half-read onto the panel.
+        junk = short[:hk.SIZE_PRE_CHAMBER - 3]
+        send(Frame(type=PacketType.HK, payload=junk, seq=1).stamp().encode())
+        assert _wait(lambda: rx.hk_rejected == 1)
+        assert rx.decode_errors == 1
+        assert f"{len(junk)} B" in rx.hk_reject_reason
+
+        # And it clears when the versions agree again, so a reflash mid
+        # session does not leave a stale accusation on the panel.
+        send(_hk_frame(2, state=hk.SeqState.ASCENT))
+        assert _wait(lambda: rx.last_hk is not None
+                     and rx.last_hk.state_name == "ASCENT")
+        assert rx.hk_reject_reason is None
+
     def test_wire_bytes_counted_even_when_undecodable(self, receiver):
         """The traffic indicator's Down lane. Bytes are charged where the
         datagram lands, not after decode: a link delivering nothing but

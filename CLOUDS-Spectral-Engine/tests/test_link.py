@@ -1,4 +1,6 @@
 """Shared link protocol (clouds_link) - CRC, COBS, frames, HK, payloads."""
+import struct
+
 import pytest
 
 from clouds_link import cobs, frames, hk
@@ -235,28 +237,18 @@ class TestHousekeeping:
         assert h.to_row()["rail_vin_a"] == ""
         assert h.to_row()["rail_24v_a"] == ""
 
-    def test_the_keller_fields_are_gone_from_the_packet(self):
-        """The two Keller 23SY parts are off the design, and their HK fields
-        went with them: a field no part can fill is read as data by anything
-        that displays it. Their bytes carry the shunt voltages instead."""
-        h = hk.Housekeeping()
-        assert not hasattr(h, "p_ch_pa") and not hasattr(h, "rh2_cpct")
-        assert not any(e.name in ("NO_CHAMBER_P", "NO_RH2")
-                       for e in hk.HkErrors)
-
     def test_an_older_logs_retired_error_bits_stay_readable(self):
         """The surviving HKE_* bits kept their positions, and a bit with no
         name still renders as a mask rather than vanishing, so a session
         logged before a change still decodes.
 
-        Both of the Keller pair's bits have now been reused - bit 2 (the
-        retired NO_CHAMBER_P) by the membrane switch, bit 3 (NO_RH2) by the
-        chamber BME280 - so a pre-removal log decodes those two under their
-        new names. That is the cost of reusing a slot, and it is recorded
-        here rather than discovered while reading an old session: an old log
-        showing NO_CHAMBER_P + NO_RH2 now reads as
-        NO_MEMBRANE_SENSE + BME280_CHM_FAIL, which is wrong about the past
-        and right about every packet written since.
+        Bits 2 and 3 are the exception: both carried retired sensor flags
+        before 2026-09-11 and both have been reused since, bit 2 by the
+        membrane switch and bit 3 by the chamber BME280. A log from before
+        that date therefore decodes those two under their current names,
+        which is wrong about the past and right about every packet written
+        since. That is the cost of reusing a slot, recorded here rather than
+        discovered while reading an old session.
         """
         old = hk.Housekeeping(error_flags=0b0000_1100)
         assert old.error_text == "NO_MEMBRANE_SENSE BME280_CHM_FAIL"
@@ -266,6 +258,41 @@ class TestHousekeeping:
         assert not any(e == 1 << 7 for e in hk.HkErrors)
         h = hk.Housekeeping(error_flags=0b1000_0000 | hk.HkErrors.NO_TEMP)
         assert h.error_text == "NO_TEMP 0x0080"
+
+    def test_an_older_mcus_shorter_hk_still_decodes(self):
+        """An MCU flashed before the chamber BME280 sends 56 B, and the ground
+        must read it rather than throw the packet away.
+
+        This is the bench failure the tolerance exists for: the ground
+        software was updated, the MCU was not, `unpack` raised on every
+        packet, both panel sections sat at their startup dashes and nothing
+        said why. A wire-format change has to degrade to "these fields have
+        no source", never to "there is no telemetry".
+        """
+        legacy = struct.Struct("<BBBBBBhhhHIhhhhhhHHHHhhhhIIH")
+        assert legacy.size == hk.SIZE_PRE_CHAMBER == 56
+        payload = legacy.pack(hk.SeqState.ASCENT, 0, 0, 0, 60, 0,
+                              0, 0, 2140, 3050, 99_248,
+                              1, -2, 981, 0, 1, -1,
+                              24_060, hk.RAIL_MV_INVALID, 5090, 3300,
+                              129, 0, -1, 333, 1234, 0, 1500)
+        g = hk.Housekeeping.unpack(payload)
+        # Everything the older packet does carry survives at its own offset.
+        assert g.state_name == "ASCENT" and g.p_amb_pa == 99_248
+        assert g.bme_temp_cc == 2140 and g.hb_sense_raw == 1500
+        assert g.rail_mv == (24_060, hk.RAIL_MV_INVALID, 5090, 3300)
+        # ...and what it does not carry is declared unsourced, not defaulted.
+        # The dataclass default for chm_p_pa is sea level, and letting that
+        # reach a display would be a pressure no sensor produced.
+        assert g.error_flags & hk.HkErrors.BME280_CHM_FAIL
+        assert (g.chm_p_pa, g.chm_temp_cc, g.chm_rh_cpct) == (0, 0, 0)
+
+    def test_a_truncated_hk_is_still_an_error(self):
+        """Tolerating a shorter *known* layout must not become tolerating any
+        payload: a truncated frame is not an older one, and decoding one would
+        put whatever bytes arrived on screen as readings."""
+        with pytest.raises(struct.error):
+            hk.Housekeeping.unpack(b"\x00" * (hk.SIZE_PRE_CHAMBER - 1))
 
     def test_the_two_bme280s_fail_independently(self):
         """Ambient and chamber are two parts on two buses, and only the

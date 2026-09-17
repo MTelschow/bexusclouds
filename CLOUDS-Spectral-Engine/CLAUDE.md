@@ -179,7 +179,6 @@ scratch** after pulling this: `PICO_BOARD` is cached.
 | CaCO₃ motor current sense | **GP46** (`ACT_HB_SENS`), ADC6 on the RP2350B | It senses the **dispersion motor**, not the membrane solenoid: `ACT_HB` is one driver channel carrying GP17/GP18 (drive) + GP46 (sense). **Downlinked raw**: 12-bit counts in `hk.hb_sense_raw` (8-sample mean, one point per 1 Hz sweep against a 5 s motor pulse). Driver is a **DRV8251A**; IPROPI mirrors the low-side current at `AIPROPI` 1500 µA/A into `R_IPROPI` 1.5 kΩ, so ground scales by `HB_SENSE_A_PER_V = 1/(R×A)` = **0.444 A/V** (3.3 V full scale = 1.47 A) - counts stay raw so a wrong resistor is correctable against a logged session. **IPROPI reads 0 in coast** (low-side current only), so 0 A ≠ no current, and zeros between releases are expected. Sentinel `HB_SENSE_INVALID` (0xFFFF) from a pico2 build, never 0. Panel row `Motor I`, timeline `Dispersion motor current`. **Not yet read against a running motor** |
 | CaCO₃ dispersion motor | **GP17 fwd / GP18 rev** | one 5 s scheduled pulse per release or per `DISPERSE pulse` (key 1), seen in `valve_status` for ~5 s; runs concurrently with the membrane, measured. **Start/Stop as well** (2026-09-17): `DISPERSE run` (key 2) holds the motor on until `DISPERSE stop` (key 0), which also cuts a pulse short and is the one drive command accepted in TERMINATION/SAFE. A run is a *hold beside* `core/pulse` (`motor_held` in `hw.c`), not a queued pulse - in the queue it would delay a release's pinch valve indefinitely and keep `busy()` true through SEAL; so `HKV_DISPERSE` can sit beside a pinch bit while an operator run overlaps a release, and nothing on the MCU times a run out. **Speed is `PARAM_DISPERSE_DUTY`** (percent, default 100, floor 20): GP17 is a 20 kHz hardware PWM for the length of the drive - not `core/sqwave`, which is for the sub-9 Hz membrane - latched when a pulse is *queued* or a run starts, and re-latched at once by a `SET_PARAM` while running. The panel's Speed slider sends `SET_PARAM DISPERSE_DUTY` before a pulse or Start, and again on **any** change while running; the release path reads the same parameter, so there is no bench-only speed. It listens on `valueChanged` *and* `sliderReleased`, not the release alone - `sliderReleased` is emitted only for a drag of the handle, so until 2026-09-17 the arrow keys, the wheel and a click on the groove moved the number beside the slider and never told the MCU, leaving the panel showing a speed the motor was not turning at. `valueChanged` defers while `isSliderDown()`, so a drag still spends one SET_PARAM rather than one per step, and an unchanged duty is never re-sent. **Not in HK** - the SET_PARAM ACK is the confirmation. **not in the SED**, reverse sense untested, **current sensed on GP46 (row above) but not yet read against a running motor; on no monitored rail**, PWM path not yet run against the motor |
 | STLM20 ×2 | none | **not populated**; the old `ADC_TEMP1` collided with GP26 |
-| Keller 23SY ×2 | none | **off the design** - absent at every address, and the HK fields they fed (`p_ch_pa`, `rh2_cpct`) went with them. The chamber readings now in HK are **not** these fields returning: different part, different bus, new fields at the end of the packet |
 | SD / SPI0 | **pinout now known** from the carrier schematic (2026-09-11): SPI_0 on GP4/GP6/GP7, `SD_1_CS` GP14 + `SD_1_SENS` GP5, `SD_2_CS` GP16 + `SD_2_SENS` GP15 | still no defines. **M-11 is no longer blocked on the schematic but on a pin conflict**: `board.h` currently gives GP4..GP7 to the equalisation valves, and an `spi_init()` would drive whatever the valve code thinks it owns. `hardware_spi` is now linked (for the chamber BME280 on **SPI_1**, a different bus with no such conflict) - that does not unblock this, which still needs FatFs and the valve pins moved |
 
 HK is **64 B** (framed 80 B against an 83 B allowance, ceiling 67 B payload -
@@ -187,32 +186,29 @@ HK is **64 B** (framed 80 B against an 83 B allowance, ceiling 67 B payload -
 `mission_t_s`, plus the chamber BME280's `chm_temp_cc` (i16) + `chm_rh_cpct`
 (u16) + `chm_p_pa` (u32) appended after that. Each addition went on the end,
 so no older field has ever moved.
-The Keller pair's 6 B (`p_ch_pa` + `rh2_cpct`) became `shunt_raw[]`; the four
-extra bytes over that are the reserved 24 V rail, whose monitor is not fitted
-yet - a slot costs 4 B once, a wire-format change on fit day costs the MCU,
-the Pi and every logged session. An unreadable rail is
+Four bytes of `rail_mv[]` / `shunt_raw[]` are the reserved 24 V rail, whose
+monitor is not fitted yet - a slot costs 4 B once, a wire-format change on
+fit day costs the MCU, the Pi and every logged session. An unreadable rail is
 `RAIL_MV_INVALID` (`0xFFFF`), never 0 - **0 mV is a real reading** for a rail
 whose supply is absent, and a dead monitor is a different fault from a dead
 rail. The sentinel invalidates that rail's `shunt_raw` too, so no current is
 ever shown against an unknown voltage.
 
-`HKE_*` bit 3 is no longer free: it was the Keller pair's `NO_RH2` and is now
-`HKE_BME280_CHM_FAIL`. With bit 2 (`NO_CHAMBER_P` → `HKE_NO_MEMBRANE_SENSE`)
-that is both retired bits reused, so **a session logged before 2026-09-11
+`HKE_*` **bits 2 and 3 have both been reused** - bit 2 is now
+`HKE_NO_MEMBRANE_SENSE`, bit 3 `HKE_BME280_CHM_FAIL`. Both carried retired
+sensor flags before 2026-09-11, so **a session logged before that date
 decodes those two bits under the wrong names**. Read an old log against the
-`HK_SIZE` its frames carry.
+`HK_SIZE` its frames carry. Bit 7 is the only free one left.
 
 So `temp1/2_cc` has **no source**. It is declared
 through `error_flags` (`HKE_*` in `core/frame.h`, `HkErrors` in
 `clouds_link/hk.py`, kept in step by a mirror test) rather than filled with
-invented numbers; bit 3 is free (it was the Keller pair's `NO_RH2`), bit 2
-(`NO_CHAMBER_P`) is now `HKE_NO_MEMBRANE_SENSE`. The SED baselines no IMU at all while risk MS002 is
+invented numbers. The SED baselines no IMU at all while risk MS002 is
 "IMU failure" - hardware and document disagree.
 
-**M-15 now has a candidate sensor it does not yet use.** Seal verification was
-to compare chamber against ambient pressure; the chamber half went with the
-Keller parts, and the chamber BME280 on SPI_1 (2026-09-17) is exactly the
-replacement source that was missing. `ops_seal_ok()` is **still
+**M-15 now has a candidate sensor it does not yet use.** Seal verification
+compares chamber against ambient pressure, and the chamber BME280 on SPI_1
+(2026-09-17) is the chamber half. `ops_seal_ok()` is **still
 `return true`** - wiring it to `chm_p_pa` was deliberately left out of that
 change, because the part has never been read against real hardware and a seal
 check is a flight decision. Do it once the chamber part has been shown to

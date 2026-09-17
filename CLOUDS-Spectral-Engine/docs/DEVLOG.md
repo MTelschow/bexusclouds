@@ -18,7 +18,123 @@ without re-deriving anything. Newest entries first.
 
 ---
 
-## 2026-09-17 (newest) - The dispersion motor's Speed slider only worked if you dragged it
+## 2026-09-17 (newest) - The panel went blank because the wire format moved and the MCU did not
+
+**Reported:** "the sensor values are no longer displayed, whole column is
+gone", and still gone after a layout fix.
+
+**It was not the GUI.** Two rounds were spent on the Sensors grid - one of
+them found a real latent weakness in its column widths and fixed it (entry
+above) - but the symptom was that **both** sidebar sections were blank, not
+one. Two sections cannot lose their values to a grid layout. Both sitting at
+their startup dashes means no housekeeping is being decoded at all.
+
+**`hk.SIZE` went 56 -> 64 B when the chamber BME280 landed, and the carrier
+was still flashed with the 56-byte firmware.** `Housekeeping.unpack` used
+`struct.unpack_from` against a 64-byte layout, so every HK packet raised
+`struct.error`. Both call sites swallow it - `receiver.py` into a silent
+`decode_errors` tick, `mcu_link.py` into nothing at all - so the link looked
+healthy the whole time: events, quick-look and command ACKs are separate
+packet types and all kept flowing. The only visible symptom was every HK-fed
+readout in the window staying at `-`, which on a bench reads as dead sensors,
+and for a while as a dead dispersion motor.
+
+**This is the cost of changing a wire format, and it was foreseeable.** The
+packet grew for a good reason and in the safe direction (appended, no older
+field moved), the mirror tests all passed, the firmware was built - and none
+of that helps when the image on the board is two commits old. **Building the
+firmware is not flashing it.** The carrier was reflashed
+(`picotool load -f -x`, serial `21DD2AE08840C863`) and the panel filled
+immediately, chamber rows included.
+
+**Two sessions fixed this at once, differently, and the merge is better than
+either.** One made the receiver *reject* any HK that is not exactly
+`hk.SIZE` and name the version mismatch on the panel - the right instinct,
+because that failure hides behind a healthy-looking link, and its wording is
+what an operator actually needs. The other made `Housekeeping.unpack` decode
+the older 56-byte layout. On their own each is half a fix: the strict one
+leaves a correct diagnosis above an empty panel, the tolerant one loses the
+message that says what to do about it. Merged:
+
+- `hk.KNOWN_SIZES` enumerates the layouts this build can read. A **known**
+  older length is decoded; **any other** length is still discarded, counted
+  in `hk_rejected` and named. Decoding by length assumes the packet only ever
+  grew by appending, which is true here and is why the sizes are enumerated
+  rather than inferred from "shorter than current".
+- The fields an older layout cannot carry are filled the way the MCU itself
+  fills them when a part does not answer - zeros behind
+  `HKE_BME280_CHM_FAIL` - so the chamber rows read `no read`. The dataclass
+  default for `chm_p_pa` is sea level, and letting that reach a display would
+  have put a pressure on screen that no sensor produced.
+- The panel says so either way: a decoded-but-older packet still shows the
+  reflash line, because otherwise its blank rows look like dead sensors.
+
+**The rule to keep:** a wire-format change must degrade to "these fields have
+no source", never to "there is no telemetry" - and a decode failure that a
+whole session can hide behind must be named on screen, not counted in a
+field nobody reads.
+
+**Checks:** native 61/61, pytest 324 passed, `verify.py` and `verify_qt.py`
+both `VERIFY OK`. A 56-byte frame driven end to end through the real receiver
+and panel fills every row except the chamber triple, which reads `no read`.
+
+---
+
+## 2026-09-17 - The sensor readings vanished: the value column was leftover width, not reserved width
+
+**Reported:** after the chamber BME280 rows landed, the sensor values stopped
+being displayed - "whole column is gone".
+
+**It was the three new rows, but not for the reason it looks like.** The
+sidebar packs into columns (`sections.SectionFlow`) and the obvious suspicion
+was that a taller Sensors section had pushed the packing over an edge. It had
+not: measured with and without the chamber rows, the column count is identical
+at every sidebar width and window height (1 / 2 / 2), and the tallest column
+differs by 3 px. The sidebar was never the problem.
+
+**The Sensors grid was.** It is three columns - reading, part, value - and
+only the *value* column stretched. That sounds like the right one to give the
+slack to, and it is exactly backwards: a stretching column gets what the
+others do not want, and the name and part columns are plain `QLabel`s that
+size to their own longest string with no ceiling. At `SectionFlow.COL_W`
+(340 px, the narrowest a sidebar column ever gets) `DRV8251A IPROPI, ADC GP46`
+alone is 153 px of the row, so the readings were already living on the
+remainder. Adding `Chamber RH` widened the name column from 66 to 70 px and
+took those 4 px straight off every reading on the panel: 105 px -> 101 px
+here. On a wider font - a real macOS desktop rather than the offscreen
+platform the checks run on - the same arithmetic reaches zero and the numbers
+disappear **while the layout still looks intact**. Nothing is misaligned; the
+column is simply not there.
+
+**The fix inverts which column is negotiable.** The value column now has a
+floor, measured from the font at runtime against the widest reading any
+formatter can produce (`WIDEST_SENSOR_VALUE`, `Ambient p` carrying its
+held-and-stale suffix - the widest value is reserved for, not the widest
+usual one, because the stale case is exactly when the row most needs
+reading). The **part** column is the one that gives way: it stretches, and it
+is an `_ElidedLabel`, which reports a minimum of three characters instead of
+its full text width and elides with the full name kept in the tooltip. Losing
+the tail of `DRV8251A IPROPI, ADC GP46` costs context that is one hover away;
+losing the reading costs the measurement. Value column 101 px -> 178 px.
+
+**Why the checks did not catch it.** `verify_qt.py` asserted that every row's
+*text* was a number, which it always was - the label held `992.5 hPa`
+throughout, in a column too narrow to show it. Geometry was never checked.
+There are now two checks that are, run with the section pinned to
+`SectionFlow.COL_W`: every value label must be at least as wide as
+`WIDEST_SENSOR_VALUE` needs, and the part labels must elide with their
+tooltips intact. Both were confirmed to **fail against the old layout**
+(127 px against the 163 px needed) before being kept - a guard that has never
+been seen to fail is not known to guard anything.
+
+**The general rule this is an instance of:** in a fixed-width sidebar, the
+column carrying the measurement gets a reserved minimum and the column
+carrying the label gives way. Any new row here can widen the name column, and
+none of them should be able to take width off the numbers.
+
+---
+
+## 2026-09-17 - The dispersion motor's Speed slider only worked if you dragged it
 
 **Asked for:** the control of the dispersion motor is broken in the GUI, fix it.
 
@@ -71,6 +187,60 @@ three existing motor checks are unchanged and still pass. `pytest tests/`:
 322 passed, 1 skipped. No firmware change - the MCU already re-latched
 `PARAM_DISPERSE_DUTY` on a `SET_PARAM` while running (`sequencer.c`,
 `ops_disperse_run`); it was never being told.
+
+---
+
+## 2026-09-17 - The Keller 23SY pair is deleted from the repo, not just from the packet
+
+**Asked for:** the Keller sensors are not part of the experiment any more -
+delete them completely.
+
+**There was no code left to delete.** `p_ch_pa` and `rh2_cpct` went out of the
+HK packet on 2026-09-09, and `HKE_NO_CHAMBER_P` / `HKE_NO_RH2` with them. What
+remained was ~35 references across comments, docs and tests, all of them
+*explaining the absence*: every place that said "there is no chamber pressure
+because the Keller pair is off the design" was still teaching a reader about a
+part. That is the same failure as a permanently-unsourced GUI row - it puts a
+part that is not in the experiment in front of someone who then has to work
+out that it is not in the experiment.
+
+**What was kept, reworded.** Two facts were load-bearing and had nothing to do
+with the part:
+
+- **`error_flags` bits 2 and 3 have been reused**, so a session log written
+  before 2026-09-11 decodes them under the wrong names. This is now stated as
+  "two retired sensor flags" without naming them - the operative fact is the
+  reuse and the mis-decode, not which sensors they belonged to. Bit 7 is the
+  only free one left.
+- **`seq_step()` takes ambient pressure and nothing else.** The comment
+  justified that by the chamber parameter having been removed; it now states
+  the rule directly - a parameter no caller reads invites one to pass
+  something plausible.
+
+**What was corrected rather than deleted.** `SED_SOFTWARE_DESIGN_v1-2_draft.md`
+attributed launch detection to the Keller 23SY. That is our replacement text
+for SED §4.11, and it was simply wrong: launch detection reads the BME280 on
+i2c0. Changed to say so. `SOFTWARE_SPEC.md` §7 listed the second humidity
+channel as unsourced for the same reason - it has a source now, the chamber
+BME280 on SPI_1, so that entry became a description of the part that exists.
+
+**One test was deleted outright.**
+`test_the_keller_fields_are_gone_from_the_packet` asserted that
+`Housekeeping` has no `p_ch_pa`/`rh2_cpct` attributes and no
+`NO_CHAMBER_P`/`NO_RH2` enum members. As a regression guard it only protects
+against someone re-adding fields for a part nobody works on any more; as
+documentation it is one more place naming the part. 322 tests → 321.
+
+**This entry and the rest of the log are the exception.** The DEVLOG is an
+append-only narrative of why things are as they are, and the 2026-09-09 entry
+is the record of the decision this one extends - it explains why HK grew the
+way it did and why two error bits were free to reuse. Deleting it would leave
+the packet's shape unexplained. The part is gone from everything that
+describes the experiment as it is *now*; the history of how it got that way
+stays here.
+
+**Checks:** native firmware 61/61, pytest 321 passed, `verify.py` and
+`verify_qt.py` both `VERIFY OK`, firmware builds clean under `-Wall -Wextra`.
 
 ---
 

@@ -407,9 +407,11 @@ static bool ops_seal_ok(void *ctx)
 {
     (void)ctx;
     /* TODO (M-15): verify the seal. The chamber-vs-ambient pressure
-     * divergence this was to use is gone with the Keller pair, so the check
-     * needs a source that exists - a chamber sensor if one is fitted, or the
-     * equalisation valves' own position sense. The sequencer only calls this
+     * divergence this was specified as now HAS a source - the chamber BME280
+     * on SPI_1, hk_t.chm_p_pa - but that part has never been read against
+     * real hardware, and a seal check is a flight decision. Wire it to
+     * chm_p_pa (or to the equalisation valves' own position sense) once the
+     * chamber part has been shown to answer. The sequencer only calls this
      * once the close pulses have finished (see ops_busy), so whatever the
      * source, it is read with the lines already at rest. Until one exists,
      * report success so the sequence proceeds (matches spec: proceed flagged
@@ -507,9 +509,7 @@ const seq_ops_t hw_seq_ops = {
  *                              out and checks the IDs when they mean
  *                              something - and still reports HKE_IMU_FAIL,
  *                              with zeroed vectors, if they do not come up.
- * There is no second humidity channel on this bus: the Keller 23SY pair is
- * off the design, and the HK fields they were to fill went with them rather
- * than being downlinked as zeros.
+ * There is no second humidity channel on this bus.
  *
  * CHAMBER T/RH/p do NOT come from this bus. A second BME280 sits on SPI_1
  * behind the chip select on GP9 (board.h PIN_BME_CHAMBER_CS) and fills

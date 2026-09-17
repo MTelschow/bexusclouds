@@ -55,6 +55,20 @@ class Receiver:
 
         self.gaps = GapStats()
         self.decode_errors = 0
+        #: HK frames whose payload is of no length this build knows, and why.
+        #: An older *known* layout is decoded instead of counted here - see
+        #: ``_dispatch`` - so this counts only packets that were discarded.
+        #: A packet the
+        #: MCU is sending and this GSE cannot read is a *version* fact, not a
+        #: corrupt datagram, and it is the one decode failure that hides
+        #: itself: events and quick-look keep flowing, so the link looks
+        #: healthy while every sensor row, the valve bits and the actuator
+        #: readouts sit at their startup text. That is how a two-commit-old
+        #: MCU image read on the bench as a dead dispersion motor
+        #: (2026-09-17: MCU 56 B, GSE 64 B, no HK for a whole session and
+        #: nothing on screen said so). Named here so the panel can say it.
+        self.hk_rejected = 0
+        self.hk_reject_reason: str | None = None
         # Wire counters for the traffic indicator (clouds_ui/traffic.py).
         # Counted where the datagram arrives, not after decode: a frame that
         # fails CRC still spent link budget, and a link that is delivering
@@ -124,6 +138,43 @@ class Receiver:
 
     def _dispatch(self, frame: frames.Frame) -> None:
         if frame.type == PacketType.HK:
+            # Length first, so a packet from an MCU of a different vintage is
+            # reported as the version mismatch it is. `unpack` would raise
+            # struct.error, which _handle catches with everything else and
+            # turns into a silent `decode_errors` tick - true, useless, and
+            # indistinguishable from line noise.
+            #
+            # A length this build KNOWS (`hk.KNOWN_SIZES`) is decoded rather
+            # than dropped. The packet has only ever grown by appending, so an
+            # older one carries every field it has at the offset this decoder
+            # expects, and refusing it throws away 56 readable bytes to
+            # protect against 8 missing ones - which on the bench meant a
+            # correct diagnosis on screen and still no telemetry under it.
+            # `Housekeeping.unpack` flags the fields the older layout cannot
+            # fill, so nothing reaches the panel that no hardware produced.
+            #
+            # The operator is told either way: the reason is set for a
+            # decoded-but-older packet too, because the fix is the same
+            # reflash and the missing rows would otherwise look like dead
+            # sensors.
+            n = len(frame.payload)
+            if n not in hk.KNOWN_SIZES:
+                self.hk_rejected += 1
+                self.hk_reject_reason = (
+                    f"HK is {n} B, this GSE reads {hk.SIZE} B and knows no "
+                    f"layout that length - the MCU is running a different "
+                    f"firmware version (reflash it, or read this session "
+                    f"with that build's clouds_link)")
+                self.decode_errors += 1
+                return
+            if n != hk.SIZE:
+                self.hk_reject_reason = (
+                    f"HK is {n} B, this GSE reads {hk.SIZE} B - the MCU is "
+                    f"running older firmware. Decoded, but its newer fields "
+                    f"have no source and read as unsourced (reflash to get "
+                    f"them)")
+            else:
+                self.hk_reject_reason = None
             self.last_hk = hk.Housekeeping.unpack(frame.payload)
             self.last_hk_time = time.time()
             if self._cb["hk"]:

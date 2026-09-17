@@ -71,14 +71,11 @@ typedef struct {
 
 /* Housekeeping payload - 64 bytes, mirror of clouds_link/hk.py.
  *
- * Chamber temperature, humidity and pressure are back, from a SECOND BME280
- * on SPI_1 (hw/board.h PIN_BME_CHAMBER_CS). They are not the Keller 23SY
- * fields returning: those were p_ch_pa + rh2_cpct, they were deleted when
- * the parts came off the design, and their six bytes went to the INA226
- * shunt voltages. These are new fields at the end of the packet, with a
- * flag of their own, from a part that answers.
+ * Chamber temperature, humidity and pressure come from a SECOND BME280 on
+ * SPI_1 (hw/board.h PIN_BME_CHAMBER_CS), at the end of the packet and
+ * behind a flag of their own.
  *
- * There is still no second humidity channel on i2c0.
+ * There is no second humidity channel on i2c0.
  *
  * Four rails are carried and three monitors are fitted: the 24 V rail's
  * INA226 is not populated yet, and its slot is reserved so that fitting the
@@ -180,12 +177,11 @@ typedef struct {
  * so ground can tell a stale reading from a real one. */
 #define HKE_BME280_FAIL (1u << 0)   /* BME280 absent or read failed */
 #define HKE_P_AMB_STALE (1u << 1)   /* p_amb_pa is a held last-good value */
-/* Bit 2 was HKE_NO_CHAMBER_P and bit 3 HKE_NO_RH2; both went out with the
- * Keller pair and the fields they flagged. Both have since been reused -
- * bit 2 for the membrane switch, bit 3 for the chamber BME280. The
- * surviving bits keep their positions so an older session log still
- * decodes; the two reused ones do not, which is why a log written before
- * 2026-09-11 must be read against the HK_SIZE its header implies. */
+/* Bits 2 and 3 carried two retired sensor flags before 2026-09-11 and have
+ * been reused since - bit 2 for the membrane switch, bit 3 for the chamber
+ * BME280. Every other bit has kept its position, so an older session log
+ * still decodes on those; these two do not, which is why a log has to be
+ * read against the HK_SIZE its header implies. */
 #define HKE_NO_MEMBRANE_SENSE (1u << 2) /* GP30 is not reachable in this build
                                          * (pico2 / RP2350A), so
                                          * HKV_MEMBRANE_PULLED has no source */

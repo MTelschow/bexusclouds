@@ -934,6 +934,7 @@ try:
     # indistinguishable from a real reading - which is the whole failure this
     # project has already been bitten by.
     import clouds_ui.flight as _fl
+    import clouds_ui.sections as _sections
     _unsourced = _hk.Housekeeping(
         state=_hk.SeqState.STANDBY, p_amb_pa=99248,
         bme_temp_cc=3422, rh1_cpct=2993,
@@ -953,8 +954,7 @@ try:
           not any(n.startswith("T1") or n.startswith("T2")
                   for n, _p, _f, _fg in _fl.SENSOR_FIELDS),
           str([n for n, _p, _f, _fg in _fl.SENSOR_FIELDS]))
-    # The Chamber rows ARE back, and they are not the Keller 23SY rows
-    # returning: they come from a second BME280 on SPI_1, a part that
+    # The Chamber rows come from a second BME280 on SPI_1, a part that
     # answers, so the rule above is not violated by them. The part column
     # has to say which bus, or two identical BME280s are indistinguishable
     # on screen when one of them fails.
@@ -1029,6 +1029,40 @@ try:
               if n != "Rail 24 V"),
           str({n: _gse._sensor_labels[n].text()
                for n, _p, _f, _fg in _fl.SENSOR_FIELDS}))
+
+    # ...and it renders them with room to be read. The value column used to
+    # be whatever the name and part columns left over, and both of those size
+    # to their own longest string with no ceiling: adding `Chamber RH` took
+    # 4 px off every reading on the panel, and on a wider font the column
+    # collapses and the numbers disappear while the layout still looks
+    # intact. So the column now has a floor, and this is the check that it
+    # holds at `SectionFlow.COL_W` - the narrowest a sidebar column ever
+    # gets, and therefore the worst case.
+    _sec = _gse.sec_sensors
+    _sec.setFixedWidth(_sections.SectionFlow.COL_W)
+    app.processEvents()
+    _need = _gse._sensor_labels["Ambient p"].fontMetrics().boundingRect(
+        _fl.WIDEST_SENSOR_VALUE).width()
+    _narrow = {n: _gse._sensor_labels[n].width()
+               for n, _p, _f, _fg in _fl.SENSOR_FIELDS
+               if _gse._sensor_labels[n].width() < _need}
+    check("flight: the sensor values keep their column at the narrowest "
+          "sidebar",
+          not _narrow,
+          f"need {_need} px for {_fl.WIDEST_SENSOR_VALUE!r}, got {_narrow}")
+    # The part column is the one that gives way, and it must give way by
+    # eliding rather than by vanishing - the part is why a reading is
+    # believable, so the full name stays in the tooltip.
+    _parts = [w for w in _sec.findChildren(_fl._ElidedLabel)]
+    check("flight: a part name too long for the column elides, with the "
+          "full name kept",
+          bool(_parts)
+          and all(w.width() > 0 and w.toolTip() for w in _parts)
+          and any(w.text() != w.toolTip() for w in _parts),
+          f"{[(w.text(), w.toolTip()) for w in _parts][:3]}")
+    _sec.setMinimumWidth(0)
+    _sec.setMaximumWidth(16777215)
+    app.processEvents()
 
     # The dispersion motor's current sense: amps through the DRV8251A IPROPI
     # chain, `-` from a build with no GP46 - and 0 counts is a reading (idle

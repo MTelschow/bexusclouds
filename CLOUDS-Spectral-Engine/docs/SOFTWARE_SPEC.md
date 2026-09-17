@@ -67,7 +67,7 @@ spectra, storage of spectra, and all external communication.
 | Pi ↔ RP2350 | UART, COBS-framed, CRC-16. Down: HK @ 1 Hz, state changes, actuator events. Up: forwarded commands, time sync every 10 s |
 | Spectrometer ↔ Pi | USB (FTDI FT2232H, VID 0403/PID 6010) → `/dev/ttyUSB*`, vendor library `libe9u_LSMD.so` (built from `drivers/e9u_LSMD_LIB_Linux/`, same API as the Windows DLL) — driven by this repo's `spectro/eureca_driver.py`; needs the vendor udev rules |
 | SD ↔ RP2350 | SPI, 2 cards, redundant HK + actuator log |
-| Sensors ↔ RP2350 | BME280 I²C; STLM20 analog/ADC; IMU I²C/SPI; INA226 ×3 I²C (rail voltage + shunt voltage). The Keller 23SY pair is **off the design** - F.6's chamber humidity and the seal check's chamber pressure have no part, see §7 |
+| Sensors ↔ RP2350 | BME280 ×2 - **ambient** on I²C (`0x76`) and **chamber** on SPI_1 (chip select GP9); STLM20 analog/ADC; IMU I²C/SPI; INA226 ×3 I²C (rail voltage + shunt voltage) |
 | Actuators ↔ RP2350 | 4× valve via GPIO→MOSFET (HW interlock on open/close pairs); membrane solenoid via PWM → inverter stage, 12 V |
 
 ## 4. Data & performance budget
@@ -97,11 +97,11 @@ Sizes below are the **encoded frame sizes of the implementation** (14 B header
 | **Total** | | | **1.974 kbit/s** of 2 kbit/s |
 
 ~5 % margin, leaving ~13 B/s for sporadic events. The INA226 rail voltages
-cost the 6 B that took HK from 44 to 50 B; their shunt voltages cost nothing
-further, having taken over the 6 B that `p_ch_pa` and `rh2_cpct` held before
-the Keller pair left the design. The 4 B after that are the fourth rail slot,
-24 V, whose monitor is not fitted yet: reserving it keeps fitting the part
-out of the wire format (DEVLOG 2026-09-09).
+cost the 6 B that took HK from 44 to 50 B, and their shunt voltages 6 B
+after that. The 4 B beyond those are the fourth rail slot, 24 V, whose
+monitor is not fitted yet: reserving it keeps fitting the part out of the
+wire format (DEVLOG 2026-09-09). The last 8 B are the chamber BME280's
+temperature, humidity and pressure (DEVLOG 2026-09-17).
 
 This supersedes the earlier "quick-look every 30 s (~1.1 kB burst ≈ 0.3 kbit/s
 avg)". That 1.1 kB assumed ~256 bins per channel — i.e. the whole detector
@@ -154,12 +154,13 @@ simulated sensor inputs.
 ## 7. Open points (owner ≠ software, but software-visible)
 
 - F.7 camera: undecided; CSI interface + downlink thumbnail budget reserved.
-- Second humidity sensor (F.6): **unsourced**. The parts list has one BME280,
-  and the Keller 23SY pair that was to give chamber humidity and chamber
-  pressure is off the design (absent at every address on the carrier). The HK
-  format no longer reserves a second RH channel or a chamber pressure - a
-  field no part can fill is read as a measurement by anything that displays
-  it. F.6's two-location requirement and the M-15 seal check both need a part
+- Second humidity sensor (F.6): **sourced, from a second BME280**. The
+  chamber part on SPI_1 (chip select GP9) gives chamber humidity *and*
+  chamber pressure, in `chm_rh_cpct` / `chm_p_pa` behind their own
+  `HKE_BME280_CHM_FAIL`. It is instrumentation only: launch and float
+  detection still read `p_amb_pa` from the ambient part on I²C, so a chamber
+  fault cannot reach the sequencer. **Not yet run against the fitted part**
+  (DEVLOG 2026-09-17). F.6's two-location requirement and the M-15 seal check both need a part
   chosen before either has software to write.
 - GSE technology (Python vs LabVIEW): decision post-PDR.
 - P.1/P.2 (intensity accuracy / spectral resolution): TBD in SED; spec

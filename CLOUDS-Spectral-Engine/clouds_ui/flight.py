@@ -105,14 +105,12 @@ def _rail_row(i: int):
 #: wrong instead of showing the number, and the number is not quietly turned
 #: into something prettier.
 #:
-#: Two groups of rows that used to sit here are gone with their parts: the
-#: chamber pressure and second humidity channel with the Keller 23SY pair
-#: (their HK fields went too), and `T1 / T2` with the **STLM20 pair, which is
-#: not populated and is not coming**. A row that can only ever say "not
-#: populated" is telling the operator about a part that is not part of the
-#: experiment; `HKE_NO_TEMP` still rides in `error_flags`, so the Errors row
-#: declares the two wire fields as unsourced without giving them a readout
-#: that looks like a sensor.
+#: One group of rows that used to sit here is gone with its part: `T1 / T2`,
+#: the **STLM20 pair, which is not populated and is not coming**. A row that
+#: can only ever say "not populated" is telling the operator about a part
+#: that is not part of the experiment; `HKE_NO_TEMP` still rides in
+#: `error_flags`, so the Errors row declares the two wire fields as
+#: unsourced without giving them a readout that looks like a sensor.
 SENSOR_FIELDS = [
     ("Ambient p", "BME280",
      lambda h: f"{h.p_amb_pa / 100:.1f} hPa{_held(h)}", HkErrors.BME280_FAIL),
@@ -164,6 +162,22 @@ SENSOR_FIELDS = [
     ("Motor I", "DRV8251A IPROPI, ADC GP46", lambda h: h.hb_sense_text, None),
 ]
 
+#: The longest reading any `SENSOR_FIELDS` formatter can produce, used to
+#: reserve the value column's width.
+#:
+#: It is `Ambient p` carrying its held-and-stale suffix: `_held()` appends
+#: that to a pressure that is already the widest plain number on the panel.
+#: Reserving for the widest *possible* value rather than the widest usual one
+#: is the point - the stale case is exactly when an operator most needs to
+#: read the row, and a column sized for the happy path would push the suffix
+#: out at that moment.
+#:
+#: A literal rather than a loop over the formatters: several of them need a
+#: whole `Housekeeping` to run, and feeding them a synthetic worst-case
+#: packet to measure a column is more machinery than a string that the
+#: `verify_qt.py` check below keeps honest.
+WIDEST_SENSOR_VALUE = "1013.2 hPa  (held, stale)"
+
 #: What to say in place of a number, per unsourced flag. "no source" rather
 #: than "sensor failed": on this carrier these parts were never fitted, and an
 #: operator reading "failed" would go looking for a fault to clear.
@@ -190,6 +204,45 @@ MEMBRANE_HZ_DEFAULT = 2.0
 #: packet if the drive's longer phase is shorter than this. Below that rate a
 #: clear MEMBRANE_CYCLING bit is the sampling, not a stuck plunger.
 HK_PERIOD_MS = 1000.0
+
+
+class _ElidedLabel(QtWidgets.QLabel):
+    """A label that shortens its text with an ellipsis instead of demanding
+    the width to show all of it.
+
+    A plain `QLabel` reports its full text width as its minimum, so in a grid
+    it pushes the other columns rather than giving way. That is what let the
+    sensor grid's part column squeeze the readings out of the row. This one
+    keeps the full string for painting decisions and the tooltip, and reports
+    a minimum of a few characters, so the column it sits in can be made as
+    narrow as the layout needs.
+    """
+
+    def __init__(self, text: str = "", parent=None):
+        super().__init__(text, parent)
+        self._full = text
+        self.setSizePolicy(QtWidgets.QSizePolicy.Ignored,
+                           QtWidgets.QSizePolicy.Preferred)
+
+    def setText(self, text: str) -> None:       # noqa: N802 - Qt's spelling
+        self._full = text
+        super().setText(text)
+        self._elide()
+
+    def minimumSizeHint(self):                  # noqa: N802 - Qt's spelling
+        hint = super().minimumSizeHint()
+        # Wide enough to show that something is there, narrow enough never to
+        # be the reason a reading is hidden.
+        hint.setWidth(self.fontMetrics().boundingRect("...").width())
+        return hint
+
+    def resizeEvent(self, ev):                  # noqa: N802 - Qt's spelling
+        super().resizeEvent(ev)
+        self._elide()
+
+    def _elide(self) -> None:
+        super().setText(self.fontMetrics().elidedText(
+            self._full, QtCore.Qt.ElideRight, max(0, self.width())))
 
 
 def membrane_longest_phase_ms(hz: float, duty_pct: int) -> float:
@@ -335,11 +388,29 @@ class FlightPanel(QtCore.QObject):
         numbers to believe.
         """
         # Three columns on one line - reading, part, value - rather than the
-        # two-line label this used to be. Nine rows at two lines each is
-        # ~270 px of a sidebar column, and the sidebar now has to fit its
-        # open sections on screen without scrolling (`sections.SectionFlow`);
-        # one line a row buys that back without dropping the part name, which
-        # is the column that makes the readings judgeable.
+        # two-line label this used to be. Thirteen rows at two lines each is
+        # ~390 px of a sidebar column, and the sidebar has to fit its open
+        # sections on screen without scrolling (`sections.SectionFlow`); one
+        # line a row buys that back without dropping the part name, which is
+        # the column that makes the readings judgeable.
+        #
+        # THE VALUE COLUMN IS RESERVED, NOT LEFTOVER. It used to be the only
+        # stretching column, which meant it got whatever the name and part
+        # columns did not want - and those two size to their own longest
+        # string with no ceiling. At 340 px (`SectionFlow.COL_W`, the
+        # narrowest a sidebar column goes) `DRV8251A IPROPI, ADC GP46` alone
+        # is most of the row, so the readings were already living on the
+        # remainder; a name one glyph longer took width straight off them,
+        # and on a wider font they collapse to nothing. A sensor panel whose
+        # numbers vanish because a label got longer is the worst version of
+        # this bug, because everything still looks laid out.
+        #
+        # So the value column gets a floor wide enough for the longest
+        # reading any formatter above produces, and the PART column is the
+        # one that gives: it stretches, and elides when there is not enough
+        # room. Losing the tail of `DRV8251A IPROPI, ADC GP46` costs context
+        # that the tooltip still carries; losing the reading costs the
+        # measurement.
         grid = QtWidgets.QGridLayout()
         grid.setContentsMargins(0, 0, 0, 0)
         grid.setHorizontalSpacing(8)
@@ -348,15 +419,28 @@ class FlightPanel(QtCore.QObject):
         for row, (name, part, _fmt, _flag) in enumerate(SENSOR_FIELDS):
             key = QtWidgets.QLabel(name)
             key.setStyleSheet(f"color:{style.MUTED}; font-size:11px;")
-            src = QtWidgets.QLabel(part)
+            src = _ElidedLabel(part)
             src.setStyleSheet(f"color:{style.SECTION}; font-size:10px;")
+            # The full name stays reachable once the column is too narrow for
+            # it - the part is why a reading is believable, so it must not be
+            # merely gone.
+            src.setToolTip(part)
             val = QtWidgets.QLabel("-")
             val.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
             self._sensor_labels[name] = val
             grid.addWidget(key, row, 0)
             grid.addWidget(src, row, 1)
             grid.addWidget(val, row, 2)
-        grid.setColumnStretch(2, 1)
+        # Column 1 absorbs the slack and shrinks; column 2 never goes below
+        # what a reading needs. Measured against a real value label rather
+        # than guessed, so a different font or platform gets the width it
+        # actually needs instead of the width this machine happened to want.
+        probe = QtWidgets.QLabel()
+        probe.setStyleSheet(f"font-family:{style.MONO}; font-size:11px;"
+                            "font-weight:bold;")
+        grid.setColumnMinimumWidth(
+            2, probe.fontMetrics().boundingRect(WIDEST_SENSOR_VALUE).width())
+        grid.setColumnStretch(1, 1)
         sec.add(grid)
 
         # The shunt resistances are named on screen because they are the one
@@ -880,9 +964,26 @@ class FlightPanel(QtCore.QObject):
                     else "cmd up")
         else:
             link = "cmd DOWN - retrying"
+        # Decode errors are on this line because the panel has no other way to
+        # say "packets are arriving and none of them mean anything". A wire
+        # format the ground and the MCU disagree about looks exactly like a
+        # dead link from every readout in this window - every field stays at
+        # its startup dash - and the receiver counts the failures silently.
+        # rx climbing while hk age stays `-` is that fault, and this is where
+        # an operator can see it.
+        # And when the receiver knows *which* disagreement it is - an HK
+        # payload of a length this build does not read - it says so above the
+        # counters instead of leaving the operator to infer a version skew
+        # from a number. That is the case worth naming: it is the one decode
+        # failure that hides behind a healthy-looking link, because events,
+        # quick-look and the command ACKs all keep working.
+        errs = getattr(self._rx, "decode_errors", 0)
+        bad = f"  undecoded {errs}" if errs else ""
+        why = getattr(self._rx, "hk_reject_reason", None)
         self.lbl_downlink.setText(
+            (f"{why}\n" if why else "") +
             f"rx {self._rx.gaps.received}  lost {self._rx.gaps.lost}  "
-            f"hk age {'-' if age is None else f'{age:.1f} s'}\n{link}")
+            f"hk age {'-' if age is None else f'{age:.1f} s'}{bad}\n{link}")
 
         while self.event_list.count() < len(self._rx.events):
             ev = self._rx.events[self.event_list.count()]

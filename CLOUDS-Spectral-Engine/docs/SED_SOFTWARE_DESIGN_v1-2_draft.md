@@ -50,7 +50,7 @@ a measured readout capability of 450 fps.
 The sequence is **autonomous by default**; ground contact is an
 opportunity to supervise, not a precondition:
 
-- **Launch detection:** sustained ambient pressure drop (Keller 23SY),
+- **Launch detection:** sustained ambient pressure drop (BME280, I²C),
   debounced over 60 s.
 - **Float detection:** ambient pressure below 55 hPa **and** |dp/dt| below
   threshold for 5 min, **or** a fallback timer (T_float = 120 min after

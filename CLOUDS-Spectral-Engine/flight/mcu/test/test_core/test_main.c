@@ -141,7 +141,7 @@ static void test_hk_pack_layout(void)
     /* temp1_cc LE at offset 6: -5512 = 0xEA78 */
     TEST_ASSERT_EQUAL_HEX8(0x78, out[6]);
     TEST_ASSERT_EQUAL_HEX8(0xEA, out[7]);
-    /* p_amb_pa LE u32 at offset 14, where dropping rh2_cpct moved it */
+    /* p_amb_pa LE u32 at offset 14 */
     TEST_ASSERT_EQUAL_HEX8(0xB4, out[14]); /* 5300 = 0x14B4 */
     TEST_ASSERT_EQUAL_HEX8(0x14, out[15]);
     /* rail_mv[] LE u16 x4 at offset 30, after the two IMU vectors */

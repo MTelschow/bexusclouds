@@ -122,9 +122,10 @@ unplugged, and nothing on the link may delay a state transition (S.7).
   populated** (and GP26, the pin the old map gave `ADC_TEMP1`, is the membrane
   solenoid), and the BNO055 at 0x28 answers with a valid chip id while its
   accel/mag/gyro IDs read 0x00. The SED baselines no IMU at all, so there is
-  nothing to verify that integration against (DEVLOG 2026-08-31). The **Keller
-  23SY pair is off the design**, so chamber pressure and the second RH channel
-  are not flagged-but-absent any more: their HK fields are gone.
+  nothing to verify that integration against (DEVLOG 2026-08-31). Chamber
+  pressure and the second RH channel come from a **second BME280 on SPI_1**
+  (chip select GP9), downlinked as `chm_*` behind `HKE_BME280_CHM_FAIL` -
+  added 2026-09-17 and **not yet run against the fitted part**.
 - **M-09 rails**: the three fitted INA226 monitors are done
   (`src/hw/ina226.c`) - bus voltage in `rail_mv[]` and the raw shunt-voltage
   register in `shunt_raw[]`, both absolute registers. The calibration register
