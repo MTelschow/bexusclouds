@@ -29,7 +29,8 @@ void hw_actuators_service(uint64_t now_ms);
 uint8_t hw_actuator_status(void);
 
 /* The membrane position switch (board.h PIN_MEMBRANE_SENSE), decoded: true
- * while the switch says the solenoid is energized (pulled). False when the
+ * while the switch says the solenoid is energized (pulled) - the button is
+ * pressed then, so the pull-up's LOW is inverted into this true. False when the
  * pin is not reachable in this build - hw_read_sensors() raises
  * HKE_NO_MEMBRANE_SENSE in that case so ground does not read the false as
  * "pushed". */

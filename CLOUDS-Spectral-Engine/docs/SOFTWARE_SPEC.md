@@ -91,10 +91,10 @@ Sizes below are the **encoded frame sizes of the implementation** (14 B header
 
 | Packet | Framed size | Cadence | Rate |
 |---|---|---|---|
-| HK (relayed, payload `hk.SIZE` = 54 B) | 70 B | 1 Hz | 0.560 kbit/s |
+| HK (relayed, payload `hk.SIZE` = 64 B) | 80 B | 1 Hz | 0.640 kbit/s |
 | Quick-look, both channels (29 + 31 bins) | 164 B | 1 Hz | 1.312 kbit/s |
 | PISTATUS | 28 B | 10 s | 0.022 kbit/s |
-| **Total** | | | **1.894 kbit/s** of 2 kbit/s |
+| **Total** | | | **1.974 kbit/s** of 2 kbit/s |
 
 ~5 % margin, leaving ~13 B/s for sporadic events. The INA226 rail voltages
 cost the 6 B that took HK from 44 to 50 B; their shunt voltages cost nothing

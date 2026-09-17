@@ -132,6 +132,9 @@ static void test_hk_pack_layout(void)
     hk.shunt_raw[2] = -40;    /* current can flow either way: sign survives */
     hk.mission_t_s = 4210;
     hk.hb_sense_raw = 1500;   /* ADC counts, ~1.2 V at IPROPI = ~0.54 A */
+    hk.chm_temp_cc = 2450;    /* chamber BME280 on SPI_1: 24.50 C */
+    hk.chm_rh_cpct = 3812;    /* 38.12 %RH */
+    hk.chm_p_pa = 98765;
     hk_pack(&hk, out);
     TEST_ASSERT_EQUAL_UINT8(5, out[0]);
     TEST_ASSERT_EQUAL_UINT8(0x01, out[2]);
@@ -161,7 +164,20 @@ static void test_hk_pack_layout(void)
      * older field moved */
     TEST_ASSERT_EQUAL_HEX8(0xDC, out[54]); /* 1500 = 0x05DC */
     TEST_ASSERT_EQUAL_HEX8(0x05, out[55]);
-    TEST_ASSERT_EQUAL_UINT32(56, (uint32_t)HK_SIZE);
+    /* The chamber BME280 triple at offsets 56..63, appended after
+     * hb_sense_raw so no older field moved. p_amb_pa above is 5300 Pa and
+     * chm_p_pa here is 98765: the two pressures are deliberately far apart,
+     * because a pack that crossed them would still decode to two plausible
+     * pressures and only differing values catch it. */
+    TEST_ASSERT_EQUAL_HEX8(0x92, out[56]); /* 2450 = 0x0992 */
+    TEST_ASSERT_EQUAL_HEX8(0x09, out[57]);
+    TEST_ASSERT_EQUAL_HEX8(0xE4, out[58]); /* 3812 = 0x0EE4 */
+    TEST_ASSERT_EQUAL_HEX8(0x0E, out[59]);
+    TEST_ASSERT_EQUAL_HEX8(0xCD, out[60]); /* 98765 = 0x000181CD */
+    TEST_ASSERT_EQUAL_HEX8(0x81, out[61]);
+    TEST_ASSERT_EQUAL_HEX8(0x01, out[62]);
+    TEST_ASSERT_EQUAL_HEX8(0x00, out[63]);
+    TEST_ASSERT_EQUAL_UINT32(64, (uint32_t)HK_SIZE);
 }
 
 /* ---- config ------------------------------------------------------------ */

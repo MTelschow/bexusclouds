@@ -708,10 +708,12 @@ try:
           and _gse._hk_labels["Driving"].text() == "DISPERSE",
           f'{_gse._hk_labels["Membrane"].text()} / '
           f'{_gse._hk_labels["Driving"].text()}')
-    # The same bit as a light beside the Drive/Stop buttons: green and
-    # "lifted" while the plunger is off the switch.
-    check("flight: the switch light shows the lifted plunger",
-          _gse.lbl_switch.text() == "switch lifted - solenoid actuated, cycling"
+    # The same bits as a light beside the Drive/Stop buttons, and there the
+    # colour is a verdict: green because the drive is on and the switch is
+    # cycling with it, which is the agreement the light exists to show.
+    check("flight: the switch light is green when the plunger follows the drive",
+          _gse.lbl_switch.text()
+          == "driving 70 % - plunger cycling, switch pressed"
           and _style.GREEN in _gse.dot_switch.styleSheet(),
           f"{_gse.lbl_switch.text()} / {_gse.dot_switch.styleSheet()}")
     # A build that cannot read GP30 says so: grey, and a reason, never a
@@ -730,6 +732,62 @@ try:
           _gse.lbl_switch.text() == "switch: no reading (MCU build without GP30)"
           and _style.GRAY in _gse.dot_switch.styleSheet(),
           f"{_gse.lbl_switch.text()} / {_gse.dot_switch.styleSheet()}")
+    # A drive that is on and a plunger that is not moving: the fault the
+    # switch exists to show, and the one case that is red. The panel judges
+    # against the rate it last had ACKed - the Drive button above left it at
+    # 0.5 Hz, too slow to judge - so put it back to the MCU's default first.
+    from clouds_ui.flight import MEMBRANE_HZ_DEFAULT as _MHZ_DEF
+    _gse._membrane_hz = _MHZ_DEF
+    _tx.sendto(_Frame(type=_Pkt.HK,
+                      payload=_hk.Housekeeping(state=_hk.SeqState.STANDBY,
+                                               membrane_duty=70).pack(),
+                      seq=2).stamp().encode(), ("127.0.0.1", _rx.port))
+    for _ in range(60):
+        app.processEvents()
+        QtCore.QThread.msleep(5)
+    _gse.refresh()
+    app.processEvents()
+    check("flight: the switch light is red when the drive moves nothing",
+          _gse.lbl_switch.text()
+          == "driving 70 % - plunger NOT cycling, switch stuck released"
+          and _style.RED in _gse.dot_switch.styleSheet(),
+          f"{_gse.lbl_switch.text()} / {_gse.dot_switch.styleSheet()}")
+    # Drive off: there is nothing for the switch to agree with, so the light
+    # reports the position and stays grey - a resting solenoid is not a fault.
+    _tx.sendto(_Frame(type=_Pkt.HK,
+                      payload=_hk.Housekeeping(state=_hk.SeqState.STANDBY,
+                                               membrane_duty=0).pack(),
+                      seq=3).stamp().encode(), ("127.0.0.1", _rx.port))
+    for _ in range(60):
+        app.processEvents()
+        QtCore.QThread.msleep(5)
+    _gse.refresh()
+    app.processEvents()
+    check("flight: the switch light is grey with the solenoid off",
+          _gse.lbl_switch.text() == "solenoid off - switch released"
+          and _style.GRAY in _gse.dot_switch.styleSheet(),
+          f"{_gse.lbl_switch.text()} / {_gse.dot_switch.styleSheet()}")
+    # A drive slower than the 1 Hz sample cannot be judged from one packet:
+    # grey with the reason, not a red that would blame the sampling on the
+    # solenoid. 0.2 Hz: the plunger holds each level for 2.5 s.
+    _gse._membrane_hz = 0.2
+    _gse.refresh()
+    _tx.sendto(_Frame(type=_Pkt.HK,
+                      payload=_hk.Housekeeping(state=_hk.SeqState.STANDBY,
+                                               membrane_duty=50).pack(),
+                      seq=4).stamp().encode(), ("127.0.0.1", _rx.port))
+    for _ in range(60):
+        app.processEvents()
+        QtCore.QThread.msleep(5)
+    _gse.refresh()
+    app.processEvents()
+    check("flight: a drive too slow to sample is grey, not red",
+          _gse.lbl_switch.text()
+          == ("driving 50 % at 0.2 Hz - too slow to judge from 1 Hz HK, "
+              "switch released")
+          and _style.GRAY in _gse.dot_switch.styleSheet(),
+          f"{_gse.lbl_switch.text()} / {_gse.dot_switch.styleSheet()}")
+    _gse._membrane_hz = _MHZ_DEF
     _tx.close()
 
     # -- Ethernet traffic indicator: the two packets above are on the wire,
@@ -871,13 +929,23 @@ try:
                   for n in ("Accel", "Gyro")),
           str(_texts))
     # A part that is not part of the experiment gets no row at all - the
-    # Keller 23SY pair, and the STLM20 pair that was never populated. A row
-    # that can only ever say "not populated" sends an operator looking for a
-    # part to fit; HKE_NO_TEMP in the Errors row is the honest declaration.
+    # STLM20 pair that was never populated. A row that can only ever say
+    # "not populated" sends an operator looking for a part to fit;
+    # HKE_NO_TEMP in the Errors row is the honest declaration.
     check("flight: rows for parts that are off the design are gone",
-          not any(n.startswith("Chamber") or n.startswith("T1")
+          not any(n.startswith("T1") or n.startswith("T2")
                   for n, _p, _f, _fg in _fl.SENSOR_FIELDS),
           str([n for n, _p, _f, _fg in _fl.SENSOR_FIELDS]))
+    # The Chamber rows ARE back, and they are not the Keller 23SY rows
+    # returning: they come from a second BME280 on SPI_1, a part that
+    # answers, so the rule above is not violated by them. The part column
+    # has to say which bus, or two identical BME280s are indistinguishable
+    # on screen when one of them fails.
+    _chm = {n: _p for n, _p, _f, _fg in _fl.SENSOR_FIELDS
+            if n.startswith("Chamber")}
+    check("flight: the chamber BME280 has its three rows",
+          set(_chm) == {"Chamber p", "Chamber T", "Chamber RH"}
+          and all("SPI" in v for v in _chm.values()), str(_chm))
     check("flight: HKE_NO_TEMP is still declared in the Errors row",
           "NO_TEMP" in _unsourced.error_text, _unsourced.error_text)
     check("flight: the BME280 readings are shown, being real",
@@ -886,6 +954,39 @@ try:
           and _texts["Ambient RH"] == "29.9 %",
           f'{_texts["Ambient T"]} / {_texts["Ambient p"]} / '
           f'{_texts["Ambient RH"]}')
+
+    # The chamber part is on its own bus with its own flag, so it must be
+    # possible for exactly one of the two BME280s to go unsourced. Ambient
+    # keeps its numbers while the chamber rows say so, and the other way
+    # round - a shared flag would have made a chamber part that was never
+    # fitted look like the ambient sensor failing, which is the one sensor
+    # fault that matters in flight.
+    _chm_dead = _hk.Housekeeping(
+        p_amb_pa=99248, bme_temp_cc=3422, rh1_cpct=2993,
+        chm_temp_cc=2450, chm_rh_cpct=3812, chm_p_pa=98765,
+        error_flags=_hk.HkErrors.BME280_CHM_FAIL)
+    _gse._refresh_sensors(_chm_dead)
+    check("flight: a dead chamber part shows no number and spares ambient",
+          not any(c.isdigit()
+                  for c in _gse._sensor_labels["Chamber p"].text())
+          and _gse._sensor_labels["Ambient T"].text() == "34.2 C",
+          f'{_gse._sensor_labels["Chamber p"].text()} / '
+          f'{_gse._sensor_labels["Ambient T"].text()}')
+
+    _amb_dead = _hk.Housekeeping(
+        chm_temp_cc=2450, chm_rh_cpct=3812, chm_p_pa=98765,
+        error_flags=_hk.HkErrors.BME280_FAIL)
+    _gse._refresh_sensors(_amb_dead)
+    check("flight: a live chamber part is read while ambient is dead",
+          _gse._sensor_labels["Chamber T"].text() == "24.5 C"
+          and _gse._sensor_labels["Chamber p"].text() == "987.6 hPa"
+          and _gse._sensor_labels["Chamber RH"].text() == "38.1 %"
+          and not any(c.isdigit()
+                      for c in _gse._sensor_labels["Ambient T"].text()),
+          f'{_gse._sensor_labels["Chamber T"].text()} / '
+          f'{_gse._sensor_labels["Chamber p"].text()} / '
+          f'{_gse._sensor_labels["Chamber RH"].text()} / '
+          f'{_gse._sensor_labels["Ambient T"].text()}')
 
     # ...and a held ambient pressure is real data, so it is shown - labelled.
     _stale = _hk.Housekeeping(p_amb_pa=99248,
@@ -898,6 +999,7 @@ try:
 
     # With nothing wrong, every row is a number.
     _ok = _hk.Housekeeping(p_amb_pa=99248, bme_temp_cc=2140,
+                           chm_p_pa=98765, chm_temp_cc=2450, chm_rh_cpct=3812,
                            rh1_cpct=3050, accel_mg=(1, -2, 981),
                            gyro_ddps=(0, 1, -1),
                            rail_mv=(24062, _hk.RAIL_MV_INVALID, 5095, 3297),
@@ -1186,9 +1288,10 @@ try:
     check("restart: housekeeping flows through the new receiver",
           _gse._hk_labels["Membrane"].text() == "35 %  pushed, not cycling",
           _gse._hk_labels["Membrane"].text())
-    check("restart: the switch light shows the resting plunger",
-          _gse.lbl_switch.text() == "switch pressed - plunger resting"
-          and _style.NAVY in _gse.dot_switch.styleSheet(),
+    check("restart: the switch light judges the new packet",
+          _gse.lbl_switch.text()
+          == "driving 35 % - plunger NOT cycling, switch stuck released"
+          and _style.RED in _gse.dot_switch.styleSheet(),
           f"{_gse.lbl_switch.text()} / {_gse.dot_switch.styleSheet()}")
     _tx2.close()
     check("restart: the button is usable again", _win.btn_restart.isEnabled())

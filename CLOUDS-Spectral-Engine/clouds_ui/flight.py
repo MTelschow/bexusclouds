@@ -93,7 +93,7 @@ def _rail_row(i: int):
     return fmt
 
 
-#: One row per sensor reading in the 56-byte housekeeping packet: the label, the
+#: One row per sensor reading in the 64-byte housekeeping packet: the label, the
 #: part that produces it, how to render it, and the `HkErrors` bit that means
 #: **this number has no sensor behind it**.
 #:
@@ -120,6 +120,24 @@ SENSOR_FIELDS = [
      lambda h: f"{h.bme_temp_cc / 100:.1f} C", HkErrors.BME280_FAIL),
     ("Ambient RH", "BME280",
      lambda h: f"{h.rh1_cpct / 100:.1f} %", HkErrors.BME280_FAIL),
+    # The chamber BME280, a second part on SPI_1 behind the chip select on
+    # GP9. Same three readings, same units, deliberately the same wording -
+    # "Ambient"/"Chamber" is the only difference between the two triples, so
+    # an operator comparing them is comparing like with like. The part column
+    # names the bus as well as the part, because that is the thing that
+    # differs: two BME280s that fail for unrelated reasons are only
+    # distinguishable on screen if the bus is on screen.
+    #
+    # No `(held, stale)` on chamber pressure: the MCU zeroes these on a
+    # failed read rather than holding them (holding exists to stop a 0 Pa
+    # tripping launch detection, and nothing reads the chamber), so the flag
+    # column is the whole story here.
+    ("Chamber p", "BME280 SPI_1",
+     lambda h: f"{h.chm_p_pa / 100:.1f} hPa", HkErrors.BME280_CHM_FAIL),
+    ("Chamber T", "BME280 SPI_1",
+     lambda h: f"{h.chm_temp_cc / 100:.1f} C", HkErrors.BME280_CHM_FAIL),
+    ("Chamber RH", "BME280 SPI_1",
+     lambda h: f"{h.chm_rh_cpct / 100:.1f} %", HkErrors.BME280_CHM_FAIL),
     ("Accel", "BNO055",
      lambda h: "  ".join(f"{v:+d}" for v in h.accel_mg) + " mg",
      HkErrors.IMU_FAIL),
@@ -151,12 +169,43 @@ SENSOR_FIELDS = [
 #: operator reading "failed" would go looking for a fault to clear.
 UNSOURCED_TEXT = {
     HkErrors.BME280_FAIL: "no read",
+    # "no read" and not "not fitted": this part IS meant to be there, and the
+    # likeliest cause on a board where it has never run is the chip select,
+    # not the sensor (hw/board.h PIN_BME_CHAMBER_CS).
+    HkErrors.BME280_CHM_FAIL: "no read",
     HkErrors.IMU_FAIL: "no data",
 }
 
 #: Older than this and the state banner goes red - the numbers on screen are
 #: no longer telling you about now.
 STALE_HK_S = 5.0
+
+#: The MCU's PARAM_MEMBRANE_MHZ default (core/config.c), in hertz. The panel
+#: judges the position switch against the drive it believes is running, and
+#: until it has sent a frequency of its own, that is the MCU's default - a
+#: release drives the membrane at it with no panel involved.
+MEMBRANE_HZ_DEFAULT = 2.0
+
+#: Housekeeping arrives once a second, so an edge is only *expected* inside a
+#: packet if the drive's longer phase is shorter than this. Below that rate a
+#: clear MEMBRANE_CYCLING bit is the sampling, not a stuck plunger.
+HK_PERIOD_MS = 1000.0
+
+
+def membrane_longest_phase_ms(hz: float, duty_pct: int) -> float:
+    """How long the membrane drive holds one level, in ms - the same
+    arithmetic as `sqwave_start()` in flight/mcu/src/core/sqwave.c, clamps
+    included, so the panel expects edges exactly when the MCU produces them.
+
+    It is the *longer* of the two phases: a 95 % duty at 2 Hz rises every
+    500 ms but falls for only 25 ms, and it is the long phase that decides
+    whether a 1 Hz sample can miss every edge.
+    """
+    mhz = max(1.0, hz * 1000.0)
+    period = max(2.0, 1000000.0 / mhz)
+    on = period * duty_pct / 100.0
+    on = min(max(on, 1.0), period - 1.0)
+    return max(on, period - on)
 
 
 class FlightPanel(QtCore.QObject):
@@ -174,6 +223,11 @@ class FlightPanel(QtCore.QObject):
         self._rx = receiver
         self._cmd = commander
         self._session = session
+        # The drive frequency the MCU is believed to be running: the last one
+        # it ACKed for this panel, else its own default. It is not in
+        # housekeeping, and the switch light needs it to know whether a
+        # missing edge is a fault or just the 1 Hz sample.
+        self._membrane_hz = MEMBRANE_HZ_DEFAULT
 
         # Order is the operator's working order, not the data's: the sections
         # they steer the experiment with come first, and the housekeeping
@@ -227,7 +281,8 @@ class FlightPanel(QtCore.QObject):
         self.lbl_downlink.setText("-")
         self.lbl_cmd_status.setText("-")
         self.lbl_act_status.setText("-")
-        self._set_switch(None, None, "no telemetry")
+        self._membrane_hz = MEMBRANE_HZ_DEFAULT
+        self._set_switch(None, None, 0, "no telemetry")
         self.event_list.clear()
 
     # -- layout --------------------------------------------------------------
@@ -424,12 +479,17 @@ class FlightPanel(QtCore.QObject):
 
         # The GP30 position switch as a light. The Membrane HK row already
         # says `pulled` / `pushed`, but that is one word in a column of text;
-        # an operator exercising the solenoid on the bench wants to see the
-        # plunger state change at a glance, next to the buttons that drive
-        # it. Green = lifted (solenoid actuated), navy = pressed (plunger
-        # resting on the button), grey = no reading - no HK yet, stale HK,
-        # or an MCU build that cannot reach GP30 - never a confident colour
-        # for a value the hardware did not produce.
+        # an operator exercising the solenoid on the bench wants to see at a
+        # glance whether the plunger is doing what the drive asks.
+        #
+        # So the colour is a verdict, not a position: GREEN = the switch
+        # agrees with the drive that is running, RED = it does not (a drive
+        # is on and the plunger is not moving - the fault this switch exists
+        # to show), GREY = no verdict is available. Grey covers the drive
+        # being off, no HK yet, stale HK, an MCU build that cannot reach
+        # GP30, and a drive too slow for a 1 Hz sample to prove anything -
+        # never a confident colour for a judgement the telemetry does not
+        # support. The text always says which of those it is.
         sw = QtWidgets.QHBoxLayout()
         sw.setContentsMargins(0, 2, 0, 0)
         sw.setSpacing(6)
@@ -439,13 +499,16 @@ class FlightPanel(QtCore.QObject):
         sw.addWidget(self.dot_switch)
         self.lbl_switch = QtWidgets.QLabel("-")
         self.lbl_switch.setToolTip(
-            "Membrane position switch on GP30: pressed by the plunger while "
-            "the solenoid rests, lifted when it actuates (HK "
-            "MEMBRANE_PULLED). `cycling` = it changed state within the last "
-            "second.")
+            "Membrane position switch on GP30: pressed by the plunger when "
+            "the solenoid actuates, released while it rests (HK "
+            "MEMBRANE_PULLED, set = pressed = pulled; MEMBRANE_CYCLING = it "
+            "changed state within the last second).\n\n"
+            "Green: the switch matches the drive that is running. Red: it "
+            "does not. Grey: no verdict - drive off, no or stale HK, a build "
+            "without GP30, or a drive too slow for a 1 Hz sample to judge.")
         sw.addWidget(self.lbl_switch, 1)
         sec.add(sw)
-        self._set_switch(None, None, "no telemetry")
+        self._set_switch(None, None, 0, "no telemetry")
 
         sec.add(group_label("CaCO₃ dispersion motor"))
         # Speed is a slider, not a spin box: it is a continuous mechanical
@@ -579,6 +642,10 @@ class FlightPanel(QtCore.QObject):
                 self.lbl_act_status.setText(
                     f"MEMBRANE_MHZ -> {r.name}, not driving")
                 return
+            # Only once the MCU has ACKed it: the switch light judges a
+            # missing edge against this rate, so it must be the rate the MCU
+            # took, not the one the spin box shows.
+            self._membrane_hz = self.sp_hz.value()
             r = self._cmd.membrane(self.sp_duty.value())
             self.lbl_act_status.setText(
                 f"membrane {self.sp_duty.value()} % @ {self.sp_hz.value():g} Hz "
@@ -674,18 +741,49 @@ class FlightPanel(QtCore.QObject):
     # -- refresh -------------------------------------------------------------
 
     def _set_switch(self, pulled: bool | None, cycling: bool | None,
-                    reason: str = "") -> None:
-        """Set the position-switch light. `pulled` None means there is no
-        reading, and `reason` says why; the light goes grey and the text
-        names the reason instead of a position."""
+                    duty: int = 0, reason: str = "") -> None:
+        """Set the position-switch light: does the switch agree with the
+        drive that is running?
+
+        `pulled` None means there is no reading at all and `reason` says why.
+        `duty` is the commanded membrane duty from the same HK packet - with
+        the drive off there is nothing to agree with, so the light is grey
+        whatever the switch says, and the text reports the switch plainly.
+
+        With the drive on, MEMBRANE_CYCLING is the verdict, not
+        MEMBRANE_PULLED: HK is sampled at 1 Hz against a drive that is
+        normally 2 Hz, so the position alone lands at an arbitrary phase and
+        proves nothing either way. Cycling means the plunger is following the
+        drive - green. Not cycling, while an edge was due inside the packet's
+        second, is the stuck plunger - red. If the drive is slower than that,
+        a clear bit is the sampling rather than a fault, and the light stays
+        grey and says so.
+        """
+        colour = style.GRAY
         if pulled is None:
-            colour, text = style.GRAY, f"switch: {reason or 'no reading'}"
-        elif pulled:
-            colour, text = style.GREEN, "switch lifted - solenoid actuated"
+            text = f"switch: {reason or 'no reading'}"
         else:
-            colour, text = style.NAVY, "switch pressed - plunger resting"
-        if pulled is not None and cycling:
-            text += ", cycling"
+            where = "pressed" if pulled else "released"
+            if not duty:
+                # No drive: the switch is reported, not judged. It should sit
+                # released; pressed with nothing driving is worth seeing, so
+                # it is spelled out rather than coloured.
+                text = (f"solenoid off - switch {where}"
+                        + (" (plunger still out)" if pulled else ""))
+                if cycling:
+                    text += ", cycling"
+            elif cycling:
+                colour = style.GREEN
+                text = f"driving {duty} % - plunger cycling, switch {where}"
+            elif membrane_longest_phase_ms(self._membrane_hz,
+                                           duty) < HK_PERIOD_MS:
+                colour = style.RED
+                text = (f"driving {duty} % - plunger NOT cycling, "
+                        f"switch stuck {where}")
+            else:
+                text = (f"driving {duty} % at {self._membrane_hz:g} Hz - "
+                        "too slow to judge from 1 Hz HK, "
+                        f"switch {where}")
         self.dot_switch.setStyleSheet(f"color:{colour}; font-size:15px;")
         self.lbl_switch.setText(text)
         self.lbl_switch.setStyleSheet(
@@ -728,12 +826,14 @@ class FlightPanel(QtCore.QObject):
                 self._hk_labels[name].setText(fmt(h))
             self._refresh_sensors(h)
             if age is not None and age > STALE_HK_S:
-                self._set_switch(None, None, "stale telemetry")
+                self._set_switch(None, None, h.membrane_duty,
+                                 "stale telemetry")
             elif h.membrane_pulled is None:
-                self._set_switch(None, None,
+                self._set_switch(None, None, h.membrane_duty,
                                  "no reading (MCU build without GP30)")
             else:
-                self._set_switch(h.membrane_pulled, h.membrane_cycling)
+                self._set_switch(h.membrane_pulled, h.membrane_cycling,
+                                 h.membrane_duty)
 
         if self._cmd is None:
             link = "no command link (listen-only)"

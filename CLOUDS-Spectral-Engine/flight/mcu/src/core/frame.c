@@ -101,7 +101,10 @@ void hk_pack(const hk_t *hk, uint8_t out[HK_SIZE])
         put_u16(p, (uint16_t)hk->shunt_raw[i]), p += 2;
     put_u32(p, hk->uptime_s), p += 4;
     put_u32(p, hk->mission_t_s), p += 4;
-    put_u16(p, hk->hb_sense_raw);
+    put_u16(p, hk->hb_sense_raw), p += 2;
+    put_u16(p, (uint16_t)hk->chm_temp_cc), p += 2;
+    put_u16(p, hk->chm_rh_cpct), p += 2;
+    put_u32(p, hk->chm_p_pa);
 }
 
 bool cmd_unpack(const frame_view_t *view, uint8_t *cmd, uint8_t *key,

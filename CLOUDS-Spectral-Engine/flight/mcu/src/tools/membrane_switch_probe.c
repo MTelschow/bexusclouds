@@ -24,8 +24,11 @@
  *   5. drive off, then a live watch: GP30 printed on every change, forever.
  *      Press the button by hand here.
  *
- * Switch sense (from the mechanics, 2026-09-17): pressed by the resting
- * plunger = LOW; lifted when the solenoid actuates = HIGH.
+ * Switch sense (from the mechanics, 2026-09-17): released while the solenoid
+ * rests = HIGH; pressed by the plunger when it actuates = LOW. hw.c inverts
+ * the pin accordingly, so LOW = HKV_MEMBRANE_PULLED. The 2026-09-17 run of
+ * this tool measured the opposite (GP30 followed GP26 one for one, LOW at
+ * rest) - re-run it against the fitted plunger and settle which holds.
  */
 #include <stdbool.h>
 #include <stdio.h>

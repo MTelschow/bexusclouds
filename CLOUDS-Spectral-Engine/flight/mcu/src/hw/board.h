@@ -51,9 +51,9 @@
  * is not there.
  *
  * GP30 is not named on that schematic page. It carries the membrane position
- * switch added on 2026-09-17: a push button under the push-pull solenoid's
- * plunger, wired to ground, pressed (closed) while the solenoid rests and
- * lifted (open) when it actuates. See PIN_MEMBRANE_SENSE.
+ * switch added on 2026-09-17: a push button on the push-pull solenoid's
+ * plunger, wired to ground, released (open) while the solenoid rests and
+ * pressed (closed) when it actuates. See PIN_MEMBRANE_SENSE.
  * --------------------------------------------------------------------------- */
 #ifndef CLOUDS_BOARD_H
 #define CLOUDS_BOARD_H
@@ -105,11 +105,17 @@
  * raises HKE_NO_MEMBRANE_SENSE instead of touching GPIO registers that the
  * RP2350A does not have.
  *
- * MEASURED 2026-09-17 on the carrier: LOW at rest, as the mechanics say
- * (pu=0 pd=0, tools/membrane_switch_probe.c). It stayed LOW with GP26 held
- * high and cycling at 2 Hz, i.e. the GP26 drive did not lift the plunger.
- * The read path is verified to the ground display; which output actually
- * moves this solenoid is the open question. DEVLOG 2026-09-17. */
+ * The pin is read INVERTED in hw_membrane_pulled(): the button is pressed
+ * (LOW) when the plunger is out, so LOW = pulled/actuated and HIGH =
+ * pushed/resting.
+ *
+ * MEASURED 2026-09-17 on the carrier (pu=0 pd=0,
+ * tools/membrane_switch_probe.c): LOW with no drive, HIGH for as long as
+ * GP26 was held high, ~40 ms release lag on the falling edge - i.e. the pin
+ * followed the drive one for one, which is the OPPOSITE sense to the
+ * inversion above. The inversion is the mechanical assignment currently
+ * asked for; re-run the probe against the fitted plunger before trusting
+ * either. DEVLOG 2026-09-17. */
 #define PIN_MEMBRANE_SENSE 30
 
 /* CaCO3 dispersion motor current sense: the ACT_HB_SENS net on GP46, read on
@@ -174,15 +180,64 @@
  * once the valve pins have moved to real actuator channels, or an spi_init()
  * will drive whatever the valve code thinks it owns. */
 
+/* SPI_1, the second bus on the carrier: GP8 MISO, GP10 SCK, GP11 MOSI, with
+ * four chip selects (SPI_1_CS1 GP9, CS2 GP12, CS3 GP13, CS4 GP47).
+ *
+ * This bus is brought up where SPI_0 is not, and the difference is the whole
+ * reason it is safe to: NOTHING ELSE IN THIS FILE CLAIMS GP8/GP10/GP11. The
+ * SD bus above is blocked because its pins are also the equalisation valve
+ * pins, so an spi_init() there would drive an actuator line; here there is
+ * no such collision, and the only pin driven is a chip select whose net the
+ * schematic names as one.
+ *
+ * GP12/GP13 are on this bus and not a second I2C, which is what the old
+ * pre-schematic map called them. Nothing has ever been probed on GP12/GP13
+ * as I2C, and nothing should be.
+ *
+ * 1 MHz: well inside the BME280's 10 MHz SPI limit, slow enough that a long
+ * chamber harness is not the thing under test during bring-up, and fast
+ * enough that the 26-byte calibration burst costs ~210 us. Raise it once a
+ * fitted harness has been shown to work at all. */
+#define PIN_SPI1_MISO 8
+#define PIN_SPI1_SCK 10
+#define PIN_SPI1_MOSI 11
+#define SPI1_BAUD_HZ (1000 * 1000)
+
+/* Chamber BME280 chip select: SPI_1_CS1 on GP9.
+ *
+ * A SECOND BME280, in the test chamber, on SPI - the ambient part on i2c0
+ * at 0x76 is unchanged and unaffected. Two identical parts on two different
+ * buses is deliberate: the I2C part has one alternate address (0x77) and it
+ * is the chamber half that has to move, so putting it on its own bus keeps
+ * an address strap out of the flight configuration entirely.
+ *
+ * The part auto-selects SPI when CSB is pulled low - there is no mode
+ * register and no strap to set - so this pin is driven as plain GPIO,
+ * idling HIGH, rather than handed to the SPI peripheral's hardware CSn.
+ * spi1's own CSn pad happens to be this pin, but hardware CSn on the RP2350
+ * deasserts between bytes, which breaks the BME280's address-then-burst
+ * transaction; a manual GPIO is not an accident here.
+ *
+ * NOT YET RUN AGAINST A FITTED PART. The CS assignment is as specified, not
+ * as measured. If the chamber part reads a chip id that is not 0x60,
+ * bme280_init() fails, hw_read_sensors() raises HKE_BME280_CHM_FAIL and the
+ * chamber fields stay zero - the wrong-CS case reports itself rather than
+ * downlinking a number from nothing. Try the other three chip selects
+ * (GP12, GP13, GP47) before suspecting the part. */
+#define PIN_BME_CHAMBER_CS 9
+
 /* I2C0 as measured on the carrier and since confirmed by the schematic
  * (SDA_0 / SCL_0): BME280 0x76 (the only source of ambient T/RH/p), INA226 x3
  * on 0x40/0x44/0x45 watching the 24 V, 5 V and 3.3 V rails. A BNO055 IMU
  * answered at 0x28 on 2026-08-31 and does NOT answer at all on 2026-09-11
  * (0/50 ACK at 0x28 and 0x29 while the other four parts answered in the same
  * sweep), so hw/bno055.c currently drives nothing and reports HKE_IMU_FAIL.
- * GP12/GP13 are SPI_1 chip selects, not a second I2C. No chamber pressure
- * sensor and no second RH channel exist on this bus. The STLM20 pair the old
- * map put on the ADC is not populated - see the note below.
+ * GP12/GP13 are SPI_1 chip selects, not a second I2C. Nothing on THIS bus
+ * measures the chamber: the chamber BME280 is a second, separate part on
+ * SPI_1 (PIN_BME_CHAMBER_CS above), so 0x76 here stays the ambient channel
+ * and nothing about it changes. There is still no second RH channel on i2c0.
+ * The STLM20 pair the old map put on the ADC is not populated - see the
+ * note below.
  * Identities and method: DEVLOG 2026-08-31. */
 #define PIN_I2C_SDA 28
 #define PIN_I2C_SCL 29

@@ -48,10 +48,14 @@ target_link_libraries(clouds_fsw_mcu
     pico_stdlib
     hardware_adc
     hardware_i2c
+    hardware_spi
     hardware_pwm
     hardware_uart
     hardware_watchdog
-    # TODO (M-11): add hardware_spi + FatFs once the SD stack lands
+    # hardware_spi is linked for the chamber BME280 on SPI_1, NOT for the SD
+    # cards: M-11 still needs FatFs, and SPI_0's pins are still the
+    # equalisation valve pins (src/hw/board.h). Adding FatFs here does not
+    # unblock it.
 )
 
 # stdio on USB, and UART stdio OFF - deliberately, both of them.
@@ -106,6 +110,7 @@ if(CLOUDS_BUILD_TOOLS)
         pico_stdlib
         hardware_adc
         hardware_i2c
+        hardware_spi
         hardware_pwm
         hardware_uart
         hardware_watchdog
@@ -140,6 +145,7 @@ if(CLOUDS_BUILD_TOOLS)
         pico_stdlib
         hardware_adc
         hardware_i2c
+        hardware_spi
         hardware_pwm
         hardware_uart
         hardware_watchdog

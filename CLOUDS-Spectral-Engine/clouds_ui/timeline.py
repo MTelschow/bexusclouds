@@ -126,7 +126,7 @@ def _vec(attr: str, axis: int, scale: float = 1.0):
 _RAIL_C = ("#01386a", "#8a97a3", "#1D9E75", "#E8821E")
 _AXIS_C = ("#b0413e", "#1D9E75", "#4d8fd1")
 
-#: Everything the 56-byte housekeeping packet carries that varies over time.
+#: Everything the 64-byte housekeeping packet carries that varies over time.
 #: `state`, `fired` and the link flags are deliberately absent - they are
 #: enumerations, and a step plot of "SEAL = 3" invites reading the number.
 SERIES: tuple[Series, ...] = (
@@ -136,6 +136,17 @@ SERIES: tuple[Series, ...] = (
            lambda h: h.bme_temp_cc / 100.0, HkErrors.BME280_FAIL),
     Series("rh1", "Ambient RH", "%", "BME280", "#4d8fd1",
            lambda h: h.rh1_cpct / 100.0, HkErrors.BME280_FAIL),
+    # The chamber part, on SPI_1. Its own group rather than three more rows
+    # under "BME280": the interesting trace is chamber against ambient, and
+    # two groups that can be ticked as wholes is how an operator gets that
+    # pair onto the plot. Same three hues as the ambient triple, so
+    # `Chamber p` and `Ambient p` read as the same quantity from two places.
+    Series("chm_p", "Chamber p", "hPa", "BME280 chamber", "#01386a",
+           lambda h: h.chm_p_pa / 100.0, HkErrors.BME280_CHM_FAIL),
+    Series("chm_t", "Chamber T", "C", "BME280 chamber", "#b0413e",
+           lambda h: h.chm_temp_cc / 100.0, HkErrors.BME280_CHM_FAIL),
+    Series("chm_rh", "Chamber RH", "%", "BME280 chamber", "#4d8fd1",
+           lambda h: h.chm_rh_cpct / 100.0, HkErrors.BME280_CHM_FAIL),
 ) + tuple(
     Series(f"acc_{ax}", f"Accel {ax.upper()}", "mg", "BNO055", _AXIS_C[i],
            _vec("accel_mg", i), HkErrors.IMU_FAIL)

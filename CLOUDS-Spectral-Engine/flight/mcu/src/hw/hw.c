@@ -14,6 +14,7 @@
 #include "hardware/gpio.h"
 #include "hardware/i2c.h"
 #include "hardware/pwm.h"
+#include "hardware/spi.h"
 #include "hardware/watchdog.h"
 #include "pico/stdlib.h"
 
@@ -211,11 +212,12 @@ uint16_t hw_hb_sense_raw(void)
 bool hw_membrane_pulled(void)
 {
 #if HAVE_MEMBRANE_SENSE
-    /* Internal pull-up, switch to ground. The button sits under the plunger
-     * and is PRESSED (closed, LOW) while the solenoid rests; actuating the
-     * solenoid lifts the plunger off it (open, HIGH). So HIGH = actuated.
-     * Measured 2026-09-17: LOW at rest, as described. */
-    return gpio_get(PIN_MEMBRANE_SENSE);
+    /* Internal pull-up, switch to ground, so the pin is LOW while the button
+     * is pressed and HIGH while it is released. The button sits where the
+     * plunger reaches it when the solenoid is ENERGIZED: pressed (LOW) =
+     * actuated (pulled), released (HIGH) = resting (pushed). Hence the
+     * inversion - the bit follows the plunger, not the pin level. */
+    return !gpio_get(PIN_MEMBRANE_SENSE);
 #else
     return false;
 #endif
@@ -505,9 +507,17 @@ const seq_ops_t hw_seq_ops = {
  *                              out and checks the IDs when they mean
  *                              something - and still reports HKE_IMU_FAIL,
  *                              with zeroed vectors, if they do not come up.
- * There is no chamber pressure sensor and no second humidity channel: the
- * Keller 23SY pair is off the design, and the HK fields they were to fill
- * went with them rather than being downlinked as zeros. */
+ * There is no second humidity channel on this bus: the Keller 23SY pair is
+ * off the design, and the HK fields they were to fill went with them rather
+ * than being downlinked as zeros.
+ *
+ * CHAMBER T/RH/p do NOT come from this bus. A second BME280 sits on SPI_1
+ * behind the chip select on GP9 (board.h PIN_BME_CHAMBER_CS) and fills
+ * hk_t.chm_*. It is instrumentation: nothing in core/ reads it, and in
+ * particular autonomy_step() still detects launch from p_amb_pa, the
+ * i2c0 part above. Two identical parts, two buses, two independent failure
+ * flags - HKE_BME280_FAIL for the ambient one, HKE_BME280_CHM_FAIL for the
+ * chamber one. */
 
 /* Why p_amb_pa is held rather than zeroed on a failed read: autonomy_step()
  * detects launch from a *drop* below p_ground - PARAM_LAUNCH_DP_PA. Reporting
@@ -548,7 +558,7 @@ void hw_read_sensors(hk_t *hk)
      * build", never 0, because 0 counts is what an idle solenoid reads. */
     hk->hb_sense_raw = hw_hb_sense_raw();
 
-    if (bme280_read(&bme_temp_cc, &rh_cpct, &p_pa)) {
+    if (bme280_read(&bme280_ambient, &bme_temp_cc, &rh_cpct, &p_pa)) {
         hk->bme_temp_cc = bme_temp_cc;
         hk->rh1_cpct = rh_cpct;
         hk->p_amb_pa = p_pa;
@@ -559,6 +569,23 @@ void hw_read_sensors(hk_t *hk)
         hk->rh1_cpct = 0;
         hk->p_amb_pa = last_p_amb_pa;
         hk->error_flags |= HKE_BME280_FAIL | HKE_P_AMB_STALE;
+    }
+
+    /* The chamber part, on SPI_1. Zeroed rather than held on a failed read,
+     * unlike p_amb_pa above: that field is held because a 0 Pa would look to
+     * autonomy_step() like a 100 kPa fall and trip launch detection, and
+     * nothing reads these. A held chamber pressure would just be an old
+     * number that looks current, which is the failure the flag exists to
+     * prevent. */
+    if (bme280_read(&bme280_chamber, &bme_temp_cc, &rh_cpct, &p_pa)) {
+        hk->chm_temp_cc = bme_temp_cc;
+        hk->chm_rh_cpct = rh_cpct;
+        hk->chm_p_pa = p_pa;
+    } else {
+        hk->chm_temp_cc = 0;
+        hk->chm_rh_cpct = 0;
+        hk->chm_p_pa = 0;
+        hk->error_flags |= HKE_BME280_CHM_FAIL;
     }
 
     /* The IMU is allowed to be late: bno055_read() returns false through the
@@ -661,8 +688,35 @@ void hw_init(void)
     gpio_pull_up(PIN_I2C_SCL);
     /* Failure is not fatal: hw_read_sensors() falls back and raises
      * HKE_BME280_FAIL, and the sequencer is required to survive it. */
-    (void)bme280_init();
+    (void)bme280_init(&bme280_ambient);
     (void)ina226_init();
+
+    /* SPI_1 for the chamber BME280. Safe to bring up where SPI_0 is not:
+     * GP8/GP10/GP11 are claimed by nothing else in board.h, whereas SPI_0's
+     * pins are also the equalisation valve pins, so an spi_init() there
+     * would drive an actuator line (M-11, board.h).
+     *
+     * Mode 0 (CPOL=0, CPHA=0), which the BME280 accepts alongside mode 3;
+     * the part picks SPI itself the moment CSB goes low, so there is no mode
+     * register to get wrong. The chip select is a plain GPIO idling HIGH and
+     * not spi1's hardware CSn: hardware CSn deasserts between bytes, and the
+     * BME280 reads that as the end of the transaction, so a multi-byte burst
+     * would return the first register over and over.
+     *
+     * CS is driven high BEFORE spi_init() touches the bus pins, so the part
+     * never sees a clock edge while selected by an undriven line.
+     *
+     * Failure is not fatal here either - and unlike the ambient part, this
+     * one is not in the sequencer's path at all. */
+    gpio_init(PIN_BME_CHAMBER_CS);
+    gpio_set_dir(PIN_BME_CHAMBER_CS, GPIO_OUT);
+    gpio_put(PIN_BME_CHAMBER_CS, 1);
+    spi_init(spi1, SPI1_BAUD_HZ);
+    spi_set_format(spi1, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
+    gpio_set_function(PIN_SPI1_MISO, GPIO_FUNC_SPI);
+    gpio_set_function(PIN_SPI1_SCK, GPIO_FUNC_SPI);
+    gpio_set_function(PIN_SPI1_MOSI, GPIO_FUNC_SPI);
+    (void)bme280_init(&bme280_chamber);
     /* Arms the IMU's bring-up without touching the bus: the BNO055 is still
      * inside its own 400 ms start-up (datasheet TSup) while this runs, so the
      * reset that starts its 650 ms boot is issued from the 1 Hz sweep once

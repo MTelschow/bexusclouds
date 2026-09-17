@@ -109,21 +109,29 @@ class TestFrame:
 
 
 class TestHousekeeping:
-    def test_size_is_56(self):
-        assert hk.SIZE == 56
+    def test_size_is_64(self):
+        assert hk.SIZE == 64
 
     def test_roundtrip(self):
         h = hk.Housekeeping(state=hk.SeqState.MEASURE_1, fired=0b01,
                             temp1_cc=-5512, p_amb_pa=5300,
                             accel_mg=(12, -34, 980),
                             rail_mv=(24012, hk.RAIL_MV_INVALID, 5003, 3298),
-                            mission_t_s=4210)
+                            mission_t_s=4210,
+                            chm_temp_cc=2450, chm_rh_cpct=3812,
+                            chm_p_pa=98_765)
         g = hk.Housekeeping.unpack(h.pack())
         assert g == h
         assert g.state_name == "MEASURE_1"
         row = g.to_row()
         assert row["accel_z_mg"] == 980 and row["state_name"] == "MEASURE_1"
         assert g.rail_mv == (24012, hk.RAIL_MV_INVALID, 5003, 3298)
+        # The chamber triple must survive the round trip distinct from the
+        # ambient one: both are BME280 readings in the same units, and a
+        # packing slip that crossed them would still decode to plausible
+        # numbers.
+        assert (g.chm_temp_cc, g.chm_rh_cpct, g.chm_p_pa) == (2450, 3812, 98_765)
+        assert g.p_amb_pa == 5300 and g.chm_p_pa == 98_765
 
     def test_link_flags_are_rendered_for_displays(self):
         """The whole link story is in `flags`, so it must be readable: an
@@ -238,15 +246,38 @@ class TestHousekeeping:
 
     def test_an_older_logs_retired_error_bits_stay_readable(self):
         """The surviving HKE_* bits kept their positions, and a bit with no
-        name (bit 3, the retired NO_RH2) renders as a mask rather than
-        vanishing, so a session logged before the change still decodes. Bit 2
-        was the retired NO_CHAMBER_P and has since been reused for the
-        membrane switch, so a pre-Keller-removal log now decodes that bit as
-        NO_MEMBRANE_SENSE - a known cost of reusing a slot, recorded here."""
-        h = hk.Housekeeping(error_flags=0b0000_1000 | hk.HkErrors.NO_TEMP)
-        assert h.error_text == "NO_TEMP 0x0008"
+        name still renders as a mask rather than vanishing, so a session
+        logged before a change still decodes.
+
+        Both of the Keller pair's bits have now been reused - bit 2 (the
+        retired NO_CHAMBER_P) by the membrane switch, bit 3 (NO_RH2) by the
+        chamber BME280 - so a pre-removal log decodes those two under their
+        new names. That is the cost of reusing a slot, and it is recorded
+        here rather than discovered while reading an old session: an old log
+        showing NO_CHAMBER_P + NO_RH2 now reads as
+        NO_MEMBRANE_SENSE + BME280_CHM_FAIL, which is wrong about the past
+        and right about every packet written since.
+        """
         old = hk.Housekeeping(error_flags=0b0000_1100)
-        assert old.error_text == "NO_MEMBRANE_SENSE 0x0008"
+        assert old.error_text == "NO_MEMBRANE_SENSE BME280_CHM_FAIL"
+        # Bit 7 is the free one now, and an unnamed bit must still survive as
+        # a mask - that is what keeps a log written by a NEWER MCU readable
+        # by this decoder.
+        assert not any(e == 1 << 7 for e in hk.HkErrors)
+        h = hk.Housekeeping(error_flags=0b1000_0000 | hk.HkErrors.NO_TEMP)
+        assert h.error_text == "NO_TEMP 0x0080"
+
+    def test_the_two_bme280s_fail_independently(self):
+        """Ambient and chamber are two parts on two buses, and only the
+        ambient one feeds the MCU's launch detection. A single flag would
+        make a chamber sensor that never got fitted look like the ambient
+        part failing, which is the one sensor fault that matters in flight.
+        """
+        chm = hk.Housekeeping(error_flags=hk.HkErrors.BME280_CHM_FAIL)
+        assert chm.error_text == "BME280_CHM_FAIL"
+        amb = hk.Housekeeping(error_flags=hk.HkErrors.BME280_FAIL)
+        assert amb.error_text == "BME280_FAIL"
+        assert hk.HkErrors.BME280_FAIL != hk.HkErrors.BME280_CHM_FAIL
 
     def test_motor_sense_rides_the_wire_raw_and_scales_on_the_ground(self):
         """The ACT_HB_SENS ADC counts go down raw; the DRV8251A IPROPI chain

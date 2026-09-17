@@ -417,10 +417,10 @@ class TestMembraneDrive:
 
 
 class TestMembraneSense:
-    """The membrane position switch on GP30: a push button under the
-    solenoid plunger, wired to ground, read with the internal pull-up. The
-    resting plunger presses it (LOW); actuating the solenoid lifts it (HIGH),
-    so HIGH means actuated (pulled).
+    """The membrane position switch on GP30: a push button on the solenoid
+    plunger, wired to ground, read with the internal pull-up. The plunger
+    presses it when the solenoid actuates (LOW) and releases it at rest
+    (HIGH), so LOW means actuated (pulled) and the pin is read inverted.
 
     GP30 exists only on the RP2350B carrier. The firmware was built for pico2
     (RP2350A, GP0..GP29) until this pin arrived, so the build now defaults to
@@ -444,16 +444,16 @@ class TestMembraneSense:
             "the switch is to ground: without the pull-up the open state floats")
         assert not re.search(r"gpio_pull_down\s*\(\s*PIN_MEMBRANE_SENSE", hw)
 
-    def test_lifted_switch_means_pulled(self):
-        """The button is pressed by the resting plunger (LOW) and lifted when
-        the solenoid actuates (HIGH) - so HIGH is the actuated state. This was
-        decoded the other way round on the first pass; the mechanics say
-        otherwise, and the bench read LOW at rest."""
+    def test_pressed_switch_means_pulled(self):
+        """The plunger presses the button when the solenoid actuates, so the
+        pull-up's LOW is the actuated state and the pin is inverted into the
+        bit. The decode has been both ways round: the pin level must never be
+        returned raw, or a resting solenoid downlinks as pulled."""
         hw = _read("src", "hw", "hw.c")
         body = hw.split("bool hw_membrane_pulled", 1)[1].split("\n}", 1)[0]
-        assert re.search(r"return\s+gpio_get\s*\(\s*PIN_MEMBRANE_SENSE", body), (
-            "the lifted (open, HIGH) switch is the actuated solenoid")
-        assert not re.search(r"!\s*gpio_get\s*\(\s*PIN_MEMBRANE_SENSE", body)
+        assert re.search(r"return\s+!\s*gpio_get\s*\(\s*PIN_MEMBRANE_SENSE", body), (
+            "the pressed (closed, LOW) switch is the actuated solenoid")
+        assert not re.search(r"return\s+gpio_get\s*\(\s*PIN_MEMBRANE_SENSE", body)
 
     def test_sense_reaches_housekeeping_as_a_status_bit(self):
         hw = _read("src", "hw", "hw.c")
@@ -649,7 +649,7 @@ class TestMotorCurrentSense:
         assert "uint16_t hb_sense_raw;" in frame_h
         assert int(re.search(r"#define HB_SENSE_INVALID (0x[0-9A-Fa-f]+)u",
                              frame_h).group(1), 16) == hk.HB_SENSE_INVALID
-        assert _define(frame_h, "HK_SIZE") == hk.SIZE == 56
+        assert _define(frame_h, "HK_SIZE") == hk.SIZE == 64
 
     def test_the_ground_scale_is_the_ipropi_chain(self):
         """The board comment and the ground constant have to agree on which

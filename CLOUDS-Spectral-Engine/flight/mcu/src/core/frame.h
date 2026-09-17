@@ -69,12 +69,16 @@ typedef struct {
     uint16_t plen;
 } frame_view_t;
 
-/* Housekeeping payload - 56 bytes, mirror of clouds_link/hk.py.
+/* Housekeeping payload - 64 bytes, mirror of clouds_link/hk.py.
  *
- * No chamber pressure and no second humidity channel: the Keller 23SY pair
- * that was to source them is off the design (absent at every address on the
- * carrier, DEVLOG 2026-08-31), and a field no part can fill reads as data on
- * a display. Their six bytes now carry the INA226 shunt voltages instead.
+ * Chamber temperature, humidity and pressure are back, from a SECOND BME280
+ * on SPI_1 (hw/board.h PIN_BME_CHAMBER_CS). They are not the Keller 23SY
+ * fields returning: those were p_ch_pa + rh2_cpct, they were deleted when
+ * the parts came off the design, and their six bytes went to the INA226
+ * shunt voltages. These are new fields at the end of the packet, with a
+ * flag of their own, from a part that answers.
+ *
+ * There is still no second humidity channel on i2c0.
  *
  * Four rails are carried and three monitors are fitted: the 24 V rail's
  * INA226 is not populated yet, and its slot is reserved so that fitting the
@@ -84,7 +88,7 @@ typedef struct {
  * a framed HK packet alongside a 1 Hz quick-look. Growing past that means
  * binning the quick-look harder or slowing its cadence, and
  * tests/test_fsw_telemetry.py::TestDownlinkBudget fails first, by design. */
-#define HK_SIZE 56
+#define HK_SIZE 64
 
 /* "No reading" for a rail_mv entry - mirror of RAIL_MV_INVALID in
  * clouds_link/hk.py. Not 0: a rail can legitimately *be* at 0 mV when its
@@ -143,6 +147,25 @@ typedef struct {
      * be corrected against a logged session. HB_SENSE_INVALID means the pin
      * is not reachable in this build. */
     uint16_t hb_sense_raw;
+    /* Chamber BME280 (SPI_1, chip select GP9): the test chamber's own
+     * temperature, humidity and pressure, in the same units as the ambient
+     * part's bme_temp_cc / rh1_cpct / p_amb_pa. Appended after
+     * hb_sense_raw so every older field keeps its offset.
+     *
+     * INSTRUMENTATION ONLY. Nothing in core/ reads these: autonomy_step()
+     * detects launch and float from p_amb_pa, the AMBIENT part, and giving
+     * it a second pressure source would mean a chamber sensor fault could
+     * fire valves. A chamber read failure is HKE_BME280_CHM_FAIL, its own
+     * bit, for the same reason - the two parts fail independently and only
+     * one of them is in the sequencer's path.
+     *
+     * Zeroed, not held, when the read fails: the holding rule exists
+     * because a 0 Pa on p_amb_pa mimics a 100 kPa fall into launch
+     * detection, and that hazard does not exist here. A held chamber value
+     * would be a number that looks current and is not. */
+    int16_t chm_temp_cc;
+    uint16_t chm_rh_cpct;
+    uint32_t chm_p_pa;
 } hk_t;
 
 /* MCU flag bits (hk_t.flags) - mirror of clouds_link/hk.py McuFlags. */
@@ -158,12 +181,21 @@ typedef struct {
 #define HKE_BME280_FAIL (1u << 0)   /* BME280 absent or read failed */
 #define HKE_P_AMB_STALE (1u << 1)   /* p_amb_pa is a held last-good value */
 /* Bit 2 was HKE_NO_CHAMBER_P and bit 3 HKE_NO_RH2; both went out with the
- * Keller pair and the fields they flagged. Bit 2 has since been reused for
- * the membrane switch; bit 3 is free. The surviving bits keep their
- * positions so an older session log still decodes. */
+ * Keller pair and the fields they flagged. Both have since been reused -
+ * bit 2 for the membrane switch, bit 3 for the chamber BME280. The
+ * surviving bits keep their positions so an older session log still
+ * decodes; the two reused ones do not, which is why a log written before
+ * 2026-09-11 must be read against the HK_SIZE its header implies. */
 #define HKE_NO_MEMBRANE_SENSE (1u << 2) /* GP30 is not reachable in this build
                                          * (pico2 / RP2350A), so
                                          * HKV_MEMBRANE_PULLED has no source */
+#define HKE_BME280_CHM_FAIL (1u << 3)   /* chamber BME280 (SPI_1 / GP9) absent
+                                         * or read failed: chm_* are zeros,
+                                         * not a measurement. Separate from
+                                         * HKE_BME280_FAIL because the two
+                                         * parts are on different buses and
+                                         * only the ambient one feeds the
+                                         * sequencer */
 #define HKE_IMU_FAIL (1u << 4)      /* IMU absent or reporting a fault */
 #define HKE_NO_TEMP (1u << 5)       /* STLM20 pair not fitted: temps unsourced */
 #define HKE_RAIL_FAIL (1u << 6)     /* one or more INA226 rails unreadable;
@@ -183,9 +215,10 @@ typedef struct {
  * percentage in hk_t.membrane_duty.
  *
  * Bit 5 is different in kind: it is an INPUT, the membrane position switch on
- * GP30 (hw/board.h PIN_MEMBRANE_SENSE), set while the plunger has lifted
- * off the button, i.e. the solenoid is actuated (pulled); clear while the
- * resting plunger holds the button pressed. It says what the plunger is doing, not what
+ * GP30 (hw/board.h PIN_MEMBRANE_SENSE), set while the plunger holds the
+ * button pressed (pin LOW), i.e. the solenoid is actuated (pulled); clear
+ * while the button is released (pin HIGH) and the solenoid rests. The pin
+ * level is inverted into the bit. It says what the plunger is doing, not what
  * the MCU is driving, so it may be set alongside a drive bit - and it is what
  * tells ground a commanded membrane drive is moving anything. When the sense
  * pin is not reachable in the build, HKE_NO_MEMBRANE_SENSE says the bit is

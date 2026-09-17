@@ -1,14 +1,23 @@
-"""Housekeeping payload (PacketType.HK) - 56 bytes, little-endian.
+"""Housekeeping payload (PacketType.HK) - 64 bytes, little-endian.
 
 Produced by the RP2350 at 1 Hz (C mirror flight/mcu/src/core/frame.c),
 relayed unchanged by the Pi, decoded by the GSE.
 
-The chamber pressure and second humidity channel that spec section 7 asks
-for are **not** in this packet: the two Keller 23SY parts that were to
-provide them are off the design (they answered at no address on the carrier,
-DEVLOG 2026-08-31), and a wire field no part can ever fill is worse than an
-absent one - it reads as data. The six bytes they held now carry the shunt
-voltage of the INA226 monitors, which is a measurement that exists.
+**Chamber temperature, humidity and pressure are the last eight bytes**, from
+a second BME280 on the carrier's SPI_1 bus behind the chip select on GP9.
+They are not the Keller 23SY fields coming back: those were ``p_ch_pa`` and
+``rh2_cpct``, they were deleted when the parts came off the design (they
+answered at no address on the carrier, DEVLOG 2026-08-31), and the six bytes
+they held went to the INA226 shunt voltages. These are new fields at the end
+of the packet, with an error bit of their own, from a part that answers.
+
+The chamber part is **instrumentation, not a control input**: the MCU's
+launch and float detection reads ``p_amb_pa``, the ambient part on i2c0, and
+nothing in the sequencer touches ``chm_*``. That is why a chamber failure is
+``HkErrors.BME280_CHM_FAIL`` and not folded into ``BME280_FAIL`` - two parts
+on two buses fail independently, and only one of them can fire a valve.
+
+There is still no second humidity channel on i2c0.
 
 Four rails are carried, but only three monitors are fitted: the 24 V rail's
 INA226 is not on the carrier yet, so its slot is reserved here and reported
@@ -16,8 +25,8 @@ as ``RAIL_MV_INVALID`` until the part is populated. A reserved slot is the
 cheaper mistake: the alternative is a wire format that changes on the day
 the part arrives, on an instrument that is already flying its protocol.
 
-The last two bytes are the CaCO3 dispersion motor's current sense, the
-``ACT_HB_SENS`` net on GP46 read by the RP2350B's ADC: raw 12-bit counts,
+Two bytes before those, after ``mission_t_s``, are the CaCO3 dispersion
+motor's current sense, the ``ACT_HB_SENS`` net on GP46 read by the RP2350B's ADC: raw 12-bit counts,
 scaled to volts and amps here (``hb_sense_v()`` / ``hb_sense_a()``), for the
 same reason the INA226 shunts come down raw. It is the IPROPI output of the
 motor's DRV8251A H-bridge, not the membrane solenoid - ``ACT_HB`` is the
@@ -31,8 +40,8 @@ import struct
 from dataclasses import dataclass, field, asdict
 from enum import IntEnum
 
-_HK = struct.Struct("<BBBBBBhhhHIhhhhhhHHHHhhhhIIH")
-SIZE = _HK.size  # 56
+_HK = struct.Struct("<BBBBBBhhhHIhhhhhhHHHHhhhhIIHhHI")
+SIZE = _HK.size  # 64
 
 
 class SeqState(IntEnum):
@@ -152,8 +161,8 @@ class ValveStatus(IntEnum):
     repeating waveform, reported as ``membrane_duty``.
 
     ``MEMBRANE_PULLED`` is the exception in kind: it is an **input**, the
-    position switch on GP30 under the solenoid plunger - pressed while the
-    solenoid rests, lifted (bit set) while it is actuated. It reports what
+    position switch on GP30 on the solenoid plunger - released while the
+    solenoid rests, pressed (bit set) while it is actuated. It reports what
     the plunger is doing, not what the MCU is
     driving, so it can be set alongside a drive bit. When the MCU build
     cannot reach GP30 it raises ``HkErrors.NO_MEMBRANE_SENSE`` and the bit
@@ -172,7 +181,7 @@ class ValveStatus(IntEnum):
     EQ1_CLOSE = 1 << 2
     EQ2_CLOSE = 1 << 3
     DISPERSE = 1 << 4        # CaCO3 dispersion motor, forward line (pulse or run)
-    MEMBRANE_PULLED = 1 << 5  # sensed, not driven: GP30 switch lifted (HIGH) now
+    MEMBRANE_PULLED = 1 << 5  # sensed, not driven: GP30 switch pressed (LOW) now
     MEMBRANE_CYCLING = 1 << 6  # sensed: GP30 switch changed since the last HK
 
 
@@ -189,14 +198,21 @@ class HkErrors(IntEnum):
     can distinguish a held or absent reading from a real one.
 
     Bit 2 was NO_CHAMBER_P and bit 3 NO_RH2; both went out with the Keller
-    pair and the fields those flagged. Bit 2 has since been reused for the
-    membrane switch; bit 3 is free. The surviving bits keep the positions
-    they had, so an older session log still decodes.
+    pair and the fields those flagged. Both have since been reused - bit 2
+    for the membrane switch, bit 3 for the chamber BME280. The surviving
+    bits keep the positions they had, so an older session log still decodes
+    on those; the two reused bits do not, which is why a log has to be read
+    against the ``SIZE`` its frames carry.
     """
     BME280_FAIL = 1 << 0    # BME280 absent or read failed
     P_AMB_STALE = 1 << 1    # p_amb_pa is a held last-good value
     NO_MEMBRANE_SENSE = 1 << 2  # GP30 unreachable in this MCU build (pico2):
                                 # ValveStatus.MEMBRANE_PULLED has no source
+    BME280_CHM_FAIL = 1 << 3    # chamber BME280 (SPI_1 / GP9) absent or read
+                                # failed: the chm_* fields are zeros. Separate
+                                # from BME280_FAIL - different bus, different
+                                # part, and only the ambient one feeds the
+                                # MCU's launch detection
     IMU_FAIL = 1 << 4       # IMU absent or reporting a fault
     NO_TEMP = 1 << 5        # STLM20 pair not fitted, temps unsourced
     RAIL_FAIL = 1 << 6      # an INA226 rail is unreadable (see RAIL_MV_INVALID)
@@ -234,6 +250,19 @@ class Housekeeping:
     #: 12-bit ADC counts, 0..4095. ``HB_SENSE_INVALID`` means this MCU build
     #: cannot reach the pin. Defaults to "no reading" like ``rail_mv``.
     hb_sense_raw: int = HB_SENSE_INVALID
+    #: Chamber BME280 (SPI_1, chip select GP9): the test chamber's own
+    #: temperature, humidity and pressure, same units as the ambient part's
+    #: ``bme_temp_cc`` / ``rh1_cpct`` / ``p_amb_pa``. Zeros behind
+    #: ``HkErrors.BME280_CHM_FAIL`` when the part did not answer - the MCU
+    #: does not hold the last good value here, as it does for ``p_amb_pa``,
+    #: because nothing reads these and a held value would look current.
+    #:
+    #: The pressure default is sea level like ``p_amb_pa``, so a
+    #: ``Housekeeping()`` built in a test does not start out asserting a
+    #: vacuum in the chamber.
+    chm_temp_cc: int = 0
+    chm_rh_cpct: int = 0
+    chm_p_pa: int = 101325
 
     def pack(self) -> bytes:
         return _HK.pack(self.state, self.flags, self.fired, self.valve_status,
@@ -243,7 +272,8 @@ class Housekeeping:
                         *self.accel_mg, *self.gyro_ddps,
                         *self.rail_mv, *self.shunt_raw,
                         self.uptime_s, self.mission_t_s,
-                        self.hb_sense_raw)
+                        self.hb_sense_raw,
+                        self.chm_temp_cc, self.chm_rh_cpct, self.chm_p_pa)
 
     @classmethod
     def unpack(cls, payload: bytes) -> "Housekeeping":
@@ -257,7 +287,8 @@ class Housekeeping:
                    rail_mv=(v[17], v[18], v[19], v[20]),
                    shunt_raw=(v[21], v[22], v[23], v[24]),
                    uptime_s=v[25], mission_t_s=v[26],
-                   hb_sense_raw=v[27])
+                   hb_sense_raw=v[27],
+                   chm_temp_cc=v[28], chm_rh_cpct=v[29], chm_p_pa=v[30])
 
     def rail_uv(self, i: int) -> float | None:
         """Shunt voltage of rail ``i`` in microvolts, or None if that monitor

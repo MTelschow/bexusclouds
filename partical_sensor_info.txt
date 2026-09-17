@@ -1,0 +1,11 @@
+GPIO16: MISO
+GPIO17: Chip Select 1
+GPIO18: SCK
+GPIO19: MOSI
+GPIO20: Chip Select 2
+
+
+For the sensors: remove the two Keller 23SY, and measure/display amperage in addition to voltage for the 3 INNA226
+
+The INA226 shunt resistance isn't recorded anywhere (M-11's schematic). Shunt voltage is absolute and measurable now; amps = shunt_uV / R_shunt. How should amperage work? → (notes only)
+· "Remove the two Keller 23SY" - how far should that go? → Out of the protocol entirely

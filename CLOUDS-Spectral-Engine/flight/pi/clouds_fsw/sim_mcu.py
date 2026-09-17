@@ -23,9 +23,15 @@ two disagree, the C is right. The mirror tests
 policed by ``tests/test_sim_mcu.py`` only for the behaviour ground sees.
 
 The sensor picture it reports is the carrier as measured (DEVLOG 2026-09-11):
-BME280 answering, three INA226 rails live, the 24 V slot unfitted
+both BME280s answering - the ambient one on i2c0 and the chamber one on
+SPI_1 - three INA226 rails live, the 24 V slot unfitted
 (``RAIL_MV_INVALID``), no STLM20 pair (``NO_TEMP``) and no IMU
 (``IMU_FAIL``, zeroed vectors). Pass ``imu=True`` for a board that has one.
+
+The chamber part answering here is an assumption, not a measurement: it has
+never been run against the fitted hardware. ``--mock`` therefore exercises
+the success path of a chain whose transport is untested, which is what it is
+for - but it is not evidence the part works.
 """
 from __future__ import annotations
 
@@ -453,7 +459,12 @@ class SimMcu:
                             (now * self.membrane_mhz / 1000.0) % 1.0 < self.membrane_duty / 100.0)
             if on_phase:
                 valves |= hk.ValveStatus.MEMBRANE_PULLED
-            if self.membrane_duty:
+            # ...but only when an edge is actually due inside this 1 Hz
+            # packet. A 0.2 Hz drive holds each level for seconds, so most
+            # packets legitimately see no edge, and a sim that set CYCLING
+            # anyway would show the panel a green light the carrier cannot
+            # give it.
+            if self.membrane_duty and self._membrane_phase_ms() < 1000.0:
                 valves |= hk.ValveStatus.MEMBRANE_CYCLING
             # The current sense on GP46 is the dispersion motor's, not the
             # membrane's: it reads while the DISPERSE drive is up and ~0
@@ -475,7 +486,26 @@ class SimMcu:
                 rail_mv=rail_mv, shunt_raw=shunt,
                 uptime_s=int(now - self._t0) & 0xFFFF,
                 mission_t_s=mission,
-                hb_sense_raw=max(0, min(4095, hb_sense)))
+                hb_sense_raw=max(0, min(4095, hb_sense)),
+                # The chamber BME280 on SPI_1. Warmer and drier than ambient
+                # by a fixed offset, and its pressure held at ground level
+                # while the ambient one falls with the model altitude: the
+                # chamber is sealed, so the two pressures diverging during
+                # ascent is the thing the pair exists to show, and a sim
+                # that moved them together would hide it.
+                chm_temp_cc=int(random.gauss(2450, 20)),
+                chm_rh_cpct=int(random.gauss(3800, 50)),
+                chm_p_pa=int(random.gauss(P_GROUND_PA, 30)))
+
+    def _membrane_phase_ms(self) -> float:
+        """How long the simulated drive holds one level, in ms - the longer
+        of the two phases, the same quantity `sqwave_start()` produces on the
+        MCU. It decides whether a 1 Hz housekeeping packet is entitled to see
+        an edge at all."""
+        period = 1000000.0 / max(1, self.membrane_mhz)
+        on = period * self.membrane_duty / 100.0
+        on = min(max(on, 1.0), period - 1.0)
+        return max(on, period - on)
 
     @staticmethod
     def _shunt_counts(amps: float, rail: int) -> int:

@@ -18,7 +18,181 @@ without re-deriving anything. Newest entries first.
 
 ---
 
-## 2026-09-17 (newest) - An Ethernet traffic indicator: is the cable carrying anything
+## 2026-09-17 (newest) - A second BME280, in the test chamber, on SPI_1
+
+**Asked for:** configure the additional BME280 in the test chamber, which is
+wired over SPI, and put its readings in the GUI's Sensors section.
+
+**Which bus, and why it was safe to bring one up.** The carrier has two SPI
+buses and only one of them could be touched. SPI_0 (GP4 MISO, GP6 SCK, GP7
+MOSI) is the SD bus, and `board.h` has blocked M-11 on it for weeks for a
+specific reason: those same pins are still the equalisation valve defines, so
+an `spi_init()` there would hand the SPI peripheral pins the valve code
+believes it is driving. SPI_1 has no such conflict - **GP8 / GP10 / GP11 are
+claimed by nothing else in `board.h`** - so it is the bus that could be
+initialised without touching an actuator line. The chip select is
+`SPI_1_CS1` on **GP9**, one of the four the schematic names (GP9, GP12, GP13,
+GP47).
+
+That CS is **specified, not measured**, and it is the one thing in this change
+that could be wrong on the fitted board. It fails safe: a wrong chip select
+means the `0xD0` read does not return `0x60`, `bme280_init()` refuses, and
+every later read reports `HKE_BME280_CHM_FAIL` with zeroed fields. The wrong-CS
+case reports itself rather than downlinking numbers compensated from a garbage
+trim block - which is the failure mode this project has been bitten by before
+(`0xFE`/`0xFF` reads off the BNO055 *causing* the error they were then read as
+evidence of). If the part does not answer, try the other three chip selects
+before suspecting the sensor.
+
+**Two mechanical SPI details that are not preferences.** The BME280 selects SPI
+itself when CSB goes low, so there is no mode strap to get wrong; mode 0 is
+used. But the chip select is driven as a **plain GPIO**, not spi1's hardware
+CSn - which happens to be this very pin. Hardware CSn on the RP2350 deasserts
+between bytes, and the BME280 reads that as the end of the transaction, so an
+address-then-burst read would restart from the address register on every byte
+and return the same register over and over. CS is also raised *before*
+`spi_init()` touches the bus pins, so the part never sees a clock edge while
+selected by an undriven line.
+
+**The driver became two instances.** `bme280.c` held its calibration block and
+`t_fine` in file-scope statics, which is exactly one part's worth of state.
+Both now live in a `bme280_t`, one per part, and the bus is a field. `t_fine`
+in particular had to move: it carries temperature into the same part's
+pressure and humidity compensation, and a shared one would have compensated
+the chamber's pressure with the ambient part's temperature - a plausible
+number, and wrong. The datasheet fixed-point compensation is untouched, so the
+chamber part inherits the 2026-08-31 bench validation of the arithmetic; its
+*transport* inherits nothing and has never run.
+
+**It is instrumentation, and deliberately not a control input.** Nothing in
+`core/` reads `chm_*`. `autonomy_step()` still detects launch and float from
+`p_amb_pa`, the i2c0 part, because a second pressure source feeding that path
+would mean a chamber sensor fault could fire valves. For the same reason the
+chamber gets its **own error bit** (`HKE_BME280_CHM_FAIL`, bit 3) rather than
+sharing `HKE_BME280_FAIL`: two parts on two buses fail independently, and only
+one of them is in the sequencer's path. A shared flag would have made a
+chamber part that was never fitted look like the ambient sensor failing, which
+is the one sensor fault that matters in flight. `verify_qt.py` now checks both
+single-failure directions.
+
+Chamber fields are **zeroed, not held**, on a failed read - the opposite of
+`p_amb_pa`. Holding exists because a 0 Pa on the ambient channel mimics a
+100 kPa fall into launch detection; nothing reads the chamber, so a held value
+there would just be an old number that looks current.
+
+**Bit 3 is spent, and old logs pay for it.** It was the Keller pair's
+`HKE_NO_RH2`. With bit 2 (`NO_CHAMBER_P`, reused for the membrane switch on
+2026-09-17) that is both retired bits now reused, so a session logged before
+2026-09-11 decodes those two under the wrong names. Recorded in
+`tests/test_link.py` rather than left to be discovered while reading an old
+session. Bit 7 is the free one now, and the mask-rendering of an unnamed bit
+is still tested against it - that is what keeps a log from a *newer* MCU
+readable.
+
+**Budget.** `hk.SIZE` 56 → **64 B**: `chm_temp_cc` (i16) + `chm_rh_cpct` (u16)
++ `chm_p_pa` (u32), appended after `hb_sense_raw` so no older field moved.
+Framed 80 B against the ~83 B allowance, total **1.974 of 2.0 kbit/s**. The
+payload ceiling is 67 B, so this leaves **3 B of margin** - one more
+`uint32_t` in `Housekeeping` and the 1 Hz quick-look has to be binned harder
+or slowed. `TestDownlinkBudget` is the thing that will say so first.
+
+**M-15 is not fixed by this.** Seal verification wanted a chamber pressure to
+compare against ambient, and this is that source - but `ops_seal_ok()` is
+still `return true`. Wiring it was left out on purpose: the part has never
+been read against real hardware, and a seal check is a flight decision. Do it
+after the chamber part has been shown to answer.
+
+**GUI.** Three rows in the Sensors section - `Chamber p` / `Chamber T` /
+`Chamber RH`, worded to match the ambient triple so the two are comparable at
+a glance, with the part column reading `BME280 SPI_1` because two identical
+BME280s are otherwise indistinguishable on screen when one of them fails.
+Three matching timeline series in their own `BME280 chamber` group, so the
+chamber/ambient pair can be ticked onto the plot as wholes; the sim
+(`sim_mcu.py`) holds chamber pressure at ground level while ambient falls with
+the model altitude, because a sealed chamber diverging during ascent is the
+thing the pair exists to show.
+
+**Status: not run against hardware.** Native firmware tests, `pytest` and
+`verify_qt.py` all pass, and `--mock` exercises the success path end to end -
+but that is a simulated part on a simulated bus. Nothing here is evidence the
+chamber sensor works.
+
+---
+
+## 2026-09-17 - The membrane switch is read inverted: pressed = pulled
+
+**Asked for:** the push-pull solenoid's indicator button should read HIGH when
+it is not pressed and LOW when it is - and the *meaning* flipped with it, so a
+pressed button is the actuated (pulled) plunger.
+
+The electrical half was already that way: GP30 is an input with the internal
+pull-up and the switch goes to ground, so pressed = LOW, released = HIGH. What
+changed is the decode. `hw_membrane_pulled()` returned the pin level raw, i.e.
+HIGH = pulled, on the assumption that the button sits under the *resting*
+plunger and is lifted off when the solenoid actuates. It now returns
+`!gpio_get(PIN_MEMBRANE_SENSE)`: the plunger reaches the button when the
+solenoid is energized, so LOW = pulled and HIGH = pushed.
+
+Nothing else moves. `HKV_MEMBRANE_PULLED` still means "actuated", so the wire
+format, `clouds_link/hk.py`, the panel's `60 %  pulled` / `pushed` row, the
+`HKV_MEMBRANE_CYCLING` edge latch and `membrane_sense_check.py` are unchanged -
+only the pin-to-bit mapping in `hw.c` did, plus every comment that described
+the mechanics the other way round (`board.h`, `core/frame.h`, `hw.h`,
+`hk.py`, `tools/membrane_switch_probe.c`).
+
+**The open contradiction, written down rather than resolved:** the 2026-09-17
+probe run measured GP30 following GP26 one for one - LOW with no drive, HIGH
+for as long as the drive was high, ~40 ms release lag. Under the new decode
+that bench reading downlinks `pulled` at rest and `pushed` under drive, which
+is backwards. Either the button was not yet on the plunger when that run was
+taken, or the mechanical assignment is the opposite of the one specified here.
+`tools/membrane_switch_probe` against the fitted plunger settles it; until
+then the firmware carries the specified sense and both `board.h` and this
+entry carry the disagreement.
+
+`tests/test_fsw_mcu_actuators.py::TestMembraneSense` guards the new polarity
+the way it guarded the old one - the raw pin level must not be returned - so a
+future flip has to be deliberate. 321 tests pass, 61 native firmware tests
+pass.
+
+**The panel light stopped reporting a position and started reporting a
+verdict.** Asked for in the same breath: green when the switch fits what the
+solenoid is being asked to do, red when it does not, grey when the solenoid is
+off. Which turns the light into the check an operator actually runs at the
+bench - press Drive, look at the dot - instead of a second copy of the
+`Membrane` HK row.
+
+```
+●  driving 70 % - plunger cycling, switch pressed                        green
+●  driving 70 % - plunger NOT cycling, switch stuck released             red
+●  solenoid off - switch released                                        grey
+●  driving 50 % at 0.2 Hz - too slow to judge from 1 Hz HK, switch ...   grey
+●  switch: no telemetry | stale telemetry | no reading (build w/o GP30)  grey
+```
+
+The verdict is taken from `MEMBRANE_CYCLING`, not `MEMBRANE_PULLED`: HK is
+1 Hz against a 2 Hz drive, so the position lands at an arbitrary phase and a
+`pressed` or `released` reading proves nothing on its own. Cycling is the
+evidence the plunger moves.
+
+Two cases are deliberately *not* red. With the drive off there is nothing to
+agree with, so the light is grey whatever the switch says - the ask, and also
+right: a resting solenoid is not a fault. A drive slower than the sample is
+grey too, because a clear CYCLING bit is then the sampling, not a stuck
+plunger. `membrane_longest_phase_ms()` decides that, repeating `sqwave_start()`
+arithmetic and its clamps so the panel expects an edge exactly when the MCU
+makes one: red only when the longer phase is under the 1 s HK period. The rate
+is not in HK, so the panel tracks the last `SET_PARAM MEMBRANE_MHZ` the MCU
+**ACKed** (`self._membrane_hz`, starting at the MCU's own 2 Hz default) - the
+spin box's value would be a rate that may never have been accepted.
+
+A solenoid that is off but reads `pressed` is worth seeing, so the text says
+`(plunger still out)` while the dot stays grey as asked. `verify_qt.py` covers
+all five lines above.
+
+---
+
+## 2026-09-17 - An Ethernet traffic indicator: is the cable carrying anything
 
 **Asked for:** a traffic indicator in the GUI showing the Ethernet up- and
 downlink.
@@ -148,6 +322,10 @@ before. The MCU's floor was checked by the peer over the same link: `SET_PARAM
 
 **Asked for:** an indicator in the GUI showing whether the GP30 button is
 pressed or not.
+
+**Superseded the same day** by "The membrane switch is read inverted" (top of
+this log): the colours below reported the *position*, and now report whether
+the position agrees with the drive. The rest of this entry still holds.
 
 **What.** A coloured dot and a line of text under the membrane `Drive` /
 `Stop` buttons in the Actuators section (`FlightPanel._set_switch`):
