@@ -227,6 +227,7 @@ class FlightPanel(QtCore.QObject):
         self.lbl_downlink.setText("-")
         self.lbl_cmd_status.setText("-")
         self.lbl_act_status.setText("-")
+        self._set_switch(None, None, "no telemetry")
         self.event_list.clear()
 
     # -- layout --------------------------------------------------------------
@@ -375,10 +376,11 @@ class FlightPanel(QtCore.QObject):
 
         Kept as its own section rather than sitting among the Commands: these
         move hardware with no arm/execute handshake, because neither drive is
-        irreversible - the membrane stops on Stop and the motor pulse is
-        bounded on the MCU - and running them is how the mechanism gets
-        exercised on the bench. The MCU still refuses both in TERMINATION and
-        SAFE, so nothing here can restart an aborted experiment.
+        irreversible - the membrane stops on Stop, the motor stops on its own
+        Stop and its pulse is bounded on the MCU - and running them is how
+        the mechanism gets exercised on the bench. The MCU still refuses both
+        in TERMINATION and SAFE, so nothing here can restart an aborted
+        experiment.
         """
         sec.add(group_label("Membrane solenoid"))
         row = QtWidgets.QHBoxLayout()
@@ -391,12 +393,18 @@ class FlightPanel(QtCore.QObject):
         self.sp_duty.setStyleSheet(style.spin_style())
         self.sp_duty.setToolTip("Drive duty cycle (MEMBRANE key)")
         row.addWidget(self.sp_duty, 1)
-        self.sp_hz = QtWidgets.QSpinBox()
-        self.sp_hz.setRange(1, 400)          # PARAM_MEMBRANE_HZ limits
-        self.sp_hz.setValue(2)
+        # Tenths of a hertz, not whole hertz: the membrane is worked at
+        # 0.1..0.9 Hz as well as 2 Hz. The wire carries millihertz
+        # (Commander.membrane_hz does the conversion).
+        self.sp_hz = QtWidgets.QDoubleSpinBox()
+        self.sp_hz.setDecimals(1)
+        self.sp_hz.setSingleStep(0.1)
+        self.sp_hz.setRange(0.1, 400.0)      # PARAM_MEMBRANE_MHZ limits / 1000
+        self.sp_hz.setValue(2.0)
         self.sp_hz.setSuffix(" Hz")
         self.sp_hz.setStyleSheet(style.spin_style())
-        self.sp_hz.setToolTip("Drive frequency, sent as SET_PARAM MEMBRANE_HZ "
+        self.sp_hz.setToolTip("Drive frequency, 0.1 to 400 Hz in tenths, "
+                              "sent as SET_PARAM MEMBRANE_MHZ (millihertz) "
                               "before the drive starts")
         row.addWidget(self.sp_hz, 1)
         sec.add(row)
@@ -414,6 +422,31 @@ class FlightPanel(QtCore.QObject):
         row2.addWidget(self.btn_stop, 1)
         sec.add(row2)
 
+        # The GP30 position switch as a light. The Membrane HK row already
+        # says `pulled` / `pushed`, but that is one word in a column of text;
+        # an operator exercising the solenoid on the bench wants to see the
+        # plunger state change at a glance, next to the buttons that drive
+        # it. Green = lifted (solenoid actuated), navy = pressed (plunger
+        # resting on the button), grey = no reading - no HK yet, stale HK,
+        # or an MCU build that cannot reach GP30 - never a confident colour
+        # for a value the hardware did not produce.
+        sw = QtWidgets.QHBoxLayout()
+        sw.setContentsMargins(0, 2, 0, 0)
+        sw.setSpacing(6)
+        self.dot_switch = QtWidgets.QLabel("●")
+        self.dot_switch.setFixedWidth(14)
+        self.dot_switch.setAlignment(QtCore.Qt.AlignCenter)
+        sw.addWidget(self.dot_switch)
+        self.lbl_switch = QtWidgets.QLabel("-")
+        self.lbl_switch.setToolTip(
+            "Membrane position switch on GP30: pressed by the plunger while "
+            "the solenoid rests, lifted when it actuates (HK "
+            "MEMBRANE_PULLED). `cycling` = it changed state within the last "
+            "second.")
+        sw.addWidget(self.lbl_switch, 1)
+        sec.add(sw)
+        self._set_switch(None, None, "no telemetry")
+
         sec.add(group_label("CaCO₃ dispersion motor"))
         # Speed is a slider, not a spin box: it is a continuous mechanical
         # setting an operator dials while watching the motor, and the value
@@ -427,8 +460,11 @@ class FlightPanel(QtCore.QObject):
         self.sl_motor.setValue(100)
         self.sl_motor.setStyleSheet(style.slider_style())
         self.sl_motor.setToolTip("Motor PWM duty, sent as SET_PARAM "
-                                 "DISPERSE_DUTY before the pulse starts")
+                                 "DISPERSE_DUTY before a drive starts, and "
+                                 "on release of the handle while the motor "
+                                 "is running")
         self.sl_motor.valueChanged.connect(self._on_motor_speed)
+        self.sl_motor.sliderReleased.connect(self._on_motor_speed_released)
         speed.addWidget(self.sl_motor, 1)
         self.lbl_motor_speed = QtWidgets.QLabel("100 %")
         self.lbl_motor_speed.setMinimumWidth(42)
@@ -439,13 +475,38 @@ class FlightPanel(QtCore.QObject):
         speed.addWidget(self.lbl_motor_speed)
         sec.add(speed)
 
-        self.btn_pulse = QtWidgets.QPushButton("Run one pulse")
-        self.btn_pulse.setStyleSheet(style.primary_btn())
+        # Start/Stop mirror the membrane's Drive/Stop: a run is a state the
+        # operator holds, ended only by Stop (or an abort). One pulse is the
+        # bounded 5 s drive a release also schedules, kept as its own button
+        # so the flight drive can still be rehearsed exactly.
+        row3 = QtWidgets.QHBoxLayout()
+        row3.setContentsMargins(0, 0, 0, 0)
+        row3.setSpacing(6)
+        self.btn_motor_start = QtWidgets.QPushButton("Start")
+        self.btn_motor_start.setStyleSheet(style.primary_btn())
+        self.btn_motor_start.setToolTip("Run the motor forward at the speed "
+                                        "above until Stop (DISPERSE run)")
+        self.btn_motor_start.clicked.connect(self._motor_start)
+        row3.addWidget(self.btn_motor_start, 1)
+        self.btn_motor_stop = QtWidgets.QPushButton("Stop")
+        self.btn_motor_stop.setStyleSheet(style.flat_btn())
+        self.btn_motor_stop.setToolTip("Stop the motor now - ends a run and "
+                                       "cuts a pulse short (DISPERSE stop)")
+        self.btn_motor_stop.clicked.connect(self._motor_stop)
+        row3.addWidget(self.btn_motor_stop, 1)
+        sec.add(row3)
+
+        self.btn_pulse = QtWidgets.QPushButton("One pulse")
+        self.btn_pulse.setStyleSheet(style.flat_btn())
         self.btn_pulse.setToolTip("One forward pulse at the speed above, "
-                                  "timed on the MCU (5 s) and not "
-                                  "interruptible from here")
+                                  "timed on the MCU (5 s) - what a release "
+                                  "schedules. Stop cuts it short. Refused "
+                                  "while the motor is running")
         self.btn_pulse.clicked.connect(self._disperse)
         sec.add(self.btn_pulse)
+        #: Set by an accepted Start, cleared by Stop or a refused speed. What
+        #: the slider release keys off; the MCU's own state is in HK.
+        self._motor_running = False
 
         self.lbl_act_status = QtWidgets.QLabel("-")
         self.lbl_act_status.setWordWrap(True)
@@ -506,21 +567,21 @@ class FlightPanel(QtCore.QObject):
     # -- actuators -----------------------------------------------------------
 
     def _membrane_start(self) -> None:
-        """Frequency first, then the drive: PARAM_MEMBRANE_HZ is read when the
-        drive starts, so setting it afterwards would leave the solenoid
+        """Frequency first, then the drive: PARAM_MEMBRANE_MHZ is read when
+        the drive starts, so setting it afterwards would leave the solenoid
         running at the old rate while the panel showed the new one."""
         if self._cmd is None:
             self.lbl_act_status.setText("no command link")
             return
         try:
-            r = self._cmd.set_param(int(Param.MEMBRANE_HZ), self.sp_hz.value())
+            r = self._cmd.membrane_hz(self.sp_hz.value())
             if r != AckResult.OK:
                 self.lbl_act_status.setText(
-                    f"MEMBRANE_HZ -> {r.name}, not driving")
+                    f"MEMBRANE_MHZ -> {r.name}, not driving")
                 return
             r = self._cmd.membrane(self.sp_duty.value())
             self.lbl_act_status.setText(
-                f"membrane {self.sp_duty.value()} % @ {self.sp_hz.value()} Hz "
+                f"membrane {self.sp_duty.value()} % @ {self.sp_hz.value():g} Hz "
                 f"-> {r.name}")
         except (InterlockError, CommandError, ValueError) as e:
             self.lbl_act_status.setText(str(e))
@@ -536,26 +597,74 @@ class FlightPanel(QtCore.QObject):
             self.lbl_act_status.setText(str(e))
 
     def _on_motor_speed(self, value: int) -> None:
-        """Track the handle only. The speed goes to the MCU when the pulse is
-        asked for, not while the operator drags: a SET_PARAM per intermediate
-        value spends uplink on settings nobody chose, and the MCU latches the
-        duty at the start of the 5 s drive anyway."""
+        """Track the handle only. The speed goes to the MCU when a drive is
+        asked for, or once per drag while the motor runs (below), not on
+        every intermediate value: a SET_PARAM per step spends uplink on
+        settings nobody chose."""
         self.lbl_motor_speed.setText(f"{value} %")
 
-    def _disperse(self) -> None:
-        """Speed first, then the pulse - the same order as the membrane, and
-        for the same reason: PARAM_DISPERSE_DUTY is latched when the drive is
-        queued, so setting it afterwards would run the motor at the old speed
-        while the panel showed the new one."""
-        if self._cmd is None:
-            self.lbl_act_status.setText("no command link")
+    def _on_motor_speed_released(self) -> None:
+        """A running motor takes its new speed when the handle is let go -
+        the MCU re-latches PARAM_DISPERSE_DUTY at once while it runs. Idle,
+        nothing is sent; the next Start or pulse carries the speed."""
+        if not self._motor_running or self._cmd is None:
             return
         speed = self.sl_motor.value()
         try:
             r = self._cmd.set_param(int(Param.DISPERSE_DUTY), speed)
-            if r != AckResult.OK:
-                self.lbl_act_status.setText(
-                    f"DISPERSE_DUTY -> {r.name}, not pulsing")
+            self.lbl_act_status.setText(f"motor speed {speed} % -> {r.name}")
+        except (InterlockError, CommandError, ValueError) as e:
+            self.lbl_act_status.setText(str(e))
+
+    def _send_motor_speed(self, what: str) -> int | None:
+        """SET_PARAM DISPERSE_DUTY from the slider; the speed the panel shows
+        must be the speed that runs. Returns it, or None (and says why) when
+        the MCU did not take it - then no drive is started."""
+        speed = self.sl_motor.value()
+        r = self._cmd.set_param(int(Param.DISPERSE_DUTY), speed)
+        if r != AckResult.OK:
+            self.lbl_act_status.setText(
+                f"DISPERSE_DUTY -> {r.name}, not {what}")
+            return None
+        return speed
+
+    def _motor_start(self) -> None:
+        """Speed first, then the run - the same order as the membrane, and
+        for the same reason: the duty is latched when the drive starts."""
+        if self._cmd is None:
+            self.lbl_act_status.setText("no command link")
+            return
+        try:
+            speed = self._send_motor_speed("starting")
+            if speed is None:
+                return
+            r = self._cmd.disperse_run()
+            self._motor_running = r == AckResult.OK
+            self.lbl_act_status.setText(f"motor run {speed} % -> {r.name}")
+        except (InterlockError, CommandError, ValueError) as e:
+            self.lbl_act_status.setText(str(e))
+
+    def _motor_stop(self) -> None:
+        if self._cmd is None:
+            self.lbl_act_status.setText("no command link")
+            return
+        self._motor_running = False
+        try:
+            r = self._cmd.disperse_stop()
+            self.lbl_act_status.setText(f"motor stop -> {r.name}")
+        except (InterlockError, CommandError, ValueError) as e:
+            self.lbl_act_status.setText(str(e))
+
+    def _disperse(self) -> None:
+        """Speed first, then the pulse: PARAM_DISPERSE_DUTY is latched when
+        the drive is queued, so setting it afterwards would run the motor at
+        the old speed while the panel showed the new one."""
+        if self._cmd is None:
+            self.lbl_act_status.setText("no command link")
+            return
+        try:
+            speed = self._send_motor_speed("pulsing")
+            if speed is None:
                 return
             r = self._cmd.disperse()
             self.lbl_act_status.setText(f"disperse {speed} % -> {r.name}")
@@ -563,6 +672,25 @@ class FlightPanel(QtCore.QObject):
             self.lbl_act_status.setText(str(e))
 
     # -- refresh -------------------------------------------------------------
+
+    def _set_switch(self, pulled: bool | None, cycling: bool | None,
+                    reason: str = "") -> None:
+        """Set the position-switch light. `pulled` None means there is no
+        reading, and `reason` says why; the light goes grey and the text
+        names the reason instead of a position."""
+        if pulled is None:
+            colour, text = style.GRAY, f"switch: {reason or 'no reading'}"
+        elif pulled:
+            colour, text = style.GREEN, "switch lifted - solenoid actuated"
+        else:
+            colour, text = style.NAVY, "switch pressed - plunger resting"
+        if pulled is not None and cycling:
+            text += ", cycling"
+        self.dot_switch.setStyleSheet(f"color:{colour}; font-size:15px;")
+        self.lbl_switch.setText(text)
+        self.lbl_switch.setStyleSheet(
+            f"color:{style.GRAY if pulled is None else style.TEXT};"
+            " font-size:11px;")
 
     def _set_banner_style(self, state_ok: bool | None) -> None:
         bg = {True: "#1f6f43", False: "#7a2c20", None: style.GRAY}[state_ok]
@@ -599,6 +727,13 @@ class FlightPanel(QtCore.QObject):
             for name, fmt in HK_FIELDS:
                 self._hk_labels[name].setText(fmt(h))
             self._refresh_sensors(h)
+            if age is not None and age > STALE_HK_S:
+                self._set_switch(None, None, "stale telemetry")
+            elif h.membrane_pulled is None:
+                self._set_switch(None, None,
+                                 "no reading (MCU build without GP30)")
+            else:
+                self._set_switch(h.membrane_pulled, h.membrane_cycling)
 
         if self._cmd is None:
             link = "no command link (listen-only)"

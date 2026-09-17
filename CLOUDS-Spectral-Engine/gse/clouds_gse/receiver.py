@@ -55,6 +55,14 @@ class Receiver:
 
         self.gaps = GapStats()
         self.decode_errors = 0
+        # Wire counters for the traffic indicator (clouds_ui/traffic.py).
+        # Counted where the datagram arrives, not after decode: a frame that
+        # fails CRC still spent link budget, and a link that is delivering
+        # nothing but garbage must not look idle. UDP payload bytes only -
+        # the IP/UDP headers are the network's, not the downlink's.
+        self.rx_bytes = 0
+        self.rx_packets = 0
+        self.last_rx_time: float = 0.0
         self.last_hk: hk.Housekeeping | None = None
         self.last_hk_time: float = 0.0
         self.last_pistatus: dict | None = None
@@ -100,6 +108,9 @@ class Receiver:
             self._handle(raw)
 
     def _handle(self, raw: bytes) -> None:
+        self.rx_bytes += len(raw)
+        self.rx_packets += 1
+        self.last_rx_time = time.time()
         try:
             frame = frames.decode(raw)
         except frames.FrameError:

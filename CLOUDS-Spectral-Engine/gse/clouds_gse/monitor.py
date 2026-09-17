@@ -2,7 +2,7 @@
 integration use, and the fallback when no display is available).
 
 Commands:  ping start hold resume abort  release 1|2  set <key> <value>
-           membrane <duty%|off>  disperse  status flight-mode quit
+           membrane <duty%|off>  disperse [pulse|run|stop]  status flight-mode quit
 """
 from __future__ import annotations
 
@@ -55,7 +55,8 @@ class ConsoleMonitor:
 
     def repl(self, input_fn=input) -> None:
         self._print("GSE console - commands: ping start hold resume abort "
-                    "release 1|2, membrane <duty%|off>, disperse, "
+                    "release 1|2, membrane <duty%|off>, "
+                    "disperse [pulse|run|stop], "
                     "set <param> <value>, status, flight-mode, quit")
         while True:
             try:
@@ -79,9 +80,16 @@ class ConsoleMonitor:
                 cmd_link = f"cmd up ({rtt * 1000:.0f} ms)" if rtt is not None else "cmd up"
             else:
                 cmd_link = "cmd DOWN - retrying"
+            # Wire bytes beside the decoded counts: the same thing the GUI's
+            # traffic indicator shows, for the headless console. `rx` counts
+            # frames that decoded, `wire` counts what arrived - the two
+            # disagreeing is a link carrying garbage, which every other
+            # number here reports as silence.
             self._print(f"hk age: {age if age is None else f'{age:.1f} s'}  "
                         f"rx: {self._rx.gaps.received} lost: {self._rx.gaps.lost}  "
-                        f"pi: {self._rx.last_pistatus}  |  {cmd_link}")
+                        f"wire: {self._rx.rx_bytes} B in"
+                        + (f" / {self._cmd.tx_bytes} B out" if self._cmd else "")
+                        + f"  pi: {self._rx.last_pistatus}  |  {cmd_link}")
             return
         if self._cmd is None:
             self._print("no command link (started with --listen-only)")
@@ -90,12 +98,20 @@ class ConsoleMonitor:
             if parts[0] == "release" and len(parts) == 2:
                 r = self._cmd.release(int(parts[1]))
             elif parts[0] == "membrane" and len(parts) == 2:
-                # The frequency knob is `set membrane_hz <n>`: it is read when
-                # the drive starts, so set it before driving.
+                # The frequency knob is `membrane_hz <hz>` (tenths allowed):
+                # it is read when the drive starts, so set it before driving.
                 r = self._cmd.membrane(0 if parts[1] in ("off", "stop")
                                        else int(parts[1]))
-            elif parts[0] == "disperse" and len(parts) == 1:
-                r = self._cmd.disperse()
+            elif parts[0] == "membrane_hz" and len(parts) == 2:
+                r = self._cmd.membrane_hz(float(parts[1]))
+            elif parts[0] == "disperse" and len(parts) <= 2:
+                # Bare `disperse` is the one 5 s pulse it always was; `run`
+                # holds the motor on until `disperse stop`.
+                mode = parts[1] if len(parts) == 2 else "pulse"
+                r = {"pulse": self._cmd.disperse,
+                     "run": self._cmd.disperse_run,
+                     "start": self._cmd.disperse_run,
+                     "stop": self._cmd.disperse_stop}[mode]()
             elif parts[0] == "set" and len(parts) == 3:
                 key = Param[parts[1].upper()] if not parts[1].isdigit() \
                     else int(parts[1])

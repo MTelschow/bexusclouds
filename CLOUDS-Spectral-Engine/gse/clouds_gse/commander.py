@@ -16,7 +16,7 @@ import time
 
 from clouds_link import frames
 from clouds_link.commands import (GROUND_INTERLOCKED, HEARTBEAT_INTERVAL_S,
-                                  Command)
+                                  Command, DisperseKey, Param)
 from clouds_link.frames import AckResult, Frame, PacketType, SeqCounter
 
 
@@ -44,9 +44,26 @@ class Commander:
         self._hb_thread: threading.Thread | None = None
         self.acks_ok = 0
         self.acks_failed = 0
+        # Wire counters for the traffic indicator (clouds_ui/traffic.py). The
+        # uplink is this socket's tx: commands and the PING heartbeat, which
+        # is the only thing on it when nobody is commanding. Its rx (ACKs)
+        # is counted separately - it arrives on the uplink's own TCP
+        # connection, not on the UDP downlink, and the two must not be added
+        # up into one number that matches neither.
+        self.tx_bytes = 0
+        self.tx_frames = 0
+        self.rx_bytes = 0
+        self.last_tx_time: float = 0.0
+        self.last_rx_time: float = 0.0
         self.last_rtt_s: float | None = None
         self.connected = False
         self._connect_once()   # best-effort - a down Pi must not stop the GSE from starting
+
+    @property
+    def peer(self) -> str:
+        """``host:port`` of the Pi command server - what the traffic
+        indicator names as the far end of the link."""
+        return f"{self._host}:{self._port}"
 
     # -- public API ----------------------------------------------------------
 
@@ -73,13 +90,23 @@ class Commander:
     def set_param(self, key: int, value: int) -> AckResult:
         return self._transact(Command.SET_PARAM, key=key, value=value)
 
+    def membrane_hz(self, hz: float) -> AckResult:
+        """Set the membrane drive frequency in hertz, tenths allowed
+        (0.1..400). The wire carries millihertz (SET_PARAM MEMBRANE_MHZ, an
+        int32), so this is the one place the conversion lives; the MCU
+        reads it when the next drive starts."""
+        mhz = int(round(hz * 1000))
+        if not 100 <= mhz <= 400000:
+            raise ValueError("membrane frequency must be 0.1..400 Hz")
+        return self.set_param(int(Param.MEMBRANE_MHZ), mhz)
+
     def membrane(self, duty_pct: int) -> AckResult:
         """Drive the membrane push-pull solenoid; 0 stops it (M-07).
 
         No arm and no ground interlock: the drive is not irreversible and
         stops on the next call, and exercising it on the bench is what the
         control is for (see MANUAL_ACTUATORS). Frequency is a separate knob -
-        SET_PARAM MEMBRANE_HZ.
+        ``membrane_hz()`` / SET_PARAM MEMBRANE_MHZ.
         """
         if not 0 <= duty_pct <= 100:
             raise ValueError("membrane duty must be 0..100 percent")
@@ -183,7 +210,11 @@ class Commander:
                       seq=seq).stamp()
             t0 = time.time()
             try:
-                self._sock.sendall(f.encode())
+                wire = f.encode()
+                self._sock.sendall(wire)
+                self.tx_bytes += len(wire)
+                self.tx_frames += 1
+                self.last_tx_time = time.time()
                 ack = self._wait_ack(seq)
             except OSError as e:
                 self.acks_failed += 1
@@ -226,5 +257,7 @@ class Commander:
                 continue
             if not chunk:
                 return None
+            self.rx_bytes += len(chunk)
+            self.last_rx_time = time.time()
             self._buf.extend(chunk)
         return None

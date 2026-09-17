@@ -934,9 +934,38 @@ static void test_membrane_default_is_below_the_pwm_floor(void)
     /* The membrane runs at 2 Hz, under the ~9 Hz PWM floor. This is the whole
      * reason core/sqwave exists: if the default ever rises above the floor,
      * the drive silently changes mechanism. */
-    TEST_ASSERT_TRUE(cfg_default(PARAM_MEMBRANE_HZ) <
-                     (int32_t)pwmdiv_min_hz(SYS_150M));
-    TEST_ASSERT_EQUAL_INT32(2, cfg_default(PARAM_MEMBRANE_HZ));
+    TEST_ASSERT_TRUE(cfg_default(PARAM_MEMBRANE_MHZ) <
+                     (int32_t)pwmdiv_min_hz(SYS_150M) * 1000);
+    TEST_ASSERT_EQUAL_INT32(2000, cfg_default(PARAM_MEMBRANE_MHZ));
+}
+
+static void test_membrane_frequency_is_millihertz_down_to_a_tenth(void)
+{
+    /* The operator drives the membrane at tenths of a hertz. In millihertz
+     * 0.1 Hz is 100: a 10 s cycle, 6 s high at 60 %. Whole hertz could not
+     * say this at all, and the range check must let it through while still
+     * refusing a stale sender's "2" (2 mHz, a 500 s cycle). */
+    sqwave_t w;
+    cfg_t cfg;
+
+    sqwave_init(&w);
+    sqwave_start(&w, 100, 60, 0);
+    TEST_ASSERT_EQUAL_UINT32(6000, w.on_ms);
+    TEST_ASSERT_EQUAL_UINT32(4000, w.off_ms);
+    sqwave_start(&w, 500, 50, 0);            /* 0.5 Hz */
+    TEST_ASSERT_EQUAL_UINT32(1000, w.on_ms);
+    TEST_ASSERT_EQUAL_UINT32(1000, w.off_ms);
+    sqwave_start(&w, 400000, 50, 0);         /* 400 Hz: 2.5 ms -> 2 ms floor */
+    TEST_ASSERT_EQUAL_UINT32(1, w.on_ms);
+    TEST_ASSERT_EQUAL_UINT32(1, w.off_ms);
+
+    cfg_defaults(&cfg);
+    TEST_ASSERT_TRUE(cfg_set(&cfg, PARAM_MEMBRANE_MHZ, 100));
+    TEST_ASSERT_TRUE(cfg_set(&cfg, PARAM_MEMBRANE_MHZ, 900));
+    TEST_ASSERT_TRUE(cfg_set(&cfg, PARAM_MEMBRANE_MHZ, 400000));
+    TEST_ASSERT_FALSE(cfg_set(&cfg, PARAM_MEMBRANE_MHZ, 99));
+    TEST_ASSERT_FALSE(cfg_set(&cfg, PARAM_MEMBRANE_MHZ, 2));   /* old unit */
+    TEST_ASSERT_FALSE(cfg_set(&cfg, PARAM_MEMBRANE_MHZ, 400001));
 }
 
 static void test_membrane_default_square_wave_timing(void)
@@ -948,7 +977,7 @@ static void test_membrane_default_square_wave_timing(void)
     uint64_t last_edge = 0;
 
     sqwave_init(&w);
-    sqwave_start(&w, (uint32_t)cfg_default(PARAM_MEMBRANE_HZ),
+    sqwave_start(&w, (uint32_t)cfg_default(PARAM_MEMBRANE_MHZ),
                  (uint8_t)cfg_default(PARAM_MEMBRANE_DUTY), t);
     TEST_ASSERT_TRUE(sqwave_level(&w));   /* starts energized */
     TEST_ASSERT_EQUAL_UINT32(300, w.on_ms);
@@ -981,7 +1010,7 @@ static void test_membrane_stop_leaves_the_output_low(void)
 
     sqwave_init(&w);
     TEST_ASSERT_FALSE(sqwave_level(&w));
-    sqwave_start(&w, 2, 60, 0);
+    sqwave_start(&w, 2000, 60, 0);
     TEST_ASSERT_TRUE(sqwave_level(&w));
     sqwave_stop(&w);
     TEST_ASSERT_FALSE(sqwave_level(&w));
@@ -1000,7 +1029,7 @@ static void test_membrane_late_service_does_not_burst_edges(void)
     sqwave_t w;
 
     sqwave_init(&w);
-    sqwave_start(&w, 2, 60, 0);
+    sqwave_start(&w, 2000, 60, 0);
     TEST_ASSERT_TRUE(sqwave_service(&w, 5000)); /* 4.7 s late */
     TEST_ASSERT_FALSE(sqwave_level(&w));
     TEST_ASSERT_FALSE(sqwave_service(&w, 5000)); /* no second edge */
@@ -1017,7 +1046,7 @@ static void test_membrane_duty_extremes_still_oscillate(void)
 
     for (unsigned i = 0; i < sizeof duties / sizeof duties[0]; i++) {
         sqwave_init(&w);
-        sqwave_start(&w, 2, duties[i], 0);
+        sqwave_start(&w, 2000, duties[i], 0);
         TEST_ASSERT_TRUE(w.on_ms >= 1);
         TEST_ASSERT_TRUE(w.off_ms >= 1);
         TEST_ASSERT_EQUAL_UINT32(500, w.on_ms + w.off_ms);
@@ -1042,7 +1071,7 @@ static void test_membrane_frequency_across_the_config_range(void)
 
 static void test_frequencies_below_the_hardware_floor_are_known(void)
 {
-    /* PARAM_MEMBRANE_HZ allows 1 Hz but the hardware bottoms out near 9 Hz.
+    /* PARAM_MEMBRANE_MHZ allows 0.1 Hz but the hardware bottoms out near 9 Hz.
      * The floor must be reported honestly so the caller can clamp instead of
      * silently emitting some other frequency. */
     uint32_t floor_hz = pwmdiv_min_hz(SYS_150M);
@@ -1324,7 +1353,7 @@ static void test_manual_disperse_run_and_stop(void)
     TEST_ASSERT_EQUAL_INT(2, M.motor_run_calls);
     /* and another parameter does not re-latch it */
     TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 2260, 2, CMD_SET_PARAM,
-                                                PARAM_MEMBRANE_HZ, 3, &cfg));
+                                                PARAM_MEMBRANE_MHZ, 3000, &cfg));
     TEST_ASSERT_EQUAL_INT(2, M.motor_run_calls);
 
     /* a second Start is idempotent: re-latch, still running */
@@ -1590,6 +1619,7 @@ int main(void)
     RUN_TEST(test_linkloss_latch_and_recovery);
     RUN_TEST(test_set_param_range_checked);
     RUN_TEST(test_membrane_default_is_below_the_pwm_floor);
+    RUN_TEST(test_membrane_frequency_is_millihertz_down_to_a_tenth);
     RUN_TEST(test_membrane_default_square_wave_timing);
     RUN_TEST(test_membrane_stop_leaves_the_output_low);
     RUN_TEST(test_membrane_late_service_does_not_burst_edges);

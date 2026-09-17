@@ -12,7 +12,7 @@ import pytest
 from clouds_fsw.sim_mcu import SimMcu
 from clouds_fsw.uart_link import PipeTransport
 from clouds_link import cobs, frames, hk
-from clouds_link.commands import Command, Param
+from clouds_link.commands import Command, DisperseKey, Param
 from clouds_link.frames import AckResult, Frame, PacketType, SeqCounter
 
 
@@ -154,7 +154,7 @@ def test_manual_drives_show_up_in_valve_status(sim):
     assert _wait(lambda: mcu.housekeeping().valve_status
                  & hk.ValveStatus.DISPERSE), "dispersion drive never energized"
     assert pi.command(Command.MEMBRANE, key=101) == AckResult.INVALID
-    assert pi.command(Command.DISPERSE, key=2) == AckResult.INVALID
+    assert pi.command(Command.DISPERSE, key=3) == AckResult.INVALID
 
 
 def test_motor_speed_is_a_parameter_not_the_disperse_key(sim):
@@ -169,6 +169,35 @@ def test_motor_speed_is_a_parameter_not_the_disperse_key(sim):
     assert pi.command(Command.DISPERSE, key=1) == AckResult.OK
     assert pi.command(Command.DISPERSE, key=40) == AckResult.INVALID
 
+
+
+def test_motor_run_holds_until_stop(sim):
+    """DISPERSE RUN / STOP: the motor stays on across HK packets (not a 5 s
+    pulse), a pulse asked for meanwhile is refused, a new speed re-latches
+    at once, Stop ends it, and Stop also cuts a plain pulse short."""
+    mcu, pi = sim
+    assert pi.command(Command.DISPERSE, key=DisperseKey.RUN) == AckResult.OK
+    assert mcu.motor_running
+    assert mcu.housekeeping().valve_status & hk.ValveStatus.DISPERSE
+    assert mcu.housekeeping().actuator_text == "DISPERSE"
+    assert mcu.housekeeping().hb_sense_a() > 0.2
+    assert pi.command(Command.DISPERSE, key=DisperseKey.PULSE) \
+        == AckResult.REJECTED
+    assert pi.command(Command.SET_PARAM, key=Param.DISPERSE_DUTY,
+                      value=30) == AckResult.OK
+    assert mcu.disperse_duty == 30 and mcu.motor_running
+    assert pi.command(Command.DISPERSE, key=DisperseKey.RUN) == AckResult.OK
+    assert pi.command(Command.DISPERSE, key=DisperseKey.STOP) == AckResult.OK
+    assert not mcu.motor_running
+    assert not mcu.housekeeping().valve_status & hk.ValveStatus.DISPERSE
+    assert pi.command(Command.DISPERSE, key=DisperseKey.STOP) == AckResult.OK
+
+    assert pi.command(Command.DISPERSE, key=DisperseKey.PULSE) == AckResult.OK
+    assert _wait(lambda: mcu.housekeeping().valve_status
+                 & hk.ValveStatus.DISPERSE)
+    assert pi.command(Command.DISPERSE, key=DisperseKey.STOP) == AckResult.OK
+    assert not mcu.housekeeping().valve_status & hk.ValveStatus.DISPERSE, \
+        "Stop must cut a running pulse short, not wait 5 s for it"
 
 
 def test_membrane_switch_follows_the_drive(sim):
@@ -230,6 +259,19 @@ def test_abort_locks_the_actuators_out(sim):
     assert mcu.housekeeping().membrane_duty == 0
     assert pi.command(Command.MEMBRANE, key=40) == AckResult.REJECTED
     assert pi.command(Command.DISPERSE, key=1) == AckResult.REJECTED
+    assert pi.command(Command.DISPERSE, key=DisperseKey.RUN) \
+        == AckResult.REJECTED
+    # Stop can only de-energize, so it is the one drive command SAFE takes
+    assert pi.command(Command.DISPERSE, key=DisperseKey.STOP) == AckResult.OK
+
+
+def test_abort_stops_a_running_motor(sim):
+    mcu, pi = sim
+    assert pi.command(Command.DISPERSE, key=DisperseKey.RUN) == AckResult.OK
+    assert pi.command(Command.ABORT) == AckResult.OK
+    assert _wait(lambda: mcu.state == hk.SeqState.SAFE)
+    assert not mcu.motor_running
+    assert not mcu.housekeeping().valve_status & hk.ValveStatus.DISPERSE
 
 
 def test_hold_stops_the_sequence_and_resume_restarts_it(sim):

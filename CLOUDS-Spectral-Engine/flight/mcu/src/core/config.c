@@ -11,9 +11,13 @@ static const int32_t limits[PARAM_COUNT_][3] = {
     [PARAM_T_FLOAT_S] = {7200, 600, 21600},
     [PARAM_LINKLOSS_S] = {600, 60, 3600},
     [PARAM_T_MEASURE_S] = {480, 60, 3600},
-    [PARAM_MEMBRANE_HZ] = {2, 1, 400}, /* 2 Hz: below the ~9 Hz PWM floor, so
-                                          the drive is loop-toggled, see
-                                          core/sqwave.h */
+    [PARAM_MEMBRANE_MHZ] = {2000, 100, 400000}, /* millihertz. 2 Hz default:
+                                          below the ~9 Hz PWM floor, so the
+                                          drive is loop-toggled (core/sqwave).
+                                          Floor 0.1 Hz = a 10 s cycle; the
+                                          operator asked for tenths of a hertz,
+                                          and an int32 in whole Hz cannot say
+                                          0.5. Ceiling 400 Hz as before. */
     [PARAM_MEMBRANE_DUTY] = {60, 5, 100},
     [PARAM_SEAL_RETRY] = {3, 0, 10},
     /* M-13: the Pi's own beat is TIMESYNC every 10 s, so 60 s is six missed

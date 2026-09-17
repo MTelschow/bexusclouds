@@ -171,7 +171,7 @@ class ValveStatus(IntEnum):
     PINCH_2 = 1 << 1
     EQ1_CLOSE = 1 << 2
     EQ2_CLOSE = 1 << 3
-    DISPERSE = 1 << 4        # CaCO3 dispersion motor, forward line
+    DISPERSE = 1 << 4        # CaCO3 dispersion motor, forward line (pulse or run)
     MEMBRANE_PULLED = 1 << 5  # sensed, not driven: GP30 switch lifted (HIGH) now
     MEMBRANE_CYCLING = 1 << 6  # sensed: GP30 switch changed since the last HK
 
@@ -331,7 +331,8 @@ class Housekeeping:
     @property
     def actuator_text(self) -> str:
         """Which actuator lines ``valve_status`` says are driven, for HK
-        displays. A commanded drive is a 5 s pulse, so this is what tells an
+        displays. A commanded drive is a 5 s pulse (or, for the dispersion
+        motor, a run held until DISPERSE STOP), so this is what tells an
         operator the command reached the hardware. The sensed
         ``MEMBRANE_PULLED`` bit is left out: it is not a drive, and it is
         shown with the membrane duty (``membrane_text``) instead."""

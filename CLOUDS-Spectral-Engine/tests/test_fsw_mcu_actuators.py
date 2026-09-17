@@ -223,6 +223,34 @@ class TestManualActuatorDrives:
             case = seq_c.split("case %s:" % cmd, 1)[1].split("case ", 1)[0]
             assert "actuators_commandable(s)" in case, (
                 "%s must be state-checked" % cmd)
+        # ...and TERMINATION takes a held motor down with the membrane, so
+        # SAFE really is "actuators off"
+        term = seq_c.split("case ST_TERMINATION:", 1)[1].split("case ", 1)[0]
+        assert "set_membrane(s, 0)" in term and "set_motor(s, false)" in term
+
+    def test_disperse_keys_mirror_the_firmware(self):
+        """The key is the request: 0 stop, 1 pulse, 2 run, at both ends."""
+        from clouds_link.commands import DisperseKey
+        frame_h = _read("src", "core", "frame.h")
+        for name, val in (("STOP", 0), ("PULSE", 1), ("RUN", 2)):
+            assert _define(frame_h, "DISPERSE_%s" % name) == val
+            assert int(DisperseKey[name]) == val
+
+    def test_motor_run_is_a_hold_beside_the_pulse_queue(self):
+        """A run must not sit in core/pulse's one-at-a-time queue: there it
+        would delay a release's pinch valve indefinitely and keep busy()
+        true through the SEAL step. So hw.c holds the line directly, keeps
+        HK honest about it, and Stop cancels any motor pulse as well."""
+        hw = _read("src", "hw", "hw.c")
+        body = hw.split("static void ops_disperse_run", 1)[1].split("\n}", 1)[0]
+        assert "pulse_cancel(&pulses, PIN_DISPERSE_FWD" in body
+        assert "pulse_request" not in body
+        assert "motor_held = true" in body and "motor_held = false" in body
+        status = hw.split("uint8_t hw_actuator_status", 1)[1].split("\n}", 1)[0]
+        assert "motor_held" in status and "HKV_DISPERSE" in status
+        # the end of a pulse must not release a held motor
+        drive = hw.split("static void drive_pin", 1)[1].split("\n}", 1)[0]
+        assert "motor_held" in drive
 
 
 class TestLinkSchemaMirror:
@@ -362,7 +390,7 @@ class TestMembraneDrive:
     def test_membrane_frequency_comes_from_config(self):
         hw = _read("src", "hw", "hw.c")
         body = hw.split("static void ops_membrane", 1)[1].split("\n}", 1)[0]
-        assert "PARAM_MEMBRANE_HZ" in body, (
+        assert "PARAM_MEMBRANE_MHZ" in body, (
             "frequency must come from config, not be left to the default "
             "divider - that is the 150 kHz bug")
         assert "pwmdiv_solve" in body or "membrane_program" in body

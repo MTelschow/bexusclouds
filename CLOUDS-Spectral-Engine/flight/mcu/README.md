@@ -149,7 +149,7 @@ unplugged, and nothing on the link may delay a state transition (S.7).
   runs in 5 s pulses, so zeros between releases are expected. Guarded by
   `HAVE_HB_SENSE`, like the GP30 switch.
 - **M-07 membrane**: the drive is done. GP26, measured, with
-  `PARAM_MEMBRANE_HZ` reaching the driver through `seq_ops_t.ctx`, default
+  `PARAM_MEMBRANE_MHZ` (millihertz, 0.1..400 Hz) reaching the driver through `seq_ops_t.ctx`, default
   **2 Hz**. Because 2 Hz is below the ~9 Hz PWM floor, edges are toggled from
   `hw_actuators_service()` via `core/sqwave` - loop-released for the same
   reason the valve pulses are, so a hung loop cannot leave the solenoid

@@ -35,7 +35,7 @@ import threading
 import time
 
 from clouds_link import cobs, frames, hk
-from clouds_link.commands import Command, Param
+from clouds_link.commands import Command, DisperseKey, Param
 from clouds_link.frames import (AckResult, EventCode, EventSeverity, Frame,
                                 PacketType, SeqCounter)
 
@@ -84,7 +84,9 @@ class SimMcu:
         self.fired = 0
         self.hold = False
         self.membrane_duty = 0
+        self.membrane_mhz = 2000            # PARAM_MEMBRANE_MHZ default
         self.disperse_duty = 100         # PARAM_DISPERSE_DUTY, motor speed
+        self.motor_running = False       # DISPERSE RUN .. STOP, like the MCU
         self.seal_verified = False
         self._t0 = time.monotonic()
         self._state_entered = self._t0
@@ -231,10 +233,22 @@ class SimMcu:
                         "membrane on" if key else "membrane off")
             return AckResult.OK
         if cmd == Command.DISPERSE:
-            if key != 1:
+            if key > DisperseKey.RUN:
                 return AckResult.INVALID
+            if key == DisperseKey.STOP:
+                # Always honoured, TERMINATION/SAFE included - it can only
+                # de-energize. Ends a run and cuts a pulse short alike.
+                self._stop_motor()
+                self._event(EventCode.MANUAL_DRIVE, "disperse stop")
+                return AckResult.OK
             if not self._actuators_commandable():
                 return AckResult.REJECTED
+            if key == DisperseKey.RUN:
+                self.motor_running = True
+                self._event(EventCode.MANUAL_DRIVE, "disperse run")
+                return AckResult.OK
+            if self.motor_running:
+                return AckResult.REJECTED    # the bounded pulse cannot happen
             self._queue_drive(hk.ValveStatus.DISPERSE)
             self._event(EventCode.MANUAL_DRIVE, "disperse")
             return AckResult.OK
@@ -245,6 +259,12 @@ class SimMcu:
                 return AckResult.INVALID
             if key == Param.T_MEASURE_S:
                 self._t_measure_s = float(value)
+            elif key == Param.MEMBRANE_MHZ:
+                # config.c limits, so the sim refuses what the MCU refuses -
+                # in particular a stale sender's whole-hertz "2".
+                if not 100 <= int(value) <= 400000:
+                    return AckResult.INVALID
+                self.membrane_mhz = int(value)
             elif key == Param.MEMBRANE_DUTY and self.membrane_duty:
                 self.membrane_duty = int(value)
             elif key == Param.DISPERSE_DUTY:
@@ -312,6 +332,7 @@ class SimMcu:
                 self._enter(st.TERMINATION)
         elif self.state == st.TERMINATION:
             self.membrane_duty = 0
+            self.motor_running = False
             self._drive_queue.clear()
             self._drive = None
             self._enter(st.SAFE)
@@ -322,8 +343,22 @@ class SimMcu:
 
     def _queue_drive(self, bit: int) -> None:
         """Ask for one actuator line. It waits its turn: the MCU drives one
-        at a time to cap peak current, so queued drives never overlap."""
+        at a time to cap peak current, so queued drives never overlap. A
+        motor pulse while the operator holds the motor on is redundant and
+        not queued, as in hw.c's ops_disperse()."""
+        if bit == hk.ValveStatus.DISPERSE and self.motor_running:
+            return
         self._drive_queue.append((bit, self._valve_pulse_s))
+
+    def _stop_motor(self) -> None:
+        """DISPERSE STOP: release the hold and cancel any motor pulse that
+        is driving or queued, leaving the valve pulses alone (pulse_cancel)."""
+        self.motor_running = False
+        self._drive_queue = [d for d in self._drive_queue
+                             if d[0] != hk.ValveStatus.DISPERSE]
+        if self._drive is not None and \
+                self._drive[0] == hk.ValveStatus.DISPERSE:
+            self._drive = None
 
     def _step_drives(self, now: float) -> None:
         if self._drive is not None and now >= self._drive[1]:
@@ -397,7 +432,8 @@ class SimMcu:
                        int(random.gauss(3_300, 3)))
             # Amps are computed on the ground from shunt_raw, so the sim has
             # to go the other way: pick a draw and emit the register.
-            draw = 0.9 if (self._drive or self.membrane_duty) else 0.35
+            draw = 0.9 if (self._drive or self.membrane_duty
+                           or self.motor_running) else 0.35
             shunt = tuple(self._shunt_counts(a, i) for i, a in
                           enumerate((draw, 0.0, 0.4, 0.2)))
 
@@ -411,8 +447,10 @@ class SimMcu:
             # during the last second. With the drive off the plunger is
             # released: the switch never closes and nothing cycles.
             valves = self._drive[0] if self._drive else 0
+            if self.motor_running:      # a held motor, beside any pulse
+                valves |= hk.ValveStatus.DISPERSE
             on_phase = bool(self.membrane_duty and
-                            (now * 2.0) % 1.0 < self.membrane_duty / 100.0)
+                            (now * self.membrane_mhz / 1000.0) % 1.0 < self.membrane_duty / 100.0)
             if on_phase:
                 valves |= hk.ValveStatus.MEMBRANE_PULLED
             if self.membrane_duty:

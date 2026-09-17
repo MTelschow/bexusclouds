@@ -27,12 +27,19 @@ class ProtocolError(RuntimeError):
     """Malformed or truncated exchange."""
 
 
-def send_request(sock: socket.socket, obj: dict) -> None:
-    sock.sendall(json.dumps(obj).encode("utf-8") + b"\n")
+def send_request(sock: socket.socket, obj: dict) -> int:
+    """Send one request; returns the bytes put on the wire, which is what the
+    traffic indicator counts (clouds_ui/traffic.py)."""
+    wire = json.dumps(obj).encode("utf-8") + b"\n"
+    sock.sendall(wire)
+    return len(wire)
 
 
-def send_response(sock: socket.socket, tag: bytes, body: bytes) -> None:
-    sock.sendall(_HEAD.pack(tag, len(body)) + body)
+def send_response(sock: socket.socket, tag: bytes, body: bytes) -> int:
+    """Send one response; returns the bytes put on the wire."""
+    wire = _HEAD.pack(tag, len(body)) + body
+    sock.sendall(wire)
+    return len(wire)
 
 
 def send_json(sock: socket.socket, obj: dict) -> None:

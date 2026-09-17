@@ -10,7 +10,7 @@ import time
 import pytest
 
 from clouds_link import frames, hk
-from clouds_link.commands import Command
+from clouds_link.commands import Command, DisperseKey
 from clouds_link.frames import AckResult, Frame, PacketType, SeqCounter
 from clouds_fsw.command_server import CommandServer, CommandState
 from clouds_gse.commander import Commander, CommandError, InterlockError
@@ -65,6 +65,18 @@ class TestReceiver:
         assert _wait(lambda: rx.gaps.received == 1)
         assert rx.decode_errors == 1
 
+    def test_wire_bytes_counted_even_when_undecodable(self, receiver):
+        """The traffic indicator's Down lane. Bytes are charged where the
+        datagram lands, not after decode: a link delivering nothing but
+        garbage spent the same budget and must not read as idle."""
+        rx, send = receiver
+        good = _hk_frame(0)
+        send(b"\xba\xad\xf0\x0d")
+        send(good)
+        assert _wait(lambda: rx.rx_packets == 2)
+        assert rx.rx_bytes == len(good) + 4
+        assert rx.last_rx_time > 0
+
     def test_quicklook_and_event_state(self, receiver):
         rx, send = receiver
         ql = Frame(type=PacketType.QUICKLOOK,
@@ -100,6 +112,29 @@ class TestCommander:
         assert commander.ping() == AckResult.OK
         assert forwarded == [(Command.PING, 0, 0)]
         assert commander.last_rtt_s is not None
+
+    def test_uplink_bytes_counted_per_direction(self, cmd_link):
+        """The traffic indicator's Up lane. Commands out and ACKs back are
+        counted apart: the ACK bytes are not downlink telemetry and must not
+        be added to the lane that carries the 2 kbit/s budget."""
+        commander, _ = cmd_link
+        commander.ping()
+        assert commander.tx_frames == 1
+        assert commander.tx_bytes > 0
+        assert commander.rx_bytes > 0
+        assert commander.last_tx_time > 0 and commander.last_rx_time > 0
+        before = commander.tx_bytes
+        commander.ping()
+        assert commander.tx_bytes == 2 * before   # same frame size twice
+        assert commander.peer.endswith(f":{commander._port}")
+
+    def test_interlocked_command_costs_no_uplink(self, cmd_link):
+        """S.10 refuses locally, so the bytes never leave - and the indicator
+        must not show traffic for a command that was never sent."""
+        commander, _ = cmd_link
+        with pytest.raises(InterlockError):
+            commander.send(Command.START)
+        assert commander.tx_bytes == 0 and commander.tx_frames == 0
 
     def test_ground_interlock_blocks_release(self, cmd_link):
         commander, forwarded = cmd_link
@@ -186,6 +221,17 @@ class TestManualActuators:
         commander, forwarded = cmd_link
         assert commander.disperse() == AckResult.OK
         assert forwarded == [(Command.DISPERSE, 1, 0)]
+
+    def test_motor_run_and_stop_are_the_disperse_keys(self, cmd_link):
+        """Start/Stop on the panel: the same command with the key naming the
+        request (2 run, 0 stop) - never a speed, which is SET_PARAM."""
+        commander, forwarded = cmd_link
+        assert commander.disperse_run() == AckResult.OK
+        assert commander.disperse_stop() == AckResult.OK
+        assert forwarded == [(Command.DISPERSE, int(DisperseKey.RUN), 0),
+                             (Command.DISPERSE, int(DisperseKey.STOP), 0)]
+        assert (DisperseKey.STOP, DisperseKey.PULSE, DisperseKey.RUN) \
+            == (0, 1, 2)
 
     def test_duty_out_of_range_never_leaves_the_laptop(self, cmd_link):
         commander, forwarded = cmd_link

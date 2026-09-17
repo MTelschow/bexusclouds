@@ -30,11 +30,13 @@ typedef struct {
 
 void sqwave_init(sqwave_t *w);
 
-/* Begin oscillating at `hz` with `duty_pct` high time, starting high.
- * Both phases are forced to at least 1 ms, so a duty of 0 or 100 still
- * produces a real square wave rather than a stuck level - callers that mean
- * "off" must use sqwave_stop(), which is unambiguous. */
-void sqwave_start(sqwave_t *w, uint32_t hz, uint8_t duty_pct,
+/* Begin oscillating at `mhz` MILLIhertz (2000 = 2 Hz) with `duty_pct` high
+ * time, starting high. Millihertz because the membrane is driven at tenths
+ * of a hertz too (a 0.1 Hz drive is a 10 s cycle), which whole hertz cannot
+ * express. Both phases are forced to at least 1 ms, so a duty of 0 or 100
+ * still produces a real square wave rather than a stuck level - callers that
+ * mean "off" must use sqwave_stop(), which is unambiguous. */
+void sqwave_start(sqwave_t *w, uint32_t mhz, uint8_t duty_pct,
                   uint64_t now_ms);
 
 /* Stop and return to the low level. Idempotent. */

@@ -47,9 +47,9 @@ ARMED_COMMANDS = frozenset({Command.RELEASE})
 #: irreversible - the membrane solenoid oscillates while it is told to and
 #: stops on MEMBRANE key=0, and the motor runs one bounded pulse or runs until
 #: DISPERSE STOP - and driving them on the bench is the whole point of having
-#: them on the panel. The MCU
-#: still refuses both in TERMINATION and SAFE, so an abort cannot be undone
-#: from the panel.
+#: them on the panel. The MCU still refuses both in TERMINATION and SAFE, so
+#: an abort cannot be undone from the panel (DISPERSE STOP excepted: it only
+#: de-energizes).
 MANUAL_ACTUATORS = frozenset({Command.MEMBRANE, Command.DISPERSE})
 
 #: Commands the GSE refuses to send while on ground (S.10) unless the
@@ -82,7 +82,9 @@ class Param(IntEnum):
     T_FLOAT_S = 6             # timer fallback after launch (default 7200)
     LINKLOSS_S = 7            # autonomous latch (default 600)
     T_MEASURE_S = 8           # per measurement phase (default 480, P.6+P.7)
-    MEMBRANE_HZ = 9           # solenoid drive frequency, Hz (default 2)
+    MEMBRANE_MHZ = 9          # solenoid drive frequency, MILLIhertz (default
+                              # 2000 = 2 Hz; 100..400000). Was MEMBRANE_HZ in
+                              # whole Hz - the operator needs 0.1..0.9 Hz
     MEMBRANE_DUTY = 10        # percent (default 60)
     SEAL_RETRY = 11           # seal verification retries (default 3)
     PI_SILENT_S = 12          # MCU declares the Pi lost after this (default 60)

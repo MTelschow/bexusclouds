@@ -135,10 +135,10 @@
  * drain-to-source through a low-side FET, so it is valid in drive and brake
  * and reads ZERO IN COAST, while the winding current freewheels through the
  * body diodes - 0 counts is "no low-side current", not "no current". And the
- * motor runs in bounded 5 s pulses (one per release or DISPERSE command), so
- * at 1 Hz a run is a handful of samples and everything between releases is a
- * legitimate zero. A pulse whose samples never rise is the fault this exists
- * to show.
+ * motor runs in bounded 5 s pulses (one per release or DISPERSE pulse), so
+ * at 1 Hz a pulse is a handful of samples and everything between releases is
+ * a legitimate zero; only an operator's DISPERSE run holds it on longer. A
+ * drive whose samples never rise is the fault this exists to show.
  *
  * GP46 exists only on the RP2350B carrier (boards/clouds_carrier.h); a pico2
  * build compiles the read out and downlinks HB_SENSE_INVALID. */
@@ -150,7 +150,9 @@
  * used. Not in the SED - undocumented hardware, see DEVLOG 2026-08-31.
  * Driven through core/pulse like the valves, with the opposite line held low
  * as its interlock, so the pair can never be energized together and no drive
- * can outlive the watchdog. Its driver is the DRV8251A whose current sense
+ * can outlive the watchdog; the operator's DISPERSE run holds the line
+ * beside that queue (hw.c motor_held) until DISPERSE stop, and a watchdog
+ * reset drops it like everything else. Its driver is the DRV8251A whose current sense
  * is PIN_HB_SENSE above - same ACT_HB channel, so that ADC reading is this
  * motor's current. */
 #define PIN_DISPERSE_FWD 17

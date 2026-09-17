@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 import os
 import socket
+import time
 
 import numpy as np
 
@@ -53,14 +54,25 @@ class NetDriver(SpectrometerDriver):
         self.timeout = float(timeout)
         self._sock: socket.socket | None = None
         self._info: DeviceInfo | None = None
+        # Wire counters, read by the traffic indicator (clouds_ui/traffic.py).
+        # This is Ethernet too, and at ~50 kB/s it is three orders of
+        # magnitude above the flight downlink - which is exactly why it is
+        # counted on its own lane rather than added to it.
+        self.tx_bytes = 0
+        self.rx_bytes = 0
+        self.last_tx_time: float = 0.0
+        self.last_rx_time: float = 0.0
 
     # ----------------------------------------------------------------- plumbing
     def _request(self, obj: dict) -> tuple[bytes, bytes]:
         if self._sock is None:
             raise DriverError("request before connect()")
         try:
-            send_request(self._sock, obj)
+            self.tx_bytes += send_request(self._sock, obj)
+            self.last_tx_time = time.time()
             tag, body = recv_response(self._sock)
+            self.rx_bytes += len(body) + 5      # 1-byte tag + uint32 length
+            self.last_rx_time = time.time()
         except (OSError, ProtocolError) as exc:
             # Transport failure, not a refusal from the far end: the request
             # may be sent and its response still on the wire. Drop the socket

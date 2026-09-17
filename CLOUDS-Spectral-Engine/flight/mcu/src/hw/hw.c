@@ -351,8 +351,8 @@ static void membrane_program(uint slice, uint32_t hz, uint8_t duty_pct)
                        (uint16_t)((uint64_t)period * duty_pct / 100u));
 }
 
-/* Membrane dispersion (M-07). Frequency comes from PARAM_MEMBRANE_HZ via
- * ops->ctx; without a cfg the compiled-in default is used rather than the
+/* Membrane dispersion (M-07). Frequency comes from PARAM_MEMBRANE_MHZ (in
+ * millihertz) via ops->ctx; without a cfg the compiled-in default is used rather than the
  * 150 kHz that an unset divider produces - at that rate a push-pull solenoid
  * only sees a DC average and never oscillates.
  *
@@ -372,28 +372,31 @@ static void ops_membrane(void *ctx, uint8_t duty_pct)
 {
     const cfg_t *c = (const cfg_t *)ctx;
     uint slice = pwm_gpio_to_slice_num(PIN_MEMBRANE_PWM);
-    uint32_t hz;
+    uint32_t mhz;
 
     if (duty_pct == 0) {
         membrane_release_pin_low(slice);
         return;
     }
 
-    hz = (uint32_t)(c ? cfg_get(c, PARAM_MEMBRANE_HZ)
-                     : cfg_default(PARAM_MEMBRANE_HZ));
+    mhz = (uint32_t)(c ? cfg_get(c, PARAM_MEMBRANE_MHZ)
+                      : cfg_default(PARAM_MEMBRANE_MHZ));
 
-    if (hz < pwmdiv_min_hz(clock_get_hz(clk_sys))) {
-        /* Below the PWM floor - which is where the membrane actually runs, at
-         * 2 Hz. Toggle from the main loop instead; core/sqwave explains why
-         * that is the safe mechanism for an actuator. */
+    if (mhz < pwmdiv_min_hz(clock_get_hz(clk_sys)) * 1000u) {
+        /* Below the PWM floor - which is where the membrane actually runs,
+         * at 2 Hz and down to 0.1 Hz. Toggle from the main loop instead;
+         * core/sqwave explains why that is the safe mechanism for an
+         * actuator. */
         membrane_release_pin_low(slice);
-        sqwave_start(&membrane_wave, hz, duty_pct, hw_monotonic_ms());
+        sqwave_start(&membrane_wave, mhz, duty_pct, hw_monotonic_ms());
         gpio_put(PIN_MEMBRANE_PWM, sqwave_level(&membrane_wave));
         return;
     }
 
     sqwave_stop(&membrane_wave);
-    membrane_program(slice, hz, duty_pct);
+    /* Above the floor the slice takes whole hertz; at >= 9 Hz the rounding
+     * is under 6 % and the mechanism does not care. */
+    membrane_program(slice, (mhz + 500u) / 1000u, duty_pct);
     gpio_set_function(PIN_MEMBRANE_PWM, GPIO_FUNC_PWM);
     pwm_set_enabled(slice, true);
 }

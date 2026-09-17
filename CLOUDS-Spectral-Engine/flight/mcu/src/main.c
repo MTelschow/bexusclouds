@@ -173,7 +173,7 @@ int main(void)
 
     cfg_defaults(&cfg);
     link_init(&pi_link, hw_monotonic_ms());
-    ops.ctx = &cfg; /* ops_membrane reads PARAM_MEMBRANE_HZ from here */
+    ops.ctx = &cfg; /* ops_membrane reads PARAM_MEMBRANE_MHZ from here */
     have_restore = hw_restore_persist(&restored); /* S.3 brownout resume */
     seq_init(&seq, &cfg, &ops, have_restore ? &restored : NULL,
              hw_monotonic_ms(), hw_wall_s());

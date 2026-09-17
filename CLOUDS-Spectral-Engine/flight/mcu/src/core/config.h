@@ -15,7 +15,12 @@ enum param {
     PARAM_T_FLOAT_S = 6,         /* timer fallback after launch           */
     PARAM_LINKLOSS_S = 7,        /* autonomous latch (O.2)                */
     PARAM_T_MEASURE_S = 8,       /* per measurement phase (P.6 + P.7)     */
-    PARAM_MEMBRANE_HZ = 9,
+    PARAM_MEMBRANE_MHZ = 9,      /* solenoid drive frequency, MILLIhertz:
+                                    2000 = 2 Hz. Was PARAM_MEMBRANE_HZ in
+                                    whole hertz until 2026-09-17; the key
+                                    number is unchanged, the unit is not, so
+                                    a stale sender's "2" is now 2 mHz and
+                                    is refused by the 100 mHz floor.       */
     PARAM_MEMBRANE_DUTY = 10,    /* percent                               */
     PARAM_SEAL_RETRY = 11,
     PARAM_PI_SILENT_S = 12,      /* Pi declared lost after this (M-13)     */

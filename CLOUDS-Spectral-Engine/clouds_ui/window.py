@@ -39,6 +39,7 @@ from . import style
 from . import timeline
 from .flight import FlightPanel
 from .sections import Section, SectionFlow, group_label
+from .traffic import TrafficIndicator
 from .timeline import TimelineBuffer, TimelineView, fig_to_pixmap
 
 # Repo root, not this package: assets/, calibration*.json and the Calibrate
@@ -614,6 +615,21 @@ class CloudsWindow(QtWidgets.QMainWindow):
         rule.setFrameShape(QtWidgets.QFrame.HLine)
         rule.setStyleSheet("color:#dde3e9;")
         v.addWidget(rule)
+
+        # --- Ethernet traffic: is the cable carrying anything --------------
+        # In the header rather than in a collapsible section, and above every
+        # readout it explains: it is the one indicator whose whole job is to
+        # be visible when nothing else is updating, and a fold that hides it
+        # turns "the link died" back into "the numbers stopped, why".
+        # The driver goes in as a callable - the window re-opens it on
+        # reconnect and on Restart, and the lane must follow the live socket.
+        self.traffic = TrafficIndicator(self.rx, self.commander,
+                                        lambda: self.driver)
+        v.addWidget(self.traffic)
+        rule2 = QtWidgets.QFrame()
+        rule2.setFrameShape(QtWidgets.QFrame.HLine)
+        rule2.setStyleSheet("color:#dde3e9;")
+        v.addWidget(rule2)
 
         # --- Source: what the spectrum view is drawing ---------------------
         # Top of the sidebar because it governs the whole plot, and explicit
@@ -1669,6 +1685,9 @@ class CloudsWindow(QtWidgets.QMainWindow):
                     self.session = links.session
                     self.mock_stack = links.mock_stack
             self.flight.rebind(self.rx, self.commander, self.session)
+            # Session totals, so they start over with the session; the Bench
+            # lane follows the re-opened driver through the callable.
+            self.traffic.rebind(self.rx, self.commander)
             self.rb_downlink.setEnabled(self.rx is not None)
             self.rb_downlink.setToolTip(
                 "" if self.rx is not None else "No downlink receiver in this session")

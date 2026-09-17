@@ -18,7 +18,234 @@ without re-deriving anything. Newest entries first.
 
 ---
 
-## 2026-09-17 (newest) - ACT_HB_SENS is the CaCO3 motor's current, in amps
+## 2026-09-17 (newest) - An Ethernet traffic indicator: is the cable carrying anything
+
+**Asked for:** a traffic indicator in the GUI showing the Ethernet up- and
+downlink.
+
+**The gap it fills.** Everything on the panel until now reported *decoded*
+telemetry: HK age, sequence gaps, command RTT. All three read the same on a
+link that is delivering nothing and on a Pi that is simply quiet, and none of
+them move at all when the bytes arriving are corrupt. The operator's question
+on the bench is cruder than any of them - *is the cable carrying anything* -
+and answering it meant a terminal and `tcpdump`.
+
+**What it shows.** `clouds_ui/traffic.py`, three lanes in the sidebar header:
+
+* **Down** - UDP telemetry into `Receiver` (HK, events, quick-look, Pi
+  status), counted where the datagram lands rather than after decode. A link
+  delivering nothing but CRC failures spent the same budget and must not read
+  as idle. This is the lane with the 2 kbit/s allowance and it goes **amber**
+  over it - the same limit `tests/test_fsw_telemetry.py` enforces on the Pi,
+  in front of the operator instead of only in CI (a test asserts the two
+  numbers are one number).
+* **Up** - the TCP command socket: commands plus the PING heartbeat, which is
+  all it carries when nobody is commanding. Its ACK bytes ride back on that
+  same socket and are counted into this lane, *not* into Down - an ACK is not
+  downlink telemetry and must not inflate the budget reading.
+* **Bench** - the `--net` frame stream (TCP 4010) when the spectrum comes
+  from a remote detector. ~50 kB/s, three orders of magnitude above the
+  flight downlink; summed into Down it would make the budget lane
+  meaningless, so it is its own row and stays grey for a USB detector, which
+  is not Ethernet at all.
+
+**Why a light and a number.** The light is the NIC LED: it says *a packet
+arrived in this window*. HK is 1 Hz and the poll is 500 ms, so a healthy link
+blinks - and a link that has been silent for 3 s goes **red**, which is the
+state the age fields could never distinguish from "quiet". The number is the
+load, smoothed with a 3 s time constant, because the instantaneous rate of a
+1 Hz burst read against a 500 ms window alternates between zero and a spike.
+A lane with no source at all (no downlink in this session, no command link,
+no remote detector) is **grey with a dash**, never a red alarm: not having a
+link is a normal shape of this application, not a fault.
+
+**Where it sits.** In the sidebar header, above the collapsible sections
+rather than in one. It is the one indicator whose job is to be visible when
+nothing else is updating, and a fold that hides it turns "the link died" back
+into "the numbers stopped, why". It polls itself on its own 500 ms timer
+instead of riding the flight tick, because an instrument-only session over
+`--net` has Ethernet traffic and no downlink at all - and the flight timer
+does not run there. The far end is named next to it (`192.168.100.10:4001`,
+or a loopback port under `--mock`), so the operator can see which link they
+are looking at.
+
+**The counters.** Plain ints on `Receiver`, `Commander` and `NetDriver`,
+written by the thread that owns each socket and read from the GUI thread -
+the receiver still never touches Qt. Totals are the session's: Restart
+rebinds the lanes and zeroes them, and the Bench lane resets itself when the
+window re-opens its driver, or a reconnect would read as a burst followed by
+a stall. `net_protocol.send_request`/`send_response` now return the bytes
+they put on the wire, which is where that lane's tx comes from.
+
+**Checks.** `tests/test_traffic.py` drives the lane maths in fake time (rate
+convergence, the blink, silence vs idleness, over-budget, no-source, and the
+first poll not inventing a rate from a counter that was already high);
+`tests/test_gse.py` asserts the wire counters themselves, including that an
+undecodable datagram is still counted and that a command refused by the S.10
+interlock costs no uplink bytes; `verify_qt.py` checks the rendered lanes
+against the receiver's and commander's own numbers, the peer line, and that
+Restart starts the totals over.
+
+---
+
+## 2026-09-17 - The membrane frequency goes to tenths of a hertz: PARAM_MEMBRANE_HZ becomes PARAM_MEMBRANE_MHZ
+
+**Asked for:** membrane frequencies like 0.1 to 0.9 Hz.
+
+**The constraint.** `SET_PARAM` carries an int32 and `PARAM_MEMBRANE_HZ`
+was whole hertz, floor 1. No decimal can travel on that wire, and widening
+the frame for one knob is not worth a wire-format change. So the **unit**
+changed instead: key 9 is now **`PARAM_MEMBRANE_MHZ`, millihertz**, default
+2000, range **100..400000** (0.1 Hz to 400 Hz). The name changed with the
+unit on purpose - a reader who sees `MHZ` cannot mistake the number for
+hertz, and the mirror test (`config.h` vs `commands.Param`) makes both ends
+rename together. The key *number* did not change, so a stale sender's "2"
+arrives as 2 mHz and is refused by the 100 mHz floor rather than driving a
+500 s cycle.
+
+**Firmware.** `sqwave_start()` takes millihertz: `period_ms = 1000000 /
+mhz`, so 0.1 Hz is a 10 s cycle, 6 s high at 60 %, and 400 Hz still hits the
+2 ms floor. `ops_membrane()` compares against `pwmdiv_min_hz() * 1000` to
+pick the loop-toggled path, and hands the PWM slice whole hertz rounded from
+mHz for the >= 9 Hz case, where 0.5 Hz of rounding is under 6 % and the
+mechanism does not care. Native test
+`test_membrane_frequency_is_millihertz_down_to_a_tenth` pins 0.1 / 0.5 /
+400 Hz timing and the range check including the old-unit "2".
+
+**Ground.** `Commander.membrane_hz(hz: float)` is the one place the
+conversion lives (`round(hz * 1000)`, range-checked to 0.1..400). The panel's
+frequency box is a `QDoubleSpinBox`, one decimal, step 0.1, 0.1..400 Hz,
+default 2.0; `Drive` sends it through `membrane_hz()` before `MEMBRANE`. The
+headless monitor gained `membrane_hz <hz>`; `set MEMBRANE_MHZ <n>` still
+works raw. `sim_mcu` honours the key with the MCU's limits and cycles its
+simulated switch at the set rate, so `--mock` at 0.2 Hz shows the light
+alternating slowly, as the carrier would.
+
+**Checks.** `run_native.sh` 61/61; `pytest` 302 passed; firmware
+cross-compiles for the carrier, clean; `verify_qt.py` drives at 0.5 Hz and
+requires `SET_PARAM MEMBRANE_MHZ 500` on the wire before `MEMBRANE 70`.
+**On the carrier** (peer session reflashed the working-tree image at 21:57;
+direct downlink receiver, commands over TCP 4001):
+
+```
+membrane_hz(0.2) OK, membrane(60) OK      16 HK:  pulled  -PP--PPP--PPP--P
+                                                  cycling .C..CC..CCC..C.C
+membrane_hz(2.0) OK, membrane(60) OK       6 HK:  pulled  PPPPPP   cycling .CCCCC
+membrane(0) OK                             3 HK:  pulled  ---
+membrane_hz(0.05)                          ValueError on the ground, never sent
+```
+
+At 0.2 Hz the plunger is lifted three packets and pressed two, one 5 s cycle
+at 60 %, exactly the wave `sqwave_start(200, 60)` describes, and the switch
+light on the panel would alternate at that pace. At 2 Hz the position sample
+is the constant fixed-phase reading and `cycling` carries the motion, as
+before. The MCU's floor was checked by the peer over the same link: `SET_PARAM
+9 = 50` (0.05 Hz) answers `INVALID`.
+
+---
+
+## 2026-09-17 - The membrane switch gets a light on the panel
+
+**Asked for:** an indicator in the GUI showing whether the GP30 button is
+pressed or not.
+
+**What.** A coloured dot and a line of text under the membrane `Drive` /
+`Stop` buttons in the Actuators section (`FlightPanel._set_switch`):
+
+```
+●  switch lifted - solenoid actuated, cycling     green   (MEMBRANE_PULLED set)
+●  switch pressed - plunger resting               navy    (bit clear, switch readable)
+●  switch: no telemetry | stale telemetry | no reading (MCU build without GP30)   grey
+```
+
+**Why a light when the `Membrane` HK row already says `pulled`/`pushed`.**
+That row is one word in a column of monospaced text, and it changes at the
+same visual weight as `Uptime`. The operator exercising the solenoid on the
+bench is looking at the mechanism, not the row; the light sits next to the
+buttons that move it and changes colour. Same information, second place,
+different reader.
+
+**Rules kept from the rest of the panel.** Grey with a reason rather than a
+default colour when there is no reading: no HK yet, HK older than
+`STALE_HK_S`, or `HKE_NO_MEMBRANE_SENSE` from a pico2 build - the always-clear
+bit of a build that cannot reach GP30 must not render as "pressed". Reset to
+`no telemetry` on the window's Restart with the other readouts. `cycling` is
+appended from the peer's `MEMBRANE_CYCLING` latch when it is set, because the
+position alone is one fixed-phase sample of the 2 Hz cycle.
+
+**Checks.** `verify_qt.py` sends the three cases and the restart and reads
+the label text and the dot's colour back: lifted+cycling green, unsourced
+grey with the build reason, pressed navy after restart, `no telemetry` on
+reset. `VERIFY OK`.
+
+---
+
+## 2026-09-17 - The dispersion motor gets Start/Stop beside its pulse
+
+**The request.** The motor was drivable from the panel only as the 5 s pulse a
+release schedules. For bench work - finding the speed that disperses the
+powder, reading the GP46 current sense against a turning motor - the operator
+wants to start it, watch, adjust, and stop it, and still be able to rehearse
+the exact flight drive. So: **Start**, **Stop** and **One pulse**.
+
+**The wire.** No new command. `CMD_DISPERSE`'s key names the request:
+`DISPERSE_STOP 0`, `DISPERSE_PULSE 1` (unchanged), `DISPERSE_RUN 2`
+(`frame.h`, mirrored by `commands.DisperseKey`, pinned by
+`test_disperse_keys_mirror_the_firmware`). Anything above 2 is `ACK_INVALID`,
+so a speed sent as the key is still a bad command, not a drive. Speed stays
+`PARAM_DISPERSE_DUTY`; a `SET_PARAM` of it while the motor runs now
+re-latches at once (`set_motor(s, true)` in `seq_command`), otherwise the
+panel would show a speed the motor is not turning at until the next Stop/Start.
+
+**Why the run is not a long pulse.** The obvious implementation - a pulse with
+no deadline in `core/pulse` - breaks two invariants. The queue drives one line
+at a time, so a held motor in it would park a release's pinch valve behind an
+unbounded drive until the operator pressed Stop; and `ops_busy()` would stay
+true, stalling the SEAL step's `seal_ok` wait (S.1: no state waits on ground).
+So the run is a **state beside the queue**, like the membrane: `hw.c`
+`motor_held` + `ops_disperse_run(on)` drive GP17 directly (reverse line forced
+low first, same interlock), `drive_pin()` ignores the pulse scheduler's
+release edge on GP17 while held, `ops_disperse()` queues nothing while held
+(the motor is already turning), and `hw_actuator_status()` sets `HKV_DISPERSE`
+for the hold - which means the "one drive bit at a time" note in `frame.h` now
+has an exception: a run overlapping a release shows `DISPERSE | PINCH_n`.
+
+**Stop is always honoured and also cuts a pulse short.** New
+`pulse_cancel(sched, pin, drive, ctx)`: ends the pin if it is the one driving
+(one low edge, now) and drops it from the queue, other pins untouched
+(`test_cancel_cuts_one_line_short_and_leaves_the_rest`). Without it a Stop
+during a 5 s pulse is a button that does nothing for up to 5 s. Stop is the one
+drive command accepted in TERMINATION and SAFE, because it can only
+de-energize; Run and Pulse are refused there like before, and TERMINATION now
+calls `set_motor(s, false)` next to `set_membrane(s, 0)`, so an abort takes a
+held motor down (`test_termination_stops_a_running_motor`). A Pulse while a
+run is on answers `ACK_REJECTED` - the bounded drive it asks for cannot happen,
+and ground should hear that rather than an OK for nothing.
+
+**What is not there.** Nothing on the MCU times a run out: a run lasts until
+Stop, an abort, or a reset - the same as the membrane drive today, and a
+deliberate non-decision (a bench timeout that fires mid-observation is worse
+than none; a flight one has no use case since flight never sends `run`).
+Worth revisiting if the motor turns out to have a duty-cycle limit.
+
+**Panel and console.** `clouds_ui/flight.py`: the CaCO3 group is Speed slider,
+**Start | Stop**, **One pulse** (was one *Run one pulse* button). Start and
+pulse send `SET_PARAM DISPERSE_DUTY` first, as before; while running, letting
+go of the slider sends one `SET_PARAM` (`sliderReleased`, one per drag - not
+per step, which would spend uplink on values nobody chose). GSE console:
+`disperse [pulse|run|stop]`, bare `disperse` still the pulse. `sim_mcu.py`
+mirrors run/stop, the hold in `valve_status`, the cancel, and the drop at
+TERMINATION, so `--mock` and `tests/test_sim_mcu.py` exercise the whole chain.
+
+**Evidence.** `run_native.sh` 60 tests (3 new), `pytest tests/` 302 passed,
+`verify_qt.py` VERIFY OK with five new `flight:` checks (Start = `SET_PARAM`
+then `DISPERSE 2`, live speed only while running, Stop = `DISPERSE 0`).
+**Not yet run against the motor** - same status as the PWM path; the first
+thing to read on the bench is `hb_sense_raw` during a run, which today's
+session (other terminal) found at 0 for every membrane drive, as expected for
+a sense that belongs to this motor and not to the solenoid.
+
+## 2026-09-17 - ACT_HB_SENS is the CaCO3 motor's current, in amps
 
 **The correction.** The GP46 sense added earlier today was written up, named
 and displayed as the **push-pull membrane solenoid's** current. It is not: on
@@ -336,26 +563,48 @@ GP26=1 (energized): GP30 high  0/20   x3
 2 Hz / 60 % on GP26, 6 s, 20 ms samples: GP26 ###############.......... GP30 .................. every line
 ```
 
-**What this establishes.** GP30 is not floating and not on the wrong pin -
-with the internal pull-up it still reads 0, so something on the board sinks
-it to ground harder than ~50 kOhm: a closed contact, a short, or a fitted
-pull-down. It does not change when GP26 goes high, low, or oscillates. So
-either the contact is closed in *both* plunger positions - a normally-closed
-switch, a button pressed at rest that the plunger does not release, a
-button the plunger never reaches - or the line is shorted, or the solenoid
-is not moving at all (GP26 visibly actuated it on 2026-08-31, and V_in is
-present, but the actuator supply is not on a monitored rail, so a flat 0.195 A
-proves nothing). The firmware reading is correct for what the pin sees; the
-fix is on the bench. **Phase 4 of the probe is a live watch for exactly this:
-flash it, open the CDC port, and press the button by hand.** A toggle there
-means the wiring is fine and the plunger is not working the switch; no toggle
-means the line is shorted or the button is on another pin.
+**What that first run established.** GP30 is wired and held low at rest -
+with the internal pull-up it still reads 0 - and nothing the MCU drove
+changed it. The operator then supplied the missing piece: **the button sits
+under the plunger and is pressed while the solenoid rests; actuating the
+solenoid lifts the plunger off it.** So LOW is the *resting* state, HIGH is
+*actuated*, the opposite of the first spec ("active is expected to be low"),
+and in that first run the solenoid had simply not moved. Polarity fixed:
+`hw_membrane_pulled()` returns `gpio_get()` without the `!`, and the bit,
+the panel text and the docs mean "lifted / actuated".
 
-Flight image restored afterwards (`picotool load -f -x`). While the probe
-ran the Pi saw no HK for ~40 s; its comms log shows the MCU answering PINGs
-again straight after the reflash, with no service restart - S.7 / M-13 on a
-small scale. (The operator restarted `clouds_ui` at 21:03 for their own
-reasons, so the ground log of the run is split across two session files.)
+**Second run, with the solenoid actually moving** (same probe, plus an
+H-bridge phase and a read of the 24 V regulator pins):
+
+```
+GP30: pu=0 pd=0 held LOW at rest          GP39 VR_24V_EN: pu=0 pd=0 (held low)   GP40 VR_24V_PG: pu=1 pd=1 (driven high)
+GP26=0 (rest):      GP30 high  0/20   x3
+GP26=1 (energized): GP30 high 20/20   x3
+2 Hz / 60 % on GP26, 20 ms samples, all six seconds identical:
+     GP26 ###############..........###############..........
+     GP30 #################........#################........
+H-bridge GP17 fwd / off / GP18 rev / off, x2:   GP30 high 0/20 in every state
+```
+
+GP30 follows GP26 one for one: high the whole time the drive is high, and it
+stays high for **two more 20 ms samples** after the drive drops - the plunger
+takes ~40 ms to fall back onto the button, which is the mechanical release
+time and a useful number in itself. The H-bridge (GP17/GP18, the dispersion
+motor) does not move the plunger at all, so the membrane solenoid really is
+the GP26 (`ACT_R_1`) load, as the 2026-08-31 measurement said, and the
+"push-pull is on the H-bridge" reading of the schematic's `ACT_HB_SENS` net
+is not supported by this switch. `VR_24V_PG` reads driven high and
+`VR_24V_EN` held low while the solenoid works - so the enable's polarity
+is either active-low or the regulator is enabled elsewhere; not touched.
+
+Flight image (HEAD 6ce2615 + the polarity fix) restored afterwards and the
+bit checked end to end through HK - see the figures below this entry's
+checks. A note for the peer session working on the same pin the same
+evening: the 1 Hz HK sample and the 2 Hz wave run off the same loop, so at
+60 % duty a single `MEMBRANE_PULLED` sample lands at a fixed phase and reads
+one constant value; their `MEMBRANE_CYCLING` latch is the answer to that,
+and the steady `MEMBRANE 100` / `MEMBRANE 0` states are what this bit alone
+can verify.
 
 ---
 

@@ -9,13 +9,13 @@ void sqwave_init(sqwave_t *w)
     w->next_edge_ms = 0;
 }
 
-void sqwave_start(sqwave_t *w, uint32_t hz, uint8_t duty_pct, uint64_t now_ms)
+void sqwave_start(sqwave_t *w, uint32_t mhz, uint8_t duty_pct, uint64_t now_ms)
 {
     uint32_t period_ms;
 
-    if (hz == 0)
-        hz = 1;
-    period_ms = 1000u / hz;
+    if (mhz == 0)
+        mhz = 1;
+    period_ms = 1000000u / mhz; /* 1 mHz -> 1000 s, 400 Hz -> 2 ms */
     if (period_ms < 2u)
         period_ms = 2u; /* both phases need a millisecond to live in */
 

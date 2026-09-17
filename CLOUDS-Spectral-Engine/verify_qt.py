@@ -28,6 +28,7 @@ def _qt_msg(mode, ctx, msg):
 
 QtCore.qInstallMessageHandler(_qt_msg)
 from clouds_ui import window as clouds_ui_window
+from clouds_ui import style as _style
 
 FAILS = []
 
@@ -596,7 +597,8 @@ from clouds_gse.commander import Commander as _Commander
 from clouds_gse.receiver import Receiver as _Receiver
 from clouds_gse.session_log import SessionLog as _SessionLog
 
-_mcu = {"duty": 0, "valves": 0, "hz": 0, "motor_duty": 100, "log": []}
+_mcu = {"duty": 0, "valves": 0, "hz": 0, "motor_duty": 100, "log": [],
+        "motor_run": False}
 
 
 def _forward(cmd, key, value):
@@ -606,8 +608,10 @@ def _forward(cmd, key, value):
     if cmd == _Cmd.MEMBRANE:
         _mcu["duty"] = key
     elif cmd == _Cmd.DISPERSE:
-        _mcu["valves"] = int(_hk.ValveStatus.DISPERSE)
-    elif cmd == _Cmd.SET_PARAM and key == _Param.MEMBRANE_HZ:
+        # key = DisperseKey: 1 pulse, 2 run (held), 0 stop (both)
+        _mcu["motor_run"] = key == 2
+        _mcu["valves"] = int(_hk.ValveStatus.DISPERSE) if key else 0
+    elif cmd == _Cmd.SET_PARAM and key == _Param.MEMBRANE_MHZ:
         _mcu["hz"] = value
     elif cmd == _Cmd.SET_PARAM and key == _Param.DISPERSE_DUTY:
         _mcu["motor_duty"] = value
@@ -632,12 +636,12 @@ _win.show()
 app.processEvents()
 try:
     _gse.sp_duty.setValue(70)
-    _gse.sp_hz.setValue(3)
+    _gse.sp_hz.setValue(0.5)   # tenths of a hertz must reach the MCU as mHz
     _gse._membrane_start()
     check("flight: membrane drive reaches the link",
-          _mcu["log"] == [(int(_Cmd.SET_PARAM), int(_Param.MEMBRANE_HZ), 3),
+          _mcu["log"] == [(int(_Cmd.SET_PARAM), int(_Param.MEMBRANE_MHZ), 500),
                           (int(_Cmd.MEMBRANE), 70, 0)], str(_mcu["log"]))
-    check("flight: frequency is set before the drive starts", _mcu["hz"] == 3)
+    check("flight: frequency is set before the drive starts", _mcu["hz"] == 500)
     _mcu["log"].clear()
     _gse._membrane_stop()
     check("flight: Stop commands duty 0",
@@ -652,6 +656,33 @@ try:
           and _mcu["motor_duty"] == 40, str(_mcu["log"]))
     check("flight: the speed slider shows its value",
           _gse.lbl_motor_speed.text() == "40 %", _gse.lbl_motor_speed.text())
+    # Start/Stop: a run the operator holds, its speed re-sent live on slider
+    # release while it runs and not otherwise, ended by Stop.
+    _mcu["log"].clear()
+    _gse.sl_motor.setValue(60)
+    _gse._on_motor_speed_released()
+    check("flight: an idle motor takes no speed on slider release",
+          _mcu["log"] == [], str(_mcu["log"]))
+    _gse._motor_start()
+    check("flight: Start sets the speed, then asks for a run",
+          _mcu["log"] == [(int(_Cmd.SET_PARAM), int(_Param.DISPERSE_DUTY), 60),
+                          (int(_Cmd.DISPERSE), 2, 0)]
+          and _mcu["motor_run"] and _gse._motor_running, str(_mcu["log"]))
+    _mcu["log"].clear()
+    _gse.sl_motor.setValue(30)
+    _gse._on_motor_speed_released()
+    check("flight: a running motor takes the new speed on slider release",
+          _mcu["log"] == [(int(_Cmd.SET_PARAM), int(_Param.DISPERSE_DUTY), 30)]
+          and _mcu["motor_duty"] == 30, str(_mcu["log"]))
+    _mcu["log"].clear()
+    _gse._motor_stop()
+    check("flight: Stop commands DISPERSE stop",
+          _mcu["log"] == [(int(_Cmd.DISPERSE), 0, 0)]
+          and not _mcu["motor_run"] and not _gse._motor_running,
+          str(_mcu["log"]))
+    _mcu["log"].clear()
+    _gse.sl_motor.setValue(40)
+    _gse._disperse()          # leave the HK stand-in showing a pulse below
 
     # housekeeping feedback: without it a 5 s pulse is invisible to ground
     import socket as _socket
@@ -677,7 +708,54 @@ try:
           and _gse._hk_labels["Driving"].text() == "DISPERSE",
           f'{_gse._hk_labels["Membrane"].text()} / '
           f'{_gse._hk_labels["Driving"].text()}')
+    # The same bit as a light beside the Drive/Stop buttons: green and
+    # "lifted" while the plunger is off the switch.
+    check("flight: the switch light shows the lifted plunger",
+          _gse.lbl_switch.text() == "switch lifted - solenoid actuated, cycling"
+          and _style.GREEN in _gse.dot_switch.styleSheet(),
+          f"{_gse.lbl_switch.text()} / {_gse.dot_switch.styleSheet()}")
+    # A build that cannot read GP30 says so: grey, and a reason, never a
+    # confident "pressed" from an always-clear bit.
+    _tx.sendto(_Frame(type=_Pkt.HK,
+                      payload=_hk.Housekeeping(
+                          state=_hk.SeqState.STANDBY, membrane_duty=70,
+                          error_flags=_hk.HkErrors.NO_MEMBRANE_SENSE).pack(),
+                      seq=1).stamp().encode(), ("127.0.0.1", _rx.port))
+    for _ in range(60):
+        app.processEvents()
+        QtCore.QThread.msleep(5)
+    _gse.refresh()
+    app.processEvents()
+    check("flight: the switch light goes grey when the MCU cannot read GP30",
+          _gse.lbl_switch.text() == "switch: no reading (MCU build without GP30)"
+          and _style.GRAY in _gse.dot_switch.styleSheet(),
+          f"{_gse.lbl_switch.text()} / {_gse.dot_switch.styleSheet()}")
     _tx.close()
+
+    # -- Ethernet traffic indicator: the two packets above are on the wire,
+    # and the commands earlier in this block went out on the uplink ---------
+    _win.traffic.refresh()
+    app.processEvents()
+    check("traffic: the Down lane counted the telemetry that arrived",
+          _win.traffic.lane_down.total == _rx.rx_bytes
+          and _win.traffic.lane_down.total > 0,
+          f"lane={_win.traffic.lane_down.total} rx={_rx.rx_bytes}")
+    check("traffic: the Up lane counted the commands that left",
+          _win.traffic.lane_up.total >= _commander.tx_bytes > 0,
+          f"lane={_win.traffic.lane_up.total} tx={_commander.tx_bytes}")
+    check("traffic: a mock detector is not Ethernet, so the Bench lane is idle",
+          _win.traffic.lane_bench.state == "none"
+          and _win.traffic._totals["Bench"].text() == "-")
+    check("traffic: the far end of the uplink is named",
+          _win.traffic.lbl_peer.text() == _commander.peer,
+          _win.traffic.lbl_peer.text())
+    # A link that has gone silent must not keep showing the last light it had:
+    # the lane is polled with a stamp far past SILENT_S rather than by waiting.
+    import time as _time
+    _win.traffic.lane_down.poll(_time.time() + 3600)
+    check("traffic: a silent link goes red, not idle",
+          _win.traffic.lane_down.state == "silent"
+          and _style.RED in _win.traffic.lane_down.colour)
 
     # A raising slot aborts the whole process under PyQt5, so the listen-only
     # path must report instead of raise.
@@ -685,6 +763,8 @@ try:
     _gse._membrane_start()
     _gse._membrane_stop()
     _gse._disperse()
+    _gse._motor_start()
+    _gse._motor_stop()
     check("flight: actuators survive a missing command link",
           _gse.lbl_act_status.text() == "no command link", _gse.lbl_act_status.text())
     # Pixel regression: every button in the Commands box is one width. Three
@@ -1080,10 +1160,15 @@ try:
           _win.session.hk_path != _old_session.hk_path)
     check("restart: the event list and readouts start over",
           _gse.event_list.count() == 0 and _gse.banner.text() == "NO TELEMETRY"
-          and _gse._hk_labels["Membrane"].text() == "-")
+          and _gse._hk_labels["Membrane"].text() == "-"
+          and _gse.lbl_switch.text() == "switch: no telemetry")
     check("restart: the interlock setting survives and reaches the new link",
           _gse.chk_flight_mode.isChecked() and _win.commander.flight_mode)
     check("restart: the flight tick is running again", _win.flight_timer.isActive())
+    check("restart: the traffic counters start over on the new links",
+          _win.traffic._rx is _win.rx and _win.traffic._cmd is _win.commander
+          and _win.traffic.lane_down.total == 0,
+          f"total={_win.traffic.lane_down.total}")
     check("restart: a downlink source stays on the downlink",
           _win.source == "downlink" and _win.rb_downlink.isChecked())
     # New housekeeping lands in the new receiver and is rendered: the proof
@@ -1101,6 +1186,10 @@ try:
     check("restart: housekeeping flows through the new receiver",
           _gse._hk_labels["Membrane"].text() == "35 %  pushed, not cycling",
           _gse._hk_labels["Membrane"].text())
+    check("restart: the switch light shows the resting plunger",
+          _gse.lbl_switch.text() == "switch pressed - plunger resting"
+          and _style.NAVY in _gse.dot_switch.styleSheet(),
+          f"{_gse.lbl_switch.text()} / {_gse.dot_switch.styleSheet()}")
     _tx2.close()
     check("restart: the button is usable again", _win.btn_restart.isEnabled())
 finally:
