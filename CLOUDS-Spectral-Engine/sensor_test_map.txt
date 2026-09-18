@@ -1,0 +1,12 @@
+26/16 Motor
+26/14 Lampe
+26/26 Raspberry PI
+26/8 Spektrometer Gehause
+26/9 Spektrometer Elektronik
+26/45 Bosch-Profil Mitte
+26/12 Temperatur-Sensor Board
+26/11 Push-Pull solonoid
+26/17 Bosch-Profil Aussen
+26/15 Tansistor
+26/5 Elektronik 3D-Druck Halterung
+26/13 Kulimator
