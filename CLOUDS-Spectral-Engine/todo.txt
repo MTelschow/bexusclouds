@@ -5,11 +5,7 @@ partical sensor
 
 Regler
 
-Add speed adjustment for the motor and create a slider in the GUI for it
-
-Sensor data is not displayed anymore
-
-
+chamber sensor
 
 IN PROGRESS:
 
@@ -17,21 +13,19 @@ IN PROGRESS:
 
 
 
-
-Add Push Pull button
-
-
-
-
 VALIDATE:
-
-on HB_SENS there is an additinal current sensor for the push pull, confure it and add it to the sensors
 
 
 
 
 
 DONE:
+
+Add Push Pull button
+
+Add speed adjustment for the motor and create a slider in the GUI for it
+
+on HB_SENS there is an additinal current sensor for the push pull, confure it and add it to the sensors
 
 Integration time slider seems wrong (especially when auto integration time on, so in that case diable it)
 
