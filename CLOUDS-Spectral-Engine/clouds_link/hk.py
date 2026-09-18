@@ -517,6 +517,15 @@ class Housekeeping:
         for i, name in enumerate(("vin", "24v", "5v", "3v3")):
             a = self.rail_a(i)
             d[f"rail_{name}_a"] = "" if a is None else round(a, 4)
+        # One column per actuator line, beside the raw ``valve_status`` they
+        # are decoded from. A session log has to answer "when did pinch 1
+        # fire, and for how long" without the reader masking bits by hand,
+        # and ``actuator_text`` cannot be that: it is a space-joined list, so
+        # a filter on it is a substring match and PINCH_1 matches nothing the
+        # day a PINCH_10 exists. 1/0 rather than True/False because these are
+        # plotted as lanes on the ground (``clouds_ui.timeline``).
+        for v in DRIVE_BITS:
+            d[f"valve_{v.name.lower()}"] = int(bool(self.valve_status & v))
         # Same rule for the motor sense: the raw counts are in the row via
         # asdict(); the derived volts and amps sit beside them, blank where
         # there is no reading or (amps) no gain to apply yet.

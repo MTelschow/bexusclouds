@@ -18,7 +18,170 @@ without re-deriving anything. Newest entries first.
 
 ---
 
-## 2026-09-18 (newest) - The timeline's span is typed, not picked from a list
+## 2026-09-18 (newest) - Actuator lines on the timeline, and one CSV column each
+
+**Asked for:** solenoid activity over time on the timeline, logged and saved
+with everything else.
+
+`valve_status` already came down in every HK packet and was already on the
+panel, as the `Driving` row. That row is a snapshot of a field whose events
+are **5 s pulses**: an operator who was looking at the spectrum when pinch 1
+fired sees `-` afterwards and has no way to find out that it fired at all,
+let alone for how long. The timeline is where that question is answered for
+every other number in the packet, so the lines belong there too.
+
+**Seven lanes, one per line** (`clouds_ui/timeline.py`, group `Actuator
+lines`): `PINCH_1`, `PINCH_2`, `EQ1_CLOSE`, `EQ2_CLOSE`, `DISPERSE`, plus the
+two sensed membrane bits. Three decisions in how they are drawn:
+
+* **Lanes, not a shared 0..1 axis.** They share a pseudo-unit
+  (`timeline.DIGITAL_UNIT = "on/off"`) so they land on one stacked sub-axis
+  like every other unit does - but that axis is drawn as lanes, because five
+  square waves on one scale overlap exactly and *which* line fired is the
+  thing the overlap destroys. The series name goes on the y tick, not in a
+  legend, so a lane is labelled where it is drawn, and the axis height grows
+  with the number of lanes (0.4 each, clamped to 0.6..2.0 of a measured
+  axis).
+* **Steps, not lines.** The value between two 1 Hz samples is the value of
+  the earlier one; a sloped edge would claim a ramp no solenoid has.
+* **A clear drive bit is a reading, a clear switch bit may not be.** The
+  drives are in every packet, so 0 means "not energized" and is plotted. The
+  GP30 membrane switch is unsourced in a build that cannot reach the pin, so
+  both membrane lanes carry `HKE_NO_MEMBRANE_SENSE` and go to gaps - the same
+  rule the rails and the IMU already follow, and the reason `membrane_pulled`
+  / `membrane_cycling` are read through the `Housekeeping` properties rather
+  than off the raw bits.
+
+`state` and the link flags stay off the plot for the reason they always were
+- they are enumerations, and a step plot of `SEAL = 3` invites reading the
+number. A one-bit line is not that.
+
+**Logged per line.** `Housekeeping.to_row()` now emits `valve_pinch_1`,
+`valve_pinch_2`, `valve_eq1_close`, `valve_eq2_close`, `valve_disperse` as
+1/0 beside the raw `valve_status` it decodes them from, so the GSE session
+CSV (`session_*_hk.csv`, `gse/clouds_gse/session_log.py`, unchanged) answers
+"when did pinch 1 fire and for how long" without masking bits by hand.
+`actuator_text` could not be that column: it is a space-joined list, so a
+filter on it is a substring match. The raw field stays, on the same rule as
+the INA226 shunt registers - a log has to remain re-derivable. The two sensed
+bits already had their own columns (`membrane_pulled` / `membrane_cycling`,
+blank where unsourced) and are left alone. No wire-format change: nothing was
+added to the 64 B packet, so the HK budget is untouched.
+
+Checks: `tests/test_timeline.py` (bit → 1.0, clear bit → 0.0 and not a gap,
+the membrane pair → NaN under `NO_MEMBRANE_SENSE`, the lines on their own
+unit); `tests/test_link.py` (a column per drive bit, none for the sense
+bits, the raw field kept); `verify_qt.py` drives the boxes and renders the
+lane axis.
+
+Commit: *Plot and log each actuator line over time*.
+
+---
+
+## 2026-09-18 - New drive defaults: membrane 20 %, motor 50 %
+
+Both actuator defaults in `core/config.c` are changed to what the mechanism is
+actually run at on the bench:
+
+| Parameter | Was | Now | Envelope |
+|---|---|---|---|
+| `PARAM_MEMBRANE_DUTY` | 60 % | **20 %** | 5..100, unchanged |
+| `PARAM_DISPERSE_DUTY` | 100 % | **50 %** | 20..100, unchanged |
+
+Nothing about the drive paths moved - only the number an unconfigured system
+starts from. The membrane is still loop-toggled through `core/sqwave`, so at the
+default 2 Hz the wave is now **100 ms high / 400 ms low** instead of 300/200
+(`test_membrane_default_square_wave_timing` asserts the new phases). The motor
+is still a 20 kHz hardware PWM on GP17 latched when a pulse is queued or a run
+starts; 50 % is above the 20 % floor, so the "draws current without turning"
+case is untouched, and the old `default 100` rationale (full-on = what the pin
+did before it was a PWM) no longer applies - a release now disperses at the
+same half speed an operator would dial.
+
+Changed in step, because a default that disagrees between the ends is a panel
+showing a speed the motor is not turning at: the MCU limits table
+(`core/config.c`), the `Param` comments in `clouds_link/commands.py`, the
+simulated MCU (`clouds_fsw/sim_mcu.py`, both its start-up value and the duty a
+release sets), and the panel's two widgets (`clouds_ui/flight.py`:
+`sp_duty.setValue(20)`, `sl_motor.setValue(50)`). The panel sends its slider's
+value as `SET_PARAM DISPERSE_DUTY` before any drive, so a mismatched widget
+would silently win over the firmware default - which is why the widget, not
+only the firmware, is part of this change.
+
+Checks: `flight/mcu/test/run_native.sh` 61/61, `pytest tests/` 369 passed,
+`verify_qt.py` VERIFY OK.
+
+---
+
+## 2026-09-18 - The integration time was real, the spectrum was not
+
+**Reported:** "the integration time seems broken, the spectrum reaches its peak
+too much" - i.e. the trace sits near saturation whatever the exposure is set to,
+and the auto-exposure servo ramps down without effect.
+
+**Where it came from.** The vendor ships its library *source*
+(`drivers/e9u_LSMD_LIB_Linux/e9u_lsmd_camera_library_Linux-2.4.02.tar.gz`), not
+only the headers we had vendored. Reading `lib/src/e9u_LSMD_macros.c` turned an
+argument about the spectrum into three findings about the arithmetic, in
+increasing order of how much they cost:
+
+1. **`set_times_us(cam, exp, frame)` clamps the exposure to the frame time**, and
+   our driver passed `frame_us = exposure_us`. The vendor floors the frame time to
+   a `step_frame` multiple, raises it to `minimum_frame`, then clamps `exp` to
+   `<= frame`. So the exposure was being asked for with zero readout margin; a
+   frame time that was not a step multiple could be floored back *under* the
+   exposure and drag it down with it. Now: `frame = exposure + minimum_frame`,
+   rounded up. Limits are read from the camera at connect
+   (`minimum_exposure/step_exposure/minimum_frame/step_frame`) rather than
+   hardcoded - this part (`TCD1304-PRO`, type `0x02290003`) reports 10/10/3750/10 µs,
+   the ECO in the same table reports 1000/1000/10000/1000.
+2. **A timing change is not live on the next frame.** The vendor's own
+   `wait_times_us()` exists only to spin `get_next_frame` until the camera's
+   exposure timestamps agree with the exposure register, which is the library
+   admitting it. `set_times_us()` now does the same, bounded to 3 frames, using
+   `CH0_T_STAMP_EXP_STOP - CH0_T_STAMP_EXP_START` (µs, shadow bank). That
+   difference is also exposed as `measured_exposure_us()`: the camera's own
+   measurement of the window it ran, so "did the exposure take effect" can be
+   answered without reading the spectrum at all. `spectro_source._apply_pending_exposure`
+   used to grab immediately after a change and hand a stale frame to storage and
+   the quick-look; it inherits the fix.
+3. **Async mode integrates the gaps between grabs - the one that explains the
+   symptom.** `start_camera_async` clears `TRIG_INT`, `TRIG_EXT` *and* `TRIG_USB`
+   ("do not trigger via USB yet, this is done just before a read"): there is no
+   frame timer, every frame is triggered from inside `get_next_frame`. Between two
+   triggers the line is never clocked, so charge keeps collecting on the
+   photodiodes for the whole idle. The first frame after a pause therefore carries
+   the *pause*. Both live loops pause by design - the FSW holds a 1 Hz cadence
+   (`sample_interval_s`), the bench panel the same - so at a 10 ms exposure the
+   displayed frame held ~1 s of light, ~100x what was asked for, pinned at
+   saturation for every setting the operator tried. `grab()` now discards one
+   frame when the line has been idle for more than 10 % of the exposure (always on
+   the first grab after connect), so the kept frame begins at a known readout.
+   `CLOUDS_E9U_FLUSH=0` / `=always` for the two extremes; cost is one extra frame
+   time per idle grab, which at 1 Hz is 100 ms of a 1000 ms budget.
+
+**Why a flush and not free-run.** `start_camera_freerun` would have the FPGA clock
+the line continuously and remove the idle entirely - it is the cleaner answer and
+it is the one to revisit if the flush proves insufficient. It also streams every
+frame over the same 5 m USB run that already corrupts ~9 % of pixels per frame
+(`DRIVER.md`), and changes the acquisition mode of a flight article on a theory
+rather than a measurement. The flush is one discarded frame, reversible by an env
+var, and correct under either explanation of where the extra charge comes from.
+
+**What is measured and what is still theory.** The arithmetic (1) is read off the
+vendor source and locked by `tests/test_spectro_timing.py` (21 checks against a
+fake library that reproduces the vendor's clamping and its one-frame lag). The
+idle accumulation (3) is inferred from the async trigger mode, not yet confirmed
+on hardware: `exposure_probe.py` sweeps the exposure and prints, per frame, the
+FPGA-timestamped exposure, the peak counts back to back, and the peak for a frame
+taken after a 1 s pause. If the theory holds, the back-to-back peaks scale with
+the exposure and the idle peaks do not. Run it detector-local (not over `--net`),
+with the FSW and `spectro.net_server` stopped - the vendor library owns the USB
+device exclusively.
+
+---
+
+## 2026-09-18 - The timeline's span is typed, not picked from a list
 
 **Asked for:** a way to configure how many seconds the housekeeping timeline
 goes back.

@@ -533,7 +533,7 @@ class FlightPanel(QtCore.QObject):
         row.setSpacing(6)
         self.sp_duty = QtWidgets.QSpinBox()
         self.sp_duty.setRange(5, 100)        # PARAM_MEMBRANE_DUTY limits
-        self.sp_duty.setValue(60)
+        self.sp_duty.setValue(20)
         self.sp_duty.setSuffix(" %")
         self.sp_duty.setStyleSheet(style.spin_style())
         self.sp_duty.setToolTip("Drive duty cycle (MEMBRANE key)")
@@ -610,7 +610,7 @@ class FlightPanel(QtCore.QObject):
         speed.addWidget(QtWidgets.QLabel("Speed"))
         self.sl_motor = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.sl_motor.setRange(20, 100)      # PARAM_DISPERSE_DUTY limits
-        self.sl_motor.setValue(100)
+        self.sl_motor.setValue(50)
         self.sl_motor.setStyleSheet(style.slider_style())
         self.sl_motor.setToolTip("Motor PWM duty, sent as SET_PARAM "
                                  "DISPERSE_DUTY before a drive starts, and "

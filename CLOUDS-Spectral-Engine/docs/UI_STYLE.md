@@ -100,6 +100,14 @@ same numbers:
   field (`HkErrors`), an unreadable rail (`RAIL_MV_INVALID`), or a link
   dropout longer than `GAP_S`. A selected series that drew nothing says why in
   its legend entry (`not fitted` / `no source` / `no reading`);
+- the **actuator lines** (`valve_status`) are the one non-measurement on the
+  plot, and they get lanes rather than a 0..1 axis: five square waves on one
+  scale overlap exactly, and which line fired when is the question the
+  overlap destroys. One lane per selected line, drawn as a step (the value
+  between two 1 Hz samples is the earlier one), the series name on the y tick
+  instead of in a legend, and the axis grows with the number of lanes. The
+  membrane's sensed bits share that axis - the pair `duty` / `cycling` is
+  what an operator reads together;
 - series toggles live in the sidebar, not under the plot: there are two dozen
   of them and a checkbox strip that wide would cost the timeline the height
   it exists for. A part the carrier does not have keeps its row, disabled - an

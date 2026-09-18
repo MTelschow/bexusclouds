@@ -53,7 +53,51 @@ Functions used (camera index 0, channel 0):
 
 A frame is 2048 x uint16 read from the pixel pointer after each
 `get_next_frame`. After changing the integration time, discard a couple of
-frames so the new timing settles before trusting the data.
+frames so the new timing settles before trusting the data - `set_times_us()`
+now does that itself, see **Integration time** below.
+
+### Integration time - three traps, all in the vendor's own arithmetic
+
+The vendor ships its source (`drivers/e9u_LSMD_LIB_Linux/e9u_lsmd_camera_library_Linux-2.4.02.tar.gz`,
+`lib/src/e9u_LSMD_macros.c`), which is the authority for all three. Per-camera
+limits come from its type table; this bench's part is
+`e9u_LSMD-TCD1304-PRO` (type `0x02290003`): **exposure min/step 10 µs, frame
+min 3750 µs, frame step 10 µs**. `minimum_exposure/step_exposure/minimum_frame/step_frame`
+report them at runtime and the driver reads them at connect - never hardcode them.
+
+**1. The frame time clamps the exposure.** `set_times_us(cam, exp, frame)` floors
+the frame time to a `step_frame` multiple, raises it to `minimum_frame`, and then
+clamps `exp` to **no more than the frame time**. The driver used to pass
+`frame_us = exposure_us`, i.e. an exposure with no readout margin at all. It now
+asks for `exposure + minimum_frame`, rounded **up** (the vendor rounds down, so a
+frame time that is already a step multiple survives its arithmetic untouched).
+An `exp` of 0 means "exposure = frame time", so a below-minimum exposure is
+raised to `minimum_exposure`, never allowed to round down into 0.
+
+**2. A timing change is not live on the next frame.** The vendor's own
+`wait_times_us()` spins `get_next_frame` until the camera's timestamps agree with
+the exposure register. The driver does the same, bounded, inside `set_times_us()`:
+`CH0_T_STAMP_EXP_STOP - CH0_T_STAMP_EXP_START` (shadow bank, µs) is the camera's
+measurement of the window it just ran, and `measured_exposure_us()` exposes it.
+That difference - requested vs measured - is the only honest answer to "did the
+integration time take effect", and it does not depend on reading the spectrum.
+
+**3. Async mode integrates the gaps between grabs.** `start_camera_async` clears
+`TRIG_INT`/`TRIG_EXT`/`TRIG_USB`: there is no frame timer, each frame is triggered
+over USB from inside `get_next_frame`. Between two triggers the line is not
+clocked, so charge keeps collecting for the whole idle time and **the first frame
+after a pause carries the pause, not the exposure**. A 1 Hz live loop at a 10 ms
+exposure reads ~100x the light it asked for, sits at saturation whatever the
+operator sets, and the auto-exposure servo ramps down with no effect. `grab()`
+therefore throws one frame away when the line has been idle for more than 10 % of
+the exposure (always on the first grab after connect), so the kept frame starts
+from a known readout. `CLOUDS_E9U_FLUSH=0` disables it, `=always` flushes every
+grab; the cost is one extra frame time per idle grab.
+
+`exposure_probe.py` measures all three against real hardware: FPGA-timestamped
+exposure per frame, peak counts back to back, and peak counts for a frame taken
+after a 1 s pause. Run it detector-local (not over `--net`), with the FSW and
+`spectro.net_server` stopped.
 
 The whole Duo is **one camera** to the library: one readout produces both fibre
 channels in one 2048-px frame, at one shared integration time. Hence channel 0

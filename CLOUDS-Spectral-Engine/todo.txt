@@ -1,39 +1,45 @@
 TODO:
+
 Gyro sensor
+Partical sensor
+Chamber multi sensor
+Electrical controller for the dispersion motor
 
-partical sensor
+Fix spectrometer data (clipping values even at minimal exposure time)
 
-Regler
+Fix/adjust automatic mode
+Add automatic mode reset/control
+Adjust data rate management and add external monitoring
 
-chamber sensor
 
 Adjust IP to match what we were given
 
 
+Push Pull activation rythmn
+Add import logs 
+Fix UI (visal bugs, and bad layout)
+
+
+
+
 IN PROGRESS:
 
-
-
+Make logging by default on
 
 
 VALIDATE:
 
-
-
+Test logging and saving
+Add solenoid over time activity
 
 
 DONE:
 
+Change default values for membrane solenoid to 20% and dispersion motor to 50%
 Add Push Pull button
-
 Add speed adjustment for the motor and create a slider in the GUI for it
-
-on HB_SENS there is an additinal current sensor for the push pull, confure it and add it to the sensors
-
+On HB_SENS there is an additinal current sensor for the push pull, confure it and add it to the sensors
 Integration time slider seems wrong (especially when auto integration time on, so in that case diable it)
-
-dark measurement is seemingly not in git repository, on a differnt mac it was not present
-
+Dark measurement is seemingly not in git repository, on a differnt mac it was not present
 Investigate Spectro data not appearing until restart
-
 Auto Integration time crashes (takes really long)

@@ -1202,6 +1202,43 @@ try:
     check("timeline: unticking removes the series",
           "rh1" not in _win.timeline.selected)
 
+    # The actuator lines: the same field the `Driving` row shows, as lanes.
+    # A 5 s pulse is gone before an operator who looked away sees the row, so
+    # what is checked is that the bit lands in the buffer as a 1 and that the
+    # lane axis renders beside the measured ones instead of on their scale.
+    _rx.last_hk = _hk.Housekeeping(
+        p_amb_pa=99248, valve_status=int(_hk.ValveStatus.PINCH_1
+                                         | _hk.ValveStatus.MEMBRANE_PULLED))
+    _rx.last_hk_time = 5300.0
+    _win._sample_timeline()
+    for _k in ("valve_pinch_1", "valve_disperse", "membrane_pulled"):
+        _win._tl_boxes[_k].setChecked(True)
+    app.processEvents()
+    _x, _cols = _win.tl_buf.window(["valve_pinch_1", "valve_disperse"], None)
+    check("timeline: an energized line is a 1 and an idle one a 0",
+          _cols["valve_pinch_1"][-1] == 1.0
+          and _cols["valve_disperse"][-1] == 0.0,
+          f"pinch {_cols['valve_pinch_1'][-1]}, "
+          f"disperse {_cols['valve_disperse'][-1]}")
+    check("timeline: the lines get a lane axis, not the hPa one",
+          _tl.SERIES_BY_KEY["valve_pinch_1"].unit == _tl.DIGITAL_UNIT
+          and _tl.DIGITAL_UNIT != _tl.SERIES_BY_KEY["p_amb"].unit
+          and _win.timeline.plot.pixmap() is not None
+          and not _win.timeline.plot.pixmap().isNull())
+    # An MCU build that cannot read GP30 must leave the membrane lanes empty
+    # rather than drawing a plunger at rest it never sampled.
+    _rx.last_hk = _hk.Housekeeping(
+        valve_status=0, error_flags=int(_hk.HkErrors.NO_MEMBRANE_SENSE))
+    _rx.last_hk_time = 5301.0
+    _win._sample_timeline()
+    _x, _cols = _win.tl_buf.window(["membrane_pulled"], None)
+    check("timeline: an unread membrane switch is a gap, not 'pushed'",
+          np.isnan(_cols["membrane_pulled"][-1]),
+          str(float(_cols["membrane_pulled"][-1])))
+    for _k in ("valve_pinch_1", "valve_disperse", "membrane_pulled"):
+        _win._tl_boxes[_k].setChecked(False)
+    app.processEvents()
+
     for _i in range(len(_tl.WINDOWS)):
         _win.cmb_tl_window.setCurrentIndex(_i)
         app.processEvents()

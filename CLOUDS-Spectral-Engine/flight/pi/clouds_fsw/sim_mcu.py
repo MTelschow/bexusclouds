@@ -91,7 +91,7 @@ class SimMcu:
         self.hold = False
         self.membrane_duty = 0
         self.membrane_mhz = 2000            # PARAM_MEMBRANE_MHZ default
-        self.disperse_duty = 100         # PARAM_DISPERSE_DUTY, motor speed
+        self.disperse_duty = 50          # PARAM_DISPERSE_DUTY, motor speed
         self.motor_running = False       # DISPERSE RUN .. STOP, like the MCU
         self.seal_verified = False
         self._t0 = time.monotonic()
@@ -300,7 +300,7 @@ class SimMcu:
         self._queue_drive(hk.ValveStatus.PINCH_1 if n == 1
                           else hk.ValveStatus.PINCH_2)
         self._queue_drive(hk.ValveStatus.DISPERSE)
-        self.membrane_duty = 60          # PARAM_MEMBRANE_DUTY
+        self.membrane_duty = 20          # PARAM_MEMBRANE_DUTY
         self._event(EventCode.RELEASE_FIRED, f"valve {n}")
 
     def _step(self, now: float) -> None:

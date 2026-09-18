@@ -154,6 +154,25 @@ class TestHousekeeping:
         assert hk.Housekeeping(valve_status=0).actuator_text == "-"
         assert h.to_row()["actuator_text"] == "DISPERSE"
 
+    def test_each_actuator_line_gets_its_own_logged_column(self):
+        """A session log has to answer "when did pinch 1 fire, and for how
+        long" without masking bits by hand, and `actuator_text` cannot be
+        that: filtering a space-joined list is a substring match."""
+        h = hk.Housekeeping(valve_status=hk.ValveStatus.PINCH_1
+                            | hk.ValveStatus.EQ2_CLOSE)
+        row = h.to_row()
+        assert row["valve_pinch_1"] == 1
+        assert row["valve_eq2_close"] == 1
+        assert row["valve_pinch_2"] == 0 and row["valve_disperse"] == 0
+        # The raw field stays beside them, as the shunt registers do.
+        assert row["valve_status"] == int(h.valve_status)
+        # Every drive bit has a column, and the sensed ones are not among
+        # them - they are logged as `membrane_pulled` / `membrane_cycling`.
+        for v in hk.DRIVE_BITS:
+            assert f"valve_{v.name.lower()}" in row
+        for v in hk.SENSE_BITS:
+            assert f"valve_{v.name.lower()}" not in row
+
     def test_membrane_switch_is_shown_with_the_duty_not_as_a_drive(self):
         """The GP30 position switch shares `valve_status` but is an input:
         it belongs next to the commanded duty, where duty-vs-position is the

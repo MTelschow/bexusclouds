@@ -68,6 +68,12 @@ class SpectrometerDriver(ABC):
         """Hardware frame counter (for drop/duplicate detection), or None."""
         return None
 
+    def measured_exposure_us(self):
+        """Integration window the hardware timestamped for the last frame, or
+        None if it cannot report one. Not the requested exposure - the two part
+        company whenever a timing change has not taken effect yet."""
+        return None
+
     def __enter__(self):
         self.connect()
         return self

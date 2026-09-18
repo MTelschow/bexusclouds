@@ -162,7 +162,7 @@ def test_motor_speed_is_a_parameter_not_the_disperse_key(sim):
     The key stays the request (1), so a speed sent as the key is a bad
     command rather than a 2 % drive nobody asked for."""
     mcu, pi = sim
-    assert mcu.disperse_duty == 100                # full-on by default
+    assert mcu.disperse_duty == 50                 # PARAM_DISPERSE_DUTY default
     assert pi.command(Command.SET_PARAM, key=Param.DISPERSE_DUTY,
                       value=40) == AckResult.OK
     assert mcu.disperse_duty == 40

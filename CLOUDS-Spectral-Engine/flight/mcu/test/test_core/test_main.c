@@ -986,7 +986,7 @@ static void test_membrane_frequency_is_millihertz_down_to_a_tenth(void)
 
 static void test_membrane_default_square_wave_timing(void)
 {
-    /* 2 Hz at the configured 60 % duty is 300 ms high, 200 ms low. */
+    /* 2 Hz at the configured 20 % duty is 100 ms high, 400 ms low. */
     sqwave_t w;
     uint64_t t = 1000;
     int highs = 0, lows = 0;
@@ -996,8 +996,8 @@ static void test_membrane_default_square_wave_timing(void)
     sqwave_start(&w, (uint32_t)cfg_default(PARAM_MEMBRANE_MHZ),
                  (uint8_t)cfg_default(PARAM_MEMBRANE_DUTY), t);
     TEST_ASSERT_TRUE(sqwave_level(&w));   /* starts energized */
-    TEST_ASSERT_EQUAL_UINT32(300, w.on_ms);
-    TEST_ASSERT_EQUAL_UINT32(200, w.off_ms);
+    TEST_ASSERT_EQUAL_UINT32(100, w.on_ms);
+    TEST_ASSERT_EQUAL_UINT32(400, w.off_ms);
 
     /* run 3 s at the real 10 ms loop cadence and measure the phases */
     last_edge = t;
@@ -1008,10 +1008,10 @@ static void test_membrane_default_square_wave_timing(void)
             last_edge = t;
             if (sqwave_level(&w)) {
                 /* just went high, so the previous phase was the low one */
-                TEST_ASSERT_UINT32_WITHIN(10, 200, held);
+                TEST_ASSERT_UINT32_WITHIN(10, 400, held);
                 lows++;
             } else {
-                TEST_ASSERT_UINT32_WITHIN(10, 300, held);
+                TEST_ASSERT_UINT32_WITHIN(10, 100, held);
                 highs++;
             }
         }
@@ -1455,16 +1455,15 @@ static void test_termination_stops_a_running_motor(void)
 
 /* Motor speed (PARAM_DISPERSE_DUTY). The PWM programming itself lives in
  * hw.c and needs the SDK, so what is guarded here is the envelope: the
- * default must still be the full-on drive GP17 had before it was a PWM, and
- * no SET_PARAM may take the motor to a duty that draws current without
- * turning it. */
-static void test_disperse_duty_defaults_to_full_and_is_bounded(void)
+ * default is the configured half-speed drive, and no SET_PARAM may take the
+ * motor to a duty that draws current without turning it. */
+static void test_disperse_duty_default_and_bounds(void)
 {
     cfg_t cfg;
 
     cfg_defaults(&cfg);
-    TEST_ASSERT_EQUAL_INT32(100, cfg_default(PARAM_DISPERSE_DUTY));
-    TEST_ASSERT_EQUAL_INT32(100, cfg_get(&cfg, PARAM_DISPERSE_DUTY));
+    TEST_ASSERT_EQUAL_INT32(50, cfg_default(PARAM_DISPERSE_DUTY));
+    TEST_ASSERT_EQUAL_INT32(50, cfg_get(&cfg, PARAM_DISPERSE_DUTY));
 
     TEST_ASSERT_TRUE(cfg_set(&cfg, PARAM_DISPERSE_DUTY, 20));
     TEST_ASSERT_EQUAL_INT32(20, cfg_get(&cfg, PARAM_DISPERSE_DUTY));
@@ -1655,7 +1654,7 @@ int main(void)
     RUN_TEST(test_manual_disperse_runs_one_motor_pulse);
     RUN_TEST(test_manual_disperse_run_and_stop);
     RUN_TEST(test_termination_stops_a_running_motor);
-    RUN_TEST(test_disperse_duty_defaults_to_full_and_is_bounded);
+    RUN_TEST(test_disperse_duty_default_and_bounds);
     RUN_TEST(test_manual_drives_are_refused_after_an_abort);
     RUN_TEST(test_sequencer_membrane_duty_tracks_the_automatic_drive);
     RUN_TEST(test_ground_link_latch_refreshes_without_the_sequencer);

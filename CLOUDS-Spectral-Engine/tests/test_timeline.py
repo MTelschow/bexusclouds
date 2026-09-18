@@ -79,6 +79,58 @@ def test_not_fitted_rail_is_flagged_in_the_table():
         assert T.SERIES_BY_KEY[f"rail_i{i}"].fitted is (addr is not None)
 
 
+# -- the actuator lines -----------------------------------------------------
+# The panel's `Driving` row is a snapshot and a pulse is 5 s, so "did pinch 1
+# fire, and when" is a question only the history can answer.
+
+def test_actuator_lines_plot_as_one_and_zero():
+    from clouds_link.hk import ValveStatus
+    buf = T.TimelineBuffer()
+    buf.append(1000.0, _hk(valve_status=int(ValveStatus.PINCH_1)))
+    buf.append(1001.0, _hk(valve_status=int(ValveStatus.DISPERSE)))
+    _x, cols = buf.window(["valve_pinch_1", "valve_disperse"], None)
+    assert list(cols["valve_pinch_1"]) == [1.0, 0.0]
+    assert list(cols["valve_disperse"]) == [0.0, 1.0]
+
+
+def test_a_clear_drive_bit_is_a_reading_not_a_gap():
+    """Unlike a sensor field, `valve_status` is in every packet: a clear bit
+    means the line is not energized, which is the thing being plotted."""
+    buf = T.TimelineBuffer()
+    buf.append(1000.0, _hk(valve_status=0))
+    _x, cols = buf.window(["valve_pinch_1"], None)
+    assert cols["valve_pinch_1"][0] == 0.0
+
+
+def test_the_membrane_switch_is_a_gap_where_it_has_no_source():
+    """GP30 is unreachable in a pico2 build; a clear bit then means nothing,
+    and "not pulled" would be an invented reading."""
+    from clouds_link.hk import ValveStatus
+    buf = T.TimelineBuffer()
+    buf.append(1000.0, _hk(valve_status=int(ValveStatus.MEMBRANE_PULLED
+                                            | ValveStatus.MEMBRANE_CYCLING)))
+    buf.append(1001.0, _hk(valve_status=0,
+                           error_flags=int(HkErrors.NO_MEMBRANE_SENSE)))
+    _x, cols = buf.window(["membrane_pulled", "membrane_cycling"], None)
+    for k in ("membrane_pulled", "membrane_cycling"):
+        assert cols[k][0] == 1.0
+        assert np.isnan(cols[k][1])
+
+
+def test_the_lines_share_one_axis_of_their_own():
+    """All on the digital unit, so they stack as lanes instead of landing on
+    a hPa or A axis."""
+    lines = [s for s in T.SERIES if s.unit == T.DIGITAL_UNIT]
+    assert {s.key for s in lines} >= {"valve_pinch_1", "valve_pinch_2",
+                                      "valve_eq1_close", "valve_eq2_close",
+                                      "valve_disperse", "membrane_pulled",
+                                      "membrane_cycling"}
+    assert {s.group for s in lines} == {"Actuator lines"}
+    # ...and no measured series was dragged onto it.
+    assert all(s.unit != T.DIGITAL_UNIT
+               for s in T.SERIES if s.key in ("p_amb", "hb_sense", "membrane"))
+
+
 def test_a_dropout_breaks_the_trace():
     """A line drawn straight across a link outage claims ground knows what
     happened during it."""

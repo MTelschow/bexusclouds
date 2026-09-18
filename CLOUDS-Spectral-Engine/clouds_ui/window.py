@@ -1000,8 +1000,10 @@ class CloudsWindow(QtWidgets.QMainWindow):
 
         note = QtWidgets.QLabel(
             "1 Hz from the downlink. Series sharing a unit share an axis; a "
-            "gap is a reading that does not exist, never a zero. Span takes a "
-            "typed value as well as a preset - 90 s, 2 min, 1.5 h, All.")
+            "gap is a reading that does not exist, never a zero. Actuator "
+            "lines are drawn as on/off lanes, one per line, and are logged "
+            "per line in the session CSV. Span takes a typed value as well "
+            "as a preset - 90 s, 2 min, 1.5 h, All.")
         note.setWordWrap(True)
         note.setStyleSheet(f"color:{style.SECTION}; font-size:10px;"
                            "font-style:italic;")

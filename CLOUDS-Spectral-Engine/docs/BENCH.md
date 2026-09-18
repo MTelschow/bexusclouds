@@ -103,3 +103,15 @@ left untouched:
 any other entity / service / parameter is refused in code, and the harness gates
 any other use of the token. The experiment scripts always switch the room **off**
 at the end (try/finally).
+
+## Bench settings are flight settings
+
+Moved out of `CLAUDE.md` 2026-09-18.
+
+The bench runs the same settings as flight. `sample_interval_s` is 1 Hz in
+both — never tune it up for bench use. For a faster trace use the exclusive
+`spectro.net_server`, not a settings change.
+
+The one shared-hardware exception is **exposure**: a bench client changes it on
+the real detector, so the change is logged and the configured `exposure_us` is
+restored when the last client disconnects.

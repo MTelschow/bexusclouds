@@ -34,6 +34,12 @@ Series are grouped onto one sub-axis per **unit**, stacked and sharing the
 time axis, rather than squeezed onto one scale: hPa next to A on a shared
 y axis is unreadable, and a normalised "everything 0..1" plot throws away the
 only thing an engineering readout is for.
+
+The **actuator lines** are the one non-measurement here: the `valve_status`
+bits, one lane each on a single stacked axis (`DIGITAL_UNIT`), drawn as steps.
+They are on the plot for the same reason as everything else - the panel's
+`Driving` row is a snapshot, and a pinch valve's 5 s pulse is over before an
+operator who looked elsewhere can see it happened at all.
 """
 from __future__ import annotations
 
@@ -48,7 +54,8 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-from clouds_link.hk import RAIL_I2C_ADDR, RAIL_NAMES, HkErrors
+from clouds_link.hk import (RAIL_I2C_ADDR, RAIL_NAMES, HkErrors,
+                           ValveStatus)
 
 from . import style
 
@@ -61,6 +68,12 @@ MAXLEN = 7200
 #: bridged. Housekeeping is 1 Hz and the state banner already goes red at 5 s
 #: (`flight.STALE_HK_S`), so the two agree on what "the link stopped" means.
 GAP_S = 5.0
+
+#: The "unit" of a line that is either on or off - the actuator drives and
+#: the membrane switch. It is a unit like `V` or `hPa` only so that those
+#: series land on one shared sub-axis; that axis is drawn as lanes, not as a
+#: 0..1 plot, because five square waves on one y scale are one square wave.
+DIGITAL_UNIT = "on/off"
 
 #: Presets offered in the span box, shortest first. "All" is the whole
 #: buffer. They are a starting point, not the choice: the box is editable
@@ -184,9 +197,26 @@ def _vec(attr: str, axis: int, scale: float = 1.0):
 _RAIL_C = ("#01386a", "#8a97a3", "#1D9E75", "#E8821E")
 _AXIS_C = ("#b0413e", "#1D9E75", "#4d8fd1")
 
+def _bit(mask: int):
+    """A `valve_status` bit as 1.0 / 0.0. Never None: the field is carried by
+    every packet and a clear bit is a reading - the line is not energized."""
+    return lambda h: 1.0 if h.valve_status & mask else 0.0
+
+
+def _sensed(attr: str):
+    """A membrane switch property (`membrane_pulled` / `membrane_cycling`) as
+    1.0 / 0.0, passing its None - no GP30 in this build - through as a gap."""
+    def get(h):
+        v = getattr(h, attr)
+        return None if v is None else float(bool(v))
+    return get
+
+
 #: Everything the 64-byte housekeeping packet carries that varies over time.
-#: `state`, `fired` and the link flags are deliberately absent - they are
-#: enumerations, and a step plot of "SEAL = 3" invites reading the number.
+#: `state` and the link flags are deliberately absent - they are enumerations,
+#: and a step plot of "SEAL = 3" invites reading the number. The
+#: `valve_status` bits are not: each one is a single line that is energized or
+#: not, so they plot as lanes without inventing a scale (`DIGITAL_UNIT`).
 SERIES: tuple[Series, ...] = (
     Series("p_amb", "Ambient p", "hPa", "BME280", "#01386a",
            lambda h: h.p_amb_pa / 100.0, HkErrors.BME280_FAIL),
@@ -231,6 +261,36 @@ SERIES: tuple[Series, ...] = (
     # A sentinel is a gap, like an unreadable rail.
     Series("hb_sense", "Dispersion motor current", "A", "Actuators", "#b0413e",
            lambda h: h.hb_sense_a()),
+) + tuple(
+    # The actuator lines themselves, one lane each. The panel's `Driving` row
+    # answers "is a line energized now"; nothing answered "when did it fire,
+    # and for how long" - a 5 s pulse is over before an operator who looked
+    # away can see it, and afterwards the row is back to `-`. These are the
+    # same `valve_status` bits, kept.
+    Series(f"valve_{v.name.lower()}", label, DIGITAL_UNIT, "Actuator lines",
+           color, _bit(v))
+    for v, label, color in (
+        (ValveStatus.PINCH_1, "Pinch 1", "#01386a"),
+        (ValveStatus.PINCH_2, "Pinch 2", "#4d8fd1"),
+        (ValveStatus.EQ1_CLOSE, "EQ1 close", "#1D9E75"),
+        (ValveStatus.EQ2_CLOSE, "EQ2 close", "#66b394"),
+        # A motor, not a solenoid, but it is a driven line in the same field
+        # and the question asked of it is the same one. Its sensed current is
+        # the `Actuators` group's `hb_sense`, on its own axis in amps.
+        (ValveStatus.DISPERSE, "Dispersion drive", "#E8821E"),
+    )
+) + (
+    # Sensed, not driven: the GP30 plunger switch. It belongs on this axis
+    # because the lane an operator reads is the pair - the membrane duty says
+    # what was commanded, `Membrane cycling` says whether anything moved.
+    # Unsourced in a build that cannot reach GP30, so both carry the flag and
+    # go to gaps rather than reading "not pulled" for a switch nobody read.
+    Series("membrane_pulled", "Membrane plunger", DIGITAL_UNIT,
+           "Actuator lines", "#b0413e", _sensed("membrane_pulled"),
+           HkErrors.NO_MEMBRANE_SENSE),
+    Series("membrane_cycling", "Membrane cycling", DIGITAL_UNIT,
+           "Actuator lines", "#8a97a3", _sensed("membrane_cycling"),
+           HkErrors.NO_MEMBRANE_SENSE),
 )
 
 SERIES_BY_KEY = {s.key: s for s in SERIES}
@@ -390,15 +450,40 @@ class TimelineView(QtWidgets.QWidget):
             self._draw_empty(fig, "no series selected" if not units
                              else self._note)
             return
-        axes = fig.subplots(len(units), 1, sharex=True,
-                            squeeze=False)[:, 0]
-        fig.subplots_adjust(left=0.10, right=0.97, top=0.97, bottom=0.18,
-                            hspace=0.12)
+        axes = fig.subplots(len(units), 1, sharex=True, squeeze=False,
+                            gridspec_kw={"height_ratios":
+                                         [self._unit_height(u) for u in units]}
+                            )[:, 0]
+        fig.subplots_adjust(left=self._left_margin(units), right=0.97,
+                            top=0.97, bottom=0.18, hspace=0.12)
         for ax, unit in zip(axes, units):
             self._draw_axis(ax, unit, x, cols)
         axes[-1].set_xlabel("time before latest housekeeping  [s]",
                             color=style.MUTED, fontsize=8)
         self.plot.setPixmap(fig_to_pixmap(fig))
+
+    def _left_margin(self, units) -> float:
+        """Room for the y labels. A measured axis needs the width of a number;
+        the lane axis carries series names on its ticks, so the margin grows
+        with the longest one - a lane labelled `mbrane plunger` is a lane the
+        operator has to guess at."""
+        if DIGITAL_UNIT not in units:
+            return 0.10
+        longest = max((len(SERIES_BY_KEY[k].label) for k in self.selected
+                       if SERIES_BY_KEY[k].unit == DIGITAL_UNIT), default=0)
+        return min(0.10 + 0.011 * longest, 0.30)
+
+    def _unit_height(self, unit) -> float:
+        """Relative height of one unit's sub-axis. Every measured unit gets
+        the same share; the lane axis is sized by how many lanes are on it,
+        because seven lanes in the height of one trace is seven flat lines.
+        Bounded so it can neither vanish at one lane nor crowd the readings
+        out at seven."""
+        if unit != DIGITAL_UNIT:
+            return 1.0
+        n = sum(1 for k in self.selected
+                if SERIES_BY_KEY[k].unit == DIGITAL_UNIT)
+        return min(max(0.4 * n, 0.6), 2.0)
 
     def _draw_axis(self, ax, unit, x, cols) -> None:
         ax.set_facecolor("#ffffff")
@@ -407,6 +492,9 @@ class TimelineView(QtWidgets.QWidget):
             sp.set_color(style.BORDER)
         ax.tick_params(colors=style.MUTED, labelsize=7)
         ax.set_ylabel(unit, color=style.MUTED, fontsize=8)
+        if unit == DIGITAL_UNIT:
+            self._draw_lanes(ax, x, cols)
+            return
         drawn = 0
         for key in self.selected:
             s = SERIES_BY_KEY[key]
@@ -426,6 +514,45 @@ class TimelineView(QtWidgets.QWidget):
         if drawn:
             ax.legend(loc="upper left", fontsize=7, framealpha=0.9,
                       ncol=min(drawn, 4))
+        if self.window_s is not None:
+            ax.set_xlim(-self.window_s, 0)
+
+    def _draw_lanes(self, ax, x, cols) -> None:
+        """The on/off axis: one lane per actuator line, stacked, drawn as a
+        step because the value between two 1 Hz samples is the value of the
+        earlier one and a sloped edge would claim a ramp that no line has.
+
+        Lanes rather than a shared 0..1 axis: five square waves on one scale
+        overlap exactly, and the question these series answer - which line,
+        when, for how long - is the one that overlap destroys. The series
+        name goes on the y tick instead of in a legend, so a lane is labelled
+        where it is drawn.
+        """
+        keys = [k for k in self.selected
+                if SERIES_BY_KEY[k].unit == DIGITAL_UNIT
+                and cols.get(k) is not None
+                and cols[k].size == x.size]
+        ax.set_ylabel("")
+        if not keys:
+            return
+        ticks, labels = [], []
+        # Bottom lane last, so the sidebar's top-to-bottom order is the
+        # plot's top-to-bottom order.
+        for lane, key in enumerate(reversed(keys)):
+            s = SERIES_BY_KEY[key]
+            y = cols[key]
+            live = bool(np.isfinite(y).any())
+            base = lane + 0.15
+            ax.step(x, base + 0.7 * y, where="post", color=s.color, lw=1.2,
+                    ls="-" if live else ":")
+            ax.fill_between(x, base, base + 0.7 * y, step="post",
+                            color=s.color, alpha=0.2)
+            ticks.append(lane + 0.4)
+            labels.append(s.label if live else f"{s.label}  ({self._why(s)})")
+        ax.set_yticks(ticks)
+        ax.set_yticklabels(labels, fontsize=7, color=style.MUTED)
+        ax.set_ylim(-0.1, len(keys))
+        ax.grid(axis="y", alpha=0.0)
         if self.window_s is not None:
             ax.set_xlim(-self.window_s, 0)
 

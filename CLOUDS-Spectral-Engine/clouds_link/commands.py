@@ -85,7 +85,7 @@ class Param(IntEnum):
     MEMBRANE_MHZ = 9          # solenoid drive frequency, MILLIhertz (default
                               # 2000 = 2 Hz; 100..400000). Was MEMBRANE_HZ in
                               # whole Hz - the operator needs 0.1..0.9 Hz
-    MEMBRANE_DUTY = 10        # percent (default 60)
+    MEMBRANE_DUTY = 10        # percent (default 20)
     SEAL_RETRY = 11           # seal verification retries (default 3)
     PI_SILENT_S = 12          # MCU declares the Pi lost after this (default 60)
-    DISPERSE_DUTY = 13        # CaCO3 motor speed, percent (default 100)
+    DISPERSE_DUTY = 13        # CaCO3 motor speed, percent (default 50)
