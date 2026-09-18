@@ -188,7 +188,21 @@ static void test_config_defaults_and_limits(void)
 
     cfg_defaults(&c);
     TEST_ASSERT_EQUAL_INT32(5500, cfg_get(&c, PARAM_FLOAT_P_PA));
-    TEST_ASSERT_EQUAL_INT32(480, cfg_get(&c, PARAM_T_MEASURE_S));
+    /* automatic mode's cycle: 2 min motor, 3 min solenoid, 5 min neither */
+    TEST_ASSERT_EQUAL_INT32(120, cfg_get(&c, PARAM_AUTO_DISPERSE_S));
+    TEST_ASSERT_EQUAL_INT32(180, cfg_get(&c, PARAM_AUTO_MEMBRANE_S));
+    TEST_ASSERT_EQUAL_INT32(300, cfg_get(&c, PARAM_AUTO_WAIT_S));
+    TEST_ASSERT_EQUAL_INT32(600, cfg_get(&c, PARAM_LINKLOSS_S));
+    TEST_ASSERT_TRUE(cfg_set(&c, PARAM_AUTO_WAIT_S, 30));
+    TEST_ASSERT_FALSE(cfg_set(&c, PARAM_AUTO_WAIT_S, 4));
+    TEST_ASSERT_FALSE(cfg_set(&c, PARAM_AUTO_WAIT_S, 3601));
+    /* 8 and 11 are retired keys (T_MEASURE_S, SEAL_RETRY). A sender that
+     * still knows them must be refused, not quietly obeyed - including the
+     * 0 that a {0,0,0} row would otherwise accept. */
+    TEST_ASSERT_FALSE(cfg_set(&c, 8, 300));
+    TEST_ASSERT_FALSE(cfg_set(&c, 8, 0));
+    TEST_ASSERT_FALSE(cfg_set(&c, 11, 3));
+    TEST_ASSERT_EQUAL_INT32(0, cfg_get(&c, 8));
     TEST_ASSERT_TRUE(cfg_set(&c, PARAM_FLOAT_P_PA, 6000));
     TEST_ASSERT_EQUAL_INT32(6000, cfg_get(&c, PARAM_FLOAT_P_PA));
     /* out-of-envelope values are refused (M-16 safety) */
@@ -448,9 +462,6 @@ typedef struct {
     bool motor_on;        /* last disperse_run(on) */
     int motor_run_calls;  /* disperse_run(true) count: a re-latch is one */
     int eq_close_calls;
-    int seal_calls;
-    uint64_t first_seal_ms;
-    bool seal_result;
     bool self_test_result;
     uint8_t last_event;
 } mock_t;
@@ -508,14 +519,6 @@ static void m_membrane(void *ctx, uint8_t duty)
     M.membrane_duty = duty;
 }
 
-static bool m_seal_ok(void *ctx)
-{
-    (void)ctx;
-    if (M.seal_calls++ == 0)
-        M.first_seal_ms = SIM_MS;
-    return M.seal_result;
-}
-
 static bool m_self_test(void *ctx)
 {
     (void)ctx;
@@ -536,7 +539,6 @@ static const seq_ops_t mock_ops = {
     .disperse = m_disperse,
     .disperse_run = m_disperse_run,
     .membrane = m_membrane,
-    .seal_ok = m_seal_ok,
     .self_test = m_self_test,
     .event = m_event,
 };
@@ -580,7 +582,6 @@ static const seq_ops_t mock_ops_pulsed = {
     .disperse_run = m_disperse_run,
     .membrane = m_membrane,
     .busy = m_busy,
-    .seal_ok = m_seal_ok,
     .self_test = m_self_test,
     .event = m_event,
 };
@@ -588,7 +589,6 @@ static const seq_ops_t mock_ops_pulsed = {
 static void mock_reset(void)
 {
     memset(&M, 0, sizeof M);
-    M.seal_result = true;
     M.self_test_result = true;
     pulse_init(&MP);
     rec_reset();
@@ -617,7 +617,96 @@ static void run_sim(sequencer_t *s, cfg_t *cfg, uint32_t from_s,
         seq_step(s, (uint64_t)t * 1000u, t, profile_pa(t));
 }
 
-static void test_full_autonomous_flight(void)
+/* The automatic-mode tests care about time and silence, not about a
+ * pressure profile: nothing in the cycle reads the pressure. SIM_T is the
+ * wall/monotonic second the next step happens at. */
+static uint32_t SIM_T;
+
+static void quiet_to(sequencer_t *s, uint32_t target_s)
+{
+    while (SIM_T <= target_s) {
+        seq_step(s, (uint64_t)SIM_T * 1000u, SIM_T, 101325);
+        SIM_T++;
+    }
+}
+
+/* INIT -> STANDBY -> the operator's start button. Leaves SIM_T at 2 s and
+ * the link-loss timer running from the START at 1 s. */
+static void start_experiment(sequencer_t *s, cfg_t *cfg)
+{
+    SIM_T = 0;
+    quiet_to(s, 0);
+    TEST_ASSERT_EQUAL_INT(ST_STANDBY, s->state);
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK,
+                            seq_command(s, 1000, 1, CMD_START, 0, 0, cfg));
+    TEST_ASSERT_EQUAL_INT(ST_RUNNING, s->state);
+    SIM_T = 2;
+}
+
+/* The second the current automatic phase was entered. */
+static uint32_t phase_t0(const sequencer_t *s)
+{
+    return (uint32_t)(s->state_entered_ms / 1000u);
+}
+
+static void test_link_loss_runs_the_cycle(void)
+{
+    cfg_t cfg;
+    sequencer_t s;
+    uint32_t t0;
+
+    mock_reset();
+    cfg_defaults(&cfg);
+    seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
+    start_experiment(&s, &cfg);
+
+    /* Nine minutes of ground silence are not ten: still RUNNING, and
+     * nothing is energized. */
+    quiet_to(&s, 540);
+    TEST_ASSERT_EQUAL_INT(ST_RUNNING, s.state);
+    TEST_ASSERT_FALSE(M.motor_on);
+    TEST_ASSERT_EQUAL_INT(0, M.membrane_duty);
+
+    /* PARAM_LINKLOSS_S (600 s) after the last command, the electronics take
+     * over: motor first, and the solenoid stays off - "just dispersion". */
+    quiet_to(&s, 620);
+    TEST_ASSERT_EQUAL_INT(ST_AUTO_DISPERSE, s.state);
+    TEST_ASSERT_TRUE(M.motor_on);
+    TEST_ASSERT_EQUAL_INT(0, M.membrane_duty);
+
+    /* 2 min of it, to the second. */
+    t0 = phase_t0(&s);
+    quiet_to(&s, t0 + 119);
+    TEST_ASSERT_EQUAL_INT(ST_AUTO_DISPERSE, s.state);
+    quiet_to(&s, t0 + 120);
+    TEST_ASSERT_EQUAL_INT(ST_AUTO_MEMBRANE, s.state);
+    TEST_ASSERT_FALSE(M.motor_on); /* solenoid ONLY */
+    TEST_ASSERT_EQUAL_INT(cfg_get(&cfg, PARAM_MEMBRANE_DUTY),
+                          M.membrane_duty);
+
+    /* 3 min of solenoid. */
+    t0 = phase_t0(&s);
+    quiet_to(&s, t0 + 179);
+    TEST_ASSERT_EQUAL_INT(ST_AUTO_MEMBRANE, s.state);
+    quiet_to(&s, t0 + 180);
+    TEST_ASSERT_EQUAL_INT(ST_AUTO_WAIT, s.state);
+    TEST_ASSERT_FALSE(M.motor_on); /* neither: measure and save only */
+    TEST_ASSERT_EQUAL_INT(0, M.membrane_duty);
+
+    /* 5 min of waiting, then round again. */
+    t0 = phase_t0(&s);
+    quiet_to(&s, t0 + 299);
+    TEST_ASSERT_EQUAL_INT(ST_AUTO_WAIT, s.state);
+    quiet_to(&s, t0 + 300);
+    TEST_ASSERT_EQUAL_INT(ST_AUTO_DISPERSE, s.state);
+    TEST_ASSERT_TRUE(M.motor_on);
+
+    /* Through all of it the pinch valves stayed shut: a release is never
+     * automatic (S.8). */
+    TEST_ASSERT_EQUAL_INT(0, M.fires[1] + M.fires[2]);
+}
+
+static void test_a_command_ends_the_cycle_at_once(void)
 {
     cfg_t cfg;
     sequencer_t s;
@@ -625,25 +714,72 @@ static void test_full_autonomous_flight(void)
     mock_reset();
     cfg_defaults(&cfg);
     seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
+    start_experiment(&s, &cfg);
+    quiet_to(&s, 700); /* into the motor phase */
+    TEST_ASSERT_EQUAL_INT(ST_AUTO_DISPERSE, s.state);
+    TEST_ASSERT_TRUE(M.motor_on);
 
-    run_sim(&s, &cfg, 0, 300);
-    TEST_ASSERT_EQUAL_INT(ST_STANDBY, s.state); /* on the pad */
+    /* A bare heartbeat is enough - it is the link that matters, not what
+     * the operator sent. The drives stop in the same call, not at the end
+     * of the phase. */
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 701000ull, 701, CMD_PING,
+                                                0, 0, &cfg));
+    TEST_ASSERT_EQUAL_INT(ST_RUNNING, s.state);
+    TEST_ASSERT_FALSE(M.motor_on);
+    TEST_ASSERT_EQUAL_INT(0, M.membrane_duty);
+    TEST_ASSERT_EQUAL_UINT8(0, s.membrane_duty);
 
-    run_sim(&s, &cfg, 300, 1000);
-    TEST_ASSERT_EQUAL_INT(ST_ASCENT, s.state); /* launch detected */
-    TEST_ASSERT_TRUE(s.autonomy.launch_detected);
+    /* And it stays off while the link is up. */
+    SIM_T = 702;
+    quiet_to(&s, 1000);
+    TEST_ASSERT_EQUAL_INT(ST_RUNNING, s.state);
+    TEST_ASSERT_FALSE(M.motor_on);
+}
 
-    /* through float + both releases + both measure phases */
-    run_sim(&s, &cfg, 1000, 6000 + 300 /*hold*/ + 2 * 480 + 60);
-    TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
-    TEST_ASSERT_EQUAL_INT(1, M.fires[1]); /* exactly one fire each (O.2) */
-    TEST_ASSERT_EQUAL_INT(1, M.fires[2]);
-    /* the dispersion motor runs once per release, not once per flight */
-    TEST_ASSERT_EQUAL_INT(2, M.disperse_calls);
-    TEST_ASSERT_EQUAL_INT(0, M.membrane_duty); /* off in SAFE */
-    TEST_ASSERT_TRUE(M.eq_close_calls >= 2);   /* seal + termination */
-    TEST_ASSERT_TRUE(s.seal_verified);
-    /* zero ground commands were sent: full autonomy (O.2, T-07) */
+static void test_the_cycle_restarts_at_the_motor_phase(void)
+{
+    cfg_t cfg;
+    sequencer_t s;
+    uint32_t t0;
+
+    mock_reset();
+    cfg_defaults(&cfg);
+    seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
+    start_experiment(&s, &cfg);
+
+    /* Far enough in to be past the motor phase... */
+    quiet_to(&s, 900);
+    TEST_ASSERT_EQUAL_INT(ST_AUTO_MEMBRANE, s.state);
+    /* ...the link comes back... */
+    seq_command(&s, 901000ull, 901, CMD_PING, 0, 0, &cfg);
+    SIM_T = 902;
+    /* ...and goes again. The cycle does not resume where it stopped: every
+     * entry starts at the motor, so what the electronics do after a given
+     * drop-out never depends on the one before it. */
+    quiet_to(&s, 1550);
+    TEST_ASSERT_EQUAL_INT(ST_AUTO_DISPERSE, s.state);
+    t0 = phase_t0(&s);
+    quiet_to(&s, t0 + 120);
+    TEST_ASSERT_EQUAL_INT(ST_AUTO_MEMBRANE, s.state);
+}
+
+static void test_standby_never_starts_the_cycle(void)
+{
+    cfg_t cfg;
+    sequencer_t s;
+
+    mock_reset();
+    cfg_defaults(&cfg);
+    seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
+    SIM_T = 0;
+    /* Twenty minutes on the pad with nobody talking to it. A link that was
+     * never up is not a link that was lost: without the start button the
+     * experiment does nothing at all. */
+    quiet_to(&s, 1200);
+    TEST_ASSERT_EQUAL_INT(ST_STANDBY, s.state);
+    TEST_ASSERT_FALSE(M.motor_on);
+    TEST_ASSERT_EQUAL_INT(0, M.membrane_duty);
+    TEST_ASSERT_EQUAL_INT(0, M.fires[1] + M.fires[2]);
 }
 
 static void test_release_works_without_a_dispersion_motor(void)
@@ -653,17 +789,26 @@ static void test_release_works_without_a_dispersion_motor(void)
     seq_ops_t no_motor = mock_ops;
 
     /* the motor is not in the SED and a board may not have it; a NULL op
-     * must not stop the release sequence. */
+     * must not stop a release. */
     no_motor.disperse = NULL;
+    no_motor.disperse_run = NULL;
     mock_reset();
     cfg_defaults(&cfg);
     seq_init(&s, &cfg, &no_motor, NULL, 0, 0);
-    run_sim(&s, &cfg, 0, 6000 + 300 + 2 * 480 + 60);
+    start_experiment(&s, &cfg);
 
-    TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 3000, 3, CMD_RELEASE, 1,
+                                                0, &cfg));
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 4000, 4, CMD_RELEASE, 2,
+                                                0, &cfg));
     TEST_ASSERT_EQUAL_INT(1, M.fires[1]);
     TEST_ASSERT_EQUAL_INT(1, M.fires[2]);
     TEST_ASSERT_EQUAL_INT(0, M.disperse_calls);
+
+    /* and the cycle still runs on a board without the motor: its motor
+     * phase simply drives nothing. */
+    quiet_to(&s, 700);
+    TEST_ASSERT_EQUAL_INT(ST_AUTO_DISPERSE, s.state);
 }
 
 static void test_persist_before_fire_ordering(void)
@@ -674,7 +819,9 @@ static void test_persist_before_fire_ordering(void)
     mock_reset();
     cfg_defaults(&cfg);
     seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
-    run_sim(&s, &cfg, 0, 8000);
+    start_experiment(&s, &cfg);
+    seq_command(&s, 3000, 3, CMD_RELEASE, 1, 0, &cfg);
+    seq_command(&s, 4000, 4, CMD_RELEASE, 2, 0, &cfg);
     /* S.3: the persist carrying each fired bit precedes its fire call */
     TEST_ASSERT_EQUAL_INT(101, M.fire_order[0]); /* persist bit 1 */
     TEST_ASSERT_EQUAL_INT(201, M.fire_order[1]); /* fire 1 */
@@ -691,36 +838,50 @@ static void test_resume_after_reset_does_not_refire(void)
     mock_reset();
     cfg_defaults(&cfg);
     seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
-    run_sim(&s, &cfg, 0, 6350); /* into MEASURE_1, valve 1 fired */
-    TEST_ASSERT_EQUAL_INT(ST_MEASURE_1, s.state);
+    start_experiment(&s, &cfg);
+    seq_command(&s, 3000, 3, CMD_RELEASE, 1, 0, &cfg);
     TEST_ASSERT_EQUAL_INT(1, M.fires[1]);
     saved = M.last_persist;
 
     /* brownout reset: restore from the persisted snapshot */
     mock_reset();
-    seq_init(&s, &cfg, &mock_ops, &saved, 6350000ull, 6350);
-    run_sim(&s, &cfg, 6351, 6351 + 2 * 480 + 60);
-    TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
-    TEST_ASSERT_EQUAL_INT(0, M.fires[1]); /* valve 1 NOT re-fired (S.3) */
-    TEST_ASSERT_EQUAL_INT(1, M.fires[2]); /* valve 2 fired once */
+    seq_init(&s, &cfg, &mock_ops, &saved, 10000, 10);
+    TEST_ASSERT_EQUAL_INT(ST_RUNNING, s.state);
+    TEST_ASSERT_EQUAL_UINT8(0x01, s.fired);
+    /* A ground command asking for valve 1 again is answered OK like every
+     * other, and still cannot re-fire it: the persisted bit is the guard,
+     * not the ACK (S.3). */
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 11000, 11,
+                                                CMD_RELEASE, 1, 0, &cfg));
+    TEST_ASSERT_EQUAL_INT(0, M.fires[1]);
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 12000, 12, CMD_RELEASE, 2,
+                                                0, &cfg));
+    TEST_ASSERT_EQUAL_INT(1, M.fires[2]);
 }
 
-static void test_resume_mid_release_treats_fired_as_done(void)
+static void test_resume_out_of_automatic_mode_comes_back_running(void)
 {
     cfg_t cfg;
     sequencer_t s;
-    /* persisted DURING RELEASE_1, bit already set (persist-before-fire) */
-    seq_persist_t saved = {.state = ST_RELEASE_1, .fired = 0x01,
+    /* persisted mid-cycle, one valve already fired by ground */
+    seq_persist_t saved = {.state = ST_AUTO_MEMBRANE, .fired = 0x01,
                            .mission_start_s = 700, .launch_detected = true};
 
     mock_reset();
     cfg_defaults(&cfg);
     seq_init(&s, &cfg, &mock_ops, &saved, 1000000ull, 1000);
-    TEST_ASSERT_EQUAL_INT(ST_MEASURE_1, s.state); /* measure, don't refire */
-    run_sim(&s, &cfg, 1001, 1001 + 2 * 480 + 60);
-    TEST_ASSERT_EQUAL_INT(0, M.fires[1]);
-    TEST_ASSERT_EQUAL_INT(1, M.fires[2]);
-    TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
+    /* A reset leaves the actuators off, so resuming into a phase that
+     * believes they are on would be a lie. Back to RUNNING, and the cycle
+     * re-enters from its first phase if the link is still gone. */
+    TEST_ASSERT_EQUAL_INT(ST_RUNNING, s.state);
+    TEST_ASSERT_FALSE(s.motor_running);
+    TEST_ASSERT_EQUAL_UINT8(0, s.membrane_duty);
+    TEST_ASSERT_EQUAL_UINT8(0x01, s.fired);
+
+    SIM_T = 1001;
+    quiet_to(&s, 1700);
+    TEST_ASSERT_EQUAL_INT(ST_AUTO_DISPERSE, s.state);
+    TEST_ASSERT_EQUAL_INT(0, M.fires[1]); /* still not re-fired */
 }
 
 static void test_self_test_failure_goes_safe(void)
@@ -737,7 +898,7 @@ static void test_self_test_failure_goes_safe(void)
     TEST_ASSERT_EQUAL_INT(0, M.fires[1] + M.fires[2]);
 }
 
-static void test_hold_blocks_resume_continues(void)
+static void test_hold_keeps_the_cycle_off(void)
 {
     cfg_t cfg;
     sequencer_t s;
@@ -745,16 +906,24 @@ static void test_hold_blocks_resume_continues(void)
     mock_reset();
     cfg_defaults(&cfg);
     seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
-    run_sim(&s, &cfg, 0, 1000); /* ASCENT */
-    seq_command(&s, 1000000ull, 1000, CMD_HOLD, 0, 0, &cfg);
-    run_sim(&s, &cfg, 1001, 8000);
-    TEST_ASSERT_EQUAL_INT(ST_ASCENT, s.state); /* held at float */
-    TEST_ASSERT_EQUAL_INT(0, M.fires[1]);
-    seq_command(&s, 8000000ull, 8000, CMD_RESUME, 0, 0, &cfg);
-    run_sim(&s, &cfg, 8001, 8001 + 400 + 2 * 480 + 60);
-    TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
-    TEST_ASSERT_EQUAL_INT(1, M.fires[1]);
-    TEST_ASSERT_EQUAL_INT(1, M.fires[2]);
+    start_experiment(&s, &cfg);
+
+    /* HOLD is how an operator says "do nothing without me", and it outlives
+     * the link: ten minutes of silence do not start the cycle. */
+    seq_command(&s, 2000, 2, CMD_HOLD, 0, 0, &cfg);
+    SIM_T = 3;
+    quiet_to(&s, 1200);
+    TEST_ASSERT_EQUAL_INT(ST_RUNNING, s.state);
+    TEST_ASSERT_TRUE(s.hold);
+    TEST_ASSERT_FALSE(M.motor_on);
+
+    /* RESUME is itself a command, so the link is up again; the next silence
+     * runs the cycle as usual. */
+    seq_command(&s, 1201000ull, 1201, CMD_RESUME, 0, 0, &cfg);
+    SIM_T = 1202;
+    quiet_to(&s, 1850);
+    TEST_ASSERT_EQUAL_INT(ST_AUTO_DISPERSE, s.state);
+    TEST_ASSERT_TRUE(M.motor_on);
 }
 
 static void test_abort_goes_safe_without_firing(void)
@@ -765,15 +934,26 @@ static void test_abort_goes_safe_without_firing(void)
     mock_reset();
     cfg_defaults(&cfg);
     seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
-    run_sim(&s, &cfg, 0, 1000);
-    seq_command(&s, 1000000ull, 1000, CMD_ABORT, 0, 0, &cfg);
-    seq_step(&s, 1001000ull, 1001, profile_pa(1001));
+    start_experiment(&s, &cfg);
+    quiet_to(&s, 700); /* let the cycle take over first */
+    TEST_ASSERT_EQUAL_INT(ST_AUTO_DISPERSE, s.state);
+
+    seq_command(&s, 701000ull, 701, CMD_ABORT, 0, 0, &cfg);
+    seq_step(&s, 702000ull, 702, 101325);
     TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
     TEST_ASSERT_EQUAL_INT(0, M.fires[1] + M.fires[2]);
     TEST_ASSERT_EQUAL_INT(0, M.membrane_duty);
+    TEST_ASSERT_FALSE(M.motor_on);
+
+    /* and the cycle cannot come back after an abort, however long the link
+     * stays down */
+    SIM_T = 703;
+    quiet_to(&s, 1500);
+    TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
+    TEST_ASSERT_FALSE(M.motor_on);
 }
 
-static void test_ground_release_override(void)
+static void test_ground_release_fires_where_it_stands(void)
 {
     cfg_t cfg;
     sequencer_t s;
@@ -781,17 +961,54 @@ static void test_ground_release_override(void)
     mock_reset();
     cfg_defaults(&cfg);
     seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
-    run_sim(&s, &cfg, 0, 1000); /* ASCENT, before float */
-    seq_command(&s, 1000000ull, 1000, CMD_RELEASE, 1, 0, &cfg);
-    seq_step(&s, 1001000ull, 1001, profile_pa(1001));
-    TEST_ASSERT_EQUAL_INT(1, M.fires[1]); /* early release accepted (S.2) */
-    /* duplicate command must not double-fire */
-    seq_command(&s, 1002000ull, 1002, CMD_RELEASE, 1, 0, &cfg);
-    seq_step(&s, 1003000ull, 1003, profile_pa(1003));
+    seq_step(&s, 0, 0, 101325); /* INIT -> STANDBY */
+
+    /* Even on the pad: while ground is connected the command executes. */
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 500, 0, CMD_RELEASE, 1,
+                                                0, &cfg));
     TEST_ASSERT_EQUAL_INT(1, M.fires[1]);
+    /* The release is an act, not a phase: the state it happens in is the
+     * state it leaves behind. */
+    TEST_ASSERT_EQUAL_INT(ST_STANDBY, s.state);
+    TEST_ASSERT_EQUAL_INT(1, M.disperse_calls); /* the motor moves it out */
+
+    start_experiment(&s, &cfg);
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 3000, 3, CMD_RELEASE, 2,
+                                                0, &cfg));
+    TEST_ASSERT_EQUAL_INT(1, M.fires[2]);
+    TEST_ASSERT_EQUAL_INT(ST_RUNNING, s.state);
+
+    /* a duplicate is answered OK and still fires nothing */
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 4000, 4, CMD_RELEASE, 2,
+                                                0, &cfg));
+    TEST_ASSERT_EQUAL_INT(1, M.fires[2]);
 }
 
-static void test_start_command_accelerates_standby(void)
+static void test_a_release_during_the_cycle_stops_it_first(void)
+{
+    cfg_t cfg;
+    sequencer_t s;
+
+    mock_reset();
+    cfg_defaults(&cfg);
+    seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
+    start_experiment(&s, &cfg);
+    quiet_to(&s, 700);
+    TEST_ASSERT_EQUAL_INT(ST_AUTO_DISPERSE, s.state);
+    TEST_ASSERT_TRUE(M.motor_on);
+
+    /* The operator is back, so the cycle's motor stops before their release
+     * is acted on - and the release then gets its own bounded drive rather
+     * than landing on a motor that was already turning. */
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 701000ull, 701,
+                                                CMD_RELEASE, 1, 0, &cfg));
+    TEST_ASSERT_EQUAL_INT(ST_RUNNING, s.state);
+    TEST_ASSERT_EQUAL_INT(1, M.fires[1]);
+    TEST_ASSERT_EQUAL_INT(1, M.disperse_calls);
+    TEST_ASSERT_FALSE(s.motor_running);
+}
+
+static void test_start_button_starts_and_restarts(void)
 {
     cfg_t cfg;
     sequencer_t s;
@@ -800,45 +1017,51 @@ static void test_start_command_accelerates_standby(void)
     cfg_defaults(&cfg);
     seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
     seq_step(&s, 1000, 1, 101325); /* INIT -> STANDBY */
-    seq_command(&s, 2000, 2, CMD_START, 0, 0, &cfg);
-    TEST_ASSERT_EQUAL_INT(ST_ASCENT, s.state);
+    /* STANDBY still moves on nothing but the button - it is the automatic
+     * path that cannot leave it, not a refusal of anything ground sends. */
+    TEST_ASSERT_EQUAL_INT(ST_STANDBY, s.state);
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK,
+                            seq_command(&s, 2000, 2, CMD_START, 0, 0, &cfg));
+    TEST_ASSERT_EQUAL_INT(ST_RUNNING, s.state);
     TEST_ASSERT_TRUE(s.mission_start_s > 0);
+    /* mission time runs from the first button press, and a second one does
+     * not restart the clock */
+    TEST_ASSERT_EQUAL_UINT32(8, seq_mission_t_s(&s, 10));
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK,
+                            seq_command(&s, 3000, 3, CMD_START, 0, 5, &cfg));
+    TEST_ASSERT_EQUAL_INT(ST_RUNNING, s.state);
+    TEST_ASSERT_EQUAL_UINT32(8, seq_mission_t_s(&s, 10));
+
+    /* and it is the way back out of SAFE after an abort */
+    seq_command(&s, 4000, 4, CMD_ABORT, 0, 0, &cfg);
+    seq_step(&s, 5000, 5, 101325);
+    TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK,
+                            seq_command(&s, 6000, 6, CMD_START, 0, 0, &cfg));
+    TEST_ASSERT_EQUAL_INT(ST_RUNNING, s.state);
 }
 
-static void test_float_timer_fallback(void)
+static void test_launch_and_float_are_reported_but_move_nothing(void)
 {
     cfg_t cfg;
     sequencer_t s;
 
     mock_reset();
     cfg_defaults(&cfg);
-    /* pressure never satisfies the float criterion: stuck at 60000 Pa */
     seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
-    for (uint32_t t = 0; t < 700; t++)
-        seq_step(&s, (uint64_t)t * 1000u, t, t < 600 ? 101325 : 60000);
-    TEST_ASSERT_EQUAL_INT(ST_ASCENT, s.state);
-    /* T_FLOAT_S (7200 s) after launch: fallback trips (S.1) */
-    for (uint32_t t = 700; t < 700 + 7300; t++)
-        seq_step(&s, (uint64_t)t * 1000u, t, 60000);
+    /* The whole BEXUS profile, with nobody pressing anything: detection
+     * still runs and still reports, because ground wants to know when the
+     * balloon left and when it levelled off - but since 2026-09-18 no state
+     * depends on it, so the experiment sits in STANDBY throughout. */
+    run_sim(&s, &cfg, 0, 8000);
+    TEST_ASSERT_TRUE(s.autonomy.launch_detected);
     TEST_ASSERT_TRUE(s.autonomy.float_detected);
-    TEST_ASSERT_TRUE(s.state >= ST_SEAL);
+    TEST_ASSERT_EQUAL_INT(ST_STANDBY, s.state);
+    TEST_ASSERT_EQUAL_INT(0, M.fires[1] + M.fires[2]);
+    TEST_ASSERT_EQUAL_INT(0, M.eq_close_calls);
+    TEST_ASSERT_EQUAL_UINT32(0, seq_mission_t_s(&s, 8000));
 }
 
-static void test_seal_failure_retries_then_proceeds_flagged(void)
-{
-    cfg_t cfg;
-    sequencer_t s;
-
-    mock_reset();
-    M.seal_result = false;
-    cfg_defaults(&cfg);
-    seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
-    run_sim(&s, &cfg, 0, 6400);
-    TEST_ASSERT_TRUE(s.state >= ST_RELEASE_1); /* proceeded anyway */
-    TEST_ASSERT_FALSE(s.seal_verified);
-    TEST_ASSERT_TRUE(s.seal_attempts > 3); /* default retries exhausted */
-    TEST_ASSERT_EQUAL_INT(1, M.fires[1]);
-}
 
 /* main.c's cadence: service the timed drives every 10 ms, step at 1 Hz. */
 static void run_sim_pulsed(sequencer_t *s, uint32_t from_s, uint32_t to_s)
@@ -853,36 +1076,8 @@ static void run_sim_pulsed(sequencer_t *s, uint32_t from_s, uint32_t to_s)
     }
 }
 
-static void test_seal_check_waits_for_the_valve_drive(void)
-{
-    cfg_t cfg;
-    sequencer_t s;
-    /* resume straight into SEAL so the state is exercised in isolation */
-    seq_persist_t at_seal = {.state = ST_SEAL, .fired = 0,
-                             .mission_start_s = 700, .launch_detected = true};
 
-    mock_reset();
-    cfg_defaults(&cfg);
-    seq_init(&s, &cfg, &mock_ops_pulsed, &at_seal, 0, 6000);
-
-    for (SIM_MS = 0; SIM_MS <= 20000; SIM_MS += LOOP_MS) {
-        pulse_service(&MP, SIM_MS, VALVE_PULSE_MS, rec_drive, NULL);
-        if (SIM_MS % 1000u == 0)
-            seq_step(&s, SIM_MS, 6000 + (uint32_t)(SIM_MS / 1000u), 5000);
-    }
-
-    /* one close command, not a burst of retries fired at the queue */
-    TEST_ASSERT_EQUAL_INT(1, M.eq_close_calls);
-    TEST_ASSERT_EQUAL_INT(1, M.seal_calls);
-    /* and it was judged only after both lines finished driving (2 x 5 s):
-     * a chamber pressure read while the valves move means nothing (M-15) */
-    TEST_ASSERT_TRUE(M.first_seal_ms >= 2 * VALVE_PULSE_MS);
-    TEST_ASSERT_TRUE(s.seal_verified);
-    TEST_ASSERT_TRUE(s.state >= ST_RELEASE_1);
-    TEST_ASSERT_EQUAL_INT(1, E.max_high);
-}
-
-static void test_full_flight_with_timed_drives(void)
+static void test_releases_with_timed_drives(void)
 {
     cfg_t cfg;
     sequencer_t s;
@@ -891,19 +1086,26 @@ static void test_full_flight_with_timed_drives(void)
     cfg_defaults(&cfg);
     seq_init(&s, &cfg, &mock_ops_pulsed, NULL, 0, 0);
 
-    /* the X-03 rehearsal again, this time with every actuation taking its
-     * real 5 s and being released by the loop rather than slept through */
-    run_sim_pulsed(&s, 0, 6000 + 300 + 2 * 480 + 120);
+    /* Both releases with every actuation taking its real 5 s and being
+     * released by the loop rather than slept through. */
+    SIM_MS = 0;
+    pulse_service(&MP, SIM_MS, VALVE_PULSE_MS, rec_drive, NULL);
+    seq_step(&s, 0, 0, 101325);
+    seq_command(&s, 1000, 1, CMD_START, 0, 0, &cfg);
+    seq_command(&s, 2000, 2, CMD_RELEASE, 1, 0, &cfg);
+    seq_command(&s, 3000, 3, CMD_RELEASE, 2, 0, &cfg);
+    for (SIM_MS = 3000; SIM_MS < 60000; SIM_MS += LOOP_MS) {
+        pulse_service(&MP, SIM_MS, VALVE_PULSE_MS, rec_drive, NULL);
+        if (SIM_MS % 1000u == 0)
+            seq_step(&s, SIM_MS, (uint32_t)(SIM_MS / 1000u), 101325);
+    }
 
-    TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
-    TEST_ASSERT_EQUAL_INT(1, M.fires[1]); /* still exactly one each (O.2) */
+    TEST_ASSERT_EQUAL_INT(1, M.fires[1]); /* exactly one each (O.2) */
     TEST_ASSERT_EQUAL_INT(1, M.fires[2]);
-    TEST_ASSERT_TRUE(s.seal_verified);
-    TEST_ASSERT_EQUAL_INT(1, E.max_high);      /* one solenoid at a time */
-    TEST_ASSERT_EQUAL_INT(0, E.n_high);        /* SAFE leaves nothing on */
-    TEST_ASSERT_FALSE(pulse_busy(&MP));        /* no drive left pending */
-    TEST_ASSERT_EQUAL_UINT16(0, MP.dropped);   /* no request was refused */
-    TEST_ASSERT_EQUAL_INT(0, M.membrane_duty); /* membrane off in SAFE */
+    TEST_ASSERT_EQUAL_INT(1, E.max_high);    /* one solenoid at a time */
+    TEST_ASSERT_EQUAL_INT(0, E.n_high);      /* everything released again */
+    TEST_ASSERT_FALSE(pulse_busy(&MP));      /* no drive left pending */
+    TEST_ASSERT_EQUAL_UINT16(0, MP.dropped); /* no request was refused */
 }
 
 static void test_linkloss_latch_and_recovery(void)
@@ -930,10 +1132,14 @@ static void test_set_param_range_checked(void)
     mock_reset();
     cfg_defaults(&cfg);
     seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
-    seq_command(&s, 1000, 1, CMD_SET_PARAM, PARAM_T_MEASURE_S, 300, &cfg);
-    TEST_ASSERT_EQUAL_INT32(300, cfg_get(&cfg, PARAM_T_MEASURE_S));
-    seq_command(&s, 2000, 2, CMD_SET_PARAM, PARAM_T_MEASURE_S, -5, &cfg);
-    TEST_ASSERT_EQUAL_INT32(300, cfg_get(&cfg, PARAM_T_MEASURE_S));
+    seq_command(&s, 1000, 1, CMD_SET_PARAM, PARAM_AUTO_DISPERSE_S, 300, &cfg);
+    TEST_ASSERT_EQUAL_INT32(300, cfg_get(&cfg, PARAM_AUTO_DISPERSE_S));
+    seq_command(&s, 2000, 2, CMD_SET_PARAM, PARAM_AUTO_DISPERSE_S, -5, &cfg);
+    TEST_ASSERT_EQUAL_INT32(300, cfg_get(&cfg, PARAM_AUTO_DISPERSE_S));
+    /* a retired key is INVALID, not a silent write */
+    TEST_ASSERT_EQUAL_UINT8(ACK_INVALID, seq_command(&s, 3000, 3,
+                                                     CMD_SET_PARAM, 8, 300,
+                                                     &cfg));
 }
 
 
@@ -1171,60 +1377,13 @@ static void test_pi_silence_threshold_is_settable(void)
     TEST_ASSERT_FALSE(l.pi_ok);
 }
 
-static void test_release_needs_an_arm_on_the_mcu_too(void)
-{
-    link_t l;
 
-    link_init(&l, 0);
-    /* The Pi enforces S.8 first, but a corrupted CMD_RELEASE that survives
-     * CRC must not fire a valve on the strength of the wire alone. */
-    TEST_ASSERT_EQUAL_UINT8(ACK_NOT_ARMED, link_gate(&l, 1000, CMD_RELEASE, 1));
 
-    TEST_ASSERT_EQUAL_UINT8(ACK_OK, link_gate(&l, 2000, CMD_ARM, CMD_RELEASE));
-    TEST_ASSERT_EQUAL_UINT8(LINK_PASS, link_gate(&l, 2500, CMD_RELEASE, 1));
-    /* one ARM authorises exactly one execute */
-    TEST_ASSERT_EQUAL_UINT8(ACK_NOT_ARMED, link_gate(&l, 2600, CMD_RELEASE, 2));
-}
 
-static void test_arm_window_expires_on_the_mcu(void)
-{
-    link_t l;
-
-    link_init(&l, 0);
-    TEST_ASSERT_EQUAL_UINT8(ACK_OK, link_gate(&l, 1000, CMD_ARM, CMD_RELEASE));
-    TEST_ASSERT_EQUAL_UINT8(LINK_PASS,
-                            link_gate(&l, 1000 + LINK_ARM_WINDOW_MS,
-                                      CMD_RELEASE, 1));
-    TEST_ASSERT_EQUAL_UINT8(ACK_OK, link_gate(&l, 5000, CMD_ARM, CMD_RELEASE));
-    TEST_ASSERT_EQUAL_UINT8(ACK_NOT_ARMED,
-                            link_gate(&l, 5001 + LINK_ARM_WINDOW_MS,
-                                      CMD_RELEASE, 1));
-}
-
-static void test_only_actuator_commands_are_armable(void)
-{
-    link_t l;
-
-    link_init(&l, 0);
-    TEST_ASSERT_EQUAL_UINT8(ACK_INVALID, link_gate(&l, 1000, CMD_ARM, CMD_HOLD));
-    /* a rejected ARM must not leave a latch behind */
-    TEST_ASSERT_EQUAL_UINT8(ACK_NOT_ARMED, link_gate(&l, 1100, CMD_RELEASE, 1));
-}
-
-static void test_unarmed_commands_pass_the_gate_untouched(void)
-{
-    link_t l;
-
-    link_init(&l, 0);
-    TEST_ASSERT_EQUAL_UINT8(LINK_PASS, link_gate(&l, 1000, CMD_PING, 0));
-    TEST_ASSERT_EQUAL_UINT8(LINK_PASS, link_gate(&l, 1000, CMD_ABORT, 0));
-    TEST_ASSERT_EQUAL_UINT8(LINK_PASS, link_gate(&l, 1000, CMD_HOLD, 0));
-    TEST_ASSERT_EQUAL_UINT8(LINK_PASS, link_gate(&l, 1000, CMD_START, 0));
-}
 
 /* ---- command results: ground hears the MCU's verdict --------------------- */
 
-static void test_command_results_report_what_happened(void)
+static void test_no_command_is_refused_for_state(void)
 {
     cfg_t cfg;
     sequencer_t s;
@@ -1236,27 +1395,77 @@ static void test_command_results_report_what_happened(void)
 
     TEST_ASSERT_EQUAL_UINT8(ACK_OK,
                             seq_command(&s, 2000, 2, CMD_PING, 0, 0, &cfg));
-    /* On the pad: STANDBY is before ASCENT, so a release does nothing and
-     * ground must be told so rather than getting a bare OK. */
-    TEST_ASSERT_EQUAL_UINT8(ACK_REJECTED,
+    /* On the pad, before START: the release goes through. Nothing is held
+     * back for state any more (2026-09-18). */
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK,
                             seq_command(&s, 2100, 2, CMD_RELEASE, 1, 0, &cfg));
-    TEST_ASSERT_EQUAL_INT(0, M.fires[1]);
+    TEST_ASSERT_EQUAL_INT(1, M.fires[1]);
+    /* A second one is answered OK too, and still cannot re-fire the valve. */
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK,
+                            seq_command(&s, 2150, 2, CMD_RELEASE, 1, 0, &cfg));
+    TEST_ASSERT_EQUAL_INT(1, M.fires[1]);
+    /* An ARM is a no-op that is answered, not a gate. */
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK,
+                            seq_command(&s, 2160, 2, CMD_ARM, CMD_RELEASE, 0,
+                                        &cfg));
+
+    /* What is still INVALID is input this build cannot act on at all: a
+     * corrupted frame must not come back as an OK. */
     TEST_ASSERT_EQUAL_UINT8(ACK_INVALID,
                             seq_command(&s, 2200, 2, CMD_RELEASE, 7, 0, &cfg));
     TEST_ASSERT_EQUAL_UINT8(ACK_INVALID,
                             seq_command(&s, 2300, 2, 0x7F, 0, 0, &cfg));
     TEST_ASSERT_EQUAL_UINT8(ACK_INVALID,
+                            seq_command(&s, 2350, 2, CMD_MEMBRANE, 101, 0,
+                                        &cfg));
+    TEST_ASSERT_EQUAL_UINT8(ACK_INVALID,
                             seq_command(&s, 2400, 2, CMD_SET_PARAM,
-                                        PARAM_T_MEASURE_S, -5, &cfg));
+                                        PARAM_AUTO_WAIT_S, -5, &cfg));
     TEST_ASSERT_EQUAL_UINT8(ACK_OK,
                             seq_command(&s, 2500, 2, CMD_SET_PARAM,
-                                        PARAM_T_MEASURE_S, 300, &cfg));
+                                        PARAM_AUTO_WAIT_S, 300, &cfg));
+    /* START works from STANDBY and from RUNNING alike. */
     TEST_ASSERT_EQUAL_UINT8(ACK_OK,
                             seq_command(&s, 2600, 2, CMD_START, 0, 0, &cfg));
-    TEST_ASSERT_EQUAL_UINT8(ACK_REJECTED, /* already left STANDBY */
-                            seq_command(&s, 2700, 2, CMD_START, 0, 0, &cfg));
+    TEST_ASSERT_EQUAL_INT(ST_RUNNING, s.state);
     TEST_ASSERT_EQUAL_UINT8(ACK_OK,
-                            seq_command(&s, 2800, 2, CMD_RELEASE, 1, 0, &cfg));
+                            seq_command(&s, 2700, 2, CMD_START, 0, 0, &cfg));
+    TEST_ASSERT_EQUAL_INT(ST_RUNNING, s.state);
+}
+
+static void test_a_drive_after_an_abort_wakes_the_experiment(void)
+{
+    cfg_t cfg;
+    sequencer_t s;
+
+    mock_reset();
+    cfg_defaults(&cfg);
+    seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
+    start_experiment(&s, &cfg);
+    seq_command(&s, 3000, 3, CMD_ABORT, 0, 0, &cfg);
+    seq_step(&s, 4000, 4, 101325);
+    TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
+    TEST_ASSERT_EQUAL_INT(0, M.membrane_duty);
+
+    /* SAFE is no longer a lock-out: the drive runs, and the state follows
+     * the hardware rather than reporting SAFE over a turning motor. */
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 5000, 5, CMD_MEMBRANE, 60,
+                                                0, &cfg));
+    TEST_ASSERT_EQUAL_INT(60, M.membrane_duty);
+    TEST_ASSERT_EQUAL_INT(ST_RUNNING, s.state);
+
+    seq_command(&s, 6000, 6, CMD_ABORT, 0, 0, &cfg);
+    seq_step(&s, 7000, 7, 101325);
+    TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
+    TEST_ASSERT_EQUAL_INT(0, M.membrane_duty);
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 8000, 8, CMD_DISPERSE,
+                                                DISPERSE_RUN, 0, &cfg));
+    TEST_ASSERT_TRUE(M.motor_on);
+    TEST_ASSERT_EQUAL_INT(ST_RUNNING, s.state);
+    /* STOP still only de-energizes, and leaves the state where it is. */
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 8100, 8, CMD_DISPERSE,
+                                                DISPERSE_STOP, 0, &cfg));
+    TEST_ASSERT_FALSE(M.motor_on);
 }
 
 /* ---- operator drives of the dispersion hardware (M-07) ------------------ */
@@ -1316,16 +1525,15 @@ static void test_manual_disperse_runs_one_motor_pulse(void)
     TEST_ASSERT_EQUAL_INT(1, M.disperse_calls);
     TEST_ASSERT_EQUAL_INT(0, M.motor_run_calls);
 
-    /* A board without the motor must refuse, not answer OK for a drive no
-     * line can make (the carrier grew the motor after the SED). */
+    /* A board without the motor answers OK - nothing is refused any more -
+     * and drives nothing, because there is no line to drive. */
     mock_reset();
     no_motor = mock_ops;
     no_motor.disperse = NULL;
     seq_init(&s, &cfg, &no_motor, NULL, 0, 0);
     seq_step(&s, 1000, 1, 101325);
-    TEST_ASSERT_EQUAL_UINT8(ACK_REJECTED, seq_command(&s, 2000, 2,
-                                                      CMD_DISPERSE, 1, 0,
-                                                      &cfg));
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 2000, 2,
+                                                CMD_DISPERSE, 1, 0, &cfg));
     TEST_ASSERT_EQUAL_INT(0, M.disperse_calls);
 }
 
@@ -1348,10 +1556,10 @@ static void test_manual_disperse_run_and_stop(void)
     TEST_ASSERT_EQUAL_INT(1, M.motor_run_calls);
     TEST_ASSERT_EQUAL_UINT8(EV_MANUAL_DRIVE, M.last_event);
 
-    /* a pulse while it runs cannot be the bounded drive it asks for */
-    TEST_ASSERT_EQUAL_UINT8(ACK_REJECTED, seq_command(&s, 2100, 2, CMD_DISPERSE,
-                                                      DISPERSE_PULSE, 0,
-                                                      &cfg));
+    /* a pulse while it runs schedules nothing on top of the hold, and is
+     * answered OK: the motor is turning, which is what was asked for */
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 2100, 2, CMD_DISPERSE,
+                                                DISPERSE_PULSE, 0, &cfg));
     TEST_ASSERT_EQUAL_INT(0, M.disperse_calls);
     TEST_ASSERT_TRUE(M.motor_on);
 
@@ -1396,30 +1604,32 @@ static void test_manual_disperse_run_and_stop(void)
                                                 DISPERSE_PULSE, 0, &cfg));
     TEST_ASSERT_EQUAL_INT(1, M.disperse_calls);
 
-    /* a release while the operator runs the motor still fires its valve and
-     * still asks for its pulse - hw.c decides that pulse is redundant */
-    seq_command(&s, 4000, 4, CMD_DISPERSE, DISPERSE_RUN, 0, &cfg);
-    seq_command(&s, 4100, 4, CMD_START, 0, 0, &cfg);
+    /* a release while the operator holds the motor on still fires its
+     * valve, and does not ask for a bounded pulse on top of a motor that is
+     * already turning */
+    M.disperse_calls = 0;
+    seq_command(&s, 4000, 4, CMD_START, 0, 0, &cfg);
+    seq_command(&s, 4100, 4, CMD_DISPERSE, DISPERSE_RUN, 0, &cfg);
     seq_command(&s, 4200, 4, CMD_RELEASE, 1, 0, &cfg);
-    seq_step(&s, 5000, 5, 5000);
     TEST_ASSERT_EQUAL_INT(1, M.fires[1]);
+    TEST_ASSERT_EQUAL_INT(0, M.disperse_calls);
     TEST_ASSERT_TRUE(s.motor_running);
 
-    /* No motor on the board: neither Start nor Stop can be answered OK. */
+    /* No motor on the board: both are answered OK and neither reaches a
+     * line. HK keeps saying the motor is held, because that is what the
+     * sequencer was told to do with a motor it cannot see. */
     mock_reset();
     no_motor = mock_ops;
     no_motor.disperse = NULL;
     no_motor.disperse_run = NULL;
     seq_init(&s, &cfg, &no_motor, NULL, 0, 0);
     seq_step(&s, 1000, 1, 101325);
-    TEST_ASSERT_EQUAL_UINT8(ACK_REJECTED, seq_command(&s, 2000, 2,
-                                                      CMD_DISPERSE,
-                                                      DISPERSE_RUN, 0, &cfg));
-    TEST_ASSERT_EQUAL_UINT8(ACK_REJECTED, seq_command(&s, 2100, 2,
-                                                      CMD_DISPERSE,
-                                                      DISPERSE_STOP, 0,
-                                                      &cfg));
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 2000, 2, CMD_DISPERSE,
+                                                DISPERSE_RUN, 0, &cfg));
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 2100, 2, CMD_DISPERSE,
+                                                DISPERSE_STOP, 0, &cfg));
     TEST_ASSERT_FALSE(s.motor_running);
+    TEST_ASSERT_EQUAL_INT(0, M.motor_run_calls);
 }
 
 static void test_termination_stops_a_running_motor(void)
@@ -1442,12 +1652,12 @@ static void test_termination_stops_a_running_motor(void)
     TEST_ASSERT_FALSE(M.motor_on);
     TEST_ASSERT_FALSE(s.motor_running);
 
-    /* SAFE: Start is refused like every other drive, Stop is still honoured
-     * because it can only de-energize */
-    TEST_ASSERT_EQUAL_UINT8(ACK_REJECTED, seq_command(&s, 5000, 5,
-                                                      CMD_DISPERSE,
-                                                      DISPERSE_RUN, 0, &cfg));
-    TEST_ASSERT_FALSE(M.motor_on);
+    /* SAFE is not a lock-out: a Start after the abort runs the motor again
+     * and takes the state with it, and Stop still only de-energizes. */
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 5000, 5, CMD_DISPERSE,
+                                                DISPERSE_RUN, 0, &cfg));
+    TEST_ASSERT_TRUE(M.motor_on);
+    TEST_ASSERT_EQUAL_INT(ST_RUNNING, s.state);
     TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 5100, 5, CMD_DISPERSE,
                                                 DISPERSE_STOP, 0, &cfg));
     TEST_ASSERT_FALSE(M.motor_on);
@@ -1473,31 +1683,6 @@ static void test_disperse_duty_default_and_bounds(void)
     TEST_ASSERT_EQUAL_INT32(20, cfg_get(&cfg, PARAM_DISPERSE_DUTY));
 }
 
-static void test_manual_drives_are_refused_after_an_abort(void)
-{
-    cfg_t cfg;
-    sequencer_t s;
-
-    mock_reset();
-    cfg_defaults(&cfg);
-    seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
-    run_sim(&s, &cfg, 0, 1000);
-    seq_command(&s, 1000000ull, 1000, CMD_ABORT, 0, 0, &cfg);
-    seq_step(&s, 1001000ull, 1001, profile_pa(1001));
-    TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
-
-    /* SAFE means the actuators are off and stay off: the panel must not be
-     * able to restart either drive after an abort. */
-    TEST_ASSERT_EQUAL_UINT8(ACK_REJECTED, seq_command(&s, 1002000ull, 1002,
-                                                      CMD_MEMBRANE, 60, 0,
-                                                      &cfg));
-    TEST_ASSERT_EQUAL_UINT8(ACK_REJECTED, seq_command(&s, 1003000ull, 1003,
-                                                      CMD_DISPERSE, 1, 0,
-                                                      &cfg));
-    TEST_ASSERT_EQUAL_INT(0, M.membrane_duty);
-    TEST_ASSERT_EQUAL_UINT8(0, s.membrane_duty);
-    TEST_ASSERT_EQUAL_INT(0, M.disperse_calls);
-}
 
 static void test_sequencer_membrane_duty_tracks_the_automatic_drive(void)
 {
@@ -1507,9 +1692,10 @@ static void test_sequencer_membrane_duty_tracks_the_automatic_drive(void)
     mock_reset();
     cfg_defaults(&cfg);
     seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
-    run_sim(&s, &cfg, 0, 1000);
-    seq_command(&s, 1000000ull, 1000, CMD_RELEASE, 1, 0, &cfg);
-    seq_step(&s, 1001000ull, 1001, profile_pa(1001));
+    start_experiment(&s, &cfg);
+    quiet_to(&s, 740); /* motor phase, then its 2 min */
+    quiet_to(&s, phase_t0(&s) + 120);
+    TEST_ASSERT_EQUAL_INT(ST_AUTO_MEMBRANE, s.state);
     /* HK read the duty as a constant 0 while the solenoid oscillated until
      * the sequencer started recording what it commanded. */
     TEST_ASSERT_EQUAL_UINT8((uint8_t)cfg_get(&cfg, PARAM_MEMBRANE_DUTY),
@@ -1517,7 +1703,7 @@ static void test_sequencer_membrane_duty_tracks_the_automatic_drive(void)
     TEST_ASSERT_EQUAL_INT(M.membrane_duty, s.membrane_duty);
 }
 
-static void test_release_already_fired_is_rejected_not_silent(void)
+static void test_release_already_fired_never_fires_twice(void)
 {
     cfg_t cfg;
     sequencer_t s;
@@ -1525,15 +1711,13 @@ static void test_release_already_fired_is_rejected_not_silent(void)
     mock_reset();
     cfg_defaults(&cfg);
     seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
-    run_sim(&s, &cfg, 0, 1000); /* ASCENT */
-    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 1000000ull, 1000,
-                                                CMD_RELEASE, 1, 0, &cfg));
-    seq_step(&s, 1001000ull, 1001, profile_pa(1001));
+    start_experiment(&s, &cfg);
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 3000, 3, CMD_RELEASE, 1,
+                                                0, &cfg));
     TEST_ASSERT_EQUAL_INT(1, M.fires[1]);
-    TEST_ASSERT_EQUAL_UINT8(ACK_REJECTED, seq_command(&s, 1002000ull, 1002,
-                                                      CMD_RELEASE, 1, 0, &cfg));
-    seq_step(&s, 1003000ull, 1003, profile_pa(1003));
-    TEST_ASSERT_EQUAL_INT(1, M.fires[1]); /* still exactly one fire */
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 4000, 4, CMD_RELEASE, 1,
+                                                0, &cfg));
+    TEST_ASSERT_EQUAL_INT(1, M.fires[1]); /* still exactly one fire (S.3) */
 }
 
 static void test_ground_link_latch_refreshes_without_the_sequencer(void)
@@ -1617,20 +1801,22 @@ int main(void)
     RUN_TEST(test_release_serialises_the_pinch_valve_and_the_motor);
     RUN_TEST(test_queue_holds_every_drivable_line);
     RUN_TEST(test_cancel_cuts_one_line_short_and_leaves_the_rest);
-    RUN_TEST(test_full_autonomous_flight);
+    RUN_TEST(test_link_loss_runs_the_cycle);
+    RUN_TEST(test_a_command_ends_the_cycle_at_once);
+    RUN_TEST(test_the_cycle_restarts_at_the_motor_phase);
+    RUN_TEST(test_standby_never_starts_the_cycle);
     RUN_TEST(test_release_works_without_a_dispersion_motor);
     RUN_TEST(test_persist_before_fire_ordering);
     RUN_TEST(test_resume_after_reset_does_not_refire);
-    RUN_TEST(test_resume_mid_release_treats_fired_as_done);
+    RUN_TEST(test_resume_out_of_automatic_mode_comes_back_running);
     RUN_TEST(test_self_test_failure_goes_safe);
-    RUN_TEST(test_hold_blocks_resume_continues);
+    RUN_TEST(test_hold_keeps_the_cycle_off);
     RUN_TEST(test_abort_goes_safe_without_firing);
-    RUN_TEST(test_ground_release_override);
-    RUN_TEST(test_start_command_accelerates_standby);
-    RUN_TEST(test_float_timer_fallback);
-    RUN_TEST(test_seal_failure_retries_then_proceeds_flagged);
-    RUN_TEST(test_seal_check_waits_for_the_valve_drive);
-    RUN_TEST(test_full_flight_with_timed_drives);
+    RUN_TEST(test_ground_release_fires_where_it_stands);
+    RUN_TEST(test_a_release_during_the_cycle_stops_it_first);
+    RUN_TEST(test_start_button_starts_and_restarts);
+    RUN_TEST(test_launch_and_float_are_reported_but_move_nothing);
+    RUN_TEST(test_releases_with_timed_drives);
     RUN_TEST(test_linkloss_latch_and_recovery);
     RUN_TEST(test_set_param_range_checked);
     RUN_TEST(test_membrane_default_is_below_the_pwm_floor);
@@ -1644,18 +1830,14 @@ int main(void)
     RUN_TEST(test_pi_liveness_needs_a_first_frame);
     RUN_TEST(test_pi_declared_lost_after_the_configured_silence);
     RUN_TEST(test_pi_silence_threshold_is_settable);
-    RUN_TEST(test_release_needs_an_arm_on_the_mcu_too);
-    RUN_TEST(test_arm_window_expires_on_the_mcu);
-    RUN_TEST(test_only_actuator_commands_are_armable);
-    RUN_TEST(test_unarmed_commands_pass_the_gate_untouched);
-    RUN_TEST(test_command_results_report_what_happened);
-    RUN_TEST(test_release_already_fired_is_rejected_not_silent);
+    RUN_TEST(test_no_command_is_refused_for_state);
+    RUN_TEST(test_a_drive_after_an_abort_wakes_the_experiment);
+    RUN_TEST(test_release_already_fired_never_fires_twice);
     RUN_TEST(test_manual_membrane_drive_and_stop);
     RUN_TEST(test_manual_disperse_runs_one_motor_pulse);
     RUN_TEST(test_manual_disperse_run_and_stop);
     RUN_TEST(test_termination_stops_a_running_motor);
     RUN_TEST(test_disperse_duty_default_and_bounds);
-    RUN_TEST(test_manual_drives_are_refused_after_an_abort);
     RUN_TEST(test_sequencer_membrane_duty_tracks_the_automatic_drive);
     RUN_TEST(test_ground_link_latch_refreshes_without_the_sequencer);
     RUN_TEST(test_event_severity_separates_faults_from_progress);

@@ -1,34 +1,33 @@
-TODO:
-
+NOT TODAY:
 Gyro sensor
 Partical sensor
 Chamber multi sensor
 Electrical controller for the dispersion motor
 
-Fix spectrometer data (clipping values even at minimal exposure time)
-
-Fix/adjust automatic mode
-Add automatic mode reset/control
-Adjust data rate management and add external monitoring
-
-
 Adjust IP to match what we were given
 
-
-Push Pull activation rythmn
-Add import logs 
+Adjust data rate management and add external monitoring
 Fix UI (visal bugs, and bad layout)
 
+
+TODO:
+Fix spectrometer data (clipping values even at minimal exposure time)
+
+
+Add automatic activation cycle when connection is present as options to enable and disable on demand
 
 
 
 IN PROGRESS:
 
-Make logging by default on
+Add import logs 
+Fix/adjust automatic mode
+Add automatic mode reset/control
 
 
 VALIDATE:
 
+Make logging by default on
 Test logging and saving
 Add solenoid over time activity
 

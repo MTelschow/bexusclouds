@@ -74,6 +74,8 @@ static void send_hk(uint64_t t_ms)
      * a membrane at 0 % while the solenoid was oscillating. */
     hk.membrane_duty = seq.membrane_duty;
     hk.valve_status = hw_actuator_status();
+    /* MCUF_SEAL_VERIFIED is not set any more: the seal state it reported
+     * went with the old sequence. The bit stays defined and stays 0. */
     hk.flags = (uint8_t)((seq.autonomy.autonomous_latched
                               ? MCUF_AUTONOMOUS_LATCHED
                               : 0) |
@@ -82,7 +84,6 @@ static void send_hk(uint64_t t_ms)
                               ? MCUF_LINK_OK
                               : 0) |
                          (pi_link.pi_ok ? MCUF_PI_OK : 0) |
-                         (seq.seal_verified ? MCUF_SEAL_VERIFIED : 0) |
                          (seq.hold ? MCUF_HOLD : 0));
     hk.uptime_s = (uint32_t)(t_ms / 1000u);
     hk.mission_t_s = seq_mission_t_s(&seq, wall);
@@ -104,12 +105,10 @@ static void handle_command(uint64_t t_ms, const frame_view_t *view)
         send_ack(view->seq, CMD_NONE, ACK_INVALID);
         return;
     }
-    /* Any valid command means the ground link lives, including ARM, which
-     * the gate answers itself and never passes to the sequencer (O.2). */
-    seq_note_ground_cmd(&seq, t_ms);
-    result = link_gate(&pi_link, t_ms, cmd, key); /* S.8, defence in depth */
-    if (result == LINK_PASS)
-        result = seq_command(&seq, t_ms, hw_wall_s(), cmd, key, value, &cfg);
+    /* Straight to the sequencer: the arm gate that used to sit in front of
+     * it is gone (2026-09-18), so every command it can parse is executed and
+     * answered with the sequencer's own verdict. */
+    result = seq_command(&seq, t_ms, hw_wall_s(), cmd, key, value, &cfg);
     send_ack(view->seq, cmd, result);
 }
 

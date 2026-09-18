@@ -31,6 +31,12 @@ Moved out of `CLAUDE.md` 2026-09-18.
   server is authoritative for arm/execute and the ground interlock — and both
   are re-checked on the MCU (`core/link.c`) and against MCU housekeeping
   (`FLIGHT_ONLY`), because each of those enforcers can be bypassed on its own.
+- **The experiment is started by the operator, and run by the link.** Since
+  2026-09-18 the MCU sits in STANDBY until a ground `START`, then RUNNING;
+  ten minutes without any ground command puts it into automatic mode, which
+  cycles the dispersion motor, the membrane solenoid and a wait until the
+  first command back. The pinch valves are outside that loop. Full state
+  machine and parameters: `docs/SOFTWARE_SPEC.md` §5.
 - **Every command is confirmed end to end.** The MCU answers each `CMD` with an
   `ACK` carrying its own verdict; the Pi correlates it by sequence number and
   relays that to ground. A UART write is not evidence a command was executed,

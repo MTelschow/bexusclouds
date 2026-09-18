@@ -84,6 +84,8 @@ class EventCode(IntEnum):
     PI_LINK_LOST = 0x0A
     PI_LINK_OK = 0x0B
     MANUAL_DRIVE = 0x0C
+    AUTO_ENTERED = 0x0D           # ground silent: the cycle took over
+    AUTO_LEFT = 0x0E              # a command arrived: actuators off
     # Pi-origin
     MCU_SILENT = 0x10
     SPECTRO = 0x11

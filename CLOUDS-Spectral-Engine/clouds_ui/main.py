@@ -98,8 +98,6 @@ def _parse(argv=None):
                     help="instrument only: no downlink receiver, no uplink")
     fl.add_argument("--listen-only", action="store_true",
                     help="receive telemetry but open no command link")
-    fl.add_argument("--flight-mode", action="store_true",
-                    help="disable the ground interlock (S.10) at startup")
     fl.add_argument("--log-dir", default="./gse_sessions",
                     help="session log directory (G-05)")
     args = ap.parse_args(argv)
@@ -184,10 +182,9 @@ def open_links(args) -> Links:
 
     if not args.listen_only:
         # The uplink is logged by the same session as the downlink: a
-        # command refused by the ground interlock never reaches the Pi, so
-        # this is the only file it can appear in.
-        commander = Commander(cmd_host, cmd_port,
-                              flight_mode=args.flight_mode, log=print,
+        # command that never reached the Pi leaves no trace on the far end,
+        # so this is the only file it can appear in.
+        commander = Commander(cmd_host, cmd_port, log=print,
                               on_result=session.log_command)
         commander.start_heartbeat()
         links.commander = commander
@@ -229,8 +226,6 @@ def main(argv=None) -> int:
                        # directory, same mock-or-not.
                        link_factory=lambda: open_links(args),
                        source="downlink" if args.flight else "detector")
-    if args.flight_mode and links.commander is not None:
-        win.flight.chk_flight_mode.setChecked(True)
     win.fold_for(flight=args.flight)
     win.show()
 

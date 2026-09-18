@@ -403,21 +403,12 @@ static void ops_membrane(void *ctx, uint8_t duty_pct)
     pwm_set_enabled(slice, true);
 }
 
-static bool ops_seal_ok(void *ctx)
-{
-    (void)ctx;
-    /* TODO (M-15): verify the seal. The chamber-vs-ambient pressure
-     * divergence this was specified as now HAS a source - the chamber BME280
-     * on SPI_1, hk_t.chm_p_pa - but that part has never been read against
-     * real hardware, and a seal check is a flight decision. Wire it to
-     * chm_p_pa (or to the equalisation valves' own position sense) once the
-     * chamber part has been shown to answer. The sequencer only calls this
-     * once the close pulses have finished (see ops_busy), so whatever the
-     * source, it is read with the lines already at rest. Until one exists,
-     * report success so the sequence proceeds (matches spec: proceed flagged
-     * on failure). */
-    return true;
-}
+/* M-15's seal check used to live here as ops_seal_ok(). It went with the
+ * SEAL state on 2026-09-18: nothing calls it now, and a callback that is
+ * never called is a worse lie than an absent one. The source it was waiting
+ * for is still there when a seal check is wanted again - the chamber BME280
+ * on SPI_1, hk_t.chm_p_pa, which has never been read against real
+ * hardware. */
 
 static bool ops_self_test(void *ctx)
 {
@@ -479,7 +470,6 @@ const seq_ops_t hw_seq_ops = {
     .disperse_run = ops_disperse_run,
     .membrane = ops_membrane,
     .busy = ops_busy,
-    .seal_ok = ops_seal_ok,
     .self_test = ops_self_test,
     .event = ops_event,
 };

@@ -125,14 +125,42 @@ storage copy.
 
 ## 5. Experiment sequence (FSW-MCU state machine)
 
-`INIT → STANDBY → ASCENT → SEAL → RELEASE_1 → MEASURE_1 → RELEASE_2 →
-MEASURE_2 → TERMINATION → SAFE`; any critical fault → SAFE (actuators
+**Changed 2026-09-18.** The sequence is no longer driven by the flight
+profile. It is started by the operator and, when the operator goes away,
+runs a fixed cycle until they come back.
+
+`INIT → STANDBY → RUNNING → {AUTO_DISPERSE → AUTO_MEMBRANE → AUTO_WAIT}* →
+RUNNING`; abort or any critical fault → `TERMINATION → SAFE` (actuators
 de-energized, data preserved, HK + downlink continue).
 
-Autonomy triggers (pre-flight configurable): launch = sustained Δp over
-60 s; float = p < 55 hPa ∧ |dp/dt| low for 5 min, or T_float = 120 min
-after launch; link-loss latch after 10 min without TCP heartbeat;
-t_measure ≥ 8 min per phase (covers P.6 5-min uniformity + P.7 3-min hold).
+- **STANDBY** — on the pad. Nothing happens on its own; `START` from the
+  ground station is the only way out, and a link that was never up is not a
+  link that was lost, so automatic mode cannot start here.
+- **RUNNING** — started. Sensors are swept, HK is logged to both SD cards
+  and the Pi stores every spectrum, as in every state. Ground owns the
+  actuators.
+- **automatic mode** — entered from RUNNING after `LINKLOSS_S` (10 min) with
+  no ground command of any kind, the GSE's 5 s PING included. It cycles
+  **2 min dispersion motor only → 3 min push-pull solenoid only → 5 min
+  neither**, at the configured motor and solenoid defaults, and repeats for
+  as long as the link stays down. Measurement and storage never stop.
+  The **first ground command of any kind ends it in the same call**: both
+  actuators de-energize and the state returns to RUNNING. The next entry
+  always restarts at the motor phase - the cycle carries nothing across a
+  link-up period or a reset.
+- **the pinch valves are not in the automatic path.** A release is
+  irreversible, so it happens only on an arm-gated ground `RELEASE`, fires
+  where it stands and changes no state.
+- **HOLD** keeps the cycle off and survives a link loss (docs/TRAPS.md).
+
+Autonomy triggers (pre-flight configurable): link-loss latch after 10 min
+without a ground command (`LINKLOSS_S`); phase lengths `AUTO_DISPERSE_S` /
+`AUTO_MEMBRANE_S` / `AUTO_WAIT_S`. Launch (sustained Δp over 60 s) and float
+(p < 55 hPa ∧ |dp/dt| low for 5 min, or T_float = 120 min after launch) are
+still detected and still reported as events, but **no state depends on
+them** any more. `T_MEASURE_S` and `SEAL_RETRY` are retired with the
+measurement phases and the SEAL state; their parameter keys (8, 11) are
+refused rather than reused.
 
 Full state/action table, pseudocode, and rationale:
 [SED_SOFTWARE_DESIGN_v1-2_draft.md](SED_SOFTWARE_DESIGN_v1-2_draft.md).
@@ -142,10 +170,10 @@ Full state/action table, pseudocode, and rationale:
 | Test | Software scope |
 |---|---|
 | T-06 Electrical/Power | Rails up, boot both processors, no software consumer beyond budget |
-| **T-07 Autonomy & Failsafe** | Pull E-Link mid-sequence → full autonomous double release; kill Pi → MCU completes sequence; watchdog resets → resume without re-fire |
+| **T-07 Autonomy & Failsafe** | Pull E-Link after START → the 2/3/5 cycle runs unattended and stops on the first command back; kill Pi → MCU keeps cycling and logging; watchdog resets → resume without re-fire |
 | T-03 Sensor calibration | HK channel plausibility + calibration constants |
 | T-01 Optical/Spectral calibration | FSW-PI acquisition + pixel→nm mapping |
-| T-10 End-to-end | Full sequence, GSE monitoring, data recovery from all 3 SD cards |
+| T-10 End-to-end | START, both releases, a link drop through at least one full cycle, GSE monitoring, data recovery from all 3 SD cards |
 
 Bench testing without hardware: FSW-PI runs against the mock driver
 (`spectro/mock_driver.py` pattern); FSW-MCU on a bench Pico 2 with

@@ -1,20 +1,16 @@
-"""TCP command uplink (S.8, S.10): framed commands, mandatory ACK, arm/execute.
+"""TCP command uplink: framed commands, mandatory ACK.
 
 Frames are self-delimiting on the TCP stream (header carries the payload
-length). The server is authoritative for the arm/execute rule: RELEASE
-without a preceding ARM(RELEASE) within ARM_WINDOW_S is refused with
-AckResult.NOT_ARMED and never reaches the MCU. Every valid command
-(including PING) is forwarded to the MCU - the MCU's own link-loss latch
-(O.2) keys off command traffic, so a dead Pi and a dead E-Link look the
-same to it, which is exactly the fail-safe intent.
+length). Every valid command (including PING) is forwarded to the MCU - the
+MCU's own link-loss latch (O.2) keys off command traffic, so a dead Pi and a
+dead E-Link look the same to it, which is exactly the fail-safe intent.
 
-Two things the ACK a client gets back is *not*: it is not proof the command
-was executed unless ``forward`` says so (it returns the MCU's own verdict for
-the commands in MCU_CONFIRMED), and it is not granted just because the GSE
-allowed the command. The GSE interlock (G-04) runs on a laptop and anything
-can open this port, so a ``interlock`` predicate re-checks FLIGHT_ONLY
-commands here against what the MCU reports - refused with
-AckResult.INTERLOCK, before the arm latch is consumed.
+**Nothing is refused here (2026-09-18).** The ground interlock (S.10) and
+the arm/execute latch (S.8) both lived in this file and are gone: while
+ground is connected, every command the Pi can parse is passed on and
+executed. What the ACK still is *not*: proof of execution, unless ``forward``
+says so - it returns the MCU's own verdict for the commands in
+MCU_CONFIRMED.
 """
 from __future__ import annotations
 
@@ -23,33 +19,16 @@ import threading
 import time
 
 from clouds_link import frames
-from clouds_link.commands import (ARM_WINDOW_S, ARMED_COMMANDS, FLIGHT_ONLY,
-                                  Command)
+from clouds_link.commands import Command
 
 
 class CommandState:
-    """Shared uplink state: heartbeat + one-shot arm latch."""
+    """Shared uplink state: the ground heartbeat. The one-shot arm latch
+    that used to live beside it went with the arm/execute rule."""
 
     def __init__(self):
         self.lock = threading.Lock()
         self.last_heartbeat = 0.0
-        self._armed_cmd: int | None = None
-        self._armed_until = 0.0
-
-    def arm(self, cmd: int, now: float | None = None) -> None:
-        now = time.time() if now is None else now
-        with self.lock:
-            self._armed_cmd = cmd
-            self._armed_until = now + ARM_WINDOW_S
-
-    def consume_arm(self, cmd: int, now: float | None = None) -> bool:
-        """True if ``cmd`` is armed and inside the window; clears the latch
-        either way (one ARM authorises exactly one execute)."""
-        now = time.time() if now is None else now
-        with self.lock:
-            ok = self._armed_cmd == cmd and now <= self._armed_until
-            self._armed_cmd = None
-            return ok
 
     def heartbeat(self, now: float | None = None) -> None:
         with self.lock:
@@ -87,15 +66,12 @@ class _Handler(socketserver.BaseRequestHandler):
 class CommandServer:
     """``forward(cmd, key, value)`` sends the command on to the MCU and
     returns its AckResult (None = "sent, nothing to report" -> OK);
-    ``on_status_req()`` triggers an immediate PISTATUS downlink;
-    ``interlock(cmd, key)`` returns True to block a FLIGHT_ONLY command
-    (S.10). With no ``interlock`` given nothing is blocked here."""
+    ``on_status_req()`` triggers an immediate PISTATUS downlink."""
 
     def __init__(self, bind: str, port: int, forward, state: CommandState,
-                 on_status_req=None, log=None, interlock=None):
+                 on_status_req=None, log=None):
         self._forward = forward
         self._on_status_req = on_status_req
-        self._interlock = interlock
         self._log = log or (lambda *_: None)
         self.state = state
         self.stopping = threading.Event()
@@ -152,34 +128,8 @@ class CommandServer:
                 self._log("up", "PING not forwarded: MCU link down")
             return self._ack(frame.seq, cmd, frames.AckResult.OK)
 
-        if cmd == Command.ARM:
-            if key not in {int(c) for c in ARMED_COMMANDS}:
-                return self._ack(frame.seq, cmd, frames.AckResult.INVALID)
-            # The MCU keeps its own arm latch (core/link), so the ARM has to
-            # reach it or the RELEASE that follows is refused there. Arm
-            # locally only once the MCU has confirmed, so "armed" never means
-            # one end of the link.
-            try:
-                result = self._forward(cmd, key, value)
-            except Exception:  # noqa: BLE001 - MCU link down
-                return self._ack(frame.seq, cmd, frames.AckResult.REJECTED)
-            if result is None:
-                result = frames.AckResult.OK
-            if result == frames.AckResult.OK:
-                self.state.arm(key)
-            return self._ack(frame.seq, cmd, result)
-
-        # Interlock before the arm latch: a command refused on the ground
-        # must not burn the operator's ARM as a side effect.
-        if cmd in {int(c) for c in FLIGHT_ONLY} and self._interlock is not None \
-                and self._interlock(cmd, key):
-            self._log("up", f"INTERLOCK refused {name} (not in flight)")
-            return self._ack(frame.seq, cmd, frames.AckResult.INTERLOCK)
-
-        if cmd in {int(c) for c in ARMED_COMMANDS}:
-            if not self.state.consume_arm(cmd):
-                return self._ack(frame.seq, cmd, frames.AckResult.NOT_ARMED)
-
+        # ARM is retired: it is forwarded like anything else and the MCU
+        # answers it OK, so an older ground station keeps working.
         if cmd == Command.STATUS_REQ and self._on_status_req is not None:
             self._on_status_req()
             return self._ack(frame.seq, cmd, frames.AckResult.OK)

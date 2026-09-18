@@ -25,6 +25,5 @@
   "budget_kbit_s": 2.0,
 
   "mcu_silent_alarm_s": 10.0,
-  "allow_ground_release": false,
   "calibration_path": "/opt/clouds/calibration.json"
 }

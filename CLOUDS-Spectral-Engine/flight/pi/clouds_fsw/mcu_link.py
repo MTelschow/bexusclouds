@@ -95,6 +95,10 @@ class McuLink:
     def in_flight(self) -> bool:
         """True only on fresh housekeeping showing the MCU past STANDBY.
 
+        Past STANDBY means started: RUNNING or one of the automatic-mode
+        phases. TERMINATION and SAFE are not "in flight" - the experiment is
+        over there and nothing may be armed.
+
         The ground interlock (S.10) reads this, so every uncertainty resolves
         to False: no HK yet, stale HK, or a state at or before STANDBY all
         mean "treat this as on the ground".
@@ -103,7 +107,7 @@ class McuLink:
             h, t = self._last_hk, self._last_hk_t
         if h is None or time.time() - t > self._silent_s:
             return False
-        return hk.SeqState.ASCENT <= h.state <= hk.SeqState.MEASURE_2
+        return hk.SeqState.RUNNING <= h.state <= hk.SeqState.AUTO_WAIT
 
     # -- sending -------------------------------------------------------------
 

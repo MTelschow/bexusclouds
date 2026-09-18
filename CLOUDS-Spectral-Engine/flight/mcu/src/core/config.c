@@ -9,8 +9,9 @@ static const int32_t limits[PARAM_COUNT_][3] = {
     [PARAM_FLOAT_DPDT_CPA_S] = {500, 50, 10000},
     [PARAM_FLOAT_HOLD_S] = {300, 10, 3600},
     [PARAM_T_FLOAT_S] = {7200, 600, 21600},
+    /* 600 s = the 10 minutes of ground silence after which the
+       electronics run the cycle themselves (sequencer.h). */
     [PARAM_LINKLOSS_S] = {600, 60, 3600},
-    [PARAM_T_MEASURE_S] = {480, 60, 3600},
     [PARAM_MEMBRANE_MHZ] = {2000, 100, 400000}, /* millihertz. 2 Hz default:
                                           below the ~9 Hz PWM floor, so the
                                           drive is loop-toggled (core/sqwave).
@@ -19,7 +20,6 @@ static const int32_t limits[PARAM_COUNT_][3] = {
                                           and an int32 in whole Hz cannot say
                                           0.5. Ceiling 400 Hz as before. */
     [PARAM_MEMBRANE_DUTY] = {20, 5, 100},
-    [PARAM_SEAL_RETRY] = {3, 0, 10},
     /* M-13: the Pi's own beat is TIMESYNC every 10 s, so 60 s is six missed
      * beats before it is called lost. Losing it changes nothing the sequence
      * does (S.7) - it only clears MCUF_PI_OK and raises one event. */
@@ -31,6 +31,13 @@ static const int32_t limits[PARAM_COUNT_][3] = {
      * turn, which reads on the panel as a drive that ran and dispersed
      * nothing. */
     [PARAM_DISPERSE_DUTY] = {50, 20, 100},
+    /* Automatic mode: 2 min motor, 3 min solenoid, 5 min neither. The
+       floor of 5 s is a bench convenience - the cycle has to be watchable
+       in one sitting to be tested at all - and the ceiling of an hour
+       keeps a single phase shorter than any plausible link outage. */
+    [PARAM_AUTO_DISPERSE_S] = {120, 5, 3600},
+    [PARAM_AUTO_MEMBRANE_S] = {180, 5, 3600},
+    [PARAM_AUTO_WAIT_S] = {300, 5, 3600},
 };
 
 void cfg_defaults(cfg_t *cfg)
@@ -50,6 +57,11 @@ int32_t cfg_default(uint8_t key)
 bool cfg_set(cfg_t *cfg, uint8_t key, int32_t value)
 {
     if (key == 0 || key >= PARAM_COUNT_)
+        return false;
+    /* A retired key has no row, so its max reads 0 - no live parameter has
+       a maximum of 0. Refusing it here is what makes a stale SET_PARAM an
+       ACK_INVALID rather than a write nobody asked for. */
+    if (limits[key][2] == 0)
         return false;
     if (value < limits[key][1] || value > limits[key][2])
         return false;

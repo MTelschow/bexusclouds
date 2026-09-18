@@ -24,12 +24,11 @@ Three rules decide what an ACK to ground is allowed to mean:
    silent MCU is reported through `PISTATUS.uart_ok` and the MCU-silent
    event, not by failing the operator's heartbeat.
 
-The **ground interlock (S.10) is re-checked here**, behind the GSE's own:
-`RELEASE` needs fresh housekeeping showing the MCU between ASCENT and
-MEASURE_2, or it is refused `INTERLOCK` before the arm latch is consumed.
-No HK, stale HK and STANDBY all mean "on the ground". `allow_ground_release`
-in the config overrides it for a bench rehearsal and says so in the comms log
-at startup — leave it false in flight.
+**Nothing is refused here** (2026-09-18). The ground interlock (S.10) and
+the arm/execute latch (S.8) both lived in this file and are gone: while
+ground is connected every command is forwarded to the MCU and answered with
+the MCU's own verdict. The one `REJECTED` left is a command that could not be
+delivered at all, because the UART to the RP2350 is down.
 
 In the other direction the Pi's `TIMESYNC` every 10 s is also the beat the
 MCU's Pi-liveness monitor watches (M-13): stop it for 60 s and `MCUF_PI_OK`

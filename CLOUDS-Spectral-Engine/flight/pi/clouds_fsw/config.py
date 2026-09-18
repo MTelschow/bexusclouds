@@ -45,10 +45,6 @@ class FswConfig:
     budget_kbit_s: float = 2.0          # continuous-stream watch level
     # liveness
     mcu_silent_alarm_s: float = 10.0    # spec: MCU silent > 10 s -> alarm
-    # Ground interlock (S.10) as defence in depth: RELEASE is refused unless
-    # the MCU's housekeeping says the experiment is flying. Set true only for
-    # a bench rehearsal with no CaCO3 loaded - it is logged loudly when it is.
-    allow_ground_release: bool = False
     mock: bool = False
     calibration_path: str | None = None
 

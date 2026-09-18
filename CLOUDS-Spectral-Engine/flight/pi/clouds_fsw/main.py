@@ -21,7 +21,7 @@ import threading
 import time
 
 from clouds_link import frames
-from clouds_link.commands import FLIGHT_ONLY, MCU_CONFIRMED, Command
+from clouds_link.commands import MCU_CONFIRMED, Command
 from clouds_link.frames import EventCode, EventSeverity, PacketType, event_name
 from spectro.calibration import Calibration
 from spectro.driver import open_driver
@@ -40,7 +40,6 @@ from .watchdog import SystemdWatchdog
 # ground can name every event it receives whichever end emitted it.
 _EV_MCU_SILENT = EventCode.MCU_SILENT
 _EV_SPECTRO = EventCode.SPECTRO
-_EV_INTERLOCK = EventCode.INTERLOCK
 
 
 class FlightApp:
@@ -68,10 +67,7 @@ class FlightApp:
         self.cmd_server = CommandServer(
             cfg.cmd_bind, cfg.cmd_port, forward=self._forward_to_mcu,
             state=self.cmd_state, on_status_req=self._send_pistatus,
-            log=self.comm_log.log, interlock=self._interlocked)
-        if cfg.allow_ground_release:
-            self.comm_log.log("pi", "WARNING: allow_ground_release is set - "
-                                    "the S.10 ground interlock is disabled")
+            log=self.comm_log.log)
 
         self.source = SpectroSource(
             driver_factory=lambda: open_driver(mock=cfg.mock,
@@ -136,25 +132,6 @@ class FlightApp:
         self.comm_log.log("mcu", f"cmd={name} key={key} value={value} -> "
                                  f"{shown}")
         return result
-
-    def _interlocked(self, cmd: int, key: int) -> bool:
-        """Ground interlock (S.10), defence in depth behind the GSE's own.
-
-        The MCU already refuses a release before ASCENT, and the GSE refuses
-        to send one outside flight mode - but the GSE runs on a laptop and
-        anything can open the command port, so the Pi checks the state the
-        MCU actually reports before letting a release through.
-        """
-        if cmd not in {int(c) for c in FLIGHT_ONLY}:
-            return False
-        if self.cfg.allow_ground_release:
-            self.comm_log.log("up", "ground interlock overridden by config")
-            return False
-        if self.mcu.in_flight:
-            return False
-        self._send_event(_EV_INTERLOCK, EventSeverity.WARNING,
-                         "interlock refused RELEASE: not in flight")
-        return True
 
     def _on_spectro_status(self, ok: bool) -> None:
         sev = EventSeverity.INFO if ok else EventSeverity.WARNING

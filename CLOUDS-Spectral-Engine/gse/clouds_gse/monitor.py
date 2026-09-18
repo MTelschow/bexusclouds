@@ -2,7 +2,7 @@
 integration use, and the fallback when no display is available).
 
 Commands:  ping start hold resume abort  release 1|2  set <key> <value>
-           membrane <duty%|off>  disperse [pulse|run|stop]  status flight-mode quit
+           membrane <duty%|off>  disperse [pulse|run|stop]  status quit
 """
 from __future__ import annotations
 
@@ -11,13 +11,14 @@ import threading
 from clouds_link.commands import Command, Param
 from clouds_link.frames import AckResult, event_name, severity_name
 
-from .commander import Commander, CommandError, InterlockError
+from .commander import Commander, CommandError
 from .receiver import Receiver
 from .session_log import SessionLog
 
 
 def _fmt_hk(h) -> str:
-    return (f"[{h.state_name:11s}] fired={h.fired:02b} "
+    # 13 = len("AUTO_MEMBRANE"), the longest state name.
+    return (f"[{h.state_name:13s}] fired={h.fired:02b} "
             f"p_amb={h.p_amb_pa / 100:8.1f} hPa "
             f"T1={h.temp1_cc / 100:6.1f} C RH1={h.rh1_cpct / 100:5.1f}% "
             f"membrane={h.membrane_text} drive={h.actuator_text} "
@@ -58,7 +59,7 @@ class ConsoleMonitor:
         self._print("GSE console - commands: ping start hold resume abort "
                     "release 1|2, membrane <duty%|off>, "
                     "disperse [pulse|run|stop], "
-                    "set <param> <value>, status, flight-mode, quit")
+                    "set <param> <value>, status, quit")
         while True:
             try:
                 line = input_fn("gse> ").strip()
@@ -117,14 +118,8 @@ class ConsoleMonitor:
                 key = Param[parts[1].upper()] if not parts[1].isdigit() \
                     else int(parts[1])
                 r = self._cmd.set_param(int(key), int(parts[2]))
-            elif parts[0] == "flight-mode":
-                self._cmd.flight_mode = not self._cmd.flight_mode
-                self._print(f"flight mode: {'ON' if self._cmd.flight_mode else 'off'}")
-                return
             else:
                 r = self._cmd.send(Command[parts[0].upper()])
             self._print(f"-> {AckResult(r).name}")
-        except InterlockError as e:
-            self._print(f"INTERLOCK: {e}")
         except (CommandError, KeyError, ValueError) as e:
             self._print(f"error: {e}")

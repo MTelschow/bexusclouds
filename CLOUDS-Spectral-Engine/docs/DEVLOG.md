@@ -18,7 +18,102 @@ without re-deriving anything. Newest entries first.
 
 ---
 
-## 2026-09-18 (newest) - Logging is on unless you turn it off, and the uplink is in the session
+## 2026-09-18 (newest) - The sequence is the operator's, and the link's
+
+**Asked for:** start the experiment with a button; if the ground station GUI
+is then unreachable for 10 minutes straight, go into automatic mode until the
+connection is back. Automatic mode = cycle 2 min dispersion motor only, 3 min
+push-pull solenoid only, 5 min neither, measuring and saving locally
+throughout, at the default motor and solenoid values.
+
+This replaces the ascent/seal/release sequence, not sits beside it. What went:
+`ASCENT`, `SEAL`, `RELEASE_1/2`, `MEASURE_1/2`, `ops_seal_ok()`,
+`PARAM_T_MEASURE_S` and `PARAM_SEAL_RETRY`. What arrived: `RUNNING` and the
+three cycle phases, `PARAM_AUTO_DISPERSE_S` / `AUTO_MEMBRANE_S` /
+`AUTO_WAIT_S`, and two events (`AUTO_ENTERED`, `AUTO_LEFT`).
+
+Decisions worth keeping:
+
+* **The link-loss latch already existed and already had the right number.**
+  `PARAM_LINKLOSS_S` is 600 s, the GSE beats `PING` every 5 s and the Pi
+  forwards it to the MCU, so "no GUI for 10 minutes" needed no new plumbing -
+  only a state machine that acts on the latch instead of reporting it.
+* **The pinch valves stayed out of the automatic path.** A release is
+  irreversible; doing one while nobody is watching is the one thing the cycle
+  must not be allowed to do. `RELEASE` is still arm-gated, needs `RUNNING`,
+  fires where it stands and changes no state - it is an act, not a phase.
+* **Any command ends the cycle in the same call**, before the command itself
+  is acted on (`seq_note_ground_cmd`). Otherwise an operator's first
+  `DISPERSE STOP` after a dropout would land on a motor the cycle turns back
+  on a second later, and their `RELEASE` would fire into a running motor.
+* **Every entry restarts at the motor phase**, including after a reset: a
+  persisted `AUTO_*` restores as `RUNNING`. Carrying a phase across a
+  drop-out would make what the electronics do after a given outage depend on
+  the outage before it, which is untestable in the only way that matters -
+  by watching it.
+* **Launch and float detection stayed, as reports.** Ground still wants to
+  know when the balloon left and when it levelled off; nothing in the state
+  machine reads them any more, and `autonomy.c` is unchanged.
+* **`HOLD` now means "sit out the link loss too".** It is the only way to
+  keep the cycle off, and it survives a dropout by design - which is a trap,
+  so it is in `TRAPS.md`.
+* **Storage needed no change.** `FlightApp._on_spectrum` writes every frame
+  to disk before anything else (O.3) with no reference to link or state, so
+  "measure and save locally the whole time" was already true.
+* **Retired parameter keys are refused, not reused.** `cfg_set()` rejects a
+  key whose limits row is absent, so a stale `SET_PARAM T_MEASURE_S` gets
+  `ACK_INVALID` instead of writing into a slot that now means something else.
+  State codes 6 and 7 are left unassigned for the same reason - an old
+  packet's 6 decodes as `UNKNOWN(6)`, not as a release.
+
+Evidence: `flight/mcu/test/run_native.sh` 63 tests green, including a
+second-by-second walk of the cycle, the immediate stop on a command, the
+restart-at-phase-1 rule and STANDBY never cycling; `tests/` 399 green with
+the same behaviours re-asserted against `sim_mcu.py` on a compressed
+timeline. **Not yet built for the RP2350** (no `PICO_SDK_PATH` on this
+machine) and not run on the carrier.
+
+---
+
+## 2026-09-18 - Reading a session back: `plot_session.py`
+
+**Asked for:** a separate program that imports a session CSV - the newest by
+default - and plots all of it over time.
+
+`plot_session.py` at the repo root, no Qt: name any one file of a session and
+it plots all of them, because a log is opened to ask "the rail sagged, what
+else happened at that second", and that is an overlay question. Events and
+commands are drawn across every sub-axis, labelled once on their own lane.
+The instrument half's `output/session_*.csv` is a different shape and is
+recognised and plotted on its own terms.
+
+It keeps the live timeline's rules (`clouds_ui/timeline.py`) - an unsourced
+field and an unreadable rail are gaps, a dropout breaks the trace - and adds
+two decisions of its own, both of which were bugs first:
+
+* **The gap threshold follows each stream's own cadence.** The first version
+  measured everything against housekeeping's 1 Hz, so Pi status at 10 s had
+  every sample declared its own island: the row drew *empty from a full
+  file*, which is the exact failure the gap rule exists to prevent, inverted.
+  `_stream_gap` widens the threshold to 2.5x a stream's median interval and
+  never narrows it below what `--gap` asked for.
+* **State ticks are labelled with the name the log carried**, not with this
+  build's `SeqState`. The sequencer's states are renumbered from time to time
+  (they are being renumbered as this is written), and decoding an old log
+  against today's enum would put a confident wrong word on the axis. The enum
+  is the fallback for logs older than the `state_name` column.
+
+A unit the session never carried gets **no axis at all**. An empty axis is not
+neutral - it reads as "recorded, and flat", which is the opposite of "this
+part never reported": the mock has no IMU, and the first plot showed two
+blank mg/dps panels that looked like a stationary payload.
+
+`tests/test_plot_session.py` covers the finding, the masking, the two gap
+rules and that a figure comes out with the axes it should have (15 tests).
+
+---
+
+## 2026-09-18 - Logging is on unless you turn it off, and the uplink is in the session
 
 **Asked for:** logging on by default in the GUI - opt out, not opt in - with
 new data saved directly as it is received.

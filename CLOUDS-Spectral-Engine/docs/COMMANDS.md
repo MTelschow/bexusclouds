@@ -32,6 +32,24 @@ python3 -m clouds_fsw.main --no-uart --bench-stream  # + serve the live panel
 python -m clouds_gse.main --experiment 192.168.100.10
 ```
 
+## Reading a session back
+
+```sh
+python plot_session.py                 # the newest session in ./gse_sessions
+python plot_session.py --list          # every session found, newest first
+python plot_session.py gse_sessions/session_20260918_110620_events.csv
+                                       # that session - naming any one of its
+                                       # files plots all of them
+python plot_session.py output/session_20260918_205940.csv   # instrument log
+python plot_session.py --save out.pdf  # write instead of show (headless: it
+                                       # writes to output/ by itself and says so)
+```
+
+One stacked plot per unit on a shared time axis, with events and commands as
+marked lines across all of them. `--gap S` sets when a dropout breaks a trace
+(default 5 s, widened automatically for a slower stream like Pi status);
+`--no-marks` leaves the event/command overlay off.
+
 ## Checks — run all four before committing
 
 ```sh

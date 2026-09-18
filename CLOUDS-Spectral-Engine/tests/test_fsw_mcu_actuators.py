@@ -194,39 +194,37 @@ class TestManualActuatorDrives:
     the panel; the safety rules that make that acceptable are asserted here
     so a later edit has to be deliberate about changing them."""
 
-    def test_manual_drives_are_not_armed_or_ground_interlocked(self):
-        from clouds_link.commands import (ARMED_COMMANDS, FLIGHT_ONLY,
-                                          GROUND_INTERLOCKED,
-                                          MANUAL_ACTUATORS, MCU_CONFIRMED,
+    def test_manual_drives_carry_the_mcus_own_verdict(self):
+        from clouds_link import commands as cmds
+        from clouds_link.commands import (MANUAL_ACTUATORS, MCU_CONFIRMED,
                                           Command)
 
         assert MANUAL_ACTUATORS == {Command.MEMBRANE, Command.DISPERSE}
         for cmd in MANUAL_ACTUATORS:
-            # Neither drive is irreversible, and driving them on the bench is
-            # the point - unlike RELEASE, which stays armed and interlocked.
-            assert cmd not in ARMED_COMMANDS
-            assert cmd not in GROUND_INTERLOCKED
-            assert cmd not in FLIGHT_ONLY
-            # But ground must still hear the MCU's own verdict, not "the Pi
-            # wrote to the UART".
+            # Ground must hear the MCU's own verdict, not "the Pi wrote to
+            # the UART".
             assert cmd in MCU_CONFIRMED
-        assert Command.RELEASE in ARMED_COMMANDS & GROUND_INTERLOCKED
+        # Nothing gates a command any more (2026-09-18): the sets that did
+        # are gone, and a re-introduced one must be a deliberate edit.
+        for gone in ("ARMED_COMMANDS", "GROUND_INTERLOCKED", "FLIGHT_ONLY",
+                     "ARM_WINDOW_S"):
+            assert not hasattr(cmds, gone), f"{gone} is retired"
 
-    def test_termination_and_safe_refuse_both_drives(self):
-        """An abort must not be reversible from the panel. The behaviour is
-        tested natively; this pins the states it keys off."""
+    def test_termination_leaves_the_actuators_off(self):
+        """An abort still de-energizes everything - it is no longer a
+        lock-out (a later drive command wakes the experiment out of SAFE),
+        but the abort itself must leave nothing running."""
         seq_c = _read("src", "core", "sequencer.c")
-        body = seq_c.split("static bool actuators_commandable", 1)[1] \
-                    .split("\n}", 1)[0]
-        assert "ST_TERMINATION" in body and "ST_SAFE" in body
-        for cmd in ("CMD_MEMBRANE", "CMD_DISPERSE"):
-            case = seq_c.split("case %s:" % cmd, 1)[1].split("case ", 1)[0]
-            assert "actuators_commandable(s)" in case, (
-                "%s must be state-checked" % cmd)
-        # ...and TERMINATION takes a held motor down with the membrane, so
-        # SAFE really is "actuators off"
+        assert "static bool actuators_commandable" not in seq_c, (
+            "the state gate on the drives is retired (2026-09-18)")
         term = seq_c.split("case ST_TERMINATION:", 1)[1].split("case ", 1)[0]
         assert "set_membrane(s, 0)" in term and "set_motor(s, false)" in term
+        # and a drive commanded afterwards takes the state with it, so HK
+        # never reports SAFE over a turning motor
+        wake = seq_c.split("static void wake_from_safe", 1)[1] \
+                    .split("\n}", 1)[0]
+        assert "ST_TERMINATION" in wake and "ST_SAFE" in wake
+        assert "enter(s, ST_RUNNING" in wake
 
     def test_disperse_keys_mirror_the_firmware(self):
         """The key is the request: 0 stop, 1 pulse, 2 run, at both ends."""
@@ -239,7 +237,8 @@ class TestManualActuatorDrives:
     def test_motor_run_is_a_hold_beside_the_pulse_queue(self):
         """A run must not sit in core/pulse's one-at-a-time queue: there it
         would delay a release's pinch valve indefinitely and keep busy()
-        true through the SEAL step. So hw.c holds the line directly, keeps
+        true for as long as automatic mode drives the motor. So hw.c holds
+        the line directly, keeps
         HK honest about it, and Stop cancels any motor pulse as well."""
         hw = _read("src", "hw", "hw.c")
         body = hw.split("static void ops_disperse_run", 1)[1].split("\n}", 1)[0]
@@ -298,15 +297,16 @@ class TestLinkSchemaMirror:
         py_vals = dict((e.name, int(e.value)) for e in Command)
         assert c_vals == py_vals
 
-    def test_arm_window_matches_the_pi(self):
-        from clouds_link.commands import ARM_WINDOW_S
-
+    def test_the_arm_gate_is_gone_from_both_ends(self):
+        """The arm/execute rule was mirrored in three places and is retired
+        in all of them (2026-09-18). A half-removed gate would refuse
+        releases at one end only."""
         link_h = _read("src", "core", "link.h")
-        m = re.search(r"#define\s+LINK_ARM_WINDOW_MS\s+(\d+)", link_h)
-        assert m, "LINK_ARM_WINDOW_MS is not defined"
-        assert int(m.group(1)) == int(ARM_WINDOW_S * 1000), (
-            "the MCU arm window must match ARM_WINDOW_S, or a release armed "
-            "on the Pi can be NOT_ARMED on the MCU")
+        link_c = _read("src", "core", "link.c")
+        assert "LINK_ARM_WINDOW_MS" not in link_h
+        assert "armed_cmd" not in link_h        # the latch itself is gone
+        assert "link_gate" not in link_c        # (the header only names it
+        assert "link_gate" not in _read("src", "main.c")   # in its history)
 
     def test_pi_silence_threshold_is_the_documented_60_s(self):
         """M-13: continue alone if the Pi is silent > 60 s. The Pi's own beat

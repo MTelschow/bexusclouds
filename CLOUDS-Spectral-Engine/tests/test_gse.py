@@ -13,7 +13,7 @@ from clouds_link import frames, hk
 from clouds_link.commands import Command, DisperseKey
 from clouds_link.frames import AckResult, Frame, PacketType, SeqCounter
 from clouds_fsw.command_server import CommandServer, CommandState
-from clouds_gse.commander import Commander, CommandError, InterlockError
+from clouds_gse.commander import Commander, CommandError
 from clouds_gse.receiver import Receiver
 from clouds_gse.session_log import SessionLog
 
@@ -45,10 +45,10 @@ def _hk_frame(seq, **kw):
 class TestReceiver:
     def test_hk_decoded_and_latest_kept(self, receiver):
         rx, send = receiver
-        send(_hk_frame(0, state=hk.SeqState.ASCENT, p_amb_pa=30_000))
-        send(_hk_frame(1, state=hk.SeqState.SEAL, p_amb_pa=5_400))
+        send(_hk_frame(0, state=hk.SeqState.RUNNING, p_amb_pa=30_000))
+        send(_hk_frame(1, state=hk.SeqState.AUTO_DISPERSE, p_amb_pa=5_400))
         assert _wait(lambda: rx.gaps.received == 2)
-        assert rx.last_hk.state_name == "SEAL"
+        assert rx.last_hk.state_name == "AUTO_DISPERSE"
         assert rx.hk_age_s() < 1.0
 
     def test_gap_counted(self, receiver):
@@ -85,12 +85,12 @@ class TestReceiver:
         # diagnosis, which is the half-fix this test also guards against.
         # Distinctive values, so this proves the older layout's fields really
         # survive the decode rather than matching a dataclass default.
-        short = hk.Housekeeping(state=hk.SeqState.MEASURE_1,
+        short = hk.Housekeeping(state=hk.SeqState.AUTO_MEMBRANE,
                                 p_amb_pa=5_300).pack()[:hk.SIZE_PRE_CHAMBER]
         send(Frame(type=PacketType.HK, payload=short, seq=0).stamp().encode())
         assert _wait(lambda: rx.last_hk is not None)
         assert rx.hk_rejected == 0                 # decoded, not discarded
-        assert rx.last_hk.state_name == "MEASURE_1"
+        assert rx.last_hk.state_name == "AUTO_MEMBRANE"
         assert rx.last_hk.p_amb_pa == 5_300
         # ...and the fields that layout cannot carry are declared unsourced
         # rather than defaulted onto the panel as readings.
@@ -111,9 +111,9 @@ class TestReceiver:
 
         # And it clears when the versions agree again, so a reflash mid
         # session does not leave a stale accusation on the panel.
-        send(_hk_frame(2, state=hk.SeqState.ASCENT))
+        send(_hk_frame(2, state=hk.SeqState.RUNNING))
         assert _wait(lambda: rx.last_hk is not None
-                     and rx.last_hk.state_name == "ASCENT")
+                     and rx.last_hk.state_name == "RUNNING")
         assert rx.hk_reject_reason is None
 
     def test_wire_bytes_counted_even_when_undecodable(self, receiver):
@@ -179,31 +179,18 @@ class TestCommander:
         assert commander.tx_bytes == 2 * before   # same frame size twice
         assert commander.peer.endswith(f":{commander._port}")
 
-    def test_interlocked_command_costs_no_uplink(self, cmd_link):
-        """S.10 refuses locally, so the bytes never leave - and the indicator
-        must not show traffic for a command that was never sent."""
-        commander, _ = cmd_link
-        with pytest.raises(InterlockError):
-            commander.send(Command.START)
-        assert commander.tx_bytes == 0 and commander.tx_frames == 0
-
-    def test_ground_interlock_blocks_release(self, cmd_link):
+    def test_nothing_is_refused_on_the_laptop(self, cmd_link):
+        """The ground interlock is gone (2026-09-18): START goes out as
+        sent, and so does everything else."""
         commander, forwarded = cmd_link
-        assert not commander.flight_mode        # engaged by default (S.10)
-        with pytest.raises(InterlockError):
-            commander.release(1)
-        with pytest.raises(InterlockError):
-            commander.send(Command.START)
-        assert forwarded == []                   # nothing left the laptop
+        assert commander.send(Command.START) == AckResult.OK
+        assert commander.tx_frames == 1
+        assert forwarded == [(Command.START, 0, 0)]
 
-    def test_flight_mode_release_does_arm_handshake(self, cmd_link):
+    def test_release_is_one_frame_without_an_arm(self, cmd_link):
         commander, forwarded = cmd_link
-        commander.flight_mode = True
         assert commander.release(2) == AckResult.OK
-        # Both halves reach the MCU: it keeps its own arm latch (core/link),
-        # so an ARM the Pi swallowed would leave the RELEASE unarmed there.
-        assert forwarded == [(Command.ARM, int(Command.RELEASE), 0),
-                             (Command.RELEASE, 2, 0)]
+        assert forwarded == [(Command.RELEASE, 2, 0)]
 
     def test_hold_allowed_on_ground(self, cmd_link):
         commander, forwarded = cmd_link
@@ -212,7 +199,6 @@ class TestCommander:
 
     def test_bad_valve_number(self, cmd_link):
         commander, _ = cmd_link
-        commander.flight_mode = True
         with pytest.raises(ValueError):
             commander.release(3)
 
@@ -260,9 +246,8 @@ class TestManualActuators:
     """G-03 operator drives of the dispersion hardware (M-07), against the
     real Pi command server."""
 
-    def test_membrane_drive_and_stop_need_no_arm_or_flight_mode(self, cmd_link):
+    def test_membrane_drive_and_stop_go_straight_out(self, cmd_link):
         commander, forwarded = cmd_link
-        assert not commander.flight_mode      # bench: the interlock is on
         assert commander.membrane(60) == AckResult.OK
         assert commander.membrane(0) == AckResult.OK
         assert forwarded == [(Command.MEMBRANE, 60, 0),
@@ -325,7 +310,7 @@ class TestSessionLog:
 
         hk_lines = (tmp_path / "session_test_hk.csv").read_text().splitlines()
         assert len(hk_lines) == 2 and "state_name" in hk_lines[0]
-        assert "ASCENT" in hk_lines[1]
+        assert "RUNNING" in hk_lines[1]
         ev_lines = (tmp_path / "session_test_events.csv").read_text().splitlines()
         assert "hello" in ev_lines[1]
         ql = json.loads((tmp_path / "session_test_quicklook.jsonl")
@@ -396,27 +381,25 @@ class TestUplinkLogging:
         assert rec["origin"] == "operator" and rec["seq"] != ""
         assert rec["rtt_ms"] != ""
 
-    def test_ground_interlocked_command_is_recorded_though_never_sent(self):
-        """S.10 refuses it on this side, so the Pi's comms log cannot have
-        it. Without this row the session shows no trace of the attempt."""
+    def test_every_command_is_recorded_with_its_ack(self):
+        """Nothing is refused on this side any more, so every row in the
+        session log is a command that really went out."""
         state = CommandState()
         server = CommandServer("127.0.0.1", 0,
                                forward=lambda *a: AckResult.OK, state=state)
         server.start()
         seen = []
         commander = Commander("127.0.0.1", server.port, timeout=2.0,
-                              flight_mode=False, on_result=seen.append)
+                              on_result=seen.append)
         try:
-            with pytest.raises(InterlockError):
-                commander.send(Command.START)
-            with pytest.raises(InterlockError):
-                commander.release(1)
+            assert commander.send(Command.START) == AckResult.OK
+            assert commander.release(1) == AckResult.OK
         finally:
             commander.close()
             server.stop()
         assert [r["cmd_name"] for r in seen] == ["START", "RELEASE"]
-        assert all(r["result_name"] == "INTERLOCK_GROUND" for r in seen)
-        assert all(r["seq"] == "" for r in seen)      # no wire, no sequence
+        assert all(r["result_name"] == "OK" for r in seen)
+        assert all(r["seq"] != "" for r in seen)
 
     def test_command_on_a_dead_link_is_recorded(self):
         state = CommandState()

@@ -30,6 +30,9 @@ behaviour changes.
   execution; a missing ACK is a rejection.
 - **The Pi never sequences the experiment** (S.7). The MCU is autonomous;
   interlocks are re-checked on both ends.
+- **A pinch valve never fires unattended.** Automatic mode (10 min of ground
+  silence → the motor/solenoid/wait cycle) drives only reversible actuators;
+  `RELEASE` stays arm-gated and ground-only. `docs/SOFTWARE_SPEC.md` §5.
 - **`board.h` is preliminary and five pins were wrong.** Measure before
   trusting it; `PIN_PINCH_*` / `PIN_EQ*` are deliberately still wrong and
   documented as such. `docs/HARDWARE.md`.

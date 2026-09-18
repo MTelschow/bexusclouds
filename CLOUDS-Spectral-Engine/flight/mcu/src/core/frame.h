@@ -31,10 +31,14 @@ enum packet_type {
  * decided rather than only that the Pi managed to write to the UART. */
 enum ack_result {
     ACK_OK = 0,
-    ACK_REJECTED = 1,   /* well-formed, but not allowed in this state */
+    /* 1, 3 and 4 are no longer produced anywhere (2026-09-18): with the
+       ground interlock and the arm/execute gate gone, a command that this
+       build can parse is executed. The values stay defined so an older
+       session log still decodes to the name it was written with. */
+    ACK_REJECTED = 1,   /* retired: "not allowed in this state" */
     ACK_INVALID = 2,    /* unparseable, unknown command, or out-of-range value */
-    ACK_NOT_ARMED = 3,  /* arm/execute violated (S.8) */
-    ACK_INTERLOCK = 4,  /* ground interlock (S.10) - enforced on the Pi */
+    ACK_NOT_ARMED = 3,  /* retired with the arm/execute gate (was S.8) */
+    ACK_INTERLOCK = 4,  /* retired with the ground interlock (was S.10) */
 };
 
 enum command {

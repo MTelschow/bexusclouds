@@ -70,19 +70,19 @@ def test_the_whole_chain_downlinks(stack):
 
 
 def test_commands_are_confirmed_end_to_end(stack):
-    """GSE -> Pi -> sim MCU and back, with the MCU's own verdict (S.8)."""
+    """GSE -> Pi -> sim MCU and back, with the MCU's own verdict."""
     from clouds_gse.commander import Commander
 
     rx, st = stack
-    cmd = Commander("127.0.0.1", st.cmd_port, flight_mode=True,
+    cmd = Commander("127.0.0.1", st.cmd_port,
                     log=lambda *_: None)
     try:
         assert cmd.ping() == AckResult.OK
         assert cmd.send(Command.START) == AckResult.OK
         assert _wait(lambda: rx.last_hk is not None
-                     and rx.last_hk.state == hk.SeqState.ASCENT)
-        # The ground interlock is the Pi's, and it reads the MCU's state: a
-        # release only passes once housekeeping says the experiment is flying.
+                     and rx.last_hk.state == hk.SeqState.RUNNING)
+        # Nothing gates the release any more: one frame, no ARM, no
+        # interlock, and the MCU's own OK comes back through the Pi.
         assert cmd.release(1) == AckResult.OK
         assert _wait(lambda: rx.last_hk.fired & 1)
     finally:

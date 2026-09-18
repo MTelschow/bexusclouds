@@ -63,24 +63,40 @@ KNOWN_SIZES = (SIZE_PRE_CHAMBER, SIZE)
 
 
 class SeqState(IntEnum):
-    """Mirror of seq_state_t in flight/mcu/src/core/sequencer.h."""
+    """Mirror of seq_state_t in flight/mcu/src/core/sequencer.h.
+
+    The experiment waits in STANDBY for the operator's START, then RUNNING.
+    From RUNNING it falls into automatic mode after PARAM_LINKLOSS_S of
+    ground silence and cycles AUTO_DISPERSE (motor only) -> AUTO_MEMBRANE
+    (solenoid only) -> AUTO_WAIT (neither) until a command arrives, which
+    puts it back in RUNNING at once.
+
+    6 and 7 are gone, not renamed: they were RELEASE_2 and MEASURE_2 of the
+    old ascent/seal/release sequence (retired 2026-09-18) and are left
+    unassigned so an old packet's 6 decodes as UNKNOWN(6) rather than as
+    something it never meant. TERMINATION and SAFE keep their numbers.
+    """
     INIT = 0
     STANDBY = 1
-    ASCENT = 2
-    SEAL = 3
-    RELEASE_1 = 4
-    MEASURE_1 = 5
-    RELEASE_2 = 6
-    MEASURE_2 = 7
+    RUNNING = 2
+    AUTO_DISPERSE = 3
+    AUTO_MEMBRANE = 4
+    AUTO_WAIT = 5
     TERMINATION = 8
     SAFE = 9
 
+    @property
+    def is_auto(self) -> bool:
+        """One of the three automatic-mode phases."""
+        return self in (SeqState.AUTO_DISPERSE, SeqState.AUTO_MEMBRANE,
+                        SeqState.AUTO_WAIT)
+
 
 class McuFlags(IntEnum):
-    AUTONOMOUS_LATCHED = 1 << 0   # link lost > threshold (O.2)
+    AUTONOMOUS_LATCHED = 1 << 0   # link lost > threshold: automatic mode
     LINK_OK = 1 << 1
     PI_OK = 1 << 2
-    SEAL_VERIFIED = 1 << 3
+    SEAL_VERIFIED = 1 << 3        # retired with the SEAL state; always 0
     HOLD = 1 << 4
 
 

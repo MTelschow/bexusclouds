@@ -214,7 +214,7 @@ def _sensed(attr: str):
 
 #: Everything the 64-byte housekeeping packet carries that varies over time.
 #: `state` and the link flags are deliberately absent - they are enumerations,
-#: and a step plot of "SEAL = 3" invites reading the number. The
+#: and a step plot of "AUTO_DISPERSE = 3" invites reading the number. The
 #: `valve_status` bits are not: each one is a single line that is energized or
 #: not, so they plot as lanes without inventing a scale (`DIGITAL_UNIT`).
 SERIES: tuple[Series, ...] = (

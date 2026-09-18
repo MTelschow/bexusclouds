@@ -1701,8 +1701,7 @@ class CloudsWindow(QtWidgets.QMainWindow):
         down and built again from the session's own flags (`link_factory`);
         then the startup sequence runs as `main` ran it. What the operator
         set - exposure, averaging, dark, reference, view, axis, zoom, fold
-        state, the interlock checkbox - is kept, because none of it belonged
-        to a connection. What the connections produced - housekeeping,
+        state - is kept, because none of it belonged to a connection. What the connections produced - housekeeping,
         events, the timeline, the gap counters, the session file - starts
         over, and the old session is closed with its summary like any other.
 

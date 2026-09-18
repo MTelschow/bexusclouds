@@ -4,8 +4,6 @@
 
 #include "frame.h" /* enum command */
 
-#define SEAL_RETRY_SPACING_MS 1000u
-
 static void persist_now(sequencer_t *s)
 {
     seq_persist_t p = {
@@ -17,8 +15,6 @@ static void persist_now(sequencer_t *s)
     s->ops->persist(s->ops->ctx, &p);
 }
 
-/* Actuator drives are scheduled, not blocking (core/pulse): the sequencer
- * must let them finish before judging what they did. */
 uint8_t event_severity(uint8_t code)
 {
     switch (code) {
@@ -29,7 +25,9 @@ uint8_t event_severity(uint8_t code)
         return EVS_ERROR;
     /* Something is wrong with the flight the operator should chase, but the
      * experiment carries on: a reset happened, ground was given up on, or
-     * the Pi went quiet. */
+     * the Pi went quiet. EV_AUTO_ENTERED is deliberately not here - it
+     * always follows EV_AUTONOMOUS_LATCHED, which carries the warning, and
+     * two warnings for one event teach nothing. */
     case EV_RESUMED_AFTER_RESET:
     case EV_AUTONOMOUS_LATCHED:
     case EV_PI_LINK_LOST:
@@ -39,21 +37,6 @@ uint8_t event_severity(uint8_t code)
     default:
         return EVS_INFO;
     }
-}
-
-static bool actuators_busy(const sequencer_t *s)
-{
-    return s->ops->busy != NULL && s->ops->busy(s->ops->ctx);
-}
-
-/* TERMINATION and SAFE mean the actuators are off and stay off, so no ground
- * command may start one there - an abort must not be reversible from the
- * panel. Every other state is fair game: the operator drives are how the
- * dispersion hardware is exercised on the bench, and how a release whose
- * automatic drive failed can still be helped along in flight. */
-static bool actuators_commandable(const sequencer_t *s)
-{
-    return s->state != ST_TERMINATION && s->state != ST_SAFE;
 }
 
 /* The one path to the membrane: every caller goes through here so
@@ -74,13 +57,6 @@ static void set_motor(sequencer_t *s, bool on)
         s->ops->disperse_run(s->ops->ctx, on);
 }
 
-static void close_eq_valves(sequencer_t *s, uint64_t t_ms)
-{
-    s->ops->close_eq_valves(s->ops->ctx);
-    s->last_seal_try_ms = t_ms;
-    s->seal_attempts++;
-}
-
 static void enter(sequencer_t *s, seq_state_t st, uint64_t t_ms)
 {
     char msg[24];
@@ -90,6 +66,67 @@ static void enter(sequencer_t *s, seq_state_t st, uint64_t t_ms)
     persist_now(s); /* every transition is durable (S.3 resume path) */
     snprintf(msg, sizeof msg, "state=%d", (int)st);
     s->ops->event(s->ops->ctx, EV_STATE_CHANGE, msg);
+}
+
+/* One phase of the automatic cycle. Both actuators are set on every phase
+ * entry, not only the one this phase drives: the phase says what the whole
+ * hardware is doing, so "motor only" is a statement about the solenoid too.
+ * Speeds come from the running config - the defaults unless the operator
+ * changed them before the link went away. */
+static void enter_auto_phase(sequencer_t *s, seq_state_t st, uint64_t t_ms)
+{
+    set_motor(s, st == ST_AUTO_DISPERSE);
+    set_membrane(s, st == ST_AUTO_MEMBRANE
+                        ? (uint8_t)cfg_get(s->cfg, PARAM_MEMBRANE_DUTY)
+                        : 0);
+    enter(s, st, t_ms);
+}
+
+static void enter_auto(sequencer_t *s, uint64_t t_ms)
+{
+    s->ops->event(s->ops->ctx, EV_AUTO_ENTERED, "link silent");
+    enter_auto_phase(s, ST_AUTO_DISPERSE, t_ms);
+}
+
+/* The link is back. Everything the cycle energized stops now, in the same
+ * pass that saw the command - not at the end of the current phase. */
+static void leave_auto(sequencer_t *s, uint64_t t_ms)
+{
+    set_motor(s, false);
+    set_membrane(s, 0);
+    s->ops->event(s->ops->ctx, EV_AUTO_LEFT, "link back");
+    enter(s, ST_RUNNING, t_ms);
+}
+
+/* How long the current automatic phase lasts. */
+static uint64_t auto_phase_ms(const sequencer_t *s)
+{
+    uint8_t key;
+
+    switch (s->state) {
+    case ST_AUTO_DISPERSE:
+        key = PARAM_AUTO_DISPERSE_S;
+        break;
+    case ST_AUTO_MEMBRANE:
+        key = PARAM_AUTO_MEMBRANE_S;
+        break;
+    default:
+        key = PARAM_AUTO_WAIT_S;
+        break;
+    }
+    return (uint64_t)cfg_get(s->cfg, key) * 1000u;
+}
+
+static seq_state_t auto_next(seq_state_t st)
+{
+    switch (st) {
+    case ST_AUTO_DISPERSE:
+        return ST_AUTO_MEMBRANE;
+    case ST_AUTO_MEMBRANE:
+        return ST_AUTO_WAIT;
+    default:
+        return ST_AUTO_DISPERSE; /* the cycle repeats while the link is out */
+    }
 }
 
 static void fire(sequencer_t *s, uint8_t n, uint64_t t_ms)
@@ -103,12 +140,13 @@ static void fire(sequencer_t *s, uint8_t n, uint64_t t_ms)
     persist_now(s); /* durable BEFORE the irreversible action */
     s->ops->fire_pinch(s->ops->ctx, n);
     /* Dispersion runs with the release, not instead of it: the motor moves
-     * the CaCO3 the pinch valve just let out, and the membrane keeps
-     * oscillating alongside. Both are scheduled drives, so this returns at
-     * once. */
-    if (s->ops->disperse != NULL)
+     * the CaCO3 the pinch valve just let out. A bounded pulse, so this
+     * returns at once. The membrane is NOT started here - it is the
+     * operator's to drive (CMD_MEMBRANE) and automatic mode's to cycle;
+     * latching it on behind a release left it oscillating with nothing
+     * saying why. */
+    if (s->ops->disperse != NULL && !s->motor_running)
         s->ops->disperse(s->ops->ctx);
-    set_membrane(s, (uint8_t)cfg_get(s->cfg, PARAM_MEMBRANE_DUTY));
     s->ops->event(s->ops->ctx, EV_RELEASE_FIRED, n == 1 ? "valve 1"
                                                         : "valve 2");
 }
@@ -128,19 +166,18 @@ void seq_init(sequencer_t *s, const cfg_t *cfg, const seq_ops_t *ops,
         s->fired = restored->fired;
         s->mission_start_s = restored->mission_start_s;
         autonomy_restore(&s->autonomy, restored->launch_detected, t_ms);
-        switch ((seq_state_t)restored->state) {
-        /* mid-release: the fired bit tells the truth; measure, don't
-         * re-fire */
-        case ST_RELEASE_1:
-            s->state = ST_MEASURE_1;
-            break;
-        case ST_RELEASE_2:
-            s->state = ST_MEASURE_2;
-            break;
-        default:
+        /* A reset drops out of automatic mode into RUNNING with both
+         * actuators off (they are off anyway after a reset). If the link is
+         * still gone, the link-loss timer runs again from here and the
+         * cycle restarts at its first phase - the same thing it does after
+         * any other entry, which is the point of restarting it. The old
+         * RELEASE_1/RELEASE_2 state numbers land here too: they are the
+         * AUTO_* numbers now, and resuming them as RUNNING is the safe
+         * reading of a persist record written by an older image. */
+        if (ST_IS_AUTO((seq_state_t)restored->state))
+            s->state = ST_RUNNING;
+        else
             s->state = (seq_state_t)restored->state;
-            break;
-        }
         s->state_entered_ms = t_ms; /* phase timers restart, conservative */
         s->ops->event(s->ops->ctx, EV_RESUMED_AFTER_RESET, "resume");
         persist_now(s);
@@ -166,12 +203,14 @@ void seq_step(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
     bool was_launched = s->autonomy.launch_detected;
     bool was_float = s->autonomy.float_detected;
 
+    (void)wall_s;
     autonomy_step(&s->autonomy, t_ms, p_amb_pa);
     if (!was_latched && s->autonomy.autonomous_latched)
         s->ops->event(s->ops->ctx, EV_AUTONOMOUS_LATCHED, "link lost");
+    /* Launch and float are reported, and nothing more: since 2026-09-18 the
+     * experiment is started by the operator and driven by the link state,
+     * so a pressure profile can no longer move the sequence on its own. */
     if (!was_launched && s->autonomy.launch_detected) {
-        s->mission_start_s = wall_s;
-        persist_now(s);
         s->ops->event(s->ops->ctx, EV_LAUNCH_DETECTED, "launch");
     }
     if (!was_float && s->autonomy.float_detected)
@@ -188,65 +227,32 @@ void seq_step(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
         break;
 
     case ST_STANDBY:
-        if (s->hold)
-            break;
-        if (s->autonomy.launch_detected)
-            enter(s, ST_ASCENT, t_ms);
+        /* Nothing on its own, ever: the experiment begins with the
+         * operator's START and with nothing else. A link that was never up
+         * is not a link that was lost, so automatic mode does not start
+         * here either. */
         break;
 
-    case ST_ASCENT:
+    case ST_RUNNING:
+        /* HOLD is what says "stay passive": it is the only way to sit out a
+         * link loss, and it survives one - see docs/TRAPS.md. */
         if (s->hold)
             break;
-        if (s->autonomy.float_detected)
-            enter(s, ST_SEAL, t_ms);
+        if (s->autonomy.autonomous_latched)
+            enter_auto(s, t_ms);
         break;
 
-    case ST_SEAL:
-        if (s->hold)
-            break;
-        if (s->seal_attempts == 0) {
-            close_eq_valves(s, t_ms); /* command it, then let it drive */
+    case ST_AUTO_DISPERSE:
+    case ST_AUTO_MEMBRANE:
+    case ST_AUTO_WAIT:
+        /* seq_note_ground_cmd() normally gets here first; this covers the
+         * latch being cleared by anything else. */
+        if (!s->autonomy.autonomous_latched) {
+            leave_auto(s, t_ms);
             break;
         }
-        if (actuators_busy(s))
-            break; /* lines still moving: nothing to judge yet (M-15) */
-        if (s->ops->seal_ok(s->ops->ctx)) {
-            s->seal_verified = true;
-            enter(s, ST_RELEASE_1, t_ms);
-        } else if (s->seal_attempts >
-                   (uint8_t)cfg_get(s->cfg, PARAM_SEAL_RETRY)) {
-            /* proceed flagged: the measurement is still valid (spec) */
-            s->ops->event(s->ops->ctx, EV_SEAL_FAILED, "unverified");
-            enter(s, ST_RELEASE_1, t_ms);
-        } else if (t_ms - s->last_seal_try_ms >= SEAL_RETRY_SPACING_MS) {
-            close_eq_valves(s, t_ms);
-        }
-        break;
-
-    case ST_RELEASE_1:
-        fire(s, 1, t_ms);
-        enter(s, ST_MEASURE_1, t_ms);
-        break;
-
-    case ST_MEASURE_1:
-        if (s->hold)
-            break;
-        if (elapsed(s, t_ms) >=
-            (uint64_t)cfg_get(s->cfg, PARAM_T_MEASURE_S) * 1000u)
-            enter(s, ST_RELEASE_2, t_ms);
-        break;
-
-    case ST_RELEASE_2:
-        fire(s, 2, t_ms);
-        enter(s, ST_MEASURE_2, t_ms);
-        break;
-
-    case ST_MEASURE_2:
-        if (s->hold)
-            break;
-        if (elapsed(s, t_ms) >=
-            (uint64_t)cfg_get(s->cfg, PARAM_T_MEASURE_S) * 1000u)
-            enter(s, ST_TERMINATION, t_ms);
+        if (elapsed(s, t_ms) >= auto_phase_ms(s))
+            enter_auto_phase(s, auto_next(s->state), t_ms);
         break;
 
     case ST_TERMINATION:
@@ -264,15 +270,36 @@ void seq_step(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
 void seq_note_ground_cmd(sequencer_t *s, uint64_t t_ms)
 {
     autonomy_cmd_seen(&s->autonomy, t_ms);
+    /* The link is back and the operator is at the panel: the cycle stops
+     * before their command is even acted on, so nothing they send lands on
+     * a motor that is already turning for its own reasons. */
+    if (ST_IS_AUTO(s->state))
+        leave_auto(s, t_ms);
+}
+
+/* A drive commanded after an abort takes the experiment out of SAFE rather
+ * than being refused (2026-09-18: while ground is connected, every command
+ * executes). The state has to follow the hardware - SAFE means "nothing is
+ * energized", so it cannot be what HK reports while the operator is running
+ * the motor. ABORT remains the way back to SAFE, and START the other way. */
+static void wake_from_safe(sequencer_t *s, uint64_t t_ms)
+{
+    if (s->state == ST_TERMINATION || s->state == ST_SAFE)
+        enter(s, ST_RUNNING, t_ms);
 }
 
 uint8_t seq_command(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
                     uint8_t cmd, uint8_t key, int32_t value, cfg_t *cfg)
 {
-    autonomy_cmd_seen(&s->autonomy, t_ms); /* any traffic = link alive */
+    seq_note_ground_cmd(s, t_ms); /* any traffic = link alive, cycle off */
 
     switch (cmd) {
     case CMD_PING:
+        return ACK_OK;
+    case CMD_ARM:
+        /* Retired with the arm/execute gate (2026-09-18). A ground station
+         * that still sends one gets an OK for a command that now does
+         * nothing, rather than a refusal it cannot act on. */
         return ACK_OK;
     case CMD_HOLD:
         s->hold = true;
@@ -286,36 +313,26 @@ uint8_t seq_command(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
         if (s->state != ST_SAFE)
             enter(s, ST_TERMINATION, t_ms);
         return ACK_OK;
-    case CMD_START: /* accelerator only: skip waiting for launch detect */
-        if (s->state != ST_STANDBY)
-            return ACK_REJECTED;
+    case CMD_START: /* the start button, from any state */
         s->hold = false;
         if (s->mission_start_s == 0)
             s->mission_start_s = wall_s;
-        enter(s, ST_ASCENT, t_ms);
+        if (s->state != ST_RUNNING)
+            enter(s, ST_RUNNING, t_ms);
         return ACK_OK;
-    case CMD_RELEASE: /* accelerator: jump the sequence forward */
-        if (key == 1 && s->state >= ST_ASCENT && s->state < ST_RELEASE_1 &&
-            !(s->fired & 1u)) {
-            s->hold = false;
-            enter(s, ST_RELEASE_1, t_ms);
-            return ACK_OK;
-        }
-        if (key == 2 && s->state >= ST_ASCENT && s->state < ST_RELEASE_2 &&
-            !(s->fired & 2u)) {
-            s->hold = false;
-            enter(s, ST_RELEASE_2, t_ms);
-            return ACK_OK;
-        }
-        /* Wrong valve number, already fired, or not in flight yet - on the
-         * pad this is the state check that keeps a stray RELEASE harmless.
-         * Ground needs to hear that it did nothing. */
-        return key == 1 || key == 2 ? ACK_REJECTED : ACK_INVALID;
+    case CMD_RELEASE:
+        if (key != 1 && key != 2)
+            return ACK_INVALID;
+        wake_from_safe(s, t_ms);
+        /* The fired bit still cannot be set twice - that is the hardware's
+         * own limit, not a state rule - but a second command is answered OK
+         * like every other. */
+        fire(s, key, t_ms);
+        return ACK_OK;
     case CMD_MEMBRANE: /* operator drive of the push-pull solenoid */
         if (key > 100)
             return ACK_INVALID;
-        if (!actuators_commandable(s))
-            return ACK_REJECTED;
+        wake_from_safe(s, t_ms);
         set_membrane(s, key);
         s->ops->event(s->ops->ctx, EV_MANUAL_DRIVE,
                       key ? "membrane on" : "membrane off");
@@ -323,35 +340,29 @@ uint8_t seq_command(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
     case CMD_DISPERSE: /* the CaCO3 motor: stop, one bounded pulse, or run */
         if (key > DISPERSE_RUN)
             return ACK_INVALID;
-        /* A board without the motor must say so rather than answer OK for a
-         * drive that no line can make. */
-        if (s->ops->disperse == NULL || s->ops->disperse_run == NULL)
-            return ACK_REJECTED;
         if (key == DISPERSE_STOP) {
-            /* Always honoured, TERMINATION and SAFE included: it can only
-             * de-energize. Ends a run and cuts a pulse short alike. */
             set_motor(s, false);
             s->ops->event(s->ops->ctx, EV_MANUAL_DRIVE, "disperse stop");
             return ACK_OK;
         }
-        if (!actuators_commandable(s))
-            return ACK_REJECTED;
+        wake_from_safe(s, t_ms);
         if (key == DISPERSE_RUN) {
             /* Idempotent: a second RUN re-latches the speed, nothing else. */
             set_motor(s, true);
             s->ops->event(s->ops->ctx, EV_MANUAL_DRIVE, "disperse run");
             return ACK_OK;
         }
-        /* PULSE while the operator holds the motor on: the bounded drive it
-         * asks for cannot happen, so ground hears that it did nothing. */
-        if (s->motor_running)
-            return ACK_REJECTED;
-        s->ops->disperse(s->ops->ctx);
+        /* PULSE while the motor is already held on: the bounded drive it
+         * asks for cannot be scheduled on top of a running motor, so the
+         * hold stands and the command is answered OK - the motor is turning,
+         * which is what was asked for. */
+        if (!s->motor_running && s->ops->disperse != NULL)
+            s->ops->disperse(s->ops->ctx);
         s->ops->event(s->ops->ctx, EV_MANUAL_DRIVE, "disperse");
         return ACK_OK;
     case CMD_SET_PARAM:
         if (!cfg_set(cfg, key, value))
-            return ACK_INVALID;
+            return ACK_INVALID; /* unknown key or out-of-envelope value */
         /* A running motor takes a new speed at once, or the panel would show
          * a speed the motor is not turning at until the next STOP/RUN. */
         if (key == PARAM_DISPERSE_DUTY && s->motor_running)
@@ -360,6 +371,6 @@ uint8_t seq_command(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
     case CMD_STATUS_REQ:
         return ACK_OK; /* answered by the Pi's PISTATUS, nothing to do here */
     default:
-        return ACK_INVALID;
+        return ACK_INVALID; /* a command this build does not know */
     }
 }

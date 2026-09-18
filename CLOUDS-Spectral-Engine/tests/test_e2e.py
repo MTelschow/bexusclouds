@@ -3,7 +3,7 @@ FSW-PI app <-> real GSE, over the real transports (pipe UART, UDP, TCP).
 
 Verifies the full chain: MCU housekeeping relayed byte-identical to the
 GSE; mock spectrometer frames stored with valid CRCs and quick-looked to
-the GSE; a ground ARM+RELEASE traverses GSE -> Pi -> MCU; timesync reaches
+the GSE; a ground RELEASE traverses GSE -> Pi -> MCU; timesync reaches
 the MCU (S.4).
 """
 import glob
@@ -123,7 +123,7 @@ def stack(tmp_path):
     assert _wait(lambda: app.cmd_server.port != 0)
 
     commander = Commander("127.0.0.1", app.cmd_server.port,
-                          flight_mode=True, timeout=3.0)
+                          timeout=3.0)
 
     yield app, mcu, ground_rx, commander, tmp_path
 
@@ -153,20 +153,14 @@ class TestEndToEnd:
         assert _wait(lambda: ground_rx.last_pistatus["spectro_ok"])
         assert ground_rx.last_pistatus["uart_ok"]
 
-        # 4. ground command path. A release on the pad is refused by the Pi's
-        # own interlock (S.10) - the MCU is reporting STANDBY.
+        # 4. ground command path. Nothing is gated any more (2026-09-18):
+        # the command goes out as sent and reaches the MCU, on the pad or
+        # not, with no ARM in front of it.
         assert commander.ping() == AckResult.OK
         assert (Command.PING, 0, 0) in mcu.commands
-        assert commander.release(1) == AckResult.INTERLOCK
-        assert (Command.RELEASE, 1, 0) not in mcu.commands
-
-        # ...and goes through once the MCU says it is flying. ARM reaches the
-        # MCU too, so its own arm latch is in step with the Pi's.
-        mcu.state = hk.SeqState.ASCENT
-        assert _wait(lambda: app.mcu.in_flight)
         assert commander.release(1) == AckResult.OK
         assert _wait(lambda: (Command.RELEASE, 1, 0) in mcu.commands)
-        assert (Command.ARM, int(Command.RELEASE), 0) in mcu.commands
+        assert (Command.ARM, int(Command.RELEASE), 0) not in mcu.commands
 
         # 5. timesync flows to the MCU (S.4)
         assert _wait(lambda: len(mcu.timesyncs) >= 2)
@@ -193,7 +187,7 @@ class TestEndToEnd:
     def test_ground_hears_the_mcu_verdict_not_the_pi_optimism(self, stack):
         """A command the MCU refuses must not reach ground as OK (S.8)."""
         app, mcu, _rx, commander, _tmp = stack
-        mcu.state = hk.SeqState.ASCENT
+        mcu.state = hk.SeqState.RUNNING
         assert _wait(lambda: app.mcu.in_flight)
 
         mcu.ack_result = AckResult.REJECTED

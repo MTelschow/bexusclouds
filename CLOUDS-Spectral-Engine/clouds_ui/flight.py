@@ -8,9 +8,9 @@ application, so an operator watching the trace and an operator commanding the
 experiment are the same person at the same window.
 
 The data path is untouched: everything here reads a `clouds_gse.Receiver`
-(UDP downlink) and writes through a `clouds_gse.Commander` (TCP uplink with
-the ground interlock). Nothing in this file talks to a detector, and nothing
-in the instrument half talks to the link.
+(UDP downlink) and writes through a `clouds_gse.Commander` (TCP uplink).
+Nothing in this file talks to a detector, and nothing in the instrument half
+talks to the link.
 
 **Every slot in here is guarded.** PyQt5 aborts the process on an unhandled
 exception in a slot, and "no command link" is a normal state (--listen-only,
@@ -24,7 +24,7 @@ from clouds_link.commands import Command, Param
 from clouds_link.frames import AckResult, event_name, severity_name
 from clouds_link.hk import (HB_SENSE_A_PER_V, RAIL_I2C_ADDR, RAIL_NAMES,
                             RAIL_SHUNT_MOHM, HkErrors, Housekeeping)
-from clouds_gse.commander import CommandError, InterlockError
+from clouds_gse.commander import CommandError
 
 from . import style
 from .sections import Section, group_label
@@ -316,13 +316,10 @@ class FlightPanel(QtCore.QObject):
         it is it would sit on the old count and show nothing new until the
         fresh receiver had caught up with it.
 
-        The interlock checkbox is the operator's setting, not the link's, so
-        it survives and is pushed onto the new commander rather than reset.
         """
         self._rx = receiver
         self._cmd = commander
         self._session = session
-        self._on_flight_mode(self.chk_flight_mode.isChecked())
 
         self.banner.setText("NO TELEMETRY")
         self._set_banner_style(None)
@@ -463,16 +460,10 @@ class FlightPanel(QtCore.QObject):
         sec.add(note)
 
     def _build_commands(self, sec: Section) -> None:
-        # A QCheckBox does not wrap, and a sidebar column is 340 px: keep the
-        # label short and put the requirement in the tooltip.
-        self.chk_flight_mode = QtWidgets.QCheckBox("Flight mode")
-        self.chk_flight_mode.setStyleSheet(style.checkbox_style())
-        self.chk_flight_mode.setToolTip(
-            "Disables the ground interlock (S.10) so RELEASE and START can be "
-            "sent. The Pi re-checks it against fresh housekeeping regardless.")
-        self.chk_flight_mode.toggled.connect(self._on_flight_mode)
-        sec.add(self.chk_flight_mode)
-
+        # The Flight mode checkbox is gone (2026-09-18): it existed to lift
+        # the ground interlock, and START does that job now - it is the one
+        # button that starts the experiment, and nothing is held back after
+        # it. One control, not two that had to agree.
         grid = QtWidgets.QGridLayout()
         grid.setContentsMargins(0, 0, 0, 0)
         grid.setSpacing(6)
@@ -485,11 +476,11 @@ class FlightPanel(QtCore.QObject):
         # button in a row the same width.
         #
         # Pinning columns to the widest button's own hint is what NOT to do
-        # here, even though it does produce equal widths: 3 x "ARM + RELEASE 1"
-        # is ~470 px inside a 340 px sidebar column whose horizontal scrollbar
-        # is off, so the far column is silently clipped - and it drags the
-        # rest of the sidebar off the edge with it. Spanning spreads a long
-        # label across columns instead of widening one.
+        # here, even though it does produce equal widths: three long labels
+        # are ~470 px inside a 340 px sidebar column whose horizontal
+        # scrollbar is off, so the far column is silently clipped - and it
+        # drags the rest of the sidebar off the edge with it. Spanning
+        # spreads a long label across columns instead of widening one.
         self._cmd_buttons: list[QtWidgets.QPushButton] = []
         for i, (label, cmd) in enumerate(simple):
             btn = QtWidgets.QPushButton(label)
@@ -498,7 +489,7 @@ class FlightPanel(QtCore.QObject):
             grid.addWidget(btn, i // 3, (i % 3) * 2, 1, 2)
             self._cmd_buttons.append(btn)
         for n in (1, 2):
-            btn = QtWidgets.QPushButton(f"ARM + RELEASE {n}")
+            btn = QtWidgets.QPushButton(f"RELEASE {n}")
             btn.setStyleSheet(style.danger_btn())
             btn.clicked.connect(lambda _, v=n: self._release(v))
             grid.addWidget(btn, 2, (n - 1) * 3, 1, 3)
@@ -690,10 +681,6 @@ class FlightPanel(QtCore.QObject):
 
     # -- commands ------------------------------------------------------------
 
-    def _on_flight_mode(self, on: bool) -> None:
-        if self._cmd is not None:
-            self._cmd.flight_mode = on
-
     def _send(self, cmd: Command) -> None:
         if self._cmd is None:
             self.lbl_cmd_status.setText("no command link")
@@ -701,31 +688,26 @@ class FlightPanel(QtCore.QObject):
         try:
             r = self._cmd.send(cmd)
             self.lbl_cmd_status.setText(f"{cmd.name} -> {r.name}")
-        except (InterlockError, CommandError) as e:
+        except CommandError as e:
             self.lbl_cmd_status.setText(str(e))
 
     def _release(self, valve: int) -> None:
         if self._cmd is None:
             self.lbl_cmd_status.setText("no command link")
             return
-        # Interlock first, dialog second. Asking "arm and fire valve 1?" and
-        # then refusing the Yes teaches the operator that the confirmation
-        # means nothing - and on the pad that is every single press.
-        if not self._cmd.flight_mode:
-            self.lbl_cmd_status.setText(
-                "RELEASE is interlocked on ground (S.10); "
-                "enable flight mode to send it")
-            return
+        # The dialog is the only thing between the click and the valve: the
+        # ground interlock and the ARM step that used to stand in front of it
+        # are gone (2026-09-18).
         ok = QtWidgets.QMessageBox.question(
             self.sec_cmd, "Confirm release",
-            f"Arm and fire pinch valve {valve}?",
+            f"Fire pinch valve {valve}?",
             QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
         if ok != QtWidgets.QMessageBox.Yes:
             return
         try:
             r = self._cmd.release(valve)
             self.lbl_cmd_status.setText(f"RELEASE {valve} -> {r.name}")
-        except (InterlockError, CommandError) as e:
+        except CommandError as e:
             self.lbl_cmd_status.setText(str(e))
 
     # -- actuators -----------------------------------------------------------
@@ -751,7 +733,7 @@ class FlightPanel(QtCore.QObject):
             self.lbl_act_status.setText(
                 f"membrane {self.sp_duty.value()} % @ {self.sp_hz.value():g} Hz "
                 f"-> {r.name}")
-        except (InterlockError, CommandError, ValueError) as e:
+        except (CommandError, ValueError) as e:
             self.lbl_act_status.setText(str(e))
 
     def _membrane_stop(self) -> None:
@@ -761,7 +743,7 @@ class FlightPanel(QtCore.QObject):
         try:
             r = self._cmd.membrane(0)
             self.lbl_act_status.setText(f"membrane off -> {r.name}")
-        except (InterlockError, CommandError, ValueError) as e:
+        except (CommandError, ValueError) as e:
             self.lbl_act_status.setText(str(e))
 
     def _on_motor_speed(self, value: int) -> None:
@@ -800,7 +782,7 @@ class FlightPanel(QtCore.QObject):
             if r == AckResult.OK:
                 self._motor_speed_sent = speed
             self.lbl_act_status.setText(f"motor speed {speed} % -> {r.name}")
-        except (InterlockError, CommandError, ValueError) as e:
+        except (CommandError, ValueError) as e:
             self.lbl_act_status.setText(str(e))
 
     def _send_motor_speed(self, what: str) -> int | None:
@@ -829,7 +811,7 @@ class FlightPanel(QtCore.QObject):
             r = self._cmd.disperse_run()
             self._motor_running = r == AckResult.OK
             self.lbl_act_status.setText(f"motor run {speed} % -> {r.name}")
-        except (InterlockError, CommandError, ValueError) as e:
+        except (CommandError, ValueError) as e:
             self.lbl_act_status.setText(str(e))
 
     def _motor_stop(self) -> None:
@@ -840,7 +822,7 @@ class FlightPanel(QtCore.QObject):
         try:
             r = self._cmd.disperse_stop()
             self.lbl_act_status.setText(f"motor stop -> {r.name}")
-        except (InterlockError, CommandError, ValueError) as e:
+        except (CommandError, ValueError) as e:
             self.lbl_act_status.setText(str(e))
 
     def _disperse(self) -> None:
@@ -856,7 +838,7 @@ class FlightPanel(QtCore.QObject):
                 return
             r = self._cmd.disperse()
             self.lbl_act_status.setText(f"disperse {speed} % -> {r.name}")
-        except (InterlockError, CommandError, ValueError) as e:
+        except (CommandError, ValueError) as e:
             self.lbl_act_status.setText(str(e))
 
     # -- refresh -------------------------------------------------------------

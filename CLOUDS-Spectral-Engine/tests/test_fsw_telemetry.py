@@ -24,7 +24,7 @@ def udp_pair():
 class TestRelay:
     def test_mcu_frame_relayed_byte_identical(self, udp_pair):
         down, rx = udp_pair
-        h = hk.Housekeeping(state=hk.SeqState.ASCENT, p_amb_pa=42_000)
+        h = hk.Housekeeping(state=hk.SeqState.RUNNING, p_amb_pa=42_000)
         raw = frames.Frame(type=frames.PacketType.HK, payload=h.pack(),
                            seq=77).stamp().encode()
         down.relay(raw)

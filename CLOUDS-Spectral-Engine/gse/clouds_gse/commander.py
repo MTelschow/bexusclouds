@@ -1,12 +1,12 @@
-"""GSE command uplink (G-03, G-04): TCP client, ACK-checked, interlocked.
+"""GSE command uplink (G-03): TCP client, ACK-checked.
 
-Ground interlock (S.10): while ``flight_mode`` is False - the default -
-commands in GROUND_INTERLOCKED (RELEASE, START) are refused locally with
-``InterlockError`` and never leave the laptop. Enabling flight mode is an
-explicit operator action (``--flight-mode`` or the GUI toggle).
-
-``release(n)`` performs the full arm/execute handshake (S.8) against the
-Pi command server, which is the authoritative enforcer.
+**No interlock and no arm handshake (2026-09-18).** The ground interlock and
+the flight-mode toggle that switched it off are gone, and so is the
+ARM→RELEASE two-step: the operator's `START` is what begins the experiment,
+and from then on every command goes out as sent and is answered by the MCU's
+own verdict. Nothing is refused on the laptop any more - a command that does
+not reach the Pi raises `CommandError`, which is a link failure, not a
+policy.
 """
 from __future__ import annotations
 
@@ -15,13 +15,9 @@ import threading
 import time
 
 from clouds_link import frames
-from clouds_link.commands import (GROUND_INTERLOCKED, HEARTBEAT_INTERVAL_S,
-                                  Command, DisperseKey, Param)
+from clouds_link.commands import (HEARTBEAT_INTERVAL_S, Command, DisperseKey,
+                                  Param)
 from clouds_link.frames import AckResult, Frame, PacketType, SeqCounter
-
-
-class InterlockError(RuntimeError):
-    """Refused by the GSE ground interlock (S.10) - not sent."""
 
 
 class CommandError(RuntimeError):
@@ -29,19 +25,17 @@ class CommandError(RuntimeError):
 
 
 class Commander:
-    def __init__(self, host: str, port: int, flight_mode: bool = False,
-                 timeout: float = 3.0, log=None, on_result=None):
-        self.flight_mode = flight_mode
+    def __init__(self, host: str, port: int, timeout: float = 3.0,
+                 log=None, on_result=None):
         self._host = host
         self._port = port
         self._timeout = timeout
         self._log = log or (lambda *_: None)
-        #: Called with one dict per command attempt - accepted, refused,
-        #: interlocked or never sent (`SessionLog.log_command`). The uplink
-        #: is the half of the session the downlink cannot record: a command
-        #: the ground interlock stopped never reaches the Pi, so nothing on
-        #: the far end can log it. Never allowed to break a command - a
-        #: session log is evidence, not a dependency.
+        #: Called with one dict per command attempt - accepted, refused or
+        #: never sent (`SessionLog.log_command`). The uplink is the half of
+        #: the session the downlink cannot record: a command that never
+        #: reached the Pi leaves no trace on the far end. Never allowed to
+        #: break a command - a session log is evidence, not a dependency.
         self._on_result = on_result or (lambda _rec: None)
         self._seq = SeqCounter()
         self._lock = threading.RLock()   # reentrant: _transact -> _disconnect, both lock
@@ -75,28 +69,13 @@ class Commander:
     # -- public API ----------------------------------------------------------
 
     def send(self, cmd: Command, key: int = 0, value: int = 0) -> AckResult:
-        """Send one command and wait for its ACK. Raises on interlock/link."""
-        if cmd in GROUND_INTERLOCKED and not self.flight_mode:
-            self._log(f"INTERLOCK refused {cmd.name}")
-            self._record(cmd, key, value, result_name="INTERLOCK_GROUND",
-                         note="refused on the ground (S.10), never sent")
-            raise InterlockError(
-                f"{cmd.name} is interlocked on ground (S.10); "
-                "enable flight mode to send it")
+        """Send one command and wait for its ACK. Raises on link failure."""
         return self._transact(cmd, key, value)
 
     def release(self, valve: int) -> AckResult:
-        """Arm/execute handshake for a particle release (S.8)."""
+        """One RELEASE, sent as it stands - no ARM in front of it."""
         if valve not in (1, 2):
             raise ValueError("valve must be 1 or 2")
-        if not self.flight_mode:
-            self._record(Command.RELEASE, key=valve, value=0,
-                         result_name="INTERLOCK_GROUND",
-                         note="refused on the ground (S.10), never sent")
-            raise InterlockError("RELEASE is interlocked on ground (S.10)")
-        r = self._transact(Command.ARM, key=int(Command.RELEASE))
-        if r != AckResult.OK:
-            raise CommandError(f"ARM refused: {AckResult(r).name}")
         return self._transact(Command.RELEASE, key=valve)
 
     def set_param(self, key: int, value: int) -> AckResult:
@@ -115,10 +94,10 @@ class Commander:
     def membrane(self, duty_pct: int) -> AckResult:
         """Drive the membrane push-pull solenoid; 0 stops it (M-07).
 
-        No arm and no ground interlock: the drive is not irreversible and
-        stops on the next call, and exercising it on the bench is what the
-        control is for (see MANUAL_ACTUATORS). Frequency is a separate knob -
-        ``membrane_hz()`` / SET_PARAM MEMBRANE_MHZ.
+        The drive is not irreversible and stops on the next call, and
+        exercising it on the bench is what the control is for (see
+        MANUAL_ACTUATORS). Frequency is a separate knob - ``membrane_hz()`` /
+        SET_PARAM MEMBRANE_MHZ.
         """
         if not 0 <= duty_pct <= 100:
             raise ValueError("membrane duty must be 0..100 percent")

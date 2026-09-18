@@ -9,18 +9,19 @@ and it is the wrong thing to show an operator who is learning the interface.
 ``SimMcu`` fills that end. It speaks the same framing as the real MCU
 (COBS + `clouds_link.frames`), emits `Housekeeping` at 1 Hz, answers every
 `CMD` with its own verdict, and runs the sequencer state graph of
-``flight/mcu/src/core/sequencer.c`` - including the arm/execute gate of
-``core/link.c``, the "never re-fire" bit (S.3) and the refusal of actuator
-drives in TERMINATION/SAFE.
+``flight/mcu/src/core/sequencer.c`` - the automatic-mode cycle, the "never
+re-fire" bit (S.3), and the rule that nothing is refused for state while
+ground is connected.
 
 **What it is not**: flight timing, and not a second source of truth. The
-phase durations are compressed to demo length (``ascent_s``, ``t_measure_s``
-below) because a mock that sits in ASCENT for two hours teaches nobody
-anything, and the ascent pressure profile is a decaying exponential, not an
-atmosphere model. Nothing here is evidence about the real firmware: when the
-two disagree, the C is right. The mirror tests
-(``tests/test_link.py``) police the wire format; this file is
-policed by ``tests/test_sim_mcu.py`` only for the behaviour ground sees.
+link-loss threshold and the three automatic-mode phases are compressed to
+demo length (``linkloss_s`` and ``auto_s`` below) because a mock that waits
+ten minutes before doing anything teaches nobody anything, and the ascent
+pressure profile is a decaying exponential, not an atmosphere model. Nothing
+here is evidence about the real firmware: when the two disagree, the C is
+right. The mirror tests (``tests/test_link.py``) police the wire format;
+this file is policed by ``tests/test_sim_mcu.py`` only for the behaviour
+ground sees.
 
 The sensor picture it reports is the carrier as measured (DEVLOG 2026-09-11):
 both BME280s answering - the ambient one on i2c0 and the chamber one on
@@ -59,20 +60,26 @@ P_CEILING_PA = 4_000
 class SimMcu:
     """Far end of a ``PipeTransport`` pair, behaving like the RP2350.
 
-    ``ascent_s`` is how long the compressed ascent takes to reach float, and
-    ``t_measure_s`` stands in for PARAM_T_MEASURE_S (480 s in flight). Both
-    are demo numbers - see the module docstring. ``valve_pulse_s`` is the
+    ``ascent_s`` is how long the compressed ascent takes to reach float -
+    a report only, since nothing in the sequence depends on it any more.
+    ``linkloss_s`` stands in for PARAM_LINKLOSS_S (600 s in flight) and
+    ``auto_s`` for the three automatic phases (120 / 180 / 300 s in flight).
+    All demo numbers - see the module docstring. ``valve_pulse_s`` is the
     real 5 s drive; only the tests shorten it.
     """
 
     def __init__(self, transport, *, hk_interval_s: float = 1.0,
-                 ascent_s: float = 45.0, t_measure_s: float = 60.0,
+                 ascent_s: float = 45.0, linkloss_s: float = 30.0,
+                 auto_s: tuple[float, float, float] = (12.0, 18.0, 30.0),
                  valve_pulse_s: float = VALVE_PULSE_S,
                  imu: bool = False, log=None):
         self._t = transport
         self._hk_interval = hk_interval_s
         self._ascent_s = ascent_s
-        self._t_measure_s = t_measure_s
+        self._linkloss_s = linkloss_s
+        self._auto_s = {hk.SeqState.AUTO_DISPERSE: auto_s[0],
+                        hk.SeqState.AUTO_MEMBRANE: auto_s[1],
+                        hk.SeqState.AUTO_WAIT: auto_s[2]}
         self._valve_pulse_s = valve_pulse_s
         self._imu = imu
         self._log = log or (lambda *_: None)
@@ -92,8 +99,8 @@ class SimMcu:
         self.membrane_duty = 0
         self.membrane_mhz = 2000            # PARAM_MEMBRANE_MHZ default
         self.disperse_duty = 50          # PARAM_DISPERSE_DUTY, motor speed
-        self.motor_running = False       # DISPERSE RUN .. STOP, like the MCU
-        self.seal_verified = False
+        self.motor_running = False       # held on: DISPERSE RUN, or the
+                                         # motor phase of automatic mode
         self._t0 = time.monotonic()
         self._state_entered = self._t0
         self._mission_start: float | None = None
@@ -101,9 +108,10 @@ class SimMcu:
         self._float_detected = False
 
         # -- link state (mirror of link_t) -----------------------------------
-        self._armed_cmd: int | None = None
-        self._armed_until = 0.0
-        self._last_ground_cmd = 0.0
+        # Silence is counted from boot, as autonomy_init() does on the MCU:
+        # a ground station that never says anything is a lost link too.
+        self._last_ground_cmd = self._t0
+        self._has_seen_cmd = False
         self._last_pi_rx = 0.0
 
         # -- actuator lines --------------------------------------------------
@@ -176,21 +184,14 @@ class SimMcu:
     def _command(self, cmd: int, key: int, value: int) -> int:
         now = time.monotonic()
         self._last_ground_cmd = now
+        self._has_seen_cmd = True
+        # Any command means the link is back: the cycle stops in this call,
+        # before the command itself is acted on (seq_note_ground_cmd).
+        self._leave_auto()
 
         if cmd == Command.ARM:
-            # Only actuator commands are armable, exactly as on the Pi.
-            if key != Command.RELEASE:
-                return AckResult.INVALID
-            self._armed_cmd = int(Command.RELEASE)
-            self._armed_until = now + 10.0          # LINK_ARM_WINDOW_MS
+            # Retired with the arm/execute gate: answered, does nothing.
             return AckResult.OK
-
-        if cmd == Command.RELEASE:
-            armed = (self._armed_cmd == int(Command.RELEASE)
-                     and now <= self._armed_until)
-            self._armed_cmd = None      # one ARM authorises one execute
-            if not armed:
-                return AckResult.NOT_ARMED
 
         if cmd == Command.PING or cmd == Command.STATUS_REQ:
             return AckResult.OK
@@ -208,32 +209,27 @@ class SimMcu:
                 self._enter(hk.SeqState.TERMINATION)
             return AckResult.OK
         if cmd == Command.START:
-            if self.state != hk.SeqState.STANDBY:
-                return AckResult.REJECTED
+            # The start button. Accepted in any state - including back out of
+            # SAFE after an abort.
             self.hold = False
             if self._mission_start is None:
                 self._mission_start = now
-            self._enter(hk.SeqState.ASCENT)
+            if self.state != hk.SeqState.RUNNING:
+                self._enter(hk.SeqState.RUNNING)
             return AckResult.OK
         if cmd == Command.RELEASE:
-            if key == 1 and (hk.SeqState.ASCENT <= self.state
-                             < hk.SeqState.RELEASE_1) and not self.fired & 1:
-                self.hold = False
-                self._enter(hk.SeqState.RELEASE_1)
-                return AckResult.OK
-            if key == 2 and (hk.SeqState.ASCENT <= self.state
-                             < hk.SeqState.RELEASE_2) and not self.fired & 2:
-                self.hold = False
-                self._enter(hk.SeqState.RELEASE_2)
-                return AckResult.OK
-            # Wrong valve, already fired, or not flying yet: ground has to
-            # hear that the command did nothing.
-            return AckResult.REJECTED if key in (1, 2) else AckResult.INVALID
+            if key not in (1, 2):
+                return AckResult.INVALID
+            # A release is an act, not a phase: it fires where it stands and
+            # leaves the state alone. Answered OK whatever the state; the
+            # fired bit, not the ACK, is what stops a second one (S.3).
+            self._wake_from_safe()
+            self._fire(key)
+            return AckResult.OK
         if cmd == Command.MEMBRANE:
             if key > 100:
                 return AckResult.INVALID
-            if not self._actuators_commandable():
-                return AckResult.REJECTED
+            self._wake_from_safe()
             self.membrane_duty = key
             self._event(EventCode.MANUAL_DRIVE,
                         "membrane on" if key else "membrane off")
@@ -242,19 +238,17 @@ class SimMcu:
             if key > DisperseKey.RUN:
                 return AckResult.INVALID
             if key == DisperseKey.STOP:
-                # Always honoured, TERMINATION/SAFE included - it can only
-                # de-energize. Ends a run and cuts a pulse short alike.
+                # It can only de-energize, and it leaves the state alone.
                 self._stop_motor()
                 self._event(EventCode.MANUAL_DRIVE, "disperse stop")
                 return AckResult.OK
-            if not self._actuators_commandable():
-                return AckResult.REJECTED
+            self._wake_from_safe()
             if key == DisperseKey.RUN:
                 self.motor_running = True
                 self._event(EventCode.MANUAL_DRIVE, "disperse run")
                 return AckResult.OK
-            if self.motor_running:
-                return AckResult.REJECTED    # the bounded pulse cannot happen
+            # A pulse on top of a held motor schedules nothing (_queue_drive
+            # drops it) and is still answered OK: the motor is turning.
             self._queue_drive(hk.ValveStatus.DISPERSE)
             self._event(EventCode.MANUAL_DRIVE, "disperse")
             return AckResult.OK
@@ -263,8 +257,18 @@ class SimMcu:
             # only knows the key space, and honours the three knobs it models.
             if key not in {int(p) for p in Param}:
                 return AckResult.INVALID
-            if key == Param.T_MEASURE_S:
-                self._t_measure_s = float(value)
+            if key in (Param.AUTO_DISPERSE_S, Param.AUTO_MEMBRANE_S,
+                       Param.AUTO_WAIT_S):
+                if not 5 <= int(value) <= 3600:
+                    return AckResult.INVALID
+                self._auto_s[{Param.AUTO_DISPERSE_S: hk.SeqState.AUTO_DISPERSE,
+                              Param.AUTO_MEMBRANE_S: hk.SeqState.AUTO_MEMBRANE,
+                              Param.AUTO_WAIT_S: hk.SeqState.AUTO_WAIT}[key]] \
+                    = float(value)
+            elif key == Param.LINKLOSS_S:
+                if not 60 <= int(value) <= 3600:
+                    return AckResult.INVALID
+                self._linkloss_s = float(value)
             elif key == Param.MEMBRANE_MHZ:
                 # config.c limits, so the sim refuses what the MCU refuses -
                 # in particular a stale sender's whole-hertz "2".
@@ -280,10 +284,12 @@ class SimMcu:
             return AckResult.OK
         return AckResult.INVALID
 
-    def _actuators_commandable(self) -> bool:
-        """TERMINATION and SAFE mean the actuators stay off - an abort is not
-        reversible from the panel."""
-        return self.state not in (hk.SeqState.TERMINATION, hk.SeqState.SAFE)
+    def _wake_from_safe(self) -> None:
+        """A drive commanded after an abort takes the experiment back out of
+        SAFE rather than being refused: the state has to follow the hardware,
+        and SAFE means "nothing is energized"."""
+        if self.state in (hk.SeqState.TERMINATION, hk.SeqState.SAFE):
+            self._enter(hk.SeqState.RUNNING)
 
     # -- sequencer -----------------------------------------------------------
 
@@ -299,8 +305,10 @@ class SimMcu:
         self.fired |= bit
         self._queue_drive(hk.ValveStatus.PINCH_1 if n == 1
                           else hk.ValveStatus.PINCH_2)
+        # The motor moves the CaCO3 the valve just let out. The membrane is
+        # not started here: it is the operator's to drive and automatic
+        # mode's to cycle.
         self._queue_drive(hk.ValveStatus.DISPERSE)
-        self.membrane_duty = 20          # PARAM_MEMBRANE_DUTY
         self._event(EventCode.RELEASE_FIRED, f"valve {n}")
 
     def _step(self, now: float) -> None:
@@ -309,43 +317,51 @@ class SimMcu:
 
         st = hk.SeqState
         if self.state == st.STANDBY:
-            if not self.hold and self._launch_detected:
-                self._enter(st.ASCENT)
-        elif self.state == st.ASCENT:
-            if not self.hold and self._float_detected:
-                self._enter(st.SEAL)
-        elif self.state == st.SEAL:
-            if self.hold:
-                return
-            if not self.seal_verified:
-                self._queue_drive(hk.ValveStatus.EQ1_CLOSE)
-                self._queue_drive(hk.ValveStatus.EQ2_CLOSE)
-                self.seal_verified = True
-                return
-            if self._drive is None and not self._drive_queue:
-                self._enter(st.RELEASE_1)   # seal_ok() is `true` today (M-15)
-        elif self.state == st.RELEASE_1:
-            self._fire(1)
-            self._enter(st.MEASURE_1)
-        elif self.state == st.MEASURE_1:
-            if not self.hold and self._phase_done(now):
-                self._enter(st.RELEASE_2)
-        elif self.state == st.RELEASE_2:
-            self._fire(2)
-            self._enter(st.MEASURE_2)
-        elif self.state == st.MEASURE_2:
-            if not self.hold and self._phase_done(now):
-                self._enter(st.TERMINATION)
-        elif self.state == st.TERMINATION:
+            # Nothing on its own: the experiment starts with the button.
+            return
+        if self.state == st.RUNNING:
+            if not self.hold and self._link_silent(now):
+                self._event(EventCode.AUTO_ENTERED, "link silent")
+                self._enter_auto_phase(st.AUTO_DISPERSE)
+            return
+        if self.state.is_auto:
+            if not self._link_silent(now):
+                self._leave_auto()
+            elif now - self._state_entered >= self._auto_s[self.state]:
+                self._enter_auto_phase(self._AUTO_NEXT[self.state])
+            return
+        if self.state == st.TERMINATION:
             self.membrane_duty = 0
             self.motor_running = False
             self._drive_queue.clear()
             self._drive = None
             self._enter(st.SAFE)
 
-    def _phase_done(self, now: float) -> bool:
-        """Has this measurement phase run its length (PARAM_T_MEASURE_S)?"""
-        return now - self._state_entered >= self._t_measure_s
+    #: The cycle, in order, repeating for as long as the link stays down.
+    _AUTO_NEXT = {hk.SeqState.AUTO_DISPERSE: hk.SeqState.AUTO_MEMBRANE,
+                  hk.SeqState.AUTO_MEMBRANE: hk.SeqState.AUTO_WAIT,
+                  hk.SeqState.AUTO_WAIT: hk.SeqState.AUTO_DISPERSE}
+
+    def _link_silent(self, now: float) -> bool:
+        """No ground command for PARAM_LINKLOSS_S (autonomy.c's latch)."""
+        return now - self._last_ground_cmd > self._linkloss_s
+
+    def _enter_auto_phase(self, state: int) -> None:
+        """One phase of the cycle. Both actuators are set on every entry:
+        "motor only" is a statement about the solenoid too."""
+        self.motor_running = state == hk.SeqState.AUTO_DISPERSE
+        self.membrane_duty = (20 if state == hk.SeqState.AUTO_MEMBRANE
+                              else 0)          # PARAM_MEMBRANE_DUTY
+        self._enter(state)
+
+    def _leave_auto(self) -> None:
+        """The link is back: stop at once, not at the end of the phase."""
+        if not self.state.is_auto:
+            return
+        self._stop_motor()
+        self.membrane_duty = 0
+        self._event(EventCode.AUTO_LEFT, "link back")
+        self._enter(hk.SeqState.RUNNING)
 
     def _queue_drive(self, bit: int) -> None:
         """Ask for one actuator line. It waits its turn: the MCU drives one
@@ -374,29 +390,27 @@ class SimMcu:
             self._drive = (bit, now + dur)
 
     def _step_pressure(self, now: float) -> None:
-        """Ground level until ASCENT, then a decaying exponential to ceiling.
+        """Ground level until the experiment starts, then a decaying
+        exponential to ceiling.
 
         A profile, not an atmosphere: what it has to get right is the shape
         ground reads - a fall that trips launch detection, then a float that
-        stops falling - on a timescale someone can sit through.
+        stops falling - on a timescale someone can sit through. Since the
+        sequence stopped depending on it (2026-09-18) it feeds the reported
+        launch/float events and the ambient-vs-chamber pressure picture, and
+        nothing else.
         """
-        st = hk.SeqState
-        if st.ASCENT <= self.state < st.TERMINATION:
-            # tau chosen so the profile reaches P_FLOAT_PA at ascent_s; past
-            # ASCENT it holds there, which is what float means.
+        if self._mission_start is None or self.state == hk.SeqState.SAFE:
+            self._p_amb = float(P_GROUND_PA)
+        else:
             tau = self._ascent_s / math.log(P_GROUND_PA / P_FLOAT_PA)
-            dt = (now - self._state_entered if self.state == st.ASCENT
-                  else self._ascent_s)
+            dt = now - self._mission_start
             self._p_amb = max(P_CEILING_PA,
                               P_GROUND_PA * math.exp(-dt / tau))
-        else:
-            self._p_amb = float(P_GROUND_PA)
 
         if not self._launch_detected and \
                 self._p_amb < P_GROUND_PA - 5000:       # PARAM_LAUNCH_DP_PA
             self._launch_detected = True
-            if self._mission_start is None:
-                self._mission_start = now
             self._event(EventCode.LAUNCH_DETECTED, "launch")
         if not self._float_detected and self._p_amb <= P_FLOAT_PA:
             self._float_detected = True
@@ -406,14 +420,13 @@ class SimMcu:
 
     def _flags(self, now: float) -> int:
         f = 0
-        if now - self._last_ground_cmd <= 600.0:        # PARAM_LINKLOSS_S
-            f |= hk.McuFlags.LINK_OK
-        elif self._last_ground_cmd:
+        if self._link_silent(now):
             f |= hk.McuFlags.AUTONOMOUS_LATCHED
+        elif self._has_seen_cmd:
+            f |= hk.McuFlags.LINK_OK
         if self._last_pi_rx and now - self._last_pi_rx <= 60.0:
             f |= hk.McuFlags.PI_OK                      # PARAM_PI_SILENT_S
-        if self.seal_verified:
-            f |= hk.McuFlags.SEAL_VERIFIED
+        # MCUF_SEAL_VERIFIED went with the SEAL state and stays 0.
         if self.hold:
             f |= hk.McuFlags.HOLD
         return f

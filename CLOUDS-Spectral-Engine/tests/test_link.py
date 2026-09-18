@@ -115,7 +115,7 @@ class TestHousekeeping:
         assert hk.SIZE == 64
 
     def test_roundtrip(self):
-        h = hk.Housekeeping(state=hk.SeqState.MEASURE_1, fired=0b01,
+        h = hk.Housekeeping(state=hk.SeqState.AUTO_MEMBRANE, fired=0b01,
                             temp1_cc=-5512, p_amb_pa=5300,
                             accel_mg=(12, -34, 980),
                             rail_mv=(24012, hk.RAIL_MV_INVALID, 5003, 3298),
@@ -124,9 +124,9 @@ class TestHousekeeping:
                             chm_p_pa=98_765)
         g = hk.Housekeeping.unpack(h.pack())
         assert g == h
-        assert g.state_name == "MEASURE_1"
+        assert g.state_name == "AUTO_MEMBRANE"
         row = g.to_row()
-        assert row["accel_z_mg"] == 980 and row["state_name"] == "MEASURE_1"
+        assert row["accel_z_mg"] == 980 and row["state_name"] == "AUTO_MEMBRANE"
         assert g.rail_mv == (24012, hk.RAIL_MV_INVALID, 5003, 3298)
         # The chamber triple must survive the round trip distinct from the
         # ambient one: both are BME280 readings in the same units, and a
@@ -290,14 +290,14 @@ class TestHousekeeping:
         """
         legacy = struct.Struct("<BBBBBBhhhHIhhhhhhHHHHhhhhIIH")
         assert legacy.size == hk.SIZE_PRE_CHAMBER == 56
-        payload = legacy.pack(hk.SeqState.ASCENT, 0, 0, 0, 60, 0,
+        payload = legacy.pack(hk.SeqState.RUNNING, 0, 0, 0, 60, 0,
                               0, 0, 2140, 3050, 99_248,
                               1, -2, 981, 0, 1, -1,
                               24_060, hk.RAIL_MV_INVALID, 5090, 3300,
                               129, 0, -1, 333, 1234, 0, 1500)
         g = hk.Housekeeping.unpack(payload)
         # Everything the older packet does carry survives at its own offset.
-        assert g.state_name == "ASCENT" and g.p_amb_pa == 99_248
+        assert g.state_name == "RUNNING" and g.p_amb_pa == 99_248
         assert g.bme_temp_cc == 2140 and g.hb_sense_raw == 1500
         assert g.rail_mv == (24_060, hk.RAIL_MV_INVALID, 5090, 3300)
         # ...and what it does not carry is declared unsourced, not defaulted.

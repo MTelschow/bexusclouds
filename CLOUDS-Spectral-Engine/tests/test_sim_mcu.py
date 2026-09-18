@@ -60,9 +60,26 @@ class Pi:
 @pytest.fixture
 def sim():
     near, far = PipeTransport.pair()
-    # 5 s valve drives are flight numbers and would idle the suite.
-    mcu = SimMcu(far, hk_interval_s=0.1, ascent_s=1.0, t_measure_s=0.5,
+    # 5 s valve drives are flight numbers and would idle the suite. The
+    # link-loss threshold stays long here on purpose: these tests poke at
+    # commands and actuators, and a cycle taking over mid-test would be
+    # noise. The cycle itself has its own fixture below.
+    mcu = SimMcu(far, hk_interval_s=0.1, ascent_s=1.0, linkloss_s=30.0,
                  valve_pulse_s=0.3)
+    mcu.start()
+    try:
+        yield mcu, Pi(near)
+    finally:
+        mcu.stop()
+
+
+@pytest.fixture
+def sim_auto():
+    """A sim whose automatic mode is reachable inside a test: silence for
+    0.5 s, then phases of 0.3 / 0.4 / 0.5 s standing in for 2 / 3 / 5 min."""
+    near, far = PipeTransport.pair()
+    mcu = SimMcu(far, hk_interval_s=0.1, ascent_s=1.0, linkloss_s=0.5,
+                 auto_s=(0.3, 0.4, 0.5), valve_pulse_s=0.1)
     mcu.start()
     try:
         yield mcu, Pi(near)
@@ -124,9 +141,10 @@ def test_arm_release_fires_once(sim):
     assert pi.command(Command.START) == AckResult.OK
     assert pi.command(Command.ARM, key=int(Command.RELEASE)) == AckResult.OK
     assert pi.command(Command.RELEASE, key=1) == AckResult.OK
-    # The command enters RELEASE_1; the drive itself happens in the next step,
-    # as on the MCU - so the fired bit lags the ACK by one loop.
-    assert _wait(lambda: mcu.fired & 1)
+    # The release fires where it stands: no state change, and the valve bit
+    # is set by the time the ACK comes back.
+    assert mcu.fired & 1
+    assert mcu.state == hk.SeqState.RUNNING
     # One ARM authorises one execute, and a fired valve never fires again.
     assert pi.command(Command.RELEASE, key=1) == AckResult.NOT_ARMED
     assert pi.command(Command.ARM, key=int(Command.RELEASE)) == AckResult.OK
@@ -274,27 +292,67 @@ def test_abort_stops_a_running_motor(sim):
     assert not mcu.housekeeping().valve_status & hk.ValveStatus.DISPERSE
 
 
-def test_hold_stops_the_sequence_and_resume_restarts_it(sim):
-    mcu, pi = sim
-    assert pi.command(Command.HOLD) == AckResult.OK
-    assert pi.command(Command.START) == AckResult.OK   # START clears hold
-    assert mcu.state == hk.SeqState.ASCENT
+def test_hold_keeps_the_cycle_off(sim_auto):
+    """HOLD is how an operator says "do nothing without me", and it outlives
+    the link: silence alone does not start the cycle while it is set."""
+    mcu, pi = sim_auto
+    assert pi.command(Command.START) == AckResult.OK
+    assert mcu.state == hk.SeqState.RUNNING
     assert pi.command(Command.HOLD) == AckResult.OK
     assert mcu.housekeeping().flags & hk.McuFlags.HOLD
-    time.sleep(1.5)                                    # ascent_s is 1.0 s here
-    assert mcu.state == hk.SeqState.ASCENT, "HOLD did not hold the sequence"
+    time.sleep(1.2)                                  # linkloss_s is 0.5 s
+    assert mcu.state == hk.SeqState.RUNNING, "HOLD did not hold the cycle off"
+    assert not mcu.motor_running
+    # RESUME is itself a command, so the link is up again; the next silence
+    # runs the cycle as usual.
     assert pi.command(Command.RESUME) == AckResult.OK
-    assert _wait(lambda: mcu.state >= hk.SeqState.SEAL)
+    assert _wait(lambda: mcu.state == hk.SeqState.AUTO_DISPERSE)
 
 
-def test_the_whole_sequence_runs_to_safe(sim):
-    """START -> ... -> SAFE, both valves fired, on the compressed timeline."""
-    mcu, pi = sim
+def test_the_cycle_runs_while_the_link_is_down(sim_auto):
+    """Ten minutes of ground silence (0.5 s here) and the electronics run
+    themselves: motor, then solenoid, then neither, then round again."""
+    mcu, pi = sim_auto
     assert pi.command(Command.START) == AckResult.OK
-    assert _wait(lambda: mcu.state == hk.SeqState.SAFE, timeout=30.0), \
-        f"stuck in {hk.SeqState(mcu.state).name}"
-    assert mcu.fired == 0b11
-    assert mcu.housekeeping().membrane_duty == 0
+
+    assert _wait(lambda: mcu.state == hk.SeqState.AUTO_DISPERSE)
+    assert mcu.motor_running and mcu.membrane_duty == 0
+
+    assert _wait(lambda: mcu.state == hk.SeqState.AUTO_MEMBRANE)
+    assert not mcu.motor_running and mcu.membrane_duty == 20
+
+    assert _wait(lambda: mcu.state == hk.SeqState.AUTO_WAIT)
+    assert not mcu.motor_running and mcu.membrane_duty == 0
+
+    # ...and it repeats, from the motor phase.
+    assert _wait(lambda: mcu.state == hk.SeqState.AUTO_DISPERSE)
+    # No valve was fired along the way: a release is never automatic.
+    assert mcu.fired == 0
+    assert mcu.housekeeping().flags & hk.McuFlags.AUTONOMOUS_LATCHED
+
+
+def test_a_command_ends_the_cycle_at_once(sim_auto):
+    mcu, pi = sim_auto
+    assert pi.command(Command.START) == AckResult.OK
+    assert _wait(lambda: mcu.state == hk.SeqState.AUTO_DISPERSE)
+    assert mcu.motor_running
+
+    # A bare heartbeat is enough: it is the link that matters, not what the
+    # operator sent. The drives stop in the same call.
+    assert pi.command(Command.PING) == AckResult.OK
+    assert mcu.state == hk.SeqState.RUNNING
+    assert not mcu.motor_running
+    assert mcu.membrane_duty == 0
+    assert not mcu.housekeeping().valve_status & hk.ValveStatus.DISPERSE
+
+
+def test_standby_never_starts_the_cycle(sim_auto):
+    """A link that was never up is not a link that was lost: without the
+    start button the experiment does nothing at all."""
+    mcu, _pi = sim_auto
+    time.sleep(1.2)
+    assert mcu.state == hk.SeqState.STANDBY
+    assert not mcu.motor_running and mcu.membrane_duty == 0
 
 
 def test_link_flags_follow_the_traffic(sim):

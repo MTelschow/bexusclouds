@@ -104,3 +104,12 @@ emitters (MCU-relayed and Pi-origin), so it is in
 **On the Pi, `pkill -f` / `pgrep -f` match your own command line** — including
 strings inside `echo`. Bracket the pattern (`"clouds_fs[w].main"`) *and* keep the
 literal name out of surrounding messages, or the shell kills itself mid-script.
+
+**`HOLD` outlives the link.** Automatic mode (spec §5) is what runs the
+experiment when ground is unreachable, and a `HOLD` keeps it off - including
+through the dropout that would have started it. That is deliberate: the
+alternative is an operator's explicit "do nothing" being overridden by
+silence. But it means an operator who holds and then loses the link has left
+the electronics passive with no way to lift it. `MCUF_HOLD` is in every HK
+packet; check it before the link is the thing you are worried about.
+

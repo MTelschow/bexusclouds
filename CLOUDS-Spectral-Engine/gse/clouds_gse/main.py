@@ -8,8 +8,9 @@ application now - `python -m clouds_ui --flight` - so that a spectrum on
 screen always says which source it came from. This module is the headless
 path (and the fallback when no display is available).
 
-The ground interlock (S.10) starts ENGAGED: RELEASE/START are refused
-locally until --flight-mode is given or the operator toggles it in the UI.
+There is no ground interlock and no flight-mode switch any more
+(2026-09-18): `start` is what begins the experiment, and every command is
+sent as typed.
 """
 from __future__ import annotations
 
@@ -30,8 +31,6 @@ def main(argv=None) -> int:
                     help="UDP telemetry port to bind")
     ap.add_argument("--listen-only", action="store_true",
                     help="no command link (monitoring / replay)")
-    ap.add_argument("--flight-mode", action="store_true",
-                    help="disable the ground interlock (S.10) at startup")
     ap.add_argument("--log-dir", default="./gse_sessions")
     args = ap.parse_args(argv)
 
@@ -41,8 +40,7 @@ def main(argv=None) -> int:
 
     commander = None
     if not args.listen_only:
-        commander = Commander(args.experiment, args.cmd_port,
-                              flight_mode=args.flight_mode, log=print,
+        commander = Commander(args.experiment, args.cmd_port, log=print,
                               on_result=session.log_command)
         commander.start_heartbeat()
 

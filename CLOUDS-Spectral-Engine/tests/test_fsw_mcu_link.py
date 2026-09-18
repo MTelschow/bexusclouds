@@ -186,7 +186,7 @@ class TestCommandAcks:
 class TestHousekeepingCache:
     def test_hk_is_decoded_and_relayed(self, link):
         mcu, end, received = link
-        end.send_hk(hk.SeqState.MEASURE_1, uptime_s=77)
+        end.send_hk(hk.SeqState.AUTO_MEMBRANE, uptime_s=77)
         assert _wait(lambda: mcu.last_hk is not None)
         assert mcu.last_hk.uptime_s == 77
         assert len(received) == 1                   # relay still sees it
@@ -208,9 +208,9 @@ class TestInFlight:
     @pytest.mark.parametrize("state,expected", [
         (hk.SeqState.INIT, False),
         (hk.SeqState.STANDBY, False),
-        (hk.SeqState.ASCENT, True),
-        (hk.SeqState.SEAL, True),
-        (hk.SeqState.MEASURE_2, True),
+        (hk.SeqState.RUNNING, True),
+        (hk.SeqState.AUTO_DISPERSE, True),
+        (hk.SeqState.AUTO_WAIT, True),
         (hk.SeqState.TERMINATION, False),
         (hk.SeqState.SAFE, False),
     ])
@@ -223,7 +223,7 @@ class TestInFlight:
 
     def test_stale_housekeeping_is_not_in_flight(self, link):
         mcu, end, _ = link
-        end.send_hk(hk.SeqState.ASCENT)
+        end.send_hk(hk.SeqState.RUNNING)
         assert _wait(lambda: mcu.in_flight)
         time.sleep(0.6)                             # silent_s = 0.5
         assert not mcu.in_flight
