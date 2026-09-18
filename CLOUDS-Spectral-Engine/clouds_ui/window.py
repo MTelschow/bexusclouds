@@ -275,6 +275,13 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self._track_msg = ""            # transient too-dim / too-bright note from the servo
         self._oob_count = 0             # consecutive out-of-band ticks (servo persistence gate)
         self.logger = None
+        #: Session logging is on unless the operator turns it off (O.3 on the
+        #: ground: the measurement nobody saved is the one that mattered).
+        #: The file itself is opened at the first frame, not here - a session
+        #: that never acquires anything (--flight, or a detector that never
+        #: came up) should leave no empty CSV behind to be read later as "the
+        #: run produced nothing".
+        self._log_enabled = True
 
         # --- flight half (downlink + uplink). All three may be None: the
         # instrument-only bench case, where the flight sections are built but
@@ -843,6 +850,13 @@ class CloudsWindow(QtWidgets.QMainWindow):
         v.addWidget(self.btn_export)
         self.chk_log = QtWidgets.QCheckBox("log session to CSV")
         self.chk_log.setStyleSheet(self._checkbox_style())
+        # Checked before the signal is connected: this is the startup state,
+        # not an operator action, and _on_log_toggle's hint would claim one.
+        self.chk_log.setChecked(self._log_enabled)
+        self.chk_log.setToolTip(
+            "On by default - every acquired frame is appended to "
+            "output/session_*.csv as it arrives. Uncheck to stop; the file "
+            "is closed and kept.")
         self.chk_log.toggled.connect(self._on_log_toggle)
         v.addWidget(self.chk_log)
 
@@ -1622,6 +1636,15 @@ class CloudsWindow(QtWidgets.QMainWindow):
                 self.driver.close()
         except Exception:
             pass
+        if self.logger is not None:
+            # Every row is already flushed, so this only releases the handle -
+            # but a session file left open by the window is one a later tool
+            # on Windows cannot move or open.
+            try:
+                self.logger.close()
+            except Exception:
+                pass
+            self.logger = None
         self.close_links()
         super().closeEvent(ev)
 
@@ -1640,6 +1663,15 @@ class CloudsWindow(QtWidgets.QMainWindow):
                                    self.mock_stack)
         self.rx = self.commander = self.session = self.mock_stack = None
         gaps = rx.gaps if rx is not None else None
+        # Read off the receiver before it is stopped, for the same reason the
+        # gap counters are: packets that arrived and could not be decoded are
+        # only in its own counters, and the traffic panel that showed them is
+        # about to go away with the window.
+        stats = None if rx is None else {
+            "rx_packets": rx.rx_packets, "rx_bytes": rx.rx_bytes,
+            "decode_errors": rx.decode_errors,
+            "hk_rejected": rx.hk_rejected,
+            "hk_reject_reason": rx.hk_reject_reason}
         for step in ((lambda: cmd.close()) if cmd is not None else None,
                      (lambda: stack.stop()) if stack is not None else None,
                      (lambda: rx.stop()) if rx is not None else None):
@@ -1652,7 +1684,8 @@ class CloudsWindow(QtWidgets.QMainWindow):
         if session is not None:
             try:
                 session.export_summary(
-                    session.hk_path.replace("_hk.csv", "_summary.json"), gaps)
+                    session.hk_path.replace("_hk.csv", "_summary.json"),
+                    gaps, stats)
             except Exception:
                 pass
             try:
@@ -2029,8 +2062,9 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self._process()
         self._render_plot()
         self._update_stats()
-        if self.logger is not None:
+        if self._log_enabled:
             try:
+                self._ensure_logger()
                 self.logger.log(self.cal, self.last_frame, self.exposure_ms,
                                 self.navg, self._last_sat)
             except (IOError, OSError) as e:
@@ -2042,6 +2076,7 @@ class CloudsWindow(QtWidgets.QMainWindow):
                 except Exception:
                     pass
                 self.logger = None
+                self._log_enabled = False
                 self.chk_log.blockSignals(True); self.chk_log.setChecked(False); self.chk_log.blockSignals(False)
         if self._track and self.running:
             self._track_exposure()          # nudge integration time for the NEXT frame
@@ -2783,18 +2818,40 @@ class CloudsWindow(QtWidgets.QMainWindow):
             except Exception:
                 pass
 
-    def _on_log_toggle(self, on):
+    def _ensure_logger(self):
+        """Open the session CSV on the first frame that needs it.
+
+        Opening it here rather than when logging is switched on keeps the
+        two states honest: a file exists exactly when something was
+        measured, and an operator who turns logging off and on again gets a
+        new file rather than one that silently continues the old one.
+        """
+        if self.logger is not None:
+            return
         from spectro import export as EX
+        os.makedirs("output", exist_ok=True)
+        # A mock run says so in the file name, as the flight-side session log
+        # does: simulated rows must never be mistaken later for a measurement.
+        stamp = ("mock_" if self.mock else "") + EX.timestamp()
+        self.logger = EX.SessionLogger(
+            os.path.join("output", f"session_{stamp}.csv"))
+        self._set_hint(f"logging every frame  ->  "
+                       f"{os.path.basename(self.logger.path)}")
+
+    def _on_log_toggle(self, on):
+        self._log_enabled = bool(on)
         if on:
-            os.makedirs("output", exist_ok=True)
-            self.logger = EX.SessionLogger(
-                os.path.join("output", f"session_{EX.timestamp()}.csv"))
-            self._set_hint("logging session to CSV ...")
+            # The file opens at the next frame (_ensure_logger); say what
+            # will happen rather than naming a file that may not exist yet.
+            self._set_hint("logging every acquired frame to CSV")
         elif self.logger is not None:
             n, path = self.logger.count, self.logger.path
             self.logger.close()
             self.logger = None
-            self._set_hint(f"logged {n} rows  ->  {os.path.basename(path)}")
+            self._set_hint(f"logging off - {n} rows kept in "
+                           f"{os.path.basename(path)}")
+        else:
+            self._set_hint("logging off")
 
 
 class _CalibrationDialog(QtWidgets.QDialog):

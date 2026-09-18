@@ -17,7 +17,9 @@ Moved out of `CLAUDE.md` 2026-09-18.
   answers commands with the sequencer's own verdicts, all on ephemeral
   loopback ports. Constraints that keep it from contaminating real work:
   window title, plot banner and device line all say MOCK; session logs are
-  `session_mock_*`; the stored dark frame is never written or cleared
+  `session_mock_*` - the ground station's and, since 2026-09-18, the
+  instrument's own `output/session_mock_*.csv`; the stored dark frame is
+  never written or cleared
   (`persist_dark=False`, a separate switch from `mock=` so `verify_qt.py`
   can still exercise the store); its data directory is temporary.
 - **`spectro/` is shared** by bench app, FSW and GSE — calibration, processing,

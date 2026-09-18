@@ -332,4 +332,140 @@ class TestSessionLog:
                         .read_text().splitlines()[0])
         assert ql["counts"] == [1, 2, 3]
         summary = json.loads(out.read_text())
-        assert summary["packets"] == {"hk": 1, "events": 1, "quicklook": 1}
+        assert summary["packets"] == {"hk": 1, "events": 1, "quicklook": 1,
+                                      "pistatus": 0, "commands": 0}
+
+    def test_pistatus_logged(self, tmp_path):
+        """The Pi health packet is on screen and now in the session: it is
+        what explains a storage gap or a quiet detector afterwards."""
+        log = SessionLog(str(tmp_path), stamp="ps")
+        f = Frame(type=PacketType.PISTATUS, seq=SeqCounter().next()).stamp()
+        log.log_pistatus(f, {"disk_free_mb": 12000, "spectra_count": 345,
+                             "uart_ok": True, "spectro_ok": False,
+                             "cpu_temp_cc": 4150})
+        log.close()
+        lines = (tmp_path / "session_ps_pistatus.csv").read_text().splitlines()
+        assert "disk_free_mb" in lines[0] and "cpu_temp_cc" in lines[0]
+        assert "12000" in lines[1] and "False" in lines[1]
+
+    def test_command_log_is_written_as_each_command_resolves(self, tmp_path):
+        log = SessionLog(str(tmp_path), stamp="cmd")
+        log.log_command({"send_t": 1.0, "origin": "operator",
+                         "cmd": int(Command.MEMBRANE), "cmd_name": "MEMBRANE",
+                         "key": 40, "value": 0, "seq": 3, "result": 0,
+                         "result_name": "OK", "rtt_ms": 2.1, "note": ""})
+        # Written and flushed per row, not at close: a session that ends in a
+        # power cut keeps every command up to the cut.
+        lines = (tmp_path / "session_cmd_commands.csv").read_text().splitlines()
+        assert lines[0].startswith("send_t,origin,cmd,cmd_name")
+        assert "MEMBRANE" in lines[1] and "OK" in lines[1]
+        log.close()
+
+    def test_summary_carries_decode_errors(self, tmp_path):
+        log = SessionLog(str(tmp_path), stamp="st")
+        out = tmp_path / "summary.json"
+        log.export_summary(str(out), None,
+                           {"decode_errors": 4, "hk_rejected": 2,
+                            "hk_reject_reason": "56 B, this build reads 64 B"})
+        log.close()
+        link = json.loads(out.read_text())["link"]
+        assert link["decode_errors"] == 4 and link["hk_rejected"] == 2
+        assert "56 B" in link["hk_reject_reason"]
+
+
+class TestUplinkLogging:
+    """Every command attempt reaches the session log - including the ones
+    the Pi never sees, which no other file can hold."""
+
+    def test_accepted_command_is_recorded_with_its_verdict(self):
+        state = CommandState()
+        server = CommandServer("127.0.0.1", 0,
+                               forward=lambda *a: AckResult.OK, state=state)
+        server.start()
+        seen = []
+        commander = Commander("127.0.0.1", server.port, timeout=2.0,
+                              on_result=seen.append)
+        try:
+            assert commander.ping() == AckResult.OK
+        finally:
+            commander.close()
+            server.stop()
+        assert len(seen) == 1
+        rec = seen[0]
+        assert rec["cmd_name"] == "PING" and rec["result_name"] == "OK"
+        assert rec["origin"] == "operator" and rec["seq"] != ""
+        assert rec["rtt_ms"] != ""
+
+    def test_ground_interlocked_command_is_recorded_though_never_sent(self):
+        """S.10 refuses it on this side, so the Pi's comms log cannot have
+        it. Without this row the session shows no trace of the attempt."""
+        state = CommandState()
+        server = CommandServer("127.0.0.1", 0,
+                               forward=lambda *a: AckResult.OK, state=state)
+        server.start()
+        seen = []
+        commander = Commander("127.0.0.1", server.port, timeout=2.0,
+                              flight_mode=False, on_result=seen.append)
+        try:
+            with pytest.raises(InterlockError):
+                commander.send(Command.START)
+            with pytest.raises(InterlockError):
+                commander.release(1)
+        finally:
+            commander.close()
+            server.stop()
+        assert [r["cmd_name"] for r in seen] == ["START", "RELEASE"]
+        assert all(r["result_name"] == "INTERLOCK_GROUND" for r in seen)
+        assert all(r["seq"] == "" for r in seen)      # no wire, no sequence
+
+    def test_command_on_a_dead_link_is_recorded(self):
+        state = CommandState()
+        server = CommandServer("127.0.0.1", 0,
+                               forward=lambda *a: AckResult.OK, state=state)
+        server.start()
+        seen = []
+        commander = Commander("127.0.0.1", server.port, timeout=2.0,
+                              on_result=seen.append)
+        server.stop()
+        commander._disconnect()
+        try:
+            with pytest.raises(CommandError):
+                commander.ping()
+        finally:
+            commander.close()
+        assert seen and seen[-1]["result_name"] == "NO_LINK"
+
+    def test_heartbeat_pings_are_marked_as_such(self):
+        """So a reader can tell the link proving itself from an operator
+        asking - 5 s of PINGs must not read as somebody at the console."""
+        state = CommandState()
+        server = CommandServer("127.0.0.1", 0,
+                               forward=lambda *a: AckResult.OK, state=state)
+        server.start()
+        seen = []
+        commander = Commander("127.0.0.1", server.port, timeout=2.0,
+                              on_result=seen.append)
+        try:
+            commander.ping(origin="heartbeat")
+            commander.ping()
+        finally:
+            commander.close()
+            server.stop()
+        assert [r["origin"] for r in seen] == ["heartbeat", "operator"]
+
+    def test_a_failing_session_log_never_breaks_a_command(self):
+        state = CommandState()
+        server = CommandServer("127.0.0.1", 0,
+                               forward=lambda *a: AckResult.OK, state=state)
+        server.start()
+
+        def explode(_rec):
+            raise IOError("disk full")
+
+        commander = Commander("127.0.0.1", server.port, timeout=2.0,
+                              on_result=explode)
+        try:
+            assert commander.ping() == AckResult.OK
+        finally:
+            commander.close()
+            server.stop()

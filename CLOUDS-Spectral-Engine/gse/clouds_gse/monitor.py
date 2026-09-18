@@ -39,6 +39,7 @@ class ConsoleMonitor:
         receiver._cb["hk"] = self._on_hk
         receiver._cb["ev"] = self._on_event
         receiver._cb["ql"] = self._session.log_quicklook
+        receiver._cb["pi"] = self._session.log_pistatus
 
     def _on_hk(self, frame, h) -> None:
         self._session.log_hk(frame, h)

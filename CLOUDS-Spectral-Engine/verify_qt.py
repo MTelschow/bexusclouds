@@ -75,10 +75,27 @@ check("a manual Connect click does not disarm that retry",
       (_cold._connect() or True) and _cold._reconnect_timer.isActive())
 _cold.close()
 
+check("session logging is on by default (opt out, not opt in)",
+      win.chk_log.isChecked() and win._log_enabled)
+check("no session file before the first frame", win.logger is None)
+
 win.sp_exp.setValue(5)
 win._single()
 app.processEvents()
 check("frame acquired", win.last_frame is not None and win.last_frame.shape == (2048,))
+# Opened by the first frame, without anybody pressing anything, and written
+# as the frames arrive - the point of the default.
+check("first frame opens the session log itself",
+      win.logger is not None and os.path.exists(win.logger.path),
+      os.path.basename(win.logger.path) if win.logger else "no logger")
+check("a mock session says so in the file name",
+      win.logger is not None and "session_mock_" in os.path.basename(win.logger.path),
+      os.path.basename(win.logger.path) if win.logger else "")
+_rows_after_one = win.logger.count if win.logger else 0
+win._single(); app.processEvents()
+check("each frame appends a row as it arrives",
+      win.logger is not None and win.logger.count == _rows_after_one + 1,
+      f"{_rows_after_one} -> {win.logger.count if win.logger else 0}")
 check("short exposure not clipping", win._last_sat < 0.5, f"sat={win._last_sat:.3f}")
 
 win.sp_exp.setValue(0.05)
@@ -455,6 +472,10 @@ if _sc_ok:
     _data = _rows[_rows.index(_hdr) + 1:] if _hdr else []
     _sc_ok = bool(_data) and all(r[2] == "" for r in _data)        # reference column blank
 check("single-channel: export CSV+PDF without crash, blank reference column", _sc_ok)
+# Off and on again: logging is already running, so this both exercises the
+# opt-out and gives the single-channel rows a file of their own.
+win.chk_log.setChecked(False); app.processEvents()
+check("unchecking closes the session log", win.logger is None)
 _lg_before = set(_glob.glob("output/session_*.csv"))
 win.chk_log.setChecked(True); win._single(); win._single(); app.processEvents()
 _lg_new = sorted(set(_glob.glob("output/session_*.csv")) - _lg_before)
@@ -568,6 +589,8 @@ win._export()
 app.processEvents()
 check("UI export writes csv+pdf",
       bool(_glob.glob("output/clouds_spectrum_*.csv")) and bool(_glob.glob("output/clouds_spectrum_*.pdf")))
+win.chk_log.setChecked(False)
+app.processEvents()
 win.chk_log.setChecked(True)
 win._single()
 win._single()

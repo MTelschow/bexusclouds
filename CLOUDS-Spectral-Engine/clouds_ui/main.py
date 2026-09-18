@@ -169,6 +169,7 @@ def open_links(args) -> Links:
     receiver._cb["hk"] = session.log_hk
     receiver._cb["ev"] = session.log_event
     receiver._cb["ql"] = session.log_quicklook
+    receiver._cb["pi"] = session.log_pistatus
     receiver.start()
     links.receiver, links.session = receiver, session
 
@@ -182,8 +183,12 @@ def open_links(args) -> Links:
         links.mock_stack = mock_stack
 
     if not args.listen_only:
+        # The uplink is logged by the same session as the downlink: a
+        # command refused by the ground interlock never reaches the Pi, so
+        # this is the only file it can appear in.
         commander = Commander(cmd_host, cmd_port,
-                              flight_mode=args.flight_mode, log=print)
+                              flight_mode=args.flight_mode, log=print,
+                              on_result=session.log_command)
         commander.start_heartbeat()
         links.commander = commander
     return links

@@ -18,7 +18,65 @@ without re-deriving anything. Newest entries first.
 
 ---
 
-## 2026-09-18 (newest) - Actuator lines on the timeline, and one CSV column each
+## 2026-09-18 (newest) - Logging is on unless you turn it off, and the uplink is in the session
+
+**Asked for:** logging on by default in the GUI - opt out, not opt in - with
+new data saved directly as it is received.
+
+The instrument half's `log session to CSV` box started unchecked. That made
+the default outcome of a bench session *no file*, and the one session anybody
+wants afterwards is the one nobody remembered to arm. It is now checked at
+startup (`CloudsWindow._log_enabled`), and the operator unchecks it to stop.
+
+The file is still opened lazily, at the first frame (`_ensure_logger`), for
+two reasons: a session that never acquires anything (`--flight`, or a
+detector that never came up) should leave **no empty CSV** behind to be read
+later as "the run produced nothing", and an off/on cycle should start a new
+file rather than silently continue the old one. Rows were already flushed per
+acquisition, so "saved directly when received" needed no change there; the
+window now also closes the handle in `closeEvent`. A mock run names its file
+`session_mock_*.csv`, the rule the ground session log already followed.
+
+**The audit that came with it.** A `--mock` run was driven end to end and
+every file it produced was read back (CRC-checked spectra, per-column CSV
+checks, counts against `summary.json`). Three things were on screen and in no
+file:
+
+* **Pi status** (`PacketType.PISTATUS`, every 10 s) - free disk, frames
+  stored, `uart_ok`, `spectro_ok`, CPU temperature. Received by the GSE,
+  counted in the traffic lane, never written, and not on the Qt panel either;
+  only the headless `monitor` printed it. These are the numbers that *explain*
+  the other files - a storage gap against `disk_free_mb`, a quiet quick-look
+  against `spectro_ok` - so they now go to `session_*_pistatus.csv`.
+* **The command uplink and its verdicts.** The panel shows every ACK
+  (`MEMBRANE 40 % @ 2 Hz -> OK`), and the only durable copy was the Pi's own
+  `comms_*.log`. That copy cannot exist for a command the **ground interlock
+  refused** (S.10): it never leaves the laptop. `Commander(on_result=...)` now
+  reports every attempt - accepted, `REJECTED`, `INTERLOCK_GROUND`, `NO_LINK`,
+  `NO_ACK` - to `session_*_commands.csv`, with RTT and an `origin` column that
+  separates the 5 s heartbeat from an operator at the console. The sink is
+  wrapped: a session log that fails must never turn an accepted command into
+  an exception, which would read as the command having failed.
+* **Packets that arrived and could not be read.** `decode_errors` and
+  `hk_rejected` (+ reason) lived only in the receiver, which dies with the
+  window. `close_links` now reads them off before stopping it, and
+  `_summary.json` carries them beside the gap stats.
+
+`SessionLog` grew a lock with this: writes now come from the receiver thread,
+the GUI thread and the heartbeat thread, where before there was only one.
+
+**Evidence** (mock session, 37 s, offscreen): 37 HK rows at 1.03 s, 72
+quick-looks (1 Hz per channel), 16 events, **5 Pi-status rows**, **24 command
+rows** - 17 operator, 7 heartbeat, one of them the interlocked `START` that
+never reached the Pi - and `link: {received 130, lost 0, decode_errors 0,
+hk_rejected 0}`. The instrument half wrote 400 rows to
+`output/session_mock_*.csv` without anybody arming it. `pytest tests/` 382
+passed, `verify_qt.py` ends `VERIFY OK` with new checks for the default, the
+lazy open and the opt-out.
+
+---
+
+## 2026-09-18 - Actuator lines on the timeline, and one CSV column each
 
 **Asked for:** solenoid activity over time on the timeline, logged and saved
 with everything else.

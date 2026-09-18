@@ -42,7 +42,8 @@ def main(argv=None) -> int:
     commander = None
     if not args.listen_only:
         commander = Commander(args.experiment, args.cmd_port,
-                              flight_mode=args.flight_mode, log=print)
+                              flight_mode=args.flight_mode, log=print,
+                              on_result=session.log_command)
         commander.start_heartbeat()
 
     try:
@@ -55,7 +56,11 @@ def main(argv=None) -> int:
         receiver.stop()
         session.export_summary(
             session.hk_path.replace("_hk.csv", "_summary.json"),
-            receiver.gaps)
+            receiver.gaps,
+            {"rx_packets": receiver.rx_packets, "rx_bytes": receiver.rx_bytes,
+             "decode_errors": receiver.decode_errors,
+             "hk_rejected": receiver.hk_rejected,
+             "hk_reject_reason": receiver.hk_reject_reason})
         session.close()
         print(f"session logs in {args.log_dir}")
 

@@ -30,12 +30,19 @@ class CommandError(RuntimeError):
 
 class Commander:
     def __init__(self, host: str, port: int, flight_mode: bool = False,
-                 timeout: float = 3.0, log=None):
+                 timeout: float = 3.0, log=None, on_result=None):
         self.flight_mode = flight_mode
         self._host = host
         self._port = port
         self._timeout = timeout
         self._log = log or (lambda *_: None)
+        #: Called with one dict per command attempt - accepted, refused,
+        #: interlocked or never sent (`SessionLog.log_command`). The uplink
+        #: is the half of the session the downlink cannot record: a command
+        #: the ground interlock stopped never reaches the Pi, so nothing on
+        #: the far end can log it. Never allowed to break a command - a
+        #: session log is evidence, not a dependency.
+        self._on_result = on_result or (lambda _rec: None)
         self._seq = SeqCounter()
         self._lock = threading.RLock()   # reentrant: _transact -> _disconnect, both lock
         self._sock: socket.socket | None = None
@@ -71,6 +78,8 @@ class Commander:
         """Send one command and wait for its ACK. Raises on interlock/link."""
         if cmd in GROUND_INTERLOCKED and not self.flight_mode:
             self._log(f"INTERLOCK refused {cmd.name}")
+            self._record(cmd, key, value, result_name="INTERLOCK_GROUND",
+                         note="refused on the ground (S.10), never sent")
             raise InterlockError(
                 f"{cmd.name} is interlocked on ground (S.10); "
                 "enable flight mode to send it")
@@ -81,6 +90,9 @@ class Commander:
         if valve not in (1, 2):
             raise ValueError("valve must be 1 or 2")
         if not self.flight_mode:
+            self._record(Command.RELEASE, key=valve, value=0,
+                         result_name="INTERLOCK_GROUND",
+                         note="refused on the ground (S.10), never sent")
             raise InterlockError("RELEASE is interlocked on ground (S.10)")
         r = self._transact(Command.ARM, key=int(Command.RELEASE))
         if r != AckResult.OK:
@@ -137,8 +149,11 @@ class Commander:
         Always accepted by the MCU (it can only de-energize)."""
         return self._transact(Command.DISPERSE, key=int(DisperseKey.STOP))
 
-    def ping(self) -> AckResult:
-        return self._transact(Command.PING)
+    def ping(self, origin: str = "operator") -> AckResult:
+        """``origin`` separates the 5 s heartbeat from an operator's own PING
+        in the session log - one is the link proving itself, the other is
+        somebody asking."""
+        return self._transact(Command.PING, origin=origin)
 
     def start_heartbeat(self) -> None:
         """PING every HEARTBEAT_INTERVAL_S - this is the signal the MCU's
@@ -196,13 +211,38 @@ class Commander:
                 self._connect_once()
                 continue
             try:
-                self.ping()
+                self.ping(origin="heartbeat")
             except (CommandError, OSError):
                 pass   # _transact already disconnected us; next tick retries
 
-    def _transact(self, cmd: Command, key: int = 0, value: int = 0) -> AckResult:
+    def _record(self, cmd, key: int, value: int, *, result=None,
+                result_name: str = "", seq=None, rtt_ms=None,
+                origin: str = "operator", note: str = "") -> None:
+        """Hand one command attempt to ``on_result``, whatever became of it.
+
+        Swallows anything the sink raises: a session log that fails must not
+        turn an accepted command into an exception at the caller, which
+        would read as the command having failed.
+        """
+        try:
+            self._on_result({
+                "send_t": time.time(), "origin": origin,
+                "cmd": int(cmd), "cmd_name": Command(cmd).name,
+                "key": key, "value": value,
+                "seq": "" if seq is None else seq,
+                "result": "" if result is None else int(result),
+                "result_name": result_name,
+                "rtt_ms": "" if rtt_ms is None else round(rtt_ms, 1),
+                "note": note})
+        except Exception:      # noqa: BLE001 - logging is never load-bearing
+            pass
+
+    def _transact(self, cmd: Command, key: int = 0, value: int = 0,
+                  origin: str = "operator") -> AckResult:
         with self._lock:   # one in-flight command at a time
             if not self.connected:
+                self._record(cmd, key, value, result_name="NO_LINK",
+                             origin=origin, note="not connected, never sent")
                 raise CommandError("not connected to the Pi command server")
             seq = self._seq.next()
             f = Frame(type=PacketType.CMD,
@@ -218,9 +258,21 @@ class Commander:
                 ack = self._wait_ack(seq)
             except OSError as e:
                 self.acks_failed += 1
+                self._record(cmd, key, value, seq=seq, result_name="NO_LINK",
+                             origin=origin, rtt_ms=(time.time() - t0) * 1000,
+                             note=f"link failure: {e}")
                 self._disconnect()
                 raise CommandError(f"link failure sending {cmd.name}: {e}") \
                     from e
+            except CommandError as e:
+                # Sent, nothing came back. The command may well have executed
+                # (S.8: a missing ACK is a rejection to the operator, but the
+                # wire does not say which), so the session has to keep it.
+                self.acks_failed += 1
+                self._record(cmd, key, value, seq=seq, result_name="NO_ACK",
+                             origin=origin, rtt_ms=(time.time() - t0) * 1000,
+                             note=str(e))
+                raise
             self.last_rtt_s = time.time() - t0
             self._log(f"{cmd.name} key={key} value={value} -> "
                       f"{AckResult(ack).name} ({self.last_rtt_s * 1000:.0f} ms)")
@@ -228,6 +280,9 @@ class Commander:
                 self.acks_ok += 1
             else:
                 self.acks_failed += 1
+            self._record(cmd, key, value, seq=seq, result=ack,
+                         result_name=AckResult(ack).name, origin=origin,
+                         rtt_ms=self.last_rtt_s * 1000)
             return AckResult(ack)
 
     def _wait_ack(self, cmd_seq: int) -> int:
