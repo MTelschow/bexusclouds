@@ -1214,6 +1214,44 @@ try:
           f"span {_win.timeline.window_s}")
     _win.cmb_tl_window.setCurrentIndex(1)
 
+    # The span box is editable: the presets are a starting point, not the
+    # choice. A typed span must reach the plot, a clamped one must be written
+    # back (a label naming a span the plot is not drawing is the failure),
+    # and a typo must leave the plot alone rather than pick a span nobody
+    # asked for.
+    _win.cmb_tl_window.setEditText("90 s")
+    _win.cmb_tl_window.lineEdit().editingFinished.emit()
+    app.processEvents()
+    check("timeline: a typed span reaches the plot",
+          _win.timeline.window_s == 90.0
+          and _win.cmb_tl_window.currentText() == "90 s",
+          f"{_win.timeline.window_s} / {_win.cmb_tl_window.currentText()}")
+    _win.cmb_tl_window.setEditText("99 h")
+    _win.cmb_tl_window.lineEdit().editingFinished.emit()
+    app.processEvents()
+    check("timeline: a span past the buffer is clamped and says so",
+          _win.timeline.window_s == _tl.MAX_WINDOW_S
+          and _win.cmb_tl_window.currentText()
+          == _tl.format_window(_tl.MAX_WINDOW_S),
+          f"{_win.timeline.window_s} / {_win.cmb_tl_window.currentText()}")
+    _win.cmb_tl_window.setEditText("banana")
+    _win.cmb_tl_window.lineEdit().editingFinished.emit()
+    app.processEvents()
+    check("timeline: an unparseable span is refused, not guessed",
+          _win.timeline.window_s == _tl.MAX_WINDOW_S
+          and _win.cmb_tl_window.currentText()
+          == _tl.format_window(_tl.MAX_WINDOW_S),
+          f"{_win.timeline.window_s} / {_win.cmb_tl_window.currentText()}")
+    # Picking a preset from the list after typing: the index may not change
+    # (it was never moved off 5 min), so `activated` is what carries it.
+    _win.cmb_tl_window.setEditText("5 min")
+    _win.cmb_tl_window.activated.emit(1)
+    app.processEvents()
+    check("timeline: a preset still wins back",
+          _win.timeline.window_s == 300.0
+          and _win.cmb_tl_window.currentText() == "5 min",
+          f"{_win.timeline.window_s} / {_win.cmb_tl_window.currentText()}")
+
     # Nothing selected is a legible state, not a crash or a blank panel.
     _was = list(_win.timeline.selected)
     for _k in _was:

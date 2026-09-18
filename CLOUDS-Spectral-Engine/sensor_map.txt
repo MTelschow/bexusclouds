@@ -1,0 +1,5 @@
+26/16 Motor
+26/14 Lampe
+26/26 Raspberry PI
+26/8 Spektrometer
+

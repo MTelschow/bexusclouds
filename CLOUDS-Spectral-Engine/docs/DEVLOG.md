@@ -18,7 +18,56 @@ without re-deriving anything. Newest entries first.
 
 ---
 
-## 2026-09-17 (newest) - The panel went blank because the wire format moved and the MCU did not
+## 2026-09-18 (newest) - The timeline's span is typed, not picked from a list
+
+**Asked for:** a way to configure how many seconds the housekeeping timeline
+goes back.
+
+It went back 1 min, 5 min, 15 min, 1 h or All, and nothing else. Those are
+fine defaults and a bad set of choices: the span an operator wants is the one
+the *event* has - the 90 s around a valve firing, the 40 min of an ascent -
+and rounding that up to the next preset either buries the event in an hour of
+flat trace or cuts the run-up off.
+
+So `cmb_tl_window` is editable (`NoInsert`, so typed spans do not accumulate
+as list entries) and both paths go through one parser,
+`timeline.parse_window`: `90`, `90 s`, `2 min`, `1.5 h`, `All`, bare number =
+seconds, case and spacing free. The presets stay - they are the common
+questions and they seed the list - but they are a starting point rather than
+the choice.
+
+Three rules the parser carries, all of them about the same failure - **the
+label under a plot must name the span that is actually drawn**:
+
+* **Clamped, and written back.** `MIN_WINDOW_S` is 5 s (five 1 Hz samples;
+  below that the plot is three points and the axis claims a trend that cannot
+  be there) and `MAX_WINDOW_S` is the buffer itself, `MAXLEN` = 7200 s at
+  1 Hz. A typed `99 h` becomes 7200 s **and the box then reads `2 h`**, so
+  the operator is never shown a span the buffer cannot fill.
+* **A typo is refused, not guessed.** `banana`, `0`, `1 min 30 s` leave the
+  plot alone and the box is rewritten with the span still being drawn. The
+  alternative - falling back to some default - silently re-scales a plot an
+  operator is reading.
+* **A typed `300 s` and the picked `5 min` are one setting.**
+  `format_window` spells a span with its preset's name where there is one, so
+  the box does not show two vocabularies for the same number.
+
+Signals: `currentIndexChanged` (a preset that differs from the current one),
+`activated` (picking the preset whose index is *already* current after a
+typed span - nothing else fires for that), `editingFinished` (the typing).
+`setEditText` changes no index and emits no `editingFinished`, so writing the
+clamped value back cannot re-enter the handler.
+
+Checks: `tests/test_timeline.py` covers the parser and the round trip (no Qt);
+`verify_qt.py` drives the box - a typed span reaches the plot, a span past the
+buffer is clamped *and says so*, an unparseable one is refused, a preset wins
+back after typing.
+
+Commit: *Let the timeline's span be typed, not only picked*.
+
+---
+
+## 2026-09-17 - The panel went blank because the wire format moved and the MCU did not
 
 **Reported:** "the sensor values are no longer displayed, whole column is
 gone", and still gone after a layout fix.

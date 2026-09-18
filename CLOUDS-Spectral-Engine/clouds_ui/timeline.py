@@ -37,6 +37,7 @@ only thing an engineering readout is for.
 """
 from __future__ import annotations
 
+import re
 from collections import deque
 from dataclasses import dataclass
 from typing import Callable
@@ -61,9 +62,66 @@ MAXLEN = 7200
 #: (`flight.STALE_HK_S`), so the two agree on what "the link stopped" means.
 GAP_S = 5.0
 
-#: Selectable spans, shortest first. "All" is the whole buffer.
+#: Presets offered in the span box, shortest first. "All" is the whole
+#: buffer. They are a starting point, not the choice: the box is editable
+#: and `parse_window` takes any span the operator types.
 WINDOWS = (("1 min", 60.0), ("5 min", 300.0), ("15 min", 900.0),
            ("1 h", 3600.0), ("All", None))
+
+#: Bounds on a typed span. The floor is five 1 Hz samples - below that the
+#: plot is three points and the axis label claims a trend that cannot be
+#: there. The ceiling is the buffer: `MAXLEN` samples at 1 Hz, so a longer
+#: span only adds blank axis in front of what "All" already shows.
+MIN_WINDOW_S = 5.0
+MAX_WINDOW_S = float(MAXLEN)
+
+#: Units accepted in a typed span. A bare number is seconds, which is the
+#: unit the operator asks the question in ("how far back does this go").
+_WINDOW_UNITS = {
+    "": 1.0, "s": 1.0, "sec": 1.0, "secs": 1.0, "second": 1.0, "seconds": 1.0,
+    "m": 60.0, "min": 60.0, "mins": 60.0, "minute": 60.0, "minutes": 60.0,
+    "h": 3600.0, "hr": 3600.0, "hrs": 3600.0, "hour": 3600.0, "hours": 3600.0,
+}
+
+_WINDOW_RE = re.compile(r"^(\d+(?:\.\d+)?|\.\d+)\s*([a-z]*)$")
+
+
+def parse_window(text) -> float | None:
+    """Seconds from a typed span - `90`, `90 s`, `2 min`, `1.5 h`, `all`.
+
+    None means the whole buffer. The result is **clamped** to
+    `MIN_WINDOW_S..MAX_WINDOW_S` rather than accepted as typed, and the
+    caller writes the clamped value back into the box: a span the plot
+    cannot honour must not be left on screen as the label of what is drawn.
+
+    Anything else raises `ValueError`, so a typo is refused instead of
+    quietly selecting some span the operator did not ask for.
+    """
+    t = " ".join(str(text).strip().lower().split())
+    if t in ("all", "full", "everything"):
+        return None
+    m = _WINDOW_RE.match(t)
+    if m is None or m.group(2) not in _WINDOW_UNITS:
+        raise ValueError(f"not a span: {text!r}")
+    secs = float(m.group(1)) * _WINDOW_UNITS[m.group(2)]
+    if secs <= 0.0:
+        raise ValueError(f"not a span: {text!r}")
+    return min(max(secs, MIN_WINDOW_S), MAX_WINDOW_S)
+
+
+def format_window(window_s: float | None) -> str:
+    """The label for a span, matching a preset's spelling where there is one
+    so a typed `300 s` and the picked `5 min` do not read as two settings."""
+    if window_s is None:
+        return "All"
+    for name, secs in WINDOWS:
+        if secs is not None and abs(secs - window_s) < 1e-9:
+            return name
+    if window_s >= 3600.0 and window_s % 3600.0 == 0.0:
+        return f"{window_s / 3600.0:g} h"
+    if window_s >= 60.0 and window_s % 60.0 == 0.0:
+        return f"{window_s / 60.0:g} min"
+    return f"{window_s:g} s"
 
 
 def fig_to_pixmap(fig):

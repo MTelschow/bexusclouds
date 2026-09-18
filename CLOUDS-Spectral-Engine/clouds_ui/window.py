@@ -948,8 +948,26 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self.cmb_tl_window.setStyleSheet(self._combo_style())
         for name, _secs in timeline.WINDOWS:
             self.cmb_tl_window.addItem(name)
+        # Editable: the presets cover the usual questions, but "how far back
+        # does this go" is asked in whatever number the event needs - 90 s
+        # around a valve firing, 40 min of an ascent. NoInsert so a typed
+        # span does not accumulate as a list entry.
+        self.cmb_tl_window.setEditable(True)
+        self.cmb_tl_window.setInsertPolicy(QtWidgets.QComboBox.NoInsert)
+        self.cmb_tl_window.setToolTip(
+            "How far back the timeline plots. Pick a preset or type a span: "
+            f"90, 90 s, 2 min, 1.5 h, All.\nClamped to "
+            f"{timeline.MIN_WINDOW_S:g} s .. {timeline.MAX_WINDOW_S:g} s "
+            "(the buffer's own length); anything else is refused and the "
+            "current span kept.")
         self.cmb_tl_window.setCurrentIndex(1)            # 5 min
+        # Three signals, one handler: the index change covers a preset that
+        # differs from the current one, `activated` covers picking the preset
+        # whose index is already current after a typed span (no index change,
+        # so nothing else fires), and `editingFinished` covers the typing.
         self.cmb_tl_window.currentIndexChanged.connect(self._on_tl_window)
+        self.cmb_tl_window.activated.connect(self._on_tl_window)
+        self.cmb_tl_window.lineEdit().editingFinished.connect(self._on_tl_window)
         row.addWidget(self.cmb_tl_window, 1)
         btn = QtWidgets.QPushButton("Clear")
         btn.setStyleSheet(self._flat_btn())
@@ -982,7 +1000,8 @@ class CloudsWindow(QtWidgets.QMainWindow):
 
         note = QtWidgets.QLabel(
             "1 Hz from the downlink. Series sharing a unit share an axis; a "
-            "gap is a reading that does not exist, never a zero.")
+            "gap is a reading that does not exist, never a zero. Span takes a "
+            "typed value as well as a preset - 90 s, 2 min, 1.5 h, All.")
         note.setWordWrap(True)
         note.setStyleSheet(f"color:{style.SECTION}; font-size:10px;"
                            "font-style:italic;")
@@ -993,8 +1012,29 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self.timeline.set_selection([k for k, b in self._tl_boxes.items()
                                      if b.isChecked()])
 
-    def _on_tl_window(self, idx):
-        self.timeline.set_window(timeline.WINDOWS[idx][1])
+    def _on_tl_window(self, *_):
+        """Apply the span in the box, picked from the list or typed into it.
+
+        Both paths go through `timeline.parse_window`, so a preset and the
+        same span typed out end up as one number. A span that does not parse
+        leaves the plot alone and the box is rewritten with what is actually
+        drawn: the label under a timeline must never name a span the plot is
+        not honouring.
+        """
+        try:
+            window_s = timeline.parse_window(self.cmb_tl_window.currentText())
+        except ValueError:
+            self._show_tl_window(self.timeline.window_s)
+            return
+        self.timeline.set_window(window_s)
+        self._show_tl_window(window_s)
+
+    def _show_tl_window(self, window_s):
+        """Write a span back into the box. `setEditText` changes no index and
+        emits no `editingFinished`, so this cannot re-enter the handler."""
+        label = timeline.format_window(window_s)
+        if self.cmb_tl_window.currentText() != label:
+            self.cmb_tl_window.setEditText(label)
 
     def _clear_timeline(self):
         self.tl_buf.clear()

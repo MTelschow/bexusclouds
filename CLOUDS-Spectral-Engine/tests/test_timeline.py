@@ -139,3 +139,54 @@ def test_a_raising_series_costs_only_itself():
     _x, cols = buf.window(["acc_x", "p_amb"], None)
     assert np.isnan(cols["acc_x"][0])
     assert cols["p_amb"][0] == pytest.approx(1013.25)
+
+
+# -- the span an operator types ---------------------------------------------
+# The presets do not cover the question a given event asks ("the 90 s around
+# that valve firing"), so the span box is editable. The parser is what keeps
+# a typed span from becoming a silently different one.
+
+@pytest.mark.parametrize("text,secs", [
+    ("90", 90.0), ("90 s", 90.0), ("90s", 90.0), ("90 sec", 90.0),
+    ("90 seconds", 90.0), ("2 min", 120.0), ("2m", 120.0), ("1.5 h", 5400.0),
+    ("  300  SECONDS ", 300.0), (".5 min", 30.0),
+])
+def test_parse_window_accepts_a_span_in_any_of_its_units(text, secs):
+    assert T.parse_window(text) == pytest.approx(secs)
+
+
+@pytest.mark.parametrize("text", ["all", "All", " FULL "])
+def test_parse_window_whole_buffer(text):
+    assert T.parse_window(text) is None
+
+
+@pytest.mark.parametrize("text", ["", "abc", "0", "-60", "5 furlong", "1e3",
+                                  "1 min 30 s", "min"])
+def test_parse_window_refuses_rather_than_guesses(text):
+    """A typo must not select a span nobody asked for: the caller keeps the
+    span that is drawn instead."""
+    with pytest.raises(ValueError):
+        T.parse_window(text)
+
+
+def test_parse_window_clamps_to_what_the_buffer_can_show():
+    assert T.parse_window("1") == T.MIN_WINDOW_S
+    assert T.parse_window("99 h") == T.MAX_WINDOW_S
+    assert T.MAX_WINDOW_S == float(T.MAXLEN)        # 1 Hz, one sample per second
+
+
+def test_format_window_matches_the_preset_spelling():
+    """A typed 300 s and the picked 5 min are one setting, so they must not
+    read as two."""
+    for name, secs in T.WINDOWS:
+        assert T.format_window(secs) == name
+    assert T.format_window(T.parse_window("300 s")) == "5 min"
+    assert T.format_window(90.0) == "90 s"
+    assert T.format_window(5400.0) == "90 min"
+    assert T.format_window(7200.0) == "2 h"
+
+
+def test_a_typed_span_round_trips():
+    for text in ("45 s", "7 min", "2 h", "All"):
+        secs = T.parse_window(text)
+        assert T.parse_window(T.format_window(secs)) == secs
