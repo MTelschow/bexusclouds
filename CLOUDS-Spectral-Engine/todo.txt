@@ -7,6 +7,9 @@ Regler
 
 chamber sensor
 
+Adjust IP to match what we were given
+
+
 IN PROGRESS:
 
 
