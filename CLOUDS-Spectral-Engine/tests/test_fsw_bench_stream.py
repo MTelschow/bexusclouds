@@ -101,6 +101,36 @@ class TestBenchStream:
         drv.set_times_us(7_500)
         assert applied == [7_500]        # handed to the acquisition thread
 
+    def test_the_log_records_the_exposure_that_runs_not_the_one_asked_for(self):
+        """A 37 us ask was logged as "37 us" while the detector ran 1000:
+        the setter clamps (SpectroSource._EXP_MIN_US, then the driver's 100 us
+        floor) and the log reported the request. A log of an exposure that
+        never happened is worse than no log - the frames carry the real one."""
+        info = DeviceInfo(model="m", serial="s", com_port="c", pixels=2048)
+        lines = []
+        bs = BenchStream(info_provider=lambda: info,
+                         exposure_setter=lambda us: max(int(us), 1_000),
+                         log=lambda tag, msg: lines.append(msg), port=0)
+        bs.start()
+        try:
+            drv = NetDriver(f"127.0.0.1:{bs.port}")
+            drv.connect()
+            try:
+                drv.set_times_us(37)
+            finally:
+                drv.close()
+            note = next(m for m in lines if "exposure set to" in m)
+            assert "1000 us" in note and "asked 37" in note
+        finally:
+            bs.stop()
+
+    def test_an_unclamped_exposure_is_logged_plainly(self):
+        """No "(asked ...)" noise when the setter took the request as given."""
+        from clouds_fsw.bench_stream import _exposure_note
+        assert _exposure_note(50_000, 50_000) == "50000 us"
+        assert _exposure_note(50_000, None) == "50000 us"
+        assert _exposure_note(37, 1_000) == "1000 us (asked 37)"
+
     def test_client_count_tracked(self, client):
         _drv, bs, _applied = client
         assert bs.clients == 1

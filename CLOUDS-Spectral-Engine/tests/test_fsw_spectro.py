@@ -65,6 +65,37 @@ def _source(driver, **kw):
 
 
 class TestSpectroSource:
+    def test_request_exposure_returns_what_it_parked(self):
+        """The bench stream logs this value, so it has to be the one that will
+        be applied rather than the one that was asked for."""
+        src = _source(ScriptedDriver())
+        assert src.request_exposure_us(37) == 1_000        # under the floor
+        assert src.request_exposure_us(50_000) == 50_000   # in range
+        assert src.request_exposure_us(9_000_000) == 1_000_000
+
+    def test_frames_are_stamped_with_what_the_driver_holds(self):
+        """The stamp reaches storage and the downlink. A driver that clamps or
+        rounds the request must be believed over the request: a 37 us ask that
+        the camera runs at 1000 used to be recorded as 37 us."""
+        class Clamping(ScriptedDriver):
+            exposure_us = 0
+
+            def set_times_us(self, exposure_us, frame_us=None):
+                super().set_times_us(exposure_us, frame_us)
+                self.exposure_us = max(int(exposure_us), 12_345)
+
+        driver = Clamping()
+        src = _source(driver)
+        src.request_exposure_us(1_000)
+        got = _collect(src, 3)
+        assert all(exp == 12_345 for _t, _c, exp, _f in got)
+        assert src.exposure_us == 12_345
+
+    def test_a_driver_that_reports_nothing_keeps_the_request(self):
+        """The mock and the net client have no register to read back."""
+        got = _collect(_source(ScriptedDriver()), 2)
+        assert all(exp == 100_000 for _t, _c, exp, _f in got)
+
     def test_frames_delivered_with_mock_flag(self):
         got = _collect(_source(ScriptedDriver()), 3)
         assert len(got) >= 3

@@ -53,15 +53,39 @@ class SpectroSource:
     def exposure_us(self) -> int:
         return self._exposure_us
 
-    def request_exposure_us(self, exposure_us: int) -> None:
+    def request_exposure_us(self, exposure_us: int) -> int:
         """Ask for a new exposure from *another* thread (bench stream).
 
         The vendor library is not thread-safe and only the acquisition thread
         touches the driver, so this just parks the value; ``_run`` applies it
         before the next grab.
+
+        Returns the value that was parked, which is the request clamped into
+        ``_EXP_MIN_US``..``_EXP_MAX_US`` - so a caller that logs the outcome
+        logs a number the detector will actually run. The driver clamps again
+        at its own floor (``spectro.driver.MIN_EXPOSURE_US``), but that floor
+        is below this one, so what is parked here is what is applied.
         """
-        self._pending_exposure_us = min(max(int(exposure_us), _EXP_MIN_US),
-                                        _EXP_MAX_US)
+        us = min(max(int(exposure_us), _EXP_MIN_US), _EXP_MAX_US)
+        self._pending_exposure_us = us
+        return us
+
+    def _adopt_exposure(self, requested: int) -> None:
+        """Take the exposure the driver holds, not the one we asked it for.
+
+        ``set_times_us`` clamps to the camera's floor and rounds onto its step
+        grid, and the Eureca driver then reads the register back, so a request
+        and the resulting setting part company routinely - a 37 us ask runs at
+        1000. Every frame is stamped with ``_exposure_us`` and that stamp goes
+        to storage and down the link, so it has to be what the detector ran;
+        a stamp of the request is a measurement labelled with a number that
+        never reached the hardware.
+
+        A driver that cannot report its setting (the mock, the net client)
+        leaves the request standing - the best available answer there.
+        """
+        held = getattr(self._driver, "exposure_us", None)
+        self._exposure_us = int(held) if held else int(requested)
 
     def _apply_pending_exposure(self) -> None:
         us, self._pending_exposure_us = self._pending_exposure_us, None
@@ -69,7 +93,7 @@ class SpectroSource:
             return
         try:
             self._driver.set_times_us(us)
-            self._exposure_us = us
+            self._adopt_exposure(us)
         except Exception:  # noqa: BLE001
             self.errors += 1
 
@@ -100,6 +124,7 @@ class SpectroSource:
             self._driver = self._factory()
             self._info = self._driver.connect()
             self._driver.set_times_us(self._exposure_us)
+            self._adopt_exposure(self._exposure_us)
             self.connected = True
             self._on_status(True)
             return True
@@ -158,6 +183,6 @@ class SpectroSource:
         if new != self._exposure_us and self._driver is not None:
             try:
                 self._driver.set_times_us(new)
-                self._exposure_us = new
+                self._adopt_exposure(new)
             except Exception:  # noqa: BLE001
                 self.errors += 1

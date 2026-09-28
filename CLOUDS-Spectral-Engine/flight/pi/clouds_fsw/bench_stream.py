@@ -50,6 +50,18 @@ from spectro.net_protocol import (DEFAULT_PORT, ProtocolError, TAG_BYTES,
 _WAIT_TIMEOUT_S = 5.0
 
 
+def _exposure_note(requested, applied):
+    """Render an exposure for the log: what runs, and the ask if it differed.
+
+    ``applied`` is whatever the exposure setter returned - ``None`` from a
+    setter that reports nothing, in which case the request is all there is to
+    say and it is printed unqualified.
+    """
+    if applied is None or int(applied) == int(requested):
+        return f"{int(requested)} us"
+    return f"{int(applied)} us (asked {int(requested)})"
+
+
 class FrameHub:
     """Latest acquired frame + a counter, so clients can wait for a *new* one.
 
@@ -148,8 +160,14 @@ class _Handler(socketserver.StreamRequestHandler):
                     send_response(self.connection, TAG_BYTES, frame.tobytes())
                 elif op == "set_times":
                     us = int(req["exposure_us"])
-                    srv.exposure_setter(us)
-                    srv.log("bench", f"exposure set to {us} us by {peer} "
+                    # Log what the detector will run, not what the panel asked
+                    # for. The request is clamped twice - by the source's own
+                    # _EXP_MIN_US and by the driver's 100 us floor - so logging
+                    # the ask records an exposure that never happened, and the
+                    # two can differ by more than an order of magnitude.
+                    applied = srv.exposure_setter(us)
+                    srv.log("bench", f"exposure set to {_exposure_note(us, applied)} "
+                                     f"by {peer} "
                                      f"(shared detector: affects flight data)")
                     send_json(self.connection, {"ok": True})
                 elif op in ("dark_value", "frame_counter"):
@@ -186,9 +204,10 @@ class _Server(socketserver.ThreadingTCPServer):
         """
         if self.clients or self.flight_exposure_us is None:
             return
-        self.exposure_setter(self.flight_exposure_us)
+        applied = self.exposure_setter(self.flight_exposure_us)
         self.log("bench", f"last client gone: exposure restored to the "
-                          f"configured {self.flight_exposure_us} us")
+                          f"configured "
+                          f"{_exposure_note(self.flight_exposure_us, applied)}")
 
 
 class BenchStream:
