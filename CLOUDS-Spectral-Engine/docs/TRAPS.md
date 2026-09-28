@@ -53,6 +53,23 @@ Correct end state: one tty at `0666`, interface `:1.0` unbound.
 **A charge-only USB cable** enumerates as Code 43 / `Port Reset Failed` and the
 camera is invisible. Use a data cable.
 
+**The carrier does not enumerate through a hub.** On 2026-09-28 a reflash of
+the RP2350 found no device at all: `picotool info -a` said "No accessible
+RP-series devices in BOOTSEL mode were found", `/dev/cu.usbmodem*` did not
+exist, and the Mac's `ioreg -p IOUSB` tree was byte-identical across a cable
+swap and a BOOTSEL attempt - same registry ids, same busy timers, so nothing
+had enumerated or de-enumerated either time. Plugged straight into the host it
+came up immediately as `Pico@00100000` and `picotool load -f -x` flashed it
+(serial `21DD2AE08840C863`). Two mid-session USB2 hubs was one too many.
+
+The misleading part is that the board is *running* throughout: HK and `ACK`s
+keep coming over the UART, so the MCU looks healthy from the Pi while being
+unreachable for flashing. Diagnose with `ioreg -p IOUSB -w0 -l | grep '+-o '`,
+not with the absence of a serial node - an unchanged tree across a replug means
+the host never saw the event, which rules out the image and the BOOTSEL state
+and leaves the physical path. A missing `stdio_init_all()` (below) produces the
+same empty `picotool` result but *does* change the tree on replug.
+
 **One sample is not a measurement.** A single INA226 read reported the 24 V bus
 at 6046 mV under load - a 75 % collapse that does not exist; 880 samples never
 left 23.9..24.0 V. A failed I2C transfer is easy to catch, a transfer that
