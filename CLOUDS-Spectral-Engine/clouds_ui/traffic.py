@@ -1,25 +1,35 @@
 """Ethernet traffic indicator - what is actually moving on the wire.
 
 A NIC activity LED for the operator: one lane per direction, each with a
-blinking light, a smoothed rate and the session total. It answers the
-question the housekeeping rows cannot - *is the cable carrying anything* -
-without the operator opening a terminal, and it separates "the Pi is quiet"
-from "the link is dead" from "the packets arrive and fail CRC".
+blinking light, its rate against the E-Link limit and the session total. It
+answers the question the housekeeping rows cannot - *is the cable carrying
+anything* - without the operator opening a terminal, and it separates "the
+Pi is quiet" from "the link is dead" from "the packets arrive and fail CRC".
 
-Three lanes, deliberately not summed into one number:
+Three lanes, deliberately not summed into one number, each counted **on the
+wire** - frame bytes plus the Ethernet/IP/UDP or TCP headers each packet
+costs, which is what the E-Link limits are written against
+(``clouds_link.linkrate``):
 
-* **Down** - the UDP telemetry the ``Receiver`` takes in (HK, events,
-  quick-look, Pi status). This is the lane with a budget: 2 kbit/s
-  continuous, and the indicator says so when it is exceeded.
-* **Up** - the TCP command socket's tx: commands and the PING heartbeat,
-  which is all it carries when nobody is commanding. Its ACK bytes come
-  back on that same socket and are counted here too (``+ack``), because an
-  ACK is not downlink telemetry and must not inflate the budget lane.
+* **Down** - every Pi -> ground byte: the UDP telemetry the ``Receiver``
+  takes in (HK, events, quick-look, Pi status) and the ACK frames the
+  command socket brings back. This is the lane with the limits the Pi
+  shapes to - **100 kbit/s over 60 s and 400 kbit/s over 1 s** - and it
+  shows both numbers, ``avg / peak``, amber when either is over.
+* **Up** - every ground -> Pi byte: commands and the PING heartbeat, which
+  is all the socket carries when nobody is commanding, with the bare TCP
+  ack of each reply. **1 kbit/s over 60 s**, the limit the commander refuses
+  beyond; amber over it.
 * **Bench** - the ``--net`` frame stream off the Pi (TCP 4010), when the
   spectrum is coming from a remote detector. ~50 kB/s, three orders of
   magnitude above the flight downlink; adding it to the Down lane would
-  make the budget reading meaningless, so it gets its own row and only
-  appears when that driver is in use.
+  make the reading meaningless, so it gets its own row and only appears
+  when that driver is in use. No limit: it is not the E-Link.
+
+The rates are the same sliding-window meter the Pi enforces with, so the
+number on screen is the number the shaper acts on. A window average ramps
+up over its first minute after a start or a Restart - that is what a 60 s
+average of a link that has been up for ten seconds is.
 
 Everything here is polled from a QTimer on the GUI thread - the receiver and
 the acquisition worker keep their own counters and never touch Qt (the
@@ -29,30 +39,24 @@ nothing here needs them to be consistent with each other.
 """
 from __future__ import annotations
 
-import math
 import time
 
 from PyQt5 import QtCore, QtWidgets
 
-from . import style
+from clouds_link.linkrate import (AVG_WINDOW_S, DOWNLINK_AVG_BIT_S,
+                                  DOWNLINK_LIMITS, DOWNLINK_PEAK_BIT_S,
+                                  PEAK_WINDOW_S, UPLINK_LIMITS, UPLINK_MAX_BIT_S,
+                                  UPLINK_WINDOW_S, LinkMeter)
 
-#: Continuous downlink allowance (FswConfig.budget_kbit_s). Over this the
-#: Down lane goes amber - the same limit tests/test_fsw_telemetry.py enforces
-#: on the Pi, shown to the operator instead of only failing in CI.
-BUDGET_BIT_S = 2000.0
+from . import style
 
 #: A source that has delivered nothing for this long is not idle, it is
 #: silent. HK is 1 Hz, so three seconds is three missed packets.
 SILENT_S = 3.0
 
-#: Rate smoothing time constant. HK arrives in 1 Hz bursts and the poll is
-#: 500 ms, so the instantaneous rate alternates between zero and a spike;
-#: the LED is what shows the burst, the number is what shows the load.
-TAU_S = 3.0
-
 _LED_ON = style.GREEN
 _LED_IDLE = "#9fc7b6"        # link alive, nothing in this poll window
-_LED_OVER = style.ORANGE     # over the downlink budget
+_LED_OVER = style.ORANGE     # over a limit of this lane
 _LED_SILENT = style.RED
 _LED_NONE = style.GRAY       # no such link in this session
 
@@ -65,6 +69,17 @@ def fmt_rate(bit_s: float) -> str:
     return f"{bit_s / 1e6:.2f} Mbit/s"
 
 
+def fmt_rate_short(bit_s: float) -> str:
+    """``480``, ``3.2k``, ``98k``, ``1.2M`` - two rates fit one cell."""
+    if bit_s < 1000:
+        return f"{bit_s:.0f}"
+    if bit_s < 10_000:
+        return f"{bit_s / 1e3:.1f}k"
+    if bit_s < 1e6:
+        return f"{bit_s / 1e3:.0f}k"
+    return f"{bit_s / 1e6:.1f}M"
+
+
 def fmt_bytes(n: int) -> str:
     if n < 1024:
         return f"{n} B"
@@ -74,25 +89,39 @@ def fmt_bytes(n: int) -> str:
 
 
 class _Lane:
-    """One direction: a byte counter turned into a rate, a light and a total.
+    """One direction: a byte counter turned into rates, a light and a total.
 
     `read` returns ``(total_bytes, last_activity_epoch)`` or None when there
     is no such link in this session (no receiver, no command link, no remote
     detector) - which is a normal state here, not an error.
+
+    ``limits`` are ``(window_s, bit_s)`` pairs (``linkrate.DOWNLINK_LIMITS``
+    or ``UPLINK_LIMITS``); the lane is "over" when any of them is exceeded.
+    ``windows`` are what the meter keeps - the limits' windows, plus the
+    display's, ``avg`` over the longest and ``peak`` over the shortest.
     """
 
-    def __init__(self, name: str, read, budget: float | None = None):
+    def __init__(self, name: str, read, limits=None,
+                 windows=(PEAK_WINDOW_S, AVG_WINDOW_S)):
         self.name = name
         self.read = read
-        self.budget = budget
+        self.limits = tuple(limits) if limits else ()
+        self.windows = tuple(windows)
+        self._meter = LinkMeter(windows=self.windows)
         self.reset()
 
     def reset(self) -> None:
-        self.bit_s = 0.0
+        self._meter.reset()
+        self.avg = 0.0
+        self.peak = 0.0
         self.total = 0
         self._prev: int | None = None
-        self._prev_t: float | None = None
         self.state = "none"      # none | silent | idle | active | over
+
+    @property
+    def bit_s(self) -> float:
+        """The lane's headline rate - the average over its longest window."""
+        return self.avg
 
     def poll(self, now: float) -> None:
         try:
@@ -105,21 +134,19 @@ class _Lane:
         total, last_t = got
         first = self._prev is None
         moved = 0 if first else max(0, total - self._prev)
-        dt = None if self._prev_t is None else max(1e-3, now - self._prev_t)
-        self._prev, self._prev_t = total, now
+        self._prev = total
         self.total = total
-        if dt is not None:
-            # Exponential moving average, time-constant based so the number
-            # does not depend on how often the window happens to poll.
-            a = 1.0 - math.exp(-dt / TAU_S)
-            self.bit_s += a * (moved * 8.0 / dt - self.bit_s)
+        if moved:
+            self._meter.add(moved, now)
+        self.avg = self._meter.bit_s(max(self.windows), now)
+        self.peak = self._meter.bit_s(min(self.windows), now)
         quiet = now - last_t if last_t else None
         if quiet is None or quiet > SILENT_S:
-            # Nothing ever arrived, or nothing for SILENT_S. The averaged rate
-            # decays on its own from the zero deltas; the light is what says
-            # the link is out.
+            # Nothing ever arrived, or nothing for SILENT_S. The window
+            # rates drain on their own; the light is what says the link is
+            # out.
             self.state = "silent"
-        elif self.budget is not None and self.bit_s > self.budget:
+        elif any(self._meter.bit_s(w, now) > lim for w, lim in self.limits):
             self.state = "over"
         elif moved or first:
             # `first` covers the poll that has no delta yet: the source's own
@@ -140,7 +167,9 @@ class _Lane:
             return "-"
         if self.state == "silent" and not self.total:
             return "no data"
-        return fmt_rate(self.bit_s)
+        if len(self.windows) > 1:
+            return f"{fmt_rate_short(self.avg)} / {fmt_rate_short(self.peak)}"
+        return fmt_rate(self.avg)
 
 
 class TrafficIndicator(QtWidgets.QWidget):
@@ -164,9 +193,11 @@ class TrafficIndicator(QtWidgets.QWidget):
         self._driver = driver
         self._bench_of = None       # driver the Bench lane's counters belong to
 
-        self.lane_down = _Lane("Down", self._read_down, budget=BUDGET_BIT_S)
-        self.lane_up = _Lane("Up", self._read_up)
-        self.lane_bench = _Lane("Bench", self._read_bench)
+        self.lane_down = _Lane("Down", self._read_down, limits=DOWNLINK_LIMITS)
+        self.lane_up = _Lane("Up", self._read_up, limits=UPLINK_LIMITS,
+                             windows=(UPLINK_WINDOW_S,))
+        self.lane_bench = _Lane("Bench", self._read_bench,
+                                windows=(AVG_WINDOW_S,))
         self.lanes = [self.lane_down, self.lane_up, self.lane_bench]
 
         grid = QtWidgets.QGridLayout(self)
@@ -208,13 +239,21 @@ class TrafficIndicator(QtWidgets.QWidget):
             self._rates[lane.name] = rate
             self._totals[lane.name] = total
         self.setToolTip(
-            "Bytes on the wire, not decoded packets.\n"
-            "Down: UDP telemetry from the Pi - HK, events, quick-look "
-            f"(amber over the {BUDGET_BIT_S / 1000:.0f} kbit/s budget).\n"
-            "Up: TCP commands and the PING heartbeat, ACK bytes counted "
-            "back separately.\n"
+            "Bytes on the wire (frames + 42 B per UDP datagram, + 54 B per "
+            "TCP segment), not decoded packets - as the E-Link limits count.\n"
+            f"Down: every Pi -> ground byte - UDP telemetry (HK, events, "
+            f"quick-look, Pi status) and the command ACKs. Shown as avg over "
+            f"{AVG_WINDOW_S:.0f} s / peak over {PEAK_WINDOW_S:.0f} s in bit/s; "
+            f"amber over {DOWNLINK_AVG_BIT_S / 1000:.0f} kbit/s avg or "
+            f"{DOWNLINK_PEAK_BIT_S / 1000:.0f} kbit/s peak, the limits the "
+            "Pi shapes to (quick-look dropped first).\n"
+            f"Up: every ground -> Pi byte - commands and the PING heartbeat; "
+            f"amber over {UPLINK_MAX_BIT_S / 1000:.0f} kbit/s avg over "
+            f"{UPLINK_WINDOW_S:.0f} s, beyond which the commander refuses a "
+            "command (never the heartbeat).\n"
             "Bench: the --net frame stream (TCP 4010), only when the "
-            "spectrum comes from a remote detector.\n"
+            "spectrum comes from a remote detector; not the E-Link, no limit.\n"
+            "A window average ramps up over its first minute after start.\n"
             "Red: the link exists but has been silent for "
             f"{SILENT_S:.0f} s.")
 
@@ -230,17 +269,21 @@ class TrafficIndicator(QtWidgets.QWidget):
         rx = self._rx
         if rx is None:
             return None
-        return int(rx.rx_bytes), float(rx.last_rx_time)
+        total = int(rx.rx_wire_bytes)
+        last = float(rx.last_rx_time)
+        cmd = self._cmd
+        if cmd is not None:
+            # The ACK frames are Pi -> ground bytes on the command socket:
+            # downlink direction, so they belong here and not in Up.
+            total += int(getattr(cmd, "rx_wire_bytes", 0))
+            last = max(last, float(getattr(cmd, "last_rx_time", 0.0)))
+        return total, last
 
     def _read_up(self):
         cmd = self._cmd
         if cmd is None:
             return None
-        # The ACK bytes ride the same socket in the other direction; counting
-        # them into this lane's total keeps the uplink's traffic in one place
-        # while leaving the Down lane purely the telemetry budget.
-        return int(cmd.tx_bytes + cmd.rx_bytes), float(max(cmd.last_tx_time,
-                                                           cmd.last_rx_time))
+        return int(cmd.tx_wire_bytes), float(cmd.last_tx_time)
 
     def _current_driver(self):
         d = self._driver

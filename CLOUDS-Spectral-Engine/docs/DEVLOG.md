@@ -18,7 +18,90 @@ without re-deriving anything. Newest entries first.
 
 ---
 
-## 2026-09-29 (newest) - The spectrum flickered on Detector -> Downlink, and the quick-look was never despiked
+## 2026-09-29 (newest) - The E-Link budget is 100 / 400 kbit/s, not 2 kbit/s: one meter, a shaper, a paced uplink
+
+**Decision (operator).** The downlink was budgeted against a self-imposed
+"2 kbit/s continuous" figure, and everything downstream of it - the 67 B HK
+ceiling, a `TestDownlinkBudget` that had been red by design since the chamber
+IMU landed, five different totals across the docs - was arithmetic on a
+number the link never asked for. The E-Link's own limits (Table 6-3) are what
+apply now: **downlink ≤ 100 kbit/s on average and ≤ 400 kbit/s at any time,
+uplink ≤ 1 kbit/s**. And they are *enforced*, not displayed: the Pi drops
+rather than exceeds, the ground refuses rather than exceeds.
+
+**What "average" and "at any time" mean here.** A 60 s sliding window and a
+1 s sliding window. The uplink is a 60 s average too, because a 1 s window
+cannot hold even one command: a CMD frame is 22 B, 76 B as a TCP segment, plus
+the ground's bare acknowledgement of the Pi's reply (54 B) - 130 B, 1040 bit.
+(A 10 s window was considered and would refuse `verify_qt`'s own burst.)
+Everything is counted **on the wire**: +42 B per UDP datagram, +54 B per TCP
+segment. The limits are the link's, and the link carries headers.
+
+**One module.** There were two rate calculators (the Pi's 10 s deque in
+kbit/s, the panel's 3 s EMA in bit/s) and three copies of the limit (config,
+a constructor default, a widget constant), held in step by one test. Now
+`clouds_link/linkrate.py` holds the constants, the wire-overhead helpers and
+one `LinkMeter` - a sliding-window byte meter that answers "bytes in the last
+W seconds" for any window it keeps and "may N more bytes go" against a list
+of `(window, bit/s)` limits, atomically. The Pi, the ground station and the
+panel all use it, so the rate on screen is the rate the Pi enforces. It
+divides by the *full* window, never by elapsed time: elapsed-division turns
+the first HK frame after boot into 768 kbit/s and trips the shaper on packet
+one. The cost is a 60 s ramp on displays after a start, which is stated.
+
+**The shaper** (`clouds_fsw.telemetry.Downlink`). Every packet is metered
+before it is sent, and one that would exceed either window is **dropped** -
+no queue. A queue that fills at 400 kbit/s is a delay nobody asked for, and
+the storage copy already has everything (O.3). Quick-look is the bulk class
+and stops at 90 % of either limit; HK, events and PISTATUS go to the limit
+itself, so they are never the packets that go - together they are ~1 % of
+the average allowance, and the 10 % reserve is ten times what they need. A
+dropped Pi-origin packet takes no sequence number, so the ground's `lost`
+still means "the link lost it"; a dropped relayed HK keeps the MCU's seq and
+shows as a gap, and `down_dropped_priority` says why. Drops are counted per
+type and come down in **PISTATUS v2** (+14 B, appended like HK: the Pi's
+`down_avg_bit_s`, `down_dropped`, `down_dropped_priority`, `up_bit_s`; a 12 B
+v1 packet still decodes with those as None) and as a `DOWNLINK_SHAPED`
+WARNING at most once a minute, however many packets went. In flight the
+shaper is a guard: the whole mix is ~3.2 kbit/s (HK 138 B + quick-look
+122 + 126 B every second, PISTATUS 84 B every ten), 3 % of the average.
+`downlink_avg_kbit_s` / `downlink_peak_kbit_s` in `fsw.json` exist to lower
+on the bench and watch it act.
+
+**The uplink** (`clouds_gse.commander.Commander`). The commander meters what
+it sends and refuses a command that would exceed 1 kbit/s over 60 s with
+`CommandError("uplink budget: ... retry in N s")`. It refuses rather than
+sleeps because every send in the panel runs on the GUI thread. A window's
+worth of 5 s heartbeats (12 × 130 B) is reserved ahead and the heartbeat
+itself is never refused, so an operator's burst cannot starve the beat the
+MCU's link-loss latch watches; ~45 operator commands a minute remain. A
+refusal is a `RATE_LIMITED` row in the session's command log, with the retry
+time. The Pi counts the uplink too (for PISTATUS) and refuses nothing - a Pi
+that ignored a command over the budget would be refusing while ground is
+connected. Direction matters for the accounting: the ACK frames come back on
+the uplink's socket but are Pi → ground bytes, so the panel adds them to the
+Down lane and never to Up; the old docstrings disagreed with each other on
+this and now say one thing.
+
+**The panel.** The Ethernet lanes lost their EMA and run the shared meter:
+Down shows `avg / peak` and is amber over 100 k / 400 k, Up is amber over
+1 kbit/s. The link line gains `pi dropped N` from PISTATUS.
+
+**The retired knob stays loadable.** `/etc/clouds/fsw.json` on the bench Pi
+carries `budget_kbit_s`, and `FswConfig.load` refuses unknown keys, so a
+straight rename would crash-loop the service at the next code deploy.
+`RETIRED_KEYS` drops it with one warning on stderr.
+
+Tests: `test_linkrate.py` (windows, admit, headroom, reserve, retry time,
+threads); `TestDownlinkBudget` rewritten against the new limits, headers
+included - green; `TestShaper` (bulk vs priority at 90 %, peak and average
+windows, no seq for a drop, one event per minute); commander burst refused
+and logged, heartbeat reserve, pacing off for tests that hammer loopback;
+PISTATUS v2 round trip and v1 compatibility; traffic lanes over on peak with
+average fine, over on average, uplink limit. 481 passed, `verify.py` and
+`verify_qt.py` OK, firmware comments only.
+
+## 2026-09-29 - The spectrum flickered on Detector -> Downlink, and the quick-look was never despiked
 
 **Reported:** the plot "glitches" when switching from continuous full
 resolution to the 1 Hz binned downlink; `todo.txt` also said "binned version

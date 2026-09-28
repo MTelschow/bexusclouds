@@ -90,6 +90,8 @@ class EventCode(IntEnum):
     MCU_SILENT = 0x10
     SPECTRO = 0x11
     INTERLOCK = 0x12
+    DOWNLINK_SHAPED = 0x13        # the Pi dropped downlink packets to stay
+                                  # inside the E-Link limits (linkrate.py)
 
 
 def event_name(code: int) -> str:
@@ -233,7 +235,14 @@ class GapStats:
 # -- payload helpers ---------------------------------------------------------
 
 _QL_HEAD = struct.Struct("<BBHH")
-_PISTATUS = struct.Struct("<IIBBh")
+# PISTATUS grows by appending, like HK: v1 is the Pi's health, the extension
+# (2026-09-29) is its own view of the E-Link - what it sent, what it dropped
+# to stay inside the limits, and the uplink rate it sees. An older Pi sends
+# 12 B and the ground reads it with the four link fields as None.
+_PISTATUS_V1 = struct.Struct("<IIBBh")
+_PISTATUS_EXT = struct.Struct("<IIHI")
+PISTATUS_SIZE_V1 = _PISTATUS_V1.size            # 12
+PISTATUS_SIZE = PISTATUS_SIZE_V1 + _PISTATUS_EXT.size   # 26
 _CMD = struct.Struct("<BBi")
 _ACK = struct.Struct("<HBB")
 _TSYNC = struct.Struct("<IH")
@@ -255,15 +264,32 @@ def unpack_quicklook(payload: bytes) -> dict:
 
 
 def pack_pistatus(disk_free_mb: int, spectra_count: int, uart_ok: bool,
-                  spectro_ok: bool, cpu_temp_cc: int) -> bytes:
-    return _PISTATUS.pack(disk_free_mb, spectra_count, int(uart_ok),
-                          int(spectro_ok), cpu_temp_cc)
+                  spectro_ok: bool, cpu_temp_cc: int,
+                  down_avg_bit_s: int = 0, down_dropped: int = 0,
+                  down_dropped_priority: int = 0, up_bit_s: int = 0) -> bytes:
+    """``down_avg_bit_s`` / ``up_bit_s``: the Pi's own wire rates over the
+    averaging window; ``down_dropped``: packets the shaper refused so far,
+    of which ``down_dropped_priority`` were not quick-look (HK, events, Pi
+    status - a nonzero count means the link is saturated by essentials)."""
+    return (_PISTATUS_V1.pack(disk_free_mb, spectra_count, int(uart_ok),
+                              int(spectro_ok), cpu_temp_cc)
+            + _PISTATUS_EXT.pack(min(int(down_avg_bit_s), 0xFFFFFFFF),
+                                 min(int(down_dropped), 0xFFFFFFFF),
+                                 min(int(down_dropped_priority), 0xFFFF),
+                                 min(int(up_bit_s), 0xFFFFFFFF)))
 
 
 def unpack_pistatus(payload: bytes) -> dict:
-    d, s, u, sp, t = _PISTATUS.unpack_from(payload)
-    return {"disk_free_mb": d, "spectra_count": s, "uart_ok": bool(u),
-            "spectro_ok": bool(sp), "cpu_temp_cc": t}
+    d, s, u, sp, t = _PISTATUS_V1.unpack_from(payload)
+    out = {"disk_free_mb": d, "spectra_count": s, "uart_ok": bool(u),
+           "spectro_ok": bool(sp), "cpu_temp_cc": t,
+           "down_avg_bit_s": None, "down_dropped": None,
+           "down_dropped_priority": None, "up_bit_s": None}
+    if len(payload) >= PISTATUS_SIZE:
+        da, dd, dp, ua = _PISTATUS_EXT.unpack_from(payload, PISTATUS_SIZE_V1)
+        out.update(down_avg_bit_s=da, down_dropped=dd,
+                   down_dropped_priority=dp, up_bit_s=ua)
+    return out
 
 
 def pack_cmd(cmd: int, key: int = 0, value: int = 0) -> bytes:

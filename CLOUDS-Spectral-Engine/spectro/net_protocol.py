@@ -7,8 +7,8 @@ Response : 1-byte tag + uint32 big-endian length + body.
 
 Deliberately dumb and synchronous: one request, one response, no streaming
 state to get out of step. A frame is 2048 x uint16 = 4096 B, so a full-rate
-bench session is ~50 KB/s - fine on a direct cable, nothing like the 2 kbit/s
-flight budget.
+bench session is ~50 KB/s - fine on a direct cable, four times the E-Link's
+100 kbit/s and nothing like the ~3 kbit/s the flight downlink carries.
 """
 from __future__ import annotations
 

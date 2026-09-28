@@ -7,6 +7,7 @@ time. The widget that draws them is exercised by verify_qt.py.
 """
 import pytest
 
+from clouds_link import linkrate
 from clouds_ui import traffic as T
 
 
@@ -26,9 +27,9 @@ class _Src:
         return (self.total, self.last) if self.present else None
 
 
-def _lane(budget=None):
+def _lane(limits=None, windows=(1.0, 60.0)):
     src = _Src()
-    return src, T._Lane("Down", src.read, budget=budget)
+    return src, T._Lane("Down", src.read, limits=limits, windows=windows)
 
 
 def test_no_source_reads_as_no_link_not_a_dead_one():
@@ -40,16 +41,32 @@ def test_no_source_reads_as_no_link_not_a_dead_one():
 
 
 def test_rate_converges_on_the_offered_load():
-    """A steady 250 B/s is 2 kbit/s. The EMA starts low by construction, so
-    what is asserted is where it settles, not the first sample."""
+    """A steady 250 B/s is 2 kbit/s. The window average ramps for its first
+    minute by construction, so what is asserted is where it settles."""
     src, lane = _lane()
     t = 1000.0
     for _ in range(200):
         t += 0.5
         src.add(125, t)                 # 250 B/s = 2000 bit/s
         lane.poll(t)
-    assert lane.bit_s == pytest.approx(2000, rel=0.02)
+    assert lane.avg == pytest.approx(2000, rel=0.02)
+    assert lane.bit_s == lane.avg
+    assert lane.peak == pytest.approx(2000, rel=0.02)
     assert lane.total == 200 * 125
+
+
+def test_average_ramps_and_peak_does_not():
+    """After ten seconds of a 1 kB/s link the 1 s peak is 8 kbit/s and the
+    60 s average is a sixth of it - true, and what the tooltip says."""
+    src, lane = _lane()
+    t = 1000.0
+    for _ in range(20):
+        t += 0.5
+        src.add(500, t)
+        lane.poll(t)
+    assert lane.peak == pytest.approx(8000)
+    # 19 deltas: the first poll has no previous count to difference against
+    assert lane.avg == pytest.approx(19 * 500 * 8 / 60)
 
 
 def test_first_poll_does_not_invent_a_rate():
@@ -89,22 +106,81 @@ def test_silence_is_not_idleness():
     assert lane2.state == "silent" and lane2.rate_text == "no data"
 
 
-def test_over_budget_is_its_own_state():
-    src, lane = _lane(budget=T.BUDGET_BIT_S)
+def test_over_the_peak_with_the_average_fine_is_over():
+    """One second at 500 kbit/s is over the 400 kbit/s peak even though the
+    minute's average is nowhere near 100 kbit/s."""
+    src, lane = _lane(limits=linkrate.DOWNLINK_LIMITS)
     t = 1000.0
-    for _ in range(200):
+    src.add(100, t)
+    lane.poll(t)
+    t += 0.5
+    src.add(62_500, t)                  # 500 kbit in one poll
+    lane.poll(t)
+    assert lane.state == "over"
+    assert lane.peak > linkrate.DOWNLINK_PEAK_BIT_S
+    assert lane.avg < linkrate.DOWNLINK_AVG_BIT_S
+    t += 1.5
+    lane.poll(t)
+    assert lane.state == "idle"         # the burst left the 1 s window
+
+
+def test_over_the_average_is_over():
+    """A steady 150 kbit/s never trips the 400 kbit/s peak, and is over the
+    100 kbit/s average once a minute of it has been seen."""
+    src, lane = _lane(limits=linkrate.DOWNLINK_LIMITS)
+    t = 1000.0
+    for _ in range(130):
         t += 0.5
-        src.add(500, t)                 # 1000 B/s = 8 kbit/s, 4x the budget
+        src.add(9_375, t)               # 18 750 B/s = 150 kbit/s
         lane.poll(t)
     assert lane.state == "over"
-    assert lane.bit_s > T.BUDGET_BIT_S
+    assert lane.peak < linkrate.DOWNLINK_PEAK_BIT_S
+    assert lane.avg > linkrate.DOWNLINK_AVG_BIT_S
 
 
-def test_budget_matches_the_flight_side_allowance():
-    """The indicator's amber line and the Pi's own watch level are the same
-    2 kbit/s; two numbers here would let one drift."""
+def test_up_lane_has_the_uplink_limit():
+    src, lane = _lane(limits=linkrate.UPLINK_LIMITS,
+                      windows=(linkrate.UPLINK_WINDOW_S,))
+    t = 1000.0
+    for _ in range(12):
+        t += 5.0
+        src.add(130, t)                 # one PING transaction per beat
+        lane.poll(t)
+    assert lane.state == "active"       # 1560 B/min = 208 bit/s
+    assert lane.rate_text.endswith("bit/s")
+    src.add(7000, t)
+    lane.poll(t)
+    assert lane.state == "over"
+
+
+def test_lanes_use_the_shared_limits():
+    """The indicator's amber lines and the Pi's shaper are the same
+    numbers, from one module; two copies would let one drift."""
     from clouds_fsw.config import FswConfig
-    assert T.BUDGET_BIT_S == FswConfig().budget_kbit_s * 1000
+    widget_src = open(T.__file__, encoding="utf-8").read()
+    assert "DOWNLINK_LIMITS" in widget_src and "UPLINK_LIMITS" in widget_src
+    assert FswConfig().downlink_avg_kbit_s * 1000 == linkrate.DOWNLINK_AVG_BIT_S
+    assert FswConfig().downlink_peak_kbit_s * 1000 == linkrate.DOWNLINK_PEAK_BIT_S
+
+
+def test_two_window_lane_shows_avg_and_peak():
+    src, lane = _lane()
+    t = 1000.0
+    for _ in range(4):
+        t += 0.5
+        src.add(500, t)
+        lane.poll(t)
+    assert lane.rate_text == (f"{T.fmt_rate_short(lane.avg)} / "
+                              f"{T.fmt_rate_short(lane.peak)}")
+    assert "/" in lane.rate_text
+
+
+@pytest.mark.parametrize("bit_s,text", [
+    (0, "0"), (480, "480"), (3_210, "3.2k"), (98_400, "98k"),
+    (402_000, "402k"), (1_250_000, "1.2M"),
+])
+def test_short_rate_units(bit_s, text):
+    assert T.fmt_rate_short(bit_s) == text
 
 
 @pytest.mark.parametrize("bit_s,text", [

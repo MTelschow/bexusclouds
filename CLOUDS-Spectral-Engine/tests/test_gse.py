@@ -12,6 +12,8 @@ import pytest
 from clouds_link import frames, hk
 from clouds_link.commands import Command, DisperseKey
 from clouds_link.frames import AckResult, Frame, PacketType, SeqCounter
+from clouds_link.linkrate import (TCP_WIRE_OVERHEAD, UDP_WIRE_OVERHEAD,
+                                  UPLINK_WINDOW_S, uplink_transaction_bytes)
 from clouds_fsw.command_server import CommandServer, CommandState
 from clouds_gse.commander import Commander, CommandError
 from clouds_gse.receiver import Receiver
@@ -126,6 +128,8 @@ class TestReceiver:
         send(good)
         assert _wait(lambda: rx.rx_packets == 2)
         assert rx.rx_bytes == len(good) + 4
+        # ... and on the wire each datagram cost its headers as well
+        assert rx.rx_wire_bytes == rx.rx_bytes + 2 * UDP_WIRE_OVERHEAD
         assert rx.last_rx_time > 0
 
     def test_quicklook_and_event_state(self, receiver):
@@ -165,19 +169,100 @@ class TestCommander:
         assert commander.last_rtt_s is not None
 
     def test_uplink_bytes_counted_per_direction(self, cmd_link):
-        """The traffic indicator's Up lane. Commands out and ACKs back are
-        counted apart: the ACK bytes are not downlink telemetry and must not
-        be added to the lane that carries the 2 kbit/s budget."""
+        """The traffic indicator's lanes. Commands out are the uplink - the
+        ground -> Pi direction with the 1 kbit/s limit; the ACKs back are
+        Pi -> ground bytes and are kept apart so the indicator can add them
+        to the Down lane and never to Up."""
         commander, _ = cmd_link
         commander.ping()
         assert commander.tx_frames == 1
         assert commander.tx_bytes > 0
+        assert commander.tx_wire_bytes == uplink_transaction_bytes(commander.tx_bytes)
         assert commander.rx_bytes > 0
+        assert commander.rx_wire_bytes == commander.rx_bytes + TCP_WIRE_OVERHEAD
         assert commander.last_tx_time > 0 and commander.last_rx_time > 0
+        assert commander.uplink.bytes_in(UPLINK_WINDOW_S) == commander.tx_wire_bytes
         before = commander.tx_bytes
         commander.ping()
         assert commander.tx_bytes == 2 * before   # same frame size twice
         assert commander.peer.endswith(f":{commander._port}")
+        assert commander.rate_limited == 0
+
+    def test_burst_over_the_uplink_budget_is_refused_and_logged(self):
+        """The E-Link's 1 kbit/s up, enforced on the laptop: a command that
+        would exceed the window is refused at once (no sleep - the panel
+        sends from the GUI thread), named in the session log, and the
+        operator is told when to retry."""
+        server = CommandServer("127.0.0.1", 0,
+                               forward=lambda *a: AckResult.OK,
+                               state=CommandState())
+        server.start()
+        seen = []
+        ping_cost = uplink_transaction_bytes(
+            len(Frame(type=PacketType.CMD,
+                      payload=frames.pack_cmd(int(Command.PING)),
+                      seq=0).stamp().encode()))
+        # Room for the heartbeat reserve plus exactly two operator PINGs.
+        reserve = ping_cost * int(UPLINK_WINDOW_S / 5.0)
+        budget = (reserve + 2 * ping_cost) * 8 / UPLINK_WINDOW_S
+        commander = Commander("127.0.0.1", server.port, timeout=2.0,
+                              on_result=seen.append, uplink_bit_s=budget)
+        try:
+            assert commander.ping() == AckResult.OK
+            assert commander.ping() == AckResult.OK
+            with pytest.raises(CommandError, match="uplink budget"):
+                commander.ping()
+            assert commander.rate_limited == 1
+            assert commander.tx_frames == 2          # nothing left the ground
+            rec = seen[-1]
+            assert rec["result_name"] == "RATE_LIMITED" and rec["seq"] == ""
+            assert "retry in" in rec["note"]
+            # The heartbeat still goes: its allowance was reserved.
+            assert commander.ping(origin="heartbeat") == AckResult.OK
+        finally:
+            commander.close()
+            server.stop()
+
+    def test_heartbeat_reserve_is_never_spent_by_the_operator(self):
+        """A window's worth of beats must always fit: an operator's burst
+        stops short of it, so the MCU's link-loss latch never fires because
+        somebody clicked too much."""
+        server = CommandServer("127.0.0.1", 0,
+                               forward=lambda *a: AckResult.OK,
+                               state=CommandState())
+        server.start()
+        commander = Commander("127.0.0.1", server.port, timeout=2.0)
+        try:
+            sent = 0
+            for _ in range(200):
+                try:
+                    commander.ping()
+                    sent += 1
+                except CommandError:
+                    break
+            assert 0 < sent < 200
+            beats = int(UPLINK_WINDOW_S / 5.0)
+            for _ in range(beats):
+                assert commander.ping(origin="heartbeat") == AckResult.OK
+        finally:
+            commander.close()
+            server.stop()
+
+    def test_pacing_can_be_disabled(self):
+        server = CommandServer("127.0.0.1", 0,
+                               forward=lambda *a: AckResult.OK,
+                               state=CommandState())
+        server.start()
+        commander = Commander("127.0.0.1", server.port, timeout=2.0,
+                              uplink_bit_s=None)
+        try:
+            for _ in range(80):
+                assert commander.ping() == AckResult.OK
+            assert commander.rate_limited == 0
+            assert commander.uplink.bytes_in(UPLINK_WINDOW_S) > 0   # still metered
+        finally:
+            commander.close()
+            server.stop()
 
     def test_nothing_is_refused_on_the_laptop(self, cmd_link):
         """The ground interlock is gone (2026-09-18): START goes out as

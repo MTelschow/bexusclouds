@@ -31,7 +31,7 @@ now; what the flags choose is which data paths exist and which sections start
 expanded, not which application you get.
 
 `--flight` opens no driver at all. That is the honest shape of a ground
-station: the detector is on the far end of a 2 kbit/s downlink, and the only
+station: the detector is on the far end of the E-Link, and the only
 reason the bench can see it live is the Pi's `--bench-stream`, which is off in
 flight.
 """

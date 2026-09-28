@@ -5,12 +5,23 @@ flight-mode toggle that switched it off and the ARM→RELEASE two-step are all
 gone: the operator's `START` is what begins the experiment, and from then on
 every command goes out as sent and is answered by the MCU's own verdict.
 `release()` went with the pinch valves themselves - the MCU answers a
-`RELEASE` frame `INVALID`. Nothing is refused on the laptop any more; a
-command that does not reach the Pi raises `CommandError`, which is a link
-failure, not a policy.
+`RELEASE` frame `INVALID`. Nothing is refused on the laptop for what it
+*is*; a command that does not reach the Pi raises `CommandError`, which is
+a link failure, not a policy.
+
+**The one thing refused here is the uplink's own limit (2026-09-29).** The
+E-Link allows the experiment 1 kbit/s up (`clouds_link.linkrate`), and one
+command is ~130 B on the wire - the CMD segment plus the bare TCP
+acknowledgement of the Pi's reply - so the commander meters what it sends
+over a 60 s window and refuses, with ``CommandError("uplink budget ...")``,
+a command that would go over. It never sleeps: every send in the panel runs
+on the GUI thread. The 5 s heartbeat is reserved for in advance, so an
+operator cannot starve it, and it is never refused itself. A refusal is a
+``RATE_LIMITED`` row in the session's command log.
 """
 from __future__ import annotations
 
+import math
 import socket
 import threading
 import time
@@ -19,6 +30,14 @@ from clouds_link import frames
 from clouds_link.commands import (HEARTBEAT_INTERVAL_S, Command, DisperseKey,
                                   Param)
 from clouds_link.frames import AckResult, Frame, PacketType, SeqCounter
+from clouds_link.linkrate import (UPLINK_MAX_BIT_S, UPLINK_WINDOW_S, LinkMeter,
+                                  tcp_wire_bytes, uplink_transaction_bytes)
+
+#: Wire cost of one PING transaction, from a real encoded frame: what the
+#: heartbeat needs per beat, reserved for a whole window ahead.
+_PING_WIRE = uplink_transaction_bytes(len(
+    Frame(type=PacketType.CMD, payload=frames.pack_cmd(int(Command.PING)),
+          seq=0).stamp().encode()))
 
 
 class CommandError(RuntimeError):
@@ -27,10 +46,19 @@ class CommandError(RuntimeError):
 
 class Commander:
     def __init__(self, host: str, port: int, timeout: float = 3.0,
-                 log=None, on_result=None):
+                 log=None, on_result=None,
+                 uplink_bit_s: float | None = UPLINK_MAX_BIT_S):
         self._host = host
         self._port = port
         self._timeout = timeout
+        #: The uplink allowance, over UPLINK_WINDOW_S. None disables the
+        #: pacing (tests that hammer a loopback link); the panel and the
+        #: console run the E-Link's 1 kbit/s.
+        self.uplink = LinkMeter(windows=(UPLINK_WINDOW_S,))
+        self._uplink_limits = (None if uplink_bit_s is None
+                               else ((UPLINK_WINDOW_S, float(uplink_bit_s)),))
+        self._hb_reserve = _PING_WIRE * math.ceil(UPLINK_WINDOW_S
+                                                  / HEARTBEAT_INTERVAL_S)
         self._log = log or (lambda *_: None)
         #: Called with one dict per command attempt - accepted, refused or
         #: never sent (`SessionLog.log_command`). The uplink is the half of
@@ -46,15 +74,20 @@ class Commander:
         self._hb_thread: threading.Thread | None = None
         self.acks_ok = 0
         self.acks_failed = 0
-        # Wire counters for the traffic indicator (clouds_ui/traffic.py). The
-        # uplink is this socket's tx: commands and the PING heartbeat, which
-        # is the only thing on it when nobody is commanding. Its rx (ACKs)
-        # is counted separately - it arrives on the uplink's own TCP
-        # connection, not on the UDP downlink, and the two must not be added
-        # up into one number that matches neither.
+        # Wire counters for the traffic indicator (clouds_ui/traffic.py).
+        # `tx_*` is the uplink proper - commands and the PING heartbeat,
+        # ground -> Pi, the direction with the 1 kbit/s limit. `rx_*` is the
+        # ACK frames coming back on the same socket: Pi -> ground bytes, so
+        # the indicator adds them to the Down lane, never to Up. `*_bytes`
+        # is frames alone, `*_wire_bytes` adds the Ethernet/IP/TCP headers
+        # (and, for tx, the bare TCP ack of each reply) that the E-Link
+        # limits are written against.
         self.tx_bytes = 0
+        self.tx_wire_bytes = 0
         self.tx_frames = 0
         self.rx_bytes = 0
+        self.rx_wire_bytes = 0
+        self.rate_limited = 0
         self.last_tx_time: float = 0.0
         self.last_rx_time: float = 0.0
         self.last_rtt_s: float | None = None
@@ -223,15 +256,38 @@ class Commander:
                 self._record(cmd, key, value, result_name="NO_LINK",
                              origin=origin, note="not connected, never sent")
                 raise CommandError("not connected to the Pi command server")
-            seq = self._seq.next()
             f = Frame(type=PacketType.CMD,
                       payload=frames.pack_cmd(int(cmd), key, value),
-                      seq=seq).stamp()
+                      seq=0).stamp()
+            wire = f.encode()
+            cost = uplink_transaction_bytes(len(wire))
+            if self._uplink_limits is not None:
+                # The heartbeat is what keeps the MCU's link-loss latch
+                # from firing (O.2): an operator's burst may never spend the
+                # window's worth of beats, and a beat itself is never refused
+                # for the budget.
+                reserve = 0 if origin == "heartbeat" else self._hb_reserve
+                if not self.uplink.admit(cost, self._uplink_limits,
+                                         reserve_bytes=reserve):
+                    wait = self.uplink.time_until_admit(
+                        cost, self._uplink_limits, reserve_bytes=reserve)
+                    self.rate_limited += 1
+                    note = (f"uplink budget {UPLINK_MAX_BIT_S} bit/s over "
+                            f"{UPLINK_WINDOW_S:.0f} s: retry in {wait:.0f} s")
+                    self._record(cmd, key, value, result_name="RATE_LIMITED",
+                                 origin=origin, note=note)
+                    raise CommandError(f"uplink budget: {cmd.name} refused, "
+                                       f"retry in {wait:.0f} s")
+            else:
+                self.uplink.add(cost)
+            seq = self._seq.next()
+            f.seq = seq
             t0 = time.time()
             try:
                 wire = f.encode()
                 self._sock.sendall(wire)
                 self.tx_bytes += len(wire)
+                self.tx_wire_bytes += cost
                 self.tx_frames += 1
                 self.last_tx_time = time.time()
                 ack = self._wait_ack(seq)
@@ -282,6 +338,7 @@ class Commander:
             frame, used = frames.try_parse_stream(bytes(self._buf))
             if used:
                 del self._buf[:used]
+                self.rx_wire_bytes += tcp_wire_bytes(used)   # one segment each
                 if frame is not None:
                     return frame
                 continue

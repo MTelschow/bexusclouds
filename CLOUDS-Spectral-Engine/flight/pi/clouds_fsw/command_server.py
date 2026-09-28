@@ -20,6 +20,8 @@ import time
 
 from clouds_link import frames
 from clouds_link.commands import Command
+from clouds_link.linkrate import (TCP_WIRE_OVERHEAD, UPLINK_WINDOW_S, LinkMeter,
+                                  tcp_wire_bytes)
 
 
 class CommandState:
@@ -50,17 +52,27 @@ class _Handler(socketserver.BaseRequestHandler):
             if not chunk:
                 return
             buf.extend(chunk)
+            srv.rx_bytes += len(chunk)
             while True:
                 frame, used = frames.try_parse_stream(bytes(buf))
                 if used == 0:
                     break
                 del buf[:used]
+                # Ground -> Pi wire cost of this command: its own segment
+                # plus the ground's bare TCP acknowledgement of our reply.
+                # Charged whether or not the frame parsed - a corrupt
+                # command spent the uplink just the same.
+                srv.uplink.add(tcp_wire_bytes(used) + TCP_WIRE_OVERHEAD)
+                srv.rx_wire_bytes += tcp_wire_bytes(used) + TCP_WIRE_OVERHEAD
                 if frame is not None:
                     reply = srv.handle_command(frame)
+                    wire = reply.encode()
                     try:
-                        self.request.sendall(reply.encode())
+                        self.request.sendall(wire)
                     except OSError:
                         return
+                    srv.tx_bytes += len(wire)
+                    srv.tx_wire_bytes += tcp_wire_bytes(len(wire))
 
 
 class CommandServer:
@@ -76,6 +88,16 @@ class CommandServer:
         self.state = state
         self.stopping = threading.Event()
         self._seq = frames.SeqCounter()
+        # The Pi's view of the uplink (clouds_link.linkrate): what ground is
+        # spending against its 1 kbit/s, reported back in PISTATUS. Counted,
+        # never refused - the ground paces itself, and a Pi that ignored a
+        # command over the budget would be refusing while ground is
+        # connected. `rx_*` is ground -> Pi, `tx_*` our ACK replies.
+        self.uplink = LinkMeter(windows=(UPLINK_WINDOW_S,))
+        self.rx_bytes = 0
+        self.rx_wire_bytes = 0
+        self.tx_bytes = 0
+        self.tx_wire_bytes = 0
 
         class _Server(socketserver.ThreadingTCPServer):
             allow_reuse_address = True
@@ -88,6 +110,9 @@ class CommandServer:
     @property
     def port(self) -> int:
         return self._server.server_address[1]
+
+    def uplink_bit_s(self, now: float | None = None) -> float:
+        return self.uplink.bit_s(UPLINK_WINDOW_S, now)
 
     def start(self) -> None:
         self._thread = threading.Thread(target=self._server.serve_forever,

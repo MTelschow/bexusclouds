@@ -139,10 +139,12 @@ class SessionLog:
         """One uplinked command and what came back (``Commander.on_result``).
 
         Includes commands that never left the ground: a link failure is
-        logged with ``result_name=NO_LINK`` and no ``seq``. The Pi cannot see
-        those, so this is the only place they are recorded. (Older sessions
-        also carry ``INTERLOCK_GROUND`` rows, from before the ground
-        interlock was removed on 2026-09-18.)
+        logged with ``result_name=NO_LINK`` and no ``seq``, and a command the
+        commander refused for the uplink's 1 kbit/s allowance as
+        ``RATE_LIMITED`` with the retry time in ``note`` (2026-09-29). The Pi
+        cannot see those, so this is the only place they are recorded.
+        (Older sessions also carry ``INTERLOCK_GROUND`` rows, from before the
+        ground interlock was removed on 2026-09-18.)
         """
         row = {k: record.get(k, "") for k in self.COMMAND_FIELDS}
         row["send_t"] = round(record.get("send_t") or time.time(), 3)

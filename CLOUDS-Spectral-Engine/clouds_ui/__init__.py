@@ -4,7 +4,7 @@ Replaces the two UIs this project used to have: the bench panel
 (`clouds_spectral.py`) and the ground dashboard (`clouds_gse.main --gui`).
 They were split because their data paths are: the bench panel drives
 `spectro.driver` directly at full resolution and can change the hardware,
-while the ground station only ever sees the 2 kbit/s downlink. That split is
+while the ground station only ever sees the binned downlink. That split is
 still real and is still enforced here - what changed is that an operator no
 longer has to run two applications, and no longer has to remember which
 window's spectrum is the instrument and which is a binned quick-look, because

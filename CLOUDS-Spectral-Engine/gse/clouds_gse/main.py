@@ -56,6 +56,7 @@ def main(argv=None) -> int:
             session.hk_path.replace("_hk.csv", "_summary.json"),
             receiver.gaps,
             {"rx_packets": receiver.rx_packets, "rx_bytes": receiver.rx_bytes,
+             "rx_wire_bytes": receiver.rx_wire_bytes,
              "decode_errors": receiver.decode_errors,
              "hk_rejected": receiver.hk_rejected,
              "hk_reject_reason": receiver.hk_reject_reason})

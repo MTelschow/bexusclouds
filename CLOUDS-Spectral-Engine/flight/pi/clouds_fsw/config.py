@@ -2,9 +2,19 @@
 from __future__ import annotations
 
 import json
+import sys
 from dataclasses import dataclass, field, fields
 
+from clouds_link.linkrate import DOWNLINK_AVG_BIT_S, DOWNLINK_PEAK_BIT_S
 from spectro.driver import resolve_kind
+
+#: Keys an older /etc/clouds/fsw.json may still carry. They are dropped with
+#: a warning rather than refused, because a config the Pi cannot load is a
+#: service that crash-loops at the next deploy.
+RETIRED_KEYS = {
+    "budget_kbit_s": "replaced by downlink_avg_kbit_s / downlink_peak_kbit_s "
+                     "(2026-09-29)",
+}
 
 
 @dataclass
@@ -32,17 +42,22 @@ class FswConfig:
     auto_exposure: bool = False    # optional guard servo
     reconnect_s: float = 5.0       # spectrometer retry period (P-10)
     # telemetry (O.4 downlink subset)
-    # Transmitted spectra per second - this is the only knob that spends
-    # downlink budget; acquisition (sample_interval_s) and exposure_us are
-    # independent of it. 1.0 s is the budget maximum: a quick-look cycle is
-    # 164 B (both channels), so 1 Hz = 1.31 kbit/s on top of HK (60 B @ 1 Hz =
-    # 0.48) and PISTATUS (0.02) -> 1.81 kbit/s against the 2 kbit/s continuous
-    # E-Link limit. Guarded by tests/test_fsw_telemetry.py::TestDownlinkBudget.
+    # Transmitted spectra per second - the one knob that spends downlink;
+    # acquisition (sample_interval_s) and exposure_us are independent of it.
+    # 1 Hz is a cadence choice, not a limit: the whole flight mix - a
+    # quick-look cycle of 164 B (both channels), HK 96 B, PISTATUS every
+    # 10 s, all +42 B of headers per datagram - is ~3.2 kbit/s on the wire
+    # against the 100 kbit/s E-Link average (tests/test_fsw_telemetry.py::
+    # TestDownlinkBudget keeps the arithmetic honest).
     quicklook_interval_s: float = 1.0
     quicklook_bin: int = 8
     pistatus_interval_s: float = 10.0
     timesync_interval_s: float = 10.0   # S.4
-    budget_kbit_s: float = 2.0          # continuous-stream watch level
+    # E-Link downlink limits the shaper enforces (clouds_link.linkrate):
+    # average over 60 s and peak over 1 s, on the wire. The defaults are the
+    # link's; lower them on the bench to watch the shaper drop quick-look.
+    downlink_avg_kbit_s: float = DOWNLINK_AVG_BIT_S / 1000.0     # 100
+    downlink_peak_kbit_s: float = DOWNLINK_PEAK_BIT_S / 1000.0   # 400
     # liveness
     mcu_silent_alarm_s: float = 10.0    # spec: MCU silent > 10 s -> alarm
     mock: bool = False
@@ -55,6 +70,11 @@ class FswConfig:
             with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
         data.update(overrides)
+        for key, why in RETIRED_KEYS.items():
+            if key in data:
+                print(f"fsw config: ignoring retired key {key!r} - {why}",
+                      file=sys.stderr)
+                del data[key]
         known = {f.name for f in fields(cls)}
         unknown = set(data) - known
         if unknown:

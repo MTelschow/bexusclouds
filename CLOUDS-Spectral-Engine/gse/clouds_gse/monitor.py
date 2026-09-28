@@ -85,13 +85,16 @@ class ConsoleMonitor:
                 cmd_link = "cmd DOWN - retrying"
             # Wire bytes beside the decoded counts: the same thing the GUI's
             # traffic indicator shows, for the headless console. `rx` counts
-            # frames that decoded, `wire` counts what arrived - the two
-            # disagreeing is a link carrying garbage, which every other
-            # number here reports as silence.
+            # frames that decoded, `wire` counts what arrived (headers
+            # included, as the E-Link limits count) - the two disagreeing is
+            # a link carrying garbage, which every other number here reports
+            # as silence. `out` is ground -> Pi, the 1 kbit/s direction.
             self._print(f"hk age: {age if age is None else f'{age:.1f} s'}  "
                         f"rx: {self._rx.gaps.received} lost: {self._rx.gaps.lost}  "
-                        f"wire: {self._rx.rx_bytes} B in"
-                        + (f" / {self._cmd.tx_bytes} B out" if self._cmd else "")
+                        f"wire: {self._rx.rx_wire_bytes} B in"
+                        + (f" / {self._cmd.tx_wire_bytes} B out"
+                           f" ({self._cmd.rate_limited} rate-limited)"
+                           if self._cmd else "")
                         + f"  pi: {self._rx.last_pistatus}  |  {cmd_link}")
             return
         if self._cmd is None:

@@ -1,14 +1,15 @@
 # CLOUDS GSE — ground station
 
 Python ground station (SED 4.12; features G-01..G-08): live telemetry,
-command uplink with **arm/execute + ground interlock**, session logging
+command uplink with mandatory ACK (no interlock since 2026-09-18, and paced
+to the E-Link's 1 kbit/s since 2026-09-29), session logging
 with CSV/JSON export. The downlink-fed sibling of the bench app at the
 repo root — same `clouds_link` protocol, same `spectro` calibration +
 processing, with the UDP receiver in place of the USB driver.
 
 > **This is not a live instrument view.** Its quick-look spectrum updates at
-> **1 Hz** — `quicklook_interval_s`, the 2 kbit/s E-Link budget maximum
-> (1.894 kbit/s with HK) — and each update is mean-binned to 29+31 points per
+> **1 Hz** — `quicklook_interval_s`, a cadence choice (the whole flight mix
+> is ~3.2 kbit/s of the E-Link's 100 kbit/s) — and each update is mean-binned to 29+31 points per
 > channel (`quicklook_bin`, 8), not the 2048-px trace. The HK grid stays empty
 > with no RP2350 attached. That is the flight downlink working as specified.
 >

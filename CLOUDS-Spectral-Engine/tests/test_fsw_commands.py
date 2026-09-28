@@ -13,6 +13,8 @@ from clouds_link import frames
 from clouds_link.commands import Command
 from clouds_link.frames import AckResult, Frame, PacketType, SeqCounter
 from clouds_link.frames import try_parse_stream as _try_parse
+from clouds_link.linkrate import (UPLINK_WINDOW_S, tcp_wire_bytes,
+                                  uplink_transaction_bytes)
 from clouds_fsw.command_server import CommandServer, CommandState
 
 
@@ -197,3 +199,31 @@ class TestStreamFraming:
         harness.sock.sendall(f.encode())
         _, _, r = harness.recv_ack()
         assert r == AckResult.INVALID
+
+
+class TestUplinkMeter:
+    def test_pi_counts_the_uplink_on_the_wire(self):
+        """The Pi's own view of ground's 1 kbit/s, for PISTATUS: each command
+        costs its segment plus the ground's bare ack of our reply; our reply
+        is counted apart as Pi -> ground bytes. Counted, never refused."""
+        h = Harness()
+        try:
+            assert h.send(Command.PING)[2] == AckResult.OK
+            cmd_len = len(Frame(type=PacketType.CMD,
+                                payload=frames.pack_cmd(int(Command.PING)),
+                                seq=0).stamp().encode())
+            ack_len = len(Frame(type=PacketType.ACK,
+                                payload=frames.pack_ack(0, 0, 0),
+                                seq=0).stamp().encode())
+            srv = h.server
+            assert srv.rx_bytes == cmd_len
+            assert srv.rx_wire_bytes == uplink_transaction_bytes(cmd_len)
+            assert srv.uplink.bytes_in(UPLINK_WINDOW_S) == srv.rx_wire_bytes
+            assert srv.uplink_bit_s() == pytest.approx(
+                srv.rx_wire_bytes * 8 / UPLINK_WINDOW_S)
+            assert srv.tx_bytes == ack_len
+            assert srv.tx_wire_bytes == tcp_wire_bytes(ack_len)
+            for _ in range(50):                  # far over 1 kbit/s: still OK
+                assert h.send(Command.PING)[2] == AckResult.OK
+        finally:
+            h.close()

@@ -539,7 +539,32 @@ class TestPayloads:
         assert d == {"code": 7, "severity": 2, "text": "seal failed"}
 
     def test_pistatus_roundtrip(self):
-        p = frames.pack_pistatus(12000, 345, True, False, 4150)
+        p = frames.pack_pistatus(12000, 345, True, False, 4150,
+                                 down_avg_bit_s=3210, down_dropped=7,
+                                 down_dropped_priority=1, up_bit_s=42)
+        assert len(p) == frames.PISTATUS_SIZE == 26
         assert frames.unpack_pistatus(p) == {
             "disk_free_mb": 12000, "spectra_count": 345,
-            "uart_ok": True, "spectro_ok": False, "cpu_temp_cc": 4150}
+            "uart_ok": True, "spectro_ok": False, "cpu_temp_cc": 4150,
+            "down_avg_bit_s": 3210, "down_dropped": 7,
+            "down_dropped_priority": 1, "up_bit_s": 42}
+
+    def test_pistatus_v1_still_decodes(self):
+        """An older Pi sends the 12 B layout; the link fields read as
+        absent, not as zero traffic and no drops."""
+        p = frames.pack_pistatus(12000, 345, True, False, 4150)
+        v1 = p[:frames.PISTATUS_SIZE_V1]
+        d = frames.unpack_pistatus(v1)
+        assert d["disk_free_mb"] == 12000 and d["cpu_temp_cc"] == 4150
+        assert d["down_avg_bit_s"] is None and d["down_dropped"] is None
+        assert d["down_dropped_priority"] is None and d["up_bit_s"] is None
+
+    def test_pistatus_link_fields_saturate(self):
+        p = frames.pack_pistatus(0, 0, True, True, 0, down_dropped=2**40,
+                                 down_dropped_priority=2**20)
+        d = frames.unpack_pistatus(p)
+        assert d["down_dropped"] == 0xFFFFFFFF
+        assert d["down_dropped_priority"] == 0xFFFF
+
+    def test_pi_event_codes_named(self):
+        assert frames.event_name(0x13) == "DOWNLINK_SHAPED"

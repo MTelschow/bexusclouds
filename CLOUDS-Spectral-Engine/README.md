@@ -319,26 +319,28 @@ each one is mean-binned to 29+31 points per channel (`quicklook_bin`) rather
 than the 2048-px trace, and with no RP2350 attached the HK grid stays empty.
 Working as specified — just not what you want when checking the spectrometer.
 
-**Downlink cadence.** `quicklook_interval_s` is **1.0 s**, the maximum the
-2 kbit/s continuous E-Link limit allows, and it is the *only* knob that spends
-budget — acquisition (`sample_interval_s`) and `exposure_us` are independent of
-it, so transmitting more often changes nothing on the instrument. Measured frame
-sizes: quick-look cycle 164 B (80 + 84, both channels), PISTATUS 28 B, HK 66 B.
+**Downlink cadence.** `quicklook_interval_s` is **1.0 s**, a cadence choice -
+the E-Link allows 100 kbit/s on average and 400 kbit/s at any time
+(`clouds_link/linkrate.py`), and the whole flight mix is ~3.2 kbit/s of that,
+counted on the wire (+42 B per datagram). It is the *only* knob that spends
+downlink - acquisition (`sample_interval_s`) and `exposure_us` are independent
+of it, so transmitting more often changes nothing on the instrument. Measured
+frame sizes: quick-look cycle 164 B (80 + 84, both channels), PISTATUS 42 B,
+HK 96 B.
 
-| | rate |
+| | wire rate |
 |---|---|
-| quick-look @ 1 Hz | 1.312 kbit/s |
-| HK @ 1 Hz (`HK_PERIOD_MS`, relayed from the MCU) | 0.528 kbit/s |
-| PISTATUS @ 0.1 Hz | 0.022 kbit/s |
-| **total, full flight mix** | **1.894 kbit/s** of 2.0 |
-| total with no RP2350 attached (bench today) | 1.334 kbit/s |
+| quick-look @ 1 Hz | 1.98 kbit/s |
+| HK @ 1 Hz (`HK_PERIOD_MS`, relayed from the MCU) | 1.10 kbit/s |
+| PISTATUS @ 0.1 Hz | 0.07 kbit/s |
+| **total, full flight mix** | **~3.2 kbit/s** of 100 |
+| total with no RP2350 attached (bench today) | ~2.1 kbit/s |
 
-Halving the interval would reach 3.1 kbit/s and bust the limit;
-`tests/test_fsw_telemetry.py::TestDownlinkBudget` asserts both directions from
-real encoded frame sizes, so a payload or cadence change cannot quietly exceed
-it. The headroom assumes HK stays at its implemented 54 B payload (44 B before
-the INA226 rail voltages, 50 B before the reserved 24 V rail slot) — the spec
-allows ~180 B, which would force the interval back to ~2.4 s.
+`tests/test_fsw_telemetry.py::TestDownlinkBudget` asserts this from real
+encoded frame sizes plus header overhead. The Pi does not trust the
+arithmetic alone: `Downlink` meters every packet and drops (quick-look first)
+rather than exceed either limit, and the ground `Commander` holds the uplink
+to its 1 kbit/s - `docs/GUI_SOURCES.md`, "Downlink budget".
 
 ### Both at once, one detector
 

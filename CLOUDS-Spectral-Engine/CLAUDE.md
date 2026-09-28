@@ -12,7 +12,7 @@ behaviour changes.
 |---|---|
 | `docs/COMMANDS.md` | **`PYTHONPATH`, launchers, app flags, the four pre-commit checks, firmware build** |
 | `docs/ARCHITECTURE.md` | driver/UI split, `--mock` stack, `clouds_link/`, command-ACK rule, env vars |
-| `docs/GUI_SOURCES.md` | detector vs downlink source, quick-look cadence, **downlink budget + HK ceiling** |
+| `docs/GUI_SOURCES.md` | detector vs downlink source, quick-look cadence, **E-Link budget, shaper, uplink pacing** |
 | `docs/HARDWARE.md` | detector, **RP2350 carrier pinout (measured)**, HK wire format, open flight gaps |
 | `docs/TRAPS.md` | failures that already cost time here — read before debugging hardware or UI |
 | `docs/PI_SETUP.md` | bench network PC↔Pi, UART enable, `/opt/clouds` deployment |
@@ -44,10 +44,17 @@ behaviour changes.
   loads. `docs/HARDWARE.md`.
 - **Never `printf` on the MCU's `uart0`** — `pico_enable_stdio_uart` stays 0,
   it is the HK downlink.
-- **HK payload ceiling is 67 B**; `hk.SIZE` is **80 B — 13 B over**: the
-  chamber BNO055's 12 B, the BMV080's 2 B, then the motor encoder's 2 B
-  (all 2026-09-28, operator deferred the budget). `tests/test_fsw_telemetry.py::TestDownlinkBudget`
-  fails until that is settled — expected, don't "fix" it by editing the test.
+- **The E-Link limits are the budget, and they are enforced** (operator,
+  2026-09-29): uplink 1 kbit/s, downlink 100 kbit/s average over 60 s and
+  400 kbit/s peak over 1 s, all **on the wire** (+42 B per UDP datagram,
+  +54 B per TCP segment). One module holds them, `clouds_link/linkrate.py`;
+  the Pi's `Downlink` drops (quick-look first, at 90 %) rather than exceed,
+  the ground `Commander` refuses a command over the uplink allowance (never
+  the heartbeat), and the panel's Ethernet lanes show the same meters. The
+  old "2 kbit/s continuous" figure and the 67 B HK ceiling are gone - don't
+  re-add either. `hk.SIZE` is **80 B**, ~1 % of the average; the flight mix is
+  ~3.2 kbit/s. `TestDownlinkBudget` is green and checks the arithmetic with
+  headers. `docs/GUI_SOURCES.md` "Downlink budget".
   `error_flags` has **no free bit left** (bit 7 = `IMU_CHM_FAIL`), which is
   why the retired `fired` byte at offset 2 is now `pm_status`; the byte never
   moved, but a session logged before 2026-09-18 decodes valve bits there.

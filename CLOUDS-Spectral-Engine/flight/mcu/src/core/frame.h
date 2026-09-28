@@ -93,21 +93,22 @@ typedef struct {
  * INA226 is not populated yet, and its slot is reserved so that fitting the
  * part is a firmware change rather than a wire-format change.
  *
- * The ceiling is 67 B: the 2 kbit/s continuous E-Link budget leaves ~83 B for
- * a framed HK packet alongside a 1 Hz quick-look. Growing past that means
- * binning the quick-look harder or slowing its cadence, and
- * tests/test_fsw_telemetry.py::TestDownlinkBudget fails first, by design.
+ * There is no size ceiling any more (2026-09-29): the downlink is budgeted
+ * against the E-Link's own 100 kbit/s average, and an 80 B packet is 138 B
+ * on the wire at 1 Hz, ~1 % of that. The 67 B ceiling that used to live here
+ * came from a self-imposed 2 kbit/s figure and went with it; the Pi now
+ * meters and shapes the downlink itself (clouds_link/linkrate.py), and
+ * tests/test_fsw_telemetry.py::TestDownlinkBudget checks the whole mix.
  *
- * 78 B is OVER that ceiling: the chamber IMU's 12 B were added on the
- * operator's instruction (2026-09-28) to get both IMUs on screen, with the
- * downlink budget explicitly deferred, and the BMV080's 2 B followed the
- * same day. The budget test fails until that is settled. PM2.5 is a single
- * u16 rather than the six floats the vendor library produces precisely
- * because of this - PM1, PM10 and all three number concentrations are
- * dropped at the MCU, not binned on the ground.
+ * 78 B: the chamber IMU's 12 B were added on the operator's instruction
+ * (2026-09-28) to get both IMUs on screen, and the BMV080's 2 B followed the
+ * same day. PM2.5 is a single u16 rather than the six floats the vendor
+ * library produces - chosen under the old ceiling and kept: PM1, PM10 and
+ * all three number concentrations are dropped at the MCU, not binned on the
+ * ground.
  *
  * 80 B: the dispersion motor encoder's speed (motor_rpm, i16) followed on
- * the operator's instruction the same day, 13 B over. */
+ * the operator's instruction the same day. */
 #define HK_SIZE 80
 
 /* "No reading" for a rail_mv entry - mirror of RAIL_MV_INVALID in

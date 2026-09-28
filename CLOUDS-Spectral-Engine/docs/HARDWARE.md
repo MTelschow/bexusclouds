@@ -108,16 +108,17 @@ scratch** after pulling this: `PICO_BOARD` is cached.
 
 ## HK wire format
 
-HK is **80 B** against a **67 B ceiling** - i.e. **13 B over budget**,
-deliberately and on the operator's instruction. 54 B as below, plus
+HK is **80 B** - 96 B framed, 138 B on the wire at 1 Hz, ~1.1 % of the
+E-Link's 100 kbit/s average; the 67 B ceiling it used to be measured against
+went with the 2 kbit/s figure on 2026-09-29 (`docs/GUI_SOURCES.md`). 54 B as
+below, plus
 `hb_sense_raw` (u16) appended after `mission_t_s`, plus the chamber BME280's
 `chm_temp_cc` (i16) + `chm_rh_cpct` (u16) + `chm_p_pa` (u32), plus the chamber
 BNO055's `chm_accel_mg[3]` + `chm_gyro_ddps[3]` (i16 ×6, 2026-09-28), plus the
 BMV080's `pm2_5_ugm3` (u16, same day), plus the motor encoder's `motor_rpm`
 (i16, same day). Each addition went on the end, so no
 older field has ever moved. `tests/test_fsw_telemetry.py::TestDownlinkBudget`
-has been **red since the chamber IMU landed at 76 B** and stays red at 80 B;
-settling it means binning the quick-look harder or slowing its cadence.
+checks the whole mix, headers included, against the link's limits.
 
 **The BMV080's state is not in `error_flags`** - that byte's eight bits are
 all assigned - so it has `pm_status` at **offset 2**, the byte that was

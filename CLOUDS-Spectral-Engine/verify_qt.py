@@ -887,13 +887,22 @@ try:
     # and the commands earlier in this block went out on the uplink ---------
     _win.traffic.refresh()
     app.processEvents()
-    check("traffic: the Down lane counted the telemetry that arrived",
-          _win.traffic.lane_down.total == _rx.rx_bytes
-          and _win.traffic.lane_down.total > 0,
-          f"lane={_win.traffic.lane_down.total} rx={_rx.rx_bytes}")
-    check("traffic: the Up lane counted the commands that left",
-          _win.traffic.lane_up.total >= _commander.tx_bytes > 0,
-          f"lane={_win.traffic.lane_up.total} tx={_commander.tx_bytes}")
+    check("traffic: the Down lane counted every Pi -> ground wire byte",
+          _win.traffic.lane_down.total
+          == _rx.rx_wire_bytes + _commander.rx_wire_bytes
+          and _rx.rx_wire_bytes > _rx.rx_bytes > 0,
+          f"lane={_win.traffic.lane_down.total} rx={_rx.rx_wire_bytes} "
+          f"acks={_commander.rx_wire_bytes}")
+    check("traffic: the Up lane counted the commands that left, on the wire",
+          _win.traffic.lane_up.total == _commander.tx_wire_bytes
+          > _commander.tx_bytes > 0,
+          f"lane={_win.traffic.lane_up.total} tx={_commander.tx_wire_bytes}")
+    check("traffic: the Down lane shows avg / peak against the E-Link limits",
+          "/" in _win.traffic._rates["Down"].text()
+          and _win.traffic.lane_down.state in ("active", "idle"),
+          f"{_win.traffic._rates['Down'].text()} {_win.traffic.lane_down.state}")
+    check("traffic: nothing here was refused for the 1 kbit/s uplink",
+          _commander.rate_limited == 0, str(_commander.rate_limited))
     check("traffic: a mock detector is not Ethernet, so the Bench lane is idle",
           _win.traffic.lane_bench.state == "none"
           and _win.traffic._totals["Bench"].text() == "-")

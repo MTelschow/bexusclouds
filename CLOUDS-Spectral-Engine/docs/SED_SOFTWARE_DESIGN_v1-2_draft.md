@@ -109,6 +109,13 @@ External (E-Link, Ethernet, per §4.2.2 and Table 6-3):
 - **Downlink — UDP**, ~2 kbit/s continuous, occasional larger bursts
   (within 400 kbit/s max / 100 kbit/s avg). Packet loss is acceptable:
   every packet is self-contained (sequence number + timestamp + CRC-16).
+
+  > **Superseded 2026-09-29, kept as the v1-2 record.** The software now
+  > budgets against the E-Link's own limits directly - 100 kbit/s over 60 s,
+  > 400 kbit/s over 1 s, uplink 1 kbit/s over 60 s, all on the wire - and
+  > enforces them: the Pi drops rather than exceeds, the ground refuses a
+  > command over the uplink allowance. The flight mix is ~3.2 kbit/s.
+  > `docs/SOFTWARE_SPEC.md` §3-4 and `clouds_link/linkrate.py`.
 - **Uplink — TCP**, ≤ 1 kbit/s: command channel with mandatory
   acknowledge. Command set: `PING` (heartbeat), `START`, `HOLD`, `RESUME`,
   `ABORT`, `RELEASE 1|2`, `SET_PARAM key value`, `STATUS?`.

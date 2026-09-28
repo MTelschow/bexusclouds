@@ -14,6 +14,7 @@ from collections import deque
 
 from clouds_link import frames, hk
 from clouds_link.frames import GapStats, PacketType
+from clouds_link.linkrate import UDP_WIRE_OVERHEAD
 
 # Windows: SIO_UDP_CONNRESET. Off by default, a UDP socket is told about ICMP
 # port-unreachable replies by failing its next recvfrom with WSAECONNRESET -
@@ -72,9 +73,12 @@ class Receiver:
         # Wire counters for the traffic indicator (clouds_ui/traffic.py).
         # Counted where the datagram arrives, not after decode: a frame that
         # fails CRC still spent link budget, and a link that is delivering
-        # nothing but garbage must not look idle. UDP payload bytes only -
-        # the IP/UDP headers are the network's, not the downlink's.
+        # nothing but garbage must not look idle. `rx_bytes` is the frames
+        # alone; `rx_wire_bytes` adds the 42 B of Ethernet/IP/UDP headers
+        # each datagram costs on the E-Link, which is what the limits in
+        # clouds_link/linkrate.py are written against.
         self.rx_bytes = 0
+        self.rx_wire_bytes = 0
         self.rx_packets = 0
         self.last_rx_time: float = 0.0
         self.last_hk: hk.Housekeeping | None = None
@@ -123,6 +127,7 @@ class Receiver:
 
     def _handle(self, raw: bytes) -> None:
         self.rx_bytes += len(raw)
+        self.rx_wire_bytes += len(raw) + UDP_WIRE_OVERHEAD
         self.rx_packets += 1
         self.last_rx_time = time.time()
         try:

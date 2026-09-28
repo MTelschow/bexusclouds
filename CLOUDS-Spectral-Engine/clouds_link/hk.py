@@ -31,8 +31,9 @@ is that **a session logged before 2026-09-18 decodes its real valve bits as
 
 PM2.5 is one ``uint16`` where the vendor library produces six floats (PM1,
 PM2.5 and PM10, each as mass and number concentration). The other five are
-dropped at the MCU, not binned on the ground, because this packet is already
-over its 67 B downlink ceiling.
+dropped at the MCU, not binned on the ground - a choice made when this packet
+was held to a 67 B ceiling, which went with the 2 kbit/s budget on
+2026-09-29 (`clouds_link/linkrate.py`); it stands until someone needs them.
 
 Two bytes before those, after ``mission_t_s``, are the CaCO3 dispersion
 motor's current sense, the ``ACT_HB_SENS`` net on GP46 read by the RP2350B's ADC: raw 12-bit counts,

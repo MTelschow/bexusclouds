@@ -197,10 +197,10 @@ static void test_hk_pack_layout(void)
     TEST_ASSERT_EQUAL_HEX8(0x19, out[70]); /* 25 = 0x0019 */
     TEST_ASSERT_EQUAL_HEX8(0x00, out[71]);
     /* pm2_5_ugm3 LE u16 at offset 76, appended after the chamber IMU. Two
-     * bytes and not the six floats the vendor library produces: the packet is
-     * already over its 67 B ceiling, so PM1, PM10 and all three number
-     * concentrations are dropped at the MCU rather than binned on the
-     * ground. */
+     * bytes and not the six floats the vendor library produces: PM1, PM10
+     * and all three number concentrations are dropped at the MCU rather
+     * than binned on the ground (chosen under the old 67 B ceiling, kept
+     * after it went on 2026-09-29). */
     TEST_ASSERT_EQUAL_HEX8(0x9C, out[76]); /* 412 = 0x019C */
     TEST_ASSERT_EQUAL_HEX8(0x01, out[77]);
     /* motor_rpm LE i16 at offset 78, appended after pm2_5_ugm3 */

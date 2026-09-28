@@ -32,7 +32,7 @@ from .config import FswConfig
 from .mcu_link import McuLink
 from .spectro_source import SpectroSource
 from .storage import CommLog, FrameStore
-from .telemetry import Downlink, QuicklookSender
+from .telemetry import Downlink, DropReporter, QuicklookSender
 from .uart_link import PipeTransport, SerialTransport
 from .watchdog import SystemdWatchdog
 
@@ -51,7 +51,9 @@ class FlightApp:
         self.store = FrameStore(cfg.data_dir, cfg.rotate_s, cfg.flush_every)
         self.comm_log = CommLog(cfg.data_dir, cfg.rotate_s)
         self.down = Downlink(cfg.ground_host, cfg.ground_port,
-                             cfg.budget_kbit_s)
+                             avg_bit_s=cfg.downlink_avg_kbit_s * 1000.0,
+                             peak_bit_s=cfg.downlink_peak_kbit_s * 1000.0)
+        self.drops = DropReporter(self.down, self._send_event)
         self.quicklook = QuicklookSender(self.down, self.cal,
                                          cfg.quicklook_bin,
                                          cfg.quicklook_interval_s)
@@ -153,7 +155,11 @@ class FlightApp:
         self.down.send(PacketType.PISTATUS, frames.pack_pistatus(
             free_mb, self.store.count,
             self.mcu.alive(),
-            self.source.connected, _cpu_temp_cc()))
+            self.source.connected, _cpu_temp_cc(),
+            down_avg_bit_s=int(self.down.avg_bit_s()),
+            down_dropped=self.down.dropped_total,
+            down_dropped_priority=self.down.dropped_priority,
+            up_bit_s=int(self.cmd_server.uplink_bit_s())))
 
     def _send_timesync(self) -> None:
         """S.4 - and the beat the MCU's own Pi-liveness monitor watches, so
@@ -205,6 +211,7 @@ class FlightApp:
                 self.watchdog.kick()                       # S.9
                 nxt["watchdog"] = now + period["watchdog"]
             self._check_mcu_liveness()
+            self.drops.poll(now)          # at most one event a minute
             self.stop_event.wait(0.2)
         self.shutdown()
 

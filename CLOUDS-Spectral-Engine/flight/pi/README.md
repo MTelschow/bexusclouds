@@ -2,8 +2,8 @@
 
 Data & communications node (spec: [docs/SOFTWARE_SPEC.md](../../docs/SOFTWARE_SPEC.md)):
 spectrometer acquisition at 1 Hz (P.3), CRC'd onboard storage (O.3, S.5),
-UDP telemetry downlink within the 2 kbit/s budget (O.4), TCP command
-uplink with arm/execute (S.8), UART link + time sync to the RP2350 (S.4).
+UDP telemetry downlink shaped to the E-Link's 100 / 400 kbit/s (O.4), TCP
+command uplink with mandatory ACK (S.8), UART link + time sync to the RP2350 (S.4).
 **Never sequences the experiment** — losing the Pi degrades the mission,
 it cannot block the experiment (S.7).
 
@@ -37,8 +37,8 @@ clears in the housekeeping the GSE shows as `link=`.
 | `clouds_fsw/main.py` | wiring + periodic loop (quicklook, pistatus, timesync, watchdog) |
 | `clouds_fsw/spectro_source.py` | 1 Hz acquisition, saturation flags, reconnect-on-failure (P-10) |
 | `clouds_fsw/storage.py` | CRC'd binary spectra records, 10-min rotation, comms log |
-| `clouds_fsw/telemetry.py` | HK relay (byte-identical), quick-look binning, budget meter |
-| `clouds_fsw/command_server.py` | TCP uplink: ACK, arm/execute enforcement (authoritative) |
+| `clouds_fsw/telemetry.py` | HK relay (byte-identical), quick-look binning, the E-Link shaper (`clouds_link/linkrate.py`) |
+| `clouds_fsw/command_server.py` | TCP uplink: forward to the MCU, ACK with its verdict, uplink meter for PISTATUS |
 | `clouds_fsw/uart_link.py` | COBS framing over pyserial / in-memory pipe (tests) |
 | `clouds_fsw/mcu_link.py` | the CLOUDS conversation on top of it: command ACK correlation, HK cache, time sync |
 | `clouds_fsw/watchdog.py` | systemd sd_notify (S.9) |

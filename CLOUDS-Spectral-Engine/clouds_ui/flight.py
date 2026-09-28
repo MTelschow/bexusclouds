@@ -975,6 +975,16 @@ class FlightPanel(QtCore.QObject):
                     else "cmd up")
         else:
             link = "cmd DOWN - retrying"
+        # The Pi's own count of downlink packets its shaper dropped to stay
+        # inside the E-Link limits (PISTATUS, clouds_link/linkrate.py). Zero
+        # in flight by a wide margin; a number here means the link was over
+        # its budget and the quick-look is thinner than the cadence says.
+        ps = self._rx.last_pistatus or {}
+        dropped = ps.get("down_dropped")
+        if dropped:
+            link += f"  pi dropped {dropped}"
+            if ps.get("down_dropped_priority"):
+                link += f" ({ps['down_dropped_priority']} not quick-look)"
         # Decode errors are on this line because the panel has no other way to
         # say "packets are arriving and none of them mean anything". A wire
         # format the ground and the MCU disagree about looks exactly like a

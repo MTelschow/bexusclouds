@@ -175,8 +175,8 @@ class CloudsWindow(QtWidgets.QMainWindow):
       (exposure). Bench only: reaching it from the ground depends on the Pi's
       ``--bench-stream``, which is off in flight.
     * the **downlink** through ``clouds_gse.Receiver`` - 1 Hz, mean-binned to
-      ~30 points per channel by the 2 kbit/s budget, plus housekeeping,
-      events and the command uplink. The only path that exists in flight.
+      ~30 points per channel for the E-Link, plus housekeeping, events and
+      the command uplink. The only path that exists in flight.
 
     Which one the spectrum shows is the operator's explicit choice
     (``self.source``) and never changes by itself, because the failure this
@@ -1722,6 +1722,7 @@ class CloudsWindow(QtWidgets.QMainWindow):
         # about to go away with the window.
         stats = None if rx is None else {
             "rx_packets": rx.rx_packets, "rx_bytes": rx.rx_bytes,
+            "rx_wire_bytes": rx.rx_wire_bytes,
             "decode_errors": rx.decode_errors,
             "hk_rejected": rx.hk_rejected,
             "hk_reject_reason": rx.hk_reject_reason}
