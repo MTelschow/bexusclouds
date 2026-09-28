@@ -92,6 +92,8 @@ picotool load -f -x flight/mcu/build-tools/bno055_probe.uf2
 picotool load -f -x flight/mcu/build-tools/membrane_switch_probe.uf2
 picotool load -f -x flight/mcu/build-tools/encoder_pin_probe.uf2     # which pins move with the shaft (DRIVES THE MOTOR)
 picotool load -f -x flight/mcu/build-tools/encoder_trace_probe.uf2   # 80 ns trace of GP19..GP22 (DRIVES THE MOTOR)
+python flight/mcu/src/tools/cdc_capture.py trace.txt   # start before the load: reads the probe's USB CDC text
+python flight/mcu/src/tools/encoder_trace_analyse.py trace.txt   # which pin is A / B / midpoint / victim
 ```
 
 `bme280_probe` sweeps all four SPI_1 chip selects at two modes and two bauds,

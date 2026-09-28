@@ -30,6 +30,9 @@
  *                       switching
  * Then motor off for good.
  *
+ * Capture with tools/cdc_capture.py, decode with tools/encoder_trace_analyse.py
+ * (both beside this file).
+ *
  * Line format: "T <iter> <state>" with <state> the 4-bit value of
  * GP22 GP21 GP20 GP19 (bit 3..0) as one hex digit. "C <what> <iters>
  * <us> <n>" heads each capture with the iteration count, its duration in

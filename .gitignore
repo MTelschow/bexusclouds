@@ -1,1 +1,5 @@
 .DS_Store
+
+# Bosch BMV080 SDK archive: confidential, no redistribution grant - the build
+# reads it from the sibling sensor-driver/ tree, never from here.
+CLOUDS-Spectral-Engine/vendor/bmv080-sdk*.zip
