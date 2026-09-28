@@ -22,23 +22,35 @@ GLITCH_TYPICAL = 33514     # the commonly-seen code, for reference only
 # are touched. Baseline glitches tower ~20x over neighbours, so none are missed.
 SPIKE_RATIO = 3.0          # a glitch pixel is >= this x its higher neighbour ...
 SPIKE_ABS = 4000           # ... and at least this many counts above it
+# Longest run of adjacent glitch pixels treated as one spike. At the ~9 % hit
+# rate a frame carries ~1.2 runs of three (2048 x 0.09^3 x 0.91^2), and a
+# three-run has no towering neighbour inside it, so the 1- and 2-px tests
+# left it standing - and an 8-px quick-look bin then read +12 k. Three is the
+# limit that is still safe against a real line: at the instrument's own
+# resolution (3.7 px FWHM) the run's edge pixels are at most 2.3x their outer
+# neighbours (both channels, any pedestal, 2026-09-29), under SPIKE_RATIO.
+# Four would be a 4.7 px feature, wider than the narrowest real line.
+SPIKE_MAX_PX = 3
 
 
 def _glitch_mask(row: np.ndarray) -> np.ndarray:
-    """Boolean mask of isolated 1- and 2-pixel spikes (USB glitches); value-agnostic.
-    Real lines are >=3.7 px (7 nm FWHM), so a 1-2 px spike is always a glitch."""
+    """Boolean mask of isolated 1..SPIKE_MAX_PX-pixel spikes (USB glitches);
+    value-agnostic. Real lines are >=3.7 px (7 nm FWHM), so a spike this
+    narrow is always a glitch: every pixel of the run must tower over the
+    higher of the two pixels just outside it."""
     f = np.asarray(row, dtype=np.float64)
     n = f.size
     bad = np.zeros(n, dtype=bool)
-    if n >= 3:
-        hi_nb = np.maximum(f[:-2], f[2:])              # higher of the two neighbours
-        bad[1:-1] |= (f[1:-1] > SPIKE_RATIO * hi_nb) & (f[1:-1] - hi_nb > SPIKE_ABS)
-    if n >= 4:                                          # 2-pixel-wide spikes (both tower over OUTER nbrs)
-        outer = np.maximum(f[:-3], f[3:])              # max(f[i-1], f[i+2])
-        pair = np.minimum(f[1:-2], f[2:-1])            # min(f[i], f[i+1])
-        is2 = (pair > SPIKE_RATIO * outer) & (pair - outer > SPIKE_ABS)
-        bad[1:-2] |= is2
-        bad[2:-1] |= is2
+    for k in range(1, SPIKE_MAX_PX + 1):                # k-pixel-wide runs f[i..i+k-1]
+        if n < k + 2:
+            break
+        outer = np.maximum(f[:-(k + 1)], f[k + 1:])     # max(f[i-1], f[i+k])
+        run = f[1:n - k]                                # f[i] for i in 1..n-k-1
+        for j in range(1, k):
+            run = np.minimum(run, f[1 + j:n - k + j])   # min over the run
+        hit = (run > SPIKE_RATIO * outer) & (run - outer > SPIKE_ABS)
+        for j in range(k):
+            bad[1 + j:n - k + j] |= hit
     if n >= 2:                                          # edge pixels: single neighbour
         if (f[0] > SPIKE_RATIO * f[1]) and (f[0] - f[1] > SPIKE_ABS):
             bad[0] = True
@@ -119,6 +131,24 @@ def robust_peak_index(row, smooth_px: int = 5) -> int:
     so a surviving glitch artifact cannot steal the marker from the real line."""
     d = _robust_trace(row, smooth_px)
     return int(np.argmax(d)) if d.size else 0
+
+
+def bin_mean(window, factor: int) -> np.ndarray:
+    """Mean-bin a 1-D window by ``factor`` px, dropping a partial trailing bin.
+
+    The quick-look's binning (feature P-04): the Pi bins each channel's pixel
+    window this way, and the ground bins the stored dark the same way to
+    subtract it from the quick-look - one function so the edges cannot drift
+    apart. ``factor < 1`` returns the window unchanged.
+    """
+    w = np.asarray(window, dtype=np.float64)
+    f = int(factor)
+    if f <= 1:
+        return w
+    n = (w.size // f) * f
+    if n == 0:
+        return w[:0]
+    return w[:n].reshape(-1, f).mean(axis=1)
 
 
 def smooth(y, window: int = 0, mode: str = "savgol") -> np.ndarray:

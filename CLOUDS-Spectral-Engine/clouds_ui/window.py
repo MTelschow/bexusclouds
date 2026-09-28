@@ -317,6 +317,8 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self.source = source
         self._src_bin = None        # quick-look bin factor, for the x axis
         self._src_exp_ms = None     # exposure the downlinked frame was taken at
+        self._resume_on_detector = False   # Run was live when Downlink was selected
+        self._src_dark = False      # the last quick-look drawn had the dark taken off
 
         # Housekeeping history for the timeline under the spectrum. Filled
         # from the flight tick, not from the receiver's thread: the receiver
@@ -1428,9 +1430,21 @@ class CloudsWindow(QtWidgets.QMainWindow):
             self._set_hint("no dark captured yet - press Capture dark")
         elif on and not self._dark_exposure_ok():
             self._set_hint(f"dark was taken at {self._dark_meta.exposure_ms:g} ms - "
-                           f"not subtracted at {self.exposure_ms:g} ms; recapture it")
+                           f"not subtracted at {self._frame_exposure_ms():g} ms; recapture it")
         self._update_dark_label()
-        self._process()
+        self._redraw_source()
+
+    def _redraw_source(self):
+        """Re-derive the trace from whichever source is up, after a control
+        that changes how a frame is read (dark). The detector re-processes
+        `last_frame`; the downlink re-takes the latest quick-look."""
+        if self.source == "downlink":
+            try:
+                self._take_downlink_frame()
+            except Exception as e:          # noqa: BLE001 - slot rule, see _tick_flight
+                self._set_hint(f"downlink refresh failed: {e}")
+        else:
+            self._process()
         self._render_plot()
         self._update_stats()
 
@@ -1846,6 +1860,12 @@ class CloudsWindow(QtWidgets.QMainWindow):
         if not self.connected:
             self._set_hint("connect first")
             return
+        if self.source != "detector":
+            # One choke point for every path that restarts the live loop
+            # (reconnect resume, tracking, the exposure hunt, restart): the
+            # detector must not feed the plot while it draws the downlink.
+            self._set_hint("spectrum is on the downlink - select Detector to run")
+            return
         self.running = True
         self.btn_run.setText("Stop")
         self.timer.start()
@@ -2097,6 +2117,12 @@ class CloudsWindow(QtWidgets.QMainWindow):
                 self._dropped += n_frames - adv          # got stale/duplicate frames
         self._last_fc = fc
         self.last_frame = last_frame
+        if self.source != "detector":
+            # A grab already in flight when the operator switched to the
+            # downlink: keep the frame, but it must not reach the plot, the
+            # stats, the log or the servo - that is the flicker between a
+            # full-resolution trace and a 29-point quick-look.
+            return
         self._process()
         self._render_plot()
         self._update_stats()
@@ -2182,11 +2208,14 @@ class CloudsWindow(QtWidgets.QMainWindow):
         """Turn the latest quick-look into the same `last_proc` the detector
         path produces, so one renderer draws both.
 
-        The counts are already the flight-scaled 16-bit values the MCU sent;
-        there is no dark subtraction, averaging or glitch filter to apply,
-        because none of that happened on the Pi. The instrument controls that
-        imply otherwise are ignored in this source rather than silently
-        pretending to work.
+        The counts are the flight-scaled 16-bit values the Pi sent: despiked
+        there, not dark-subtracted. The stored dark is applied here, binned
+        with the Pi's own edges (`P.bin_mean`, the same function), under the
+        same exposure guard as the detector path - the packet says what
+        exposure the frame was taken at, and a dark taken at another one is
+        held back. Averaging and the offset modes do not apply: none of that
+        happened on the Pi, and the controls are ignored in this source
+        rather than silently pretending to work.
         """
         ql = getattr(self.rx, "quicklook", None)
         if not ql:
@@ -2204,20 +2233,36 @@ class CloudsWindow(QtWidgets.QMainWindow):
             head = payload
         if "m" not in proc or head is None:
             return
+        raw = dict(proc)                         # saturation is judged on the raw counts
+        dark = self._dark_in_use(head["exposure_ms"])
+        if dark is not None:
+            for key, ch in (("m", self.cal.by_role("measurement")), ("r", r)):
+                if key not in proc or ch is None:
+                    continue
+                lo, hi = ch.pixel_window
+                dk = P.bin_mean(np.asarray(dark, dtype=float)[lo:hi + 1], head["bin"])
+                if dk.size == proc[key].size:    # else the two sides bin differently: leave it raw
+                    proc[key] = subtract_dark(proc[key], dk)
         if head["bin"] != self._src_bin:
             # The banner quotes the binning, so it cannot be written once at
             # switch time - until the first quick-look lands there is nothing
             # to quote, and it must stop saying "waiting" when one does.
             self._src_bin = head["bin"]
             self._update_source_banner()
-        self._src_exp_ms = head["exposure_ms"]
+        if head["exposure_ms"] != self._src_exp_ms:
+            # The dark's validity follows the Pi's exposure now, so the Dark
+            # frame section must say "held back" (or stop saying it) as soon
+            # as a packet says what that exposure is.
+            self._src_exp_ms = head["exposure_ms"]
+            self._update_dark_label()
         # Saturation is worth having here too: the bench quick-look clips flat
         # at saturation_count and the old dashboard gave no sign of it, so a
         # clipped downlink looked like a real spectrum with a plateau.
-        allc = np.concatenate([v for v in proc.values()])
+        allc = np.concatenate([v for v in raw.values()])
         self._last_sat = (float(np.count_nonzero(
             allc >= self.cal.saturation_count)) / allc.size) if allc.size else 0.0
         self._last_glitch = 0.0
+        self._src_dark = dark is not None
         self.last_proc = proc
         self._frame_n += 1
         self._render_plot()
@@ -2230,18 +2275,44 @@ class CloudsWindow(QtWidgets.QMainWindow):
         read as a live instrument trace."""
         if name == self.source:
             return
+        was_running = self.running
+        if name == "downlink" and was_running:
+            # The live loop would keep writing full-resolution frames into
+            # the same buffer the quick-look lands in, and the plot would
+            # flip between the two grids at 60 ms. Operator decision
+            # (2026-09-29): stop Run, do not merely hide it - and remember
+            # it, so the way back is the way it was.
+            self._stop()
+            self._resume_on_detector = True
         self.source = name
         self.last_proc = None                # never mix the two on one axis
         self._last_sat = self._last_glitch = 0.0
         self._src_bin = self._src_exp_ms = None
+        self._src_dark = False
         self._frame_n = 0
         self._update_source_banner()
+        self._update_dark_label()            # the exposure it is judged against changed
         if name == "downlink":
-            self._take_downlink_frame()
-            self._set_hint("spectrum follows the downlink - 1 Hz, binned")
+            try:
+                self._take_downlink_frame()
+            except Exception as e:          # noqa: BLE001 - QTimer/slot rule, see _tick_flight
+                self._set_hint(f"downlink refresh failed: {e}")
+            self._set_hint("spectrum follows the downlink - 1 Hz, binned"
+                           + (" - Run stopped" if was_running else ""))
         else:
-            self._set_hint("spectrum follows the detector"
-                           + ("" if self.connected else " - press Connect"))
+            # The last live frame is still here: draw it now rather than a
+            # blank pane until the next tick, then pick Run back up if it was
+            # live when the operator went to the downlink. A stop pressed
+            # while on the downlink is not possible (the button reads Run),
+            # so the remembered state is the operator's last decision.
+            self._process()
+            resume = self._resume_on_detector
+            self._resume_on_detector = False
+            if resume and self.connected:
+                self._start()               # posts "running - live"
+            else:
+                self._set_hint("spectrum follows the detector"
+                               + ("" if self.connected else " - press Connect"))
         self._render_plot()
         self._update_stats()
 
@@ -2299,8 +2370,8 @@ class CloudsWindow(QtWidgets.QMainWindow):
         return None
 
     def _process(self):
-        if self.last_frame is None:
-            return
+        if self.last_frame is None or self.source != "detector":
+            return          # the downlink trace is never re-derived from last_frame
         m = self.cal.by_role("measurement")
         r = self._ref()
         fr = subtract_dark(self.last_frame, self._dark_in_use())
@@ -2329,8 +2400,10 @@ class CloudsWindow(QtWidgets.QMainWindow):
             self._peak_nm = float(m.wavelengths[P.robust_peak_index(mc)])
 
     # ------------------------------------------------------------ dark frame
-    def _dark_in_use(self):
-        """The dark to subtract right now, or ``None``.
+    def _dark_in_use(self, exposure_ms=None):
+        """The dark to subtract right now, or ``None``. ``exposure_ms`` is
+        the exposure of the frame it would come off (default: this window's
+        detector setting; the downlink passes the packet's).
 
         A dark is only valid at the exposure it was taken at - dark current
         scales with integration time - so an exposure change withholds it
@@ -2340,10 +2413,26 @@ class CloudsWindow(QtWidgets.QMainWindow):
         """
         if not self.subtract_dark_flag or self.dark is None:
             return None
+        if exposure_ms is None:
+            exposure_ms = self.exposure_ms
         if self._dark_meta is not None and not self._dark_meta.matches_exposure(
-                int(round(self.exposure_ms * 1000))):
+                *self._dark_exposure_probe(exposure_ms)):
             return None
         return self.dark
+
+    def _frame_exposure_ms(self):
+        """Exposure of the frames the plot is drawing: this window's setting
+        on the detector, the Pi's (from the packet) on the downlink - ``None``
+        there until a quick-look has landed."""
+        return self._src_exp_ms if self.source == "downlink" else self.exposure_ms
+
+    def _dark_exposure_probe(self, exposure_ms):
+        """``(exposure_us, tol_us)`` for `DarkFrame.matches_exposure`. The
+        quick-look packet carries whole milliseconds (`exposure_us // 1000`
+        on the Pi), so on the downlink the dark is matched to the
+        millisecond; the detector's own setting is matched exactly."""
+        tol = 999 if self.source == "downlink" else 1
+        return int(round(float(exposure_ms) * 1000)), tol
 
     def _dark_windows(self):
         """`[(name, lo, hi)]` for the leak check - the calibration's windows."""
@@ -2360,9 +2449,9 @@ class CloudsWindow(QtWidgets.QMainWindow):
             return ""
 
     def _dark_exposure_ok(self) -> bool:
-        return (self.dark is None or self._dark_meta is None
-                or self._dark_meta.matches_exposure(
-                    int(round(self.exposure_ms * 1000))))
+        exp = self._frame_exposure_ms()
+        return (self.dark is None or self._dark_meta is None or exp is None
+                or self._dark_meta.matches_exposure(*self._dark_exposure_probe(exp)))
 
     def _update_dark_label(self):
         if not hasattr(self, "lbl_dark"):
@@ -2372,7 +2461,8 @@ class CloudsWindow(QtWidgets.QMainWindow):
         elif not self._dark_exposure_ok():
             self.lbl_dark.setText(
                 f"held back: dark is {self._dark_meta.exposure_ms:g} ms, "
-                f"exposure is {self.exposure_ms:g} ms")
+                f"exposure is {self._frame_exposure_ms():g} ms"
+                + (" on the Pi" if self.source == "downlink" else ""))
         elif self._dark_meta is not None:
             # A lit dark subtracts real signal out of the baseline and nothing
             # downstream can tell, so it is said here every time, not once in
@@ -2583,7 +2673,11 @@ class CloudsWindow(QtWidgets.QMainWindow):
             has_ref = r is not None and rc is not None
             if self.view == "counts" or not has_ref:
                 mx = self._trace_x(m, mc.size)
-                flat = self.flat and self.reference_proc is not None
+                # The reference is a full-resolution detector capture; a
+                # ratio against a 29-point quick-look is a shape error, not
+                # a flat field.
+                flat = (self.flat and self.reference_proc is not None
+                        and self.source == "detector")
                 md = P.reference_ratio(mc, self.reference_proc["m"]) if flat else mc
                 if self.smooth_win:
                     md = P.smooth(md, self.smooth_win, self.smooth_mode)
@@ -2809,7 +2903,8 @@ class CloudsWindow(QtWidgets.QMainWindow):
                 age = self.rx.hk_age_s() if self.rx is not None else None
                 self.stats.setText(
                     head
-                    + f"exp   {self._src_exp_ms or 0:g} ms  on the Pi\n"
+                    + f"exp   {self._src_exp_ms or 0:g} ms  on the Pi"
+                      f"{'  -dark' if self._src_dark else ''}\n"
                     + f"bin   {self._src_bin or 0}x  mean\n"
                     + f"hk    {'-' if age is None else f'{age:.1f} s'} old"
                       f"   packet #{self._frame_n}")

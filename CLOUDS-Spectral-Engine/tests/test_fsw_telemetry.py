@@ -141,6 +141,19 @@ class TestBinning:
         # window [0, 15], factor 4 -> means of [0..3],[4..7],[8..11],[12..15]
         assert bin_channel(counts, 0, 15, 4) == [1, 5, 9, 13]
 
+    def test_bin_channel_is_bin_mean(self):
+        """The ground bins the stored dark with `spectro.processing.bin_mean`
+        to take it off the quick-look; the Pi must bin the frame the same
+        way or the two grids drift apart."""
+        from spectro.processing import bin_mean
+        rng = np.random.default_rng(3)
+        counts = rng.integers(0, 60000, 2048).astype(np.uint16)
+        cal = Calibration.load()
+        for ch in cal.channels:
+            lo, hi = ch.pixel_window
+            ground = bin_mean(counts[lo:hi + 1].astype(float), 8)
+            assert bin_channel(counts, lo, hi, 8) == [int(v) for v in ground]
+
     def test_partial_bin_dropped(self):
         counts = np.ones(2048, dtype=np.uint16)
         assert len(bin_channel(counts, 0, 9, 4)) == 2   # 10 px -> 2 full bins
@@ -161,6 +174,25 @@ class TestBinning:
             lo, hi = cal.by_role(role).pixel_window
             assert len(seen[idx]["counts"]) == (hi - lo + 1) // 8
             assert all(c == 1234 for c in seen[idx]["counts"])
+
+    def test_quicklook_rejects_usb_glitches(self, udp_pair):
+        """The transfer pins ~9 % of pixels per frame to ~33514 and they move
+        frame to frame; a plain 8-px mean lifts about half the bins by +4 k.
+        The quick-look must despike first, as the bench view does."""
+        down, rx = udp_pair
+        cal = Calibration.load()
+        ql = QuicklookSender(down, cal, bin_factor=8, interval_s=30)
+        rng = np.random.default_rng(7)
+        counts = np.full(2048, 1500, dtype=np.uint16)
+        hit = rng.random(2048) < 0.09
+        counts[hit] = 33514
+        assert ql.maybe_send((1e9, counts, 100_000), now=1000.0)
+        for _ in range(2):
+            f = frames.decode(rx.recvfrom(65536)[0])
+            d = frames.unpack_quicklook(f.payload)
+            assert d["counts"], "empty channel"
+            assert max(d["counts"]) <= 1500 + 50, d["counts"]
+            assert min(d["counts"]) >= 1500 - 50, d["counts"]
 
     def test_quicklook_rate_limited(self, udp_pair):
         down, rx = udp_pair

@@ -20,6 +20,34 @@ The plot carries a banner naming the source and its rate, and the stats card
 says `LIVE` or `QUICK-LOOK`. Reaching the detector from the ground at all
 depends on the Pi's `--bench-stream`, which is **off in flight**.
 
+**Selecting Downlink stops Run, and Run is refused on the downlink source**
+(2026-09-29). Both draw into the same `last_proc`; before this the detector's
+60 ms live loop kept writing full-resolution, dark-subtracted frames over the
+29+31-point quick-look and the plot flipped between the two grids. `_start()`
+is the one choke point (reconnect resume, tracking, the exposure hunt and
+`restart()` all go through it), `_finish_tick` / `_process` drop a detector
+frame while the source is the downlink, and flat-field only applies on the
+detector (its reference is a full-resolution capture). Selecting Detector
+again draws the last live frame at once and resumes Run if it was live when
+Downlink was selected; if Run was off, it stays off.
+
+**The quick-look is despiked on the Pi, not dark-subtracted.** The USB
+transfer pins ~9 % of pixels per frame to ~33514 ct (`calibration.json`
+notes); an 8-px plain mean of a raw frame therefore carried a +4 k ct hit in
+about half of its bins, moving every second. `QuicklookSender` now runs the
+frame through `spectro.processing.average_frames(clean=True)` before
+`bin_channel` - the same rejection the bench view uses. Storage keeps the raw
+frame. **The stored dark comes off on the ground** (2026-09-29): the window
+bins its 2048-px dark with the Pi's own edges (`spectro.processing.bin_mean`,
+the one function both sides use) and subtracts it from the quick-look under
+the same exposure guard as the detector path - the packet names the exposure
+the frame was taken at (whole ms on the wire), and a dark taken at another
+one is held back, with the Dark frame section saying "... on the Pi". One
+capture therefore serves both views, **taken at the flight exposure**
+(`exposure_us` in `/etc/clouds/fsw.json`, 100 ms; bench = flight settings).
+The stats card shows `-dark` after the Pi exposure when it was taken off.
+Saturation is still judged on the raw counts.
+
 `quicklook_interval_s` is **1.0 s - the 2 kbit/s budget maximum** (1.894
 kbit/s with HK), and it is the only knob that spends downlink budget:
 `sample_interval_s` and `exposure_us` are independent of it. Each interval

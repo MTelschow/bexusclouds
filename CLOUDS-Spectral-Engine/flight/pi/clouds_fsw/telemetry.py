@@ -22,6 +22,7 @@ from collections import deque
 import numpy as np
 
 from clouds_link import frames
+from spectro.processing import average_frames, bin_mean
 
 
 class BudgetMeter:
@@ -84,18 +85,26 @@ def bin_channel(frame_counts, lo: int, hi: int, factor: int) -> list[int]:
     """Mean-bin a channel's pixel window [lo, hi] by ``factor`` (feature P-04).
 
     A partial trailing bin is dropped so every value averages ``factor``
-    real pixels."""
-    window = np.asarray(frame_counts[lo:hi + 1], dtype=np.float64)
-    n = (window.size // factor) * factor
-    if n == 0:
-        return []
-    binned = window[:n].reshape(-1, factor).mean(axis=1)
+    real pixels. The arithmetic is `spectro.processing.bin_mean`, shared with
+    the ground's binned dark so both sides agree on the edges."""
+    binned = bin_mean(np.asarray(frame_counts[lo:hi + 1], dtype=np.float64), factor)
     return [int(v) for v in np.clip(binned, 0, 0xFFFF)]
 
 
 class QuicklookSender:
     """Every ``interval_s``, downlink both channels of the latest frame,
-    binned ``bin_factor`` x (spec section 4: ~1.1 kB burst per 30 s)."""
+    binned ``bin_factor`` x (spec section 4: ~1.1 kB burst per 30 s).
+
+    The frame is **despiked before binning**, the same USB-glitch rejection
+    the bench view applies (`spectro.processing.average_frames`, single
+    frame -> spatial despike). The transfer pins a random ~9 % of pixels per
+    frame to ~33514 ct and they move frame to frame, so a plain 8-px mean
+    carries a +4 k ct hit in about half of its bins and the quick-look jumps
+    every second while its baseline sits ~3 k high (`calibration.json`
+    notes: "never plain-average"). Storage still gets the raw frame - this
+    touches the downlink copy only. No dark subtraction here: that is the
+    ground's call, and the stats card says the frame is raw from the Pi.
+    """
 
     def __init__(self, downlink: Downlink, calibration, bin_factor: int = 8,
                  interval_s: float = 30.0):
@@ -111,6 +120,7 @@ class QuicklookSender:
         if latest is None or (now - self._last_sent) < self._interval:
             return False
         _, counts, exposure_us = latest
+        counts = average_frames(counts, clean=True)     # despike once, both channels
         for idx, role in enumerate(("measurement", "reference")):
             ch = self._cal.by_role_optional(role)
             if ch is None:

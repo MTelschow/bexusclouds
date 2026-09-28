@@ -187,11 +187,15 @@ read noise. Mitigations:
    source. EURECA explicitly recommends short, shielded cables.
 
 **Does the filter ever remove real signal? No -- by construction and by measurement.**
-The despike removes only an ISOLATED 1-px spike that exceeds its *higher* neighbour by
->=3x; a real spectral line is >=3.7 px wide (7.4 nm FWHM / 1.99 nm/px) and always has a
-high neighbour toward its centre, so it is never flagged. Injecting synthetic lines into
-real frames: lines >=1.75 px are preserved to 100%, the 3.7 px instrument line to 100%
-(>2x margin); only sub-1.5 px features (which the optics cannot produce) are touched.
+The despike removes only an ISOLATED spike of 1 to 3 px (`SPIKE_MAX_PX`) in which every
+pixel exceeds the *higher* of the two pixels just outside the run by >=3x; a real spectral
+line is >=3.7 px wide (7.4 nm FWHM / 1.99 nm/px) and falls off too slowly for that: at the
+instrument's own resolution a 3-px run centred on the line has edge pixels at most 2.3x
+their outer neighbours (both channels, any pedestal, on- or off-grid, 2026-09-29), so it is
+never flagged. Injecting synthetic lines into real frames: the 3.7 px instrument line is
+preserved to 100%; only features narrower than the optics can produce are touched. The
+run length was 1-2 px until 2026-09-29; a run of three (about 1.2 per frame at the 9 %
+hit rate) stood untouched and put +12 k into an 8-px quick-look bin, `docs/DEVLOG.md`.
 Downward features (absorption dips, transmission/absorbance) are never flagged. The
 temporal median is inherently lossless for real signal (it is present in every frame).
 A UI toggle (**glitch filter**) and `processing.average_frames(..., clean=False)` expose

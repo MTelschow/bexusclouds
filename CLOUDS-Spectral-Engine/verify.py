@@ -126,16 +126,21 @@ check("value-agnostic spike removed", abs(P.average_frames(spk)[3] - 1500.0) < 1
 spk2 = np.full(9, 1500.0); spk2[4] = 34000.0; spk2[5] = 34000.0   # 2-pixel-wide persistent glitch
 _c2 = P.average_frames(spk2)
 check("2-pixel-wide spike removed", abs(_c2[4] - 1500.0) < 1.0 and abs(_c2[5] - 1500.0) < 1.0, f"{_c2[4]:.0f},{_c2[5]:.0f}")
+spk3 = np.full(11, 1500.0); spk3[4:7] = 33514.0   # 3 adjacent hits: ~1.2 per frame at 9 %, +12 k in an 8-px bin
+_c3 = P.average_frames(spk3)
+check("3-pixel-wide spike removed", bool(np.all(np.abs(_c3[4:7] - 1500.0) < 1.0)), f"{_c3[4:7]}")
 
 # robust_peak: the exposure-control peak. A real spectral line is >=3.7 px FWHM and
 # survives; a glitch CLUSTER that slips past despike is diluted by the boxcar so it
 # cannot masquerade as signal (full protection pairs this with a 7-frame odd median).
 _xs = np.arange(60)
 _line = 1500.0 + 3000.0 * np.exp(-0.5 * ((_xs - 20) / 2.5) ** 2)    # real ~6 px line, peak ~4500
-_with_glitch = _line.copy(); _with_glitch[40:43] = 26000.0          # 3-px residual glitch cluster
+_with_glitch = _line.copy(); _with_glitch[40:44] = 26000.0          # 4-px residual glitch cluster (despike stops at 3)
 _rp = P.robust_peak(_with_glitch); _plain = float(P._despike(_with_glitch).max())
-check("robust_peak dilutes a surviving glitch cluster vs plain max", _rp < _plain * 0.75,
-      f"robust {_rp:.0f} < 0.75 x plain {_plain:.0f}")
+# a 5-px boxcar over a 4-px cluster keeps 4/5 of it: anything under 0.85 says the
+# boxcar acted, and the full defence is the 7-frame odd median in front of it.
+check("robust_peak dilutes a surviving glitch cluster vs plain max", _rp < _plain * 0.85,
+      f"robust {_rp:.0f} < 0.85 x plain {_plain:.0f}")
 check("robust_peak preserves a real >=5 px line", P.robust_peak(_line) > 3800,
       f"{P.robust_peak(_line):.0f}")
 # robust_peak_index marks the real line, not a glitch spike, at a sane exposure

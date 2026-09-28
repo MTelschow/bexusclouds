@@ -572,6 +572,44 @@ check("mock: a simulated dark is used but never stored",
 _mwin._clear_dark()
 check("mock: clearing it leaves the real stored dark alone",
       os.path.isfile(_dpath) == (_before is not None))
+
+# Switching the spectrum to the downlink while Run is live: the live loop
+# used to keep writing full-resolution frames into the buffer the 1 Hz
+# quick-look lands in, and the plot flipped between the two grids.
+_mwin._start()
+app.processEvents()
+check("source: Run is live on the detector", _mwin.running and _mwin.timer.isActive())
+_mwin._on_source("downlink")
+app.processEvents()
+check("source: switching to the downlink stops Run",
+      not _mwin.running and not _mwin.timer.isActive()
+      and _mwin.btn_run.text() == "Run")
+check("source: the switch clears the detector trace", _mwin.last_proc is None)
+_mwin._finish_tick(_mwin._acquire_frame())      # a tick that was already in flight
+_mwin._process()                                 # what the dark/offset toggles call
+app.processEvents()
+check("source: a late detector tick cannot draw over the downlink",
+      _mwin.last_proc is None)
+_mwin._start()
+app.processEvents()
+check("source: Run is refused while the spectrum is on the downlink",
+      not _mwin.running and "select Detector" in _mwin.hint.text(),
+      _mwin.hint.text())
+_mwin._on_source("detector")
+app.processEvents()
+check("source: back on the detector the last frame is drawn at once",
+      _mwin.last_proc is not None and _mwin.last_proc["m"].size
+      == _mwin.cal.by_role("measurement").pixels.size,
+      str(None if _mwin.last_proc is None else _mwin.last_proc["m"].size))
+check("source: and Run resumes by itself because it was live before",
+      _mwin.running and _mwin.timer.isActive())
+_mwin._stop()
+_mwin._on_source("downlink")
+_mwin._on_source("detector")
+app.processEvents()
+check("source: Run stays off on the way back when it was off before",
+      not _mwin.running and _mwin.last_proc is not None)
+_mwin._stop()
 _mwin.close()
 
 win._start()
@@ -1490,6 +1528,55 @@ try:
           and _win.last_proc["r"].size == 31,
           str(None if _win.last_proc is None
               else {k: v.size for k, v in _win.last_proc.items()}))
+    # Flat-field is a ratio against a full-resolution detector capture: on a
+    # 29-point quick-look it was a numpy broadcast error out of a slot.
+    _win.flat = True
+    _win.reference_proc = {"m": np.full(_ch1.pixels.size, 3000.0),
+                           "r": np.full(_ch2.pixels.size, 3000.0)}
+    try:
+        _win._take_downlink_frame()
+        app.processEvents()
+        _flat_ok = _win.last_proc is not None and _win.last_proc["m"].size == 29
+    except Exception as _e:                              # noqa: BLE001
+        _flat_ok, _e_txt = False, repr(_e)
+    else:
+        _e_txt = ""
+    check("downlink: flat-field on cannot break the binned trace", _flat_ok, _e_txt)
+    _win.flat = False
+    _win.reference_proc = None
+    # The stored dark comes off the quick-look too, binned with the Pi's
+    # edges, and only at the exposure the packet names (whole ms on the wire).
+    from spectro import dark as _darkstore
+    _dk = np.full(2048, 400.0); _dk[_ch1.pixel_window[0]:_ch1.pixel_window[0] + 8] = 800.0
+    _win.dark = _dk
+    _win._dark_meta = _darkstore.DarkFrame(counts=_dk, exposure_us=5000)
+    _win.subtract_dark_flag = True
+    _win._take_downlink_frame()
+    app.processEvents()
+    _m = _win.last_proc["m"]
+    check("downlink: the dark comes off the quick-look, binned like the Pi bins",
+          abs(_m[0] - (1000 - 800)) < 1e-6 and abs(_m[1] - (1010 - 400)) < 1e-6
+          and abs(_win.last_proc["r"][0] - (2000 - 400)) < 1e-6,
+          f"m[0]={_m[0]:.0f} m[1]={_m[1]:.0f} r[0]={_win.last_proc['r'][0]:.0f}")
+    check("downlink: the stats card says the dark was taken off",
+          "-dark" in _win.stats.text(), _win.stats.text().splitlines()[-3])
+    _win._dark_meta = _darkstore.DarkFrame(counts=_dk, exposure_us=5400)   # 5.4 ms: same wire ms
+    _win._take_downlink_frame()
+    check("downlink: a dark within the packet's millisecond still applies",
+          abs(_win.last_proc["m"][1] - 610) < 1e-6, f"{_win.last_proc['m'][1]:.0f}")
+    _win._dark_meta = _darkstore.DarkFrame(counts=_dk, exposure_us=10000)  # 10 ms vs 5 ms on the Pi
+    _win._update_dark_label()               # what capture/restore/clear do after changing the dark
+    _win._take_downlink_frame()
+    app.processEvents()
+    check("downlink: a dark from another exposure is held back, raw counts drawn",
+          abs(_win.last_proc["m"][1] - 1010) < 1e-6 and "-dark" not in _win.stats.text(),
+          f"{_win.last_proc['m'][1]:.0f}")
+    check("downlink: the Dark frame section says so, naming the Pi",
+          "held back" in _win.lbl_dark.text() and "on the Pi" in _win.lbl_dark.text(),
+          _win.lbl_dark.text())
+    _win.subtract_dark_flag = False
+    _win.dark = None; _win._dark_meta = None
+    _win._update_dark_label()
     _swept = 0
     for _axis in ("nm", "pixel"):
         _win.axis = _axis

@@ -18,7 +18,93 @@ without re-deriving anything. Newest entries first.
 
 ---
 
-## 2026-09-28 (newest) - AUTOPILOT: the automatic cycle on demand
+## 2026-09-29 (newest) - The spectrum flickered on Detector -> Downlink, and the quick-look was never despiked
+
+**Reported:** the plot "glitches" when switching from continuous full
+resolution to the 1 Hz binned downlink; `todo.txt` also said "binned version
+seems wrong". Two bugs, both in code, neither on the wire.
+
+**1 - two writers, one buffer.** `_on_source` cleared `last_proc` but never
+stopped the detector's 60 ms live loop, and nothing in `_finish_tick` /
+`_process` looked at `self.source`. So the detector wrote a 236/251-point
+dark-subtracted trace, `_tick_flight` wrote the 29/31-point raw quick-look
+back 500 ms later, and the plot flipped between the two grids and between
+two pedestals (~24 k ct). `_frame_n` and `_last_sat` were bumped by both;
+the CSV logger and the tracking servo kept running behind a "QUICK-LOOK"
+badge. Flat-field on top of that was a numpy broadcast error
+(`reference_ratio(mc_29, ref_236)`), and from `_on_source` it ran outside
+any `try` - a slot abort. Fix (operator decision: stop Run, do not merely
+hide it): selecting Downlink calls `_stop()`, `_start()` refuses on the
+downlink source (the one choke point for reconnect resume, `_on_track`, the
+exposure hunt and `restart()`), `_finish_tick` and `_process` return early
+off the detector, flat-field is detector-only, and the switch-time
+quick-look draw is under the `_tick_flight` `try`. First bench pass found
+the way back blank: the switch cleared `last_proc` and the loop it had
+stopped was not restarted, so the pane stayed empty until Run was pressed
+(the old code looked instant only because the loop never stopped). Now
+Detector redraws `last_frame` through `_process()` at once and resumes Run
+when `_resume_on_detector` says it was live at the switch.
+
+**2 - plain mean of a raw frame.** `QuicklookSender.maybe_send` binned
+`_latest_frame` as delivered by `grab()`: no despike, no median, the one
+thing `calibration.json` says never to do ("a mean lifts the true
+~1500-count baseline to ~4500"). With ~9 % of pixels pinned to ~33514 and
+8-px bins, P(bin has >= 1 glitch) = 1 - 0.91^8 ~ 53 %, each hit +4 k ct on
+that bin, and the hits move every frame - so the quick-look jumped by
+0/4k/8k per bin every second and its baseline sat ~3 k high. The bench view
+never showed this because it goes through `average_frames(median, clean)`.
+The sender now despikes the frame once (`average_frames(counts,
+clean=True)`, the 1-D path) before `bin_channel`; `bin_channel` itself and
+the stored frame are unchanged.
+
+**The despike had to grow one pixel to do that.** `_glitch_mask` caught
+isolated 1- and 2-px spikes only; a run of three has no towering neighbour
+inside it and stood untouched, and at 9 % a frame carries ~1.2 of those
+(2048 x 0.09^3 x 0.91^2) - the first glitch-frame test failed on exactly
+one, a +12 k bin. `SPIKE_MAX_PX = 3` generalises the mask to runs of up to
+three, every pixel of the run towering over the higher pixel just outside
+it. Checked against a real line before widening: at the instrument's own
+resolution (3.7 px FWHM, both channels, pedestal 76..24 000, amplitude up to
+full scale, on- and off-grid centres) a three-run's edge pixels are at most
+2.3x their outer neighbours, under the 3.0 threshold; four would be a 4.7 px
+feature, wider than the narrowest real line, so three is the limit.
+`verify.py` gains "3-pixel-wide spike removed", its instrument-resolution
+line still passes at 100.00 %, and its "surviving cluster" fixture is now a
+4-px run (despike stops at 3), diluted to 4/5 by the 5-px boxcar, so that
+check's threshold moved from 0.75 to 0.85 with the arithmetic beside it. This
+also improves the bench view at `navg=1`; the median stack never needed it.
+
+**3 - one dark for both views.** With the flicker gone the two traces sat
+~24 k apart: the detector's had the stored dark taken off, the quick-look's
+did not, and the stored dark could not have been applied - it is 2048 px,
+the quick-look 29. Now `_take_downlink_frame` bins the dark with the Pi's
+edges (`spectro.processing.bin_mean`, which `bin_channel` on the Pi now
+calls too, so the edges cannot drift) and subtracts it under the detector
+path's exposure guard, against the exposure the packet names - whole
+milliseconds on the wire, so matched to the millisecond there, exactly on
+the detector. `_dark_in_use(exposure_ms)`, `_frame_exposure_ms()` and
+`_dark_exposure_probe()` carry which exposure is being judged; the label
+says "held back ... on the Pi" when it is the Pi's. The dark toggle goes
+through `_redraw_source()` (re-take the quick-look, or re-process the
+frame), since `_process()` is detector-only now. Saturation stays on the
+raw counts. The committed dark is 10 ms and the Pi runs 100 ms, so the
+downlink holds it back until one is captured at 100 ms - which is the
+bench's flight setting anyway.
+
+**Evidence.** `tests/test_fsw_telemetry.py::TestBinning::test_quicklook_rejects_usb_glitches`
+(9 % glitch frame, every bin within 50 ct of the 1500 baseline);
+`verify_qt.py` gains eight `source:` checks (Run stops on the switch, a late
+tick and the dark/offset path cannot draw over the downlink, Run refused on
+the downlink, redraw + resume on the way back), one flat-field-on-downlink
+check and five binned-dark checks (bin edges, stats `-dark`, the wire
+millisecond, held back at another exposure, the label). `test_bin_channel_is_bin_mean`
+pins the Pi to the ground's binning.
+`docs/GUI_SOURCES.md` updated. Not yet on the Pi: `/opt/clouds` needs the
+new `telemetry.py` (md5 it, `docs/TRAPS.md`).
+
+---
+
+## 2026-09-28 - AUTOPILOT: the automatic cycle on demand
 
 **Asked for:** a command that starts the automatic cycle without waiting for
 a link loss ("autopilot"), ended by STOP. Before this the cycle was only
