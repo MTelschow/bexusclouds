@@ -1,34 +1,35 @@
 NOT TODAY:
-Gyro sensor
-Partical sensor
-Chamber multi sensor
-Electrical controller for the dispersion motor
-
 
 Adjust IP to match what we were given
-Investiage spectrometer flight data (binned version seems wrong
-Adjust data rate management and add external monitoring
 
 
 TODO:
 
-Add automatic activation cycle when connection is present as options to enable and disable on demand
+Gyro sensor
+Partical sensor
+Chamber multi sensor
+
 
 
 
 IN PROGRESS:
 
-Fix spectrometer data (clipping values even at minimal exposure time and low light exposure) Investigate.
 
-Fix/adjust automatic mode
-Add automatic mode reset/control
 
 
 VALIDATE:
 
+Fix spectrometer data (clipping values even at minimal exposure time and low light exposure) Investigate.
+Adjust data rate management and add external monitoring
+
 
 DONE:
 
+Investiage spectrometer flight data (binned version seems wrong)
+Fix/adjust automatic mode
+Add automatic mode reset/control
+Add automatic activation cycle when connection is present as options to enable and disable on demand
+Electrical controller for the dispersion motor
 Fix UI (visal bugs, and bad layout)
 Remove Release 1 and 2 (not relevant anymore)
 Default motor percentage is coerrectly at 50% but just the display right after starting says 100% by mistake.
