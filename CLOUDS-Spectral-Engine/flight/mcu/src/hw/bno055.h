@@ -9,14 +9,14 @@
  *
  * Everything below cites BST-BNO055-DS000-18 rev 1.8 (October 2021).
  *
- * **The address is discovered, not assumed.** Table 4-7 makes 0x29 the
- * default and 0x28 the alternative reached by pulling COM3 low, and Table 4-6
- * puts a 20-60 kOhm internal pull-up on COM3 - so a COM3 left open is 0x29.
- * This driver hardcoded 0x28 because that is where the 2026-08-31 survey
- * happened to find a part, which is one board's strap mistaken for the part's
- * address. Both are now tried and the one that returns a whole ID block is
- * latched. At the HK bit, a part answering at the address the driver does not
- * use is indistinguishable from a part that is absent.
+ * **Two parts, two fixed addresses.** Table 4-7 makes 0x29 the default and
+ * 0x28 the alternative reached by pulling COM3 low; Table 4-6 puts a 20-60
+ * kOhm internal pull-up on COM3, so a COM3 left open is 0x29. The ambient
+ * IMU is at 0x29, the chamber IMU at 0x28 (COM3 low), both on i2c0. One
+ * bno055_t per part, each bound to its own address - the driver used to try
+ * both and latch whichever answered, which with two parts fitted would claim
+ * the wrong one. A part strapped to the other address reads as absent, so
+ * src/tools/bno055_probe.c, which scans both, is what settles the strap.
  *
  * **Two boot numbers, not one.** Table 0-2 gives TSup = 400 ms "From Off to
  * configuration mode" *and* TPOR = 650 ms "From Reset to Config mode". Only
@@ -73,18 +73,42 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define BNO055_ADDR_AMBIENT 0x29 /* COM3 high or open: datasheet default */
+#define BNO055_ADDR_CHAMBER 0x28 /* COM3 pulled low: the alternative */
+
+enum bno055_state {
+    ST_POWER_WAIT,  /* waiting out the part's own start-up; bus untouched */
+    ST_BOOT_WAIT,   /* reset issued, waiting out the 650 ms boot */
+    ST_CONFIG_WAIT, /* CONFIGMODE requested, waiting out the 19 ms switch */
+    ST_MODE_WAIT,   /* configured, waiting out the mode switch */
+    ST_RUN,         /* identified, configured, delivering samples */
+    ST_DOWN,        /* unusable; waiting to retry */
+};
+
+/* One per fitted part. Set addr, then bno055_init(); everything else is the
+ * driver's. */
+typedef struct {
+    uint8_t addr;
+    enum bno055_state state;
+    uint64_t due_ms;
+    unsigned read_fails;
+    bool identified; /* ID block read back since the last reset */
+} bno055_t;
+
 /* Arms the bring-up. Writes NOTHING to the bus: the part is still inside its
  * 400 ms start-up when hw_init() runs, so the first transfer - the reset that
  * starts the 650 ms boot - is issued from bno055_read() once that has
  * elapsed. There is therefore no hardware verdict to return here, and none is
  * returned: the first honest one is the ID check after the boot. */
-void bno055_init(uint64_t now_ms);
+void bno055_init(bno055_t *dev, uint64_t now_ms);
 
-/* The I2C address the part identified at (0x29 or 0x28), or 0 while it has
- * not identified. Diagnostics only - it answers "which strap" for the bench
- * probe and for a DEVLOG entry, and nothing in the flight path branches on
- * it. */
-uint8_t bno055_address(void);
+/* The two parts on i2c0. Defined in bno055.c. */
+extern bno055_t bno055_ambient; /* BNO055_ADDR_AMBIENT, HKE_IMU_FAIL */
+extern bno055_t bno055_chamber; /* BNO055_ADDR_CHAMBER, HKE_IMU_CHM_FAIL */
+
+/* True once the part has returned a whole ID block since its last reset.
+ * Diagnostics only - nothing in the flight path branches on it. */
+bool bno055_identified(const bno055_t *dev);
 
 /* Latest sample, or false while the part is booting, being configured,
  * unusable, or waiting to be retried. Outputs are untouched when false.
@@ -92,6 +116,7 @@ uint8_t bno055_address(void);
  *   gyro_ddps   deci-degrees per second, converted from the part's 16 LSB/dps
  * Must be called periodically even while it returns false: the bring-up and
  * the retry after a failure are driven from here. Never sleeps. */
-bool bno055_read(uint64_t now_ms, int16_t accel_mg[3], int16_t gyro_ddps[3]);
+bool bno055_read(bno055_t *dev, uint64_t now_ms, int16_t accel_mg[3],
+                 int16_t gyro_ddps[3]);
 
 #endif

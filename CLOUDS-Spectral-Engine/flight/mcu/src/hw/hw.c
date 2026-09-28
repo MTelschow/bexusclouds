@@ -455,12 +455,12 @@ const seq_ops_t hw_seq_ops = {
  *   --    INA226  24 V rail  -> not fitted yet. The rail keeps its slot in
  *                              hk_t and downlinks RAIL_MV_INVALID; an absent
  *                              part is not HKE_RAIL_FAIL.
- *   0x29  BNO055 IMU        -> accel and gyro, in the non-fusion ACCGYRO mode.
- *   or 0x28                    Which of the two is a board strap, not a
- *                              property of the part: 0x29 is the datasheet
- *                              default and COM3 carries an internal pull-up,
- *                              so bno055.c tries both and latches whichever
- *                              returns a whole ID block. The 2026-08-31
+ *   0x29  BNO055 ambient   -> hk_t.accel_mg / gyro_ddps, HKE_IMU_FAIL.
+ *   0x28  BNO055 chamber   -> hk_t.chm_accel_mg / chm_gyro_ddps,
+ *                              HKE_IMU_CHM_FAIL. Both in the non-fusion
+ *                              ACCGYRO mode; the address is the COM3 strap
+ *                              (0x29 default/open, 0x28 pulled low) and each
+ *                              instance talks only to its own. The 2026-08-31
  *                              survey read the accel/mag/gyro IDs as 0x00 and
  *                              called the part faulted; it read them before
  *                              the part's 400 ms start-up and 650 ms boot
@@ -555,10 +555,19 @@ void hw_read_sensors(hk_t *hk)
      * accelerometer can produce and the flag is the only thing that says this
      * one is not. The bring-up runs from here rather than from hw_init() so
      * that it can also recover a part that drops out in flight. */
-    if (!bno055_read(hw_monotonic_ms(), hk->accel_mg, hk->gyro_ddps)) {
+    if (!bno055_read(&bno055_ambient, hw_monotonic_ms(), hk->accel_mg,
+                     hk->gyro_ddps)) {
         memset(hk->accel_mg, 0, sizeof hk->accel_mg);
         memset(hk->gyro_ddps, 0, sizeof hk->gyro_ddps);
         hk->error_flags |= HKE_IMU_FAIL;
+    }
+    /* The chamber IMU, same rules, its own flag: the two parts fail
+     * independently. */
+    if (!bno055_read(&bno055_chamber, hw_monotonic_ms(), hk->chm_accel_mg,
+                     hk->chm_gyro_ddps)) {
+        memset(hk->chm_accel_mg, 0, sizeof hk->chm_accel_mg);
+        memset(hk->chm_gyro_ddps, 0, sizeof hk->chm_gyro_ddps);
+        hk->error_flags |= HKE_IMU_CHM_FAIL;
     }
 
     /* Rail voltage and shunt voltage, per rail. A rail that does not answer
@@ -677,5 +686,6 @@ void hw_init(void)
      * inside its own 400 ms start-up (datasheet TSup) while this runs, so the
      * reset that starts its 650 ms boot is issued from the 1 Hz sweep once
      * that has elapsed. Nothing here waits for any of it. */
-    bno055_init(hw_monotonic_ms());
+    bno055_init(&bno055_ambient, hw_monotonic_ms());
+    bno055_init(&bno055_chamber, hw_monotonic_ms());
 }

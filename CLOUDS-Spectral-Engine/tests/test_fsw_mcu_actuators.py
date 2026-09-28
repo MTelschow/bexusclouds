@@ -656,7 +656,7 @@ class TestMotorCurrentSense:
         assert "uint16_t hb_sense_raw;" in frame_h
         assert int(re.search(r"#define HB_SENSE_INVALID (0x[0-9A-Fa-f]+)u",
                              frame_h).group(1), 16) == hk.HB_SENSE_INVALID
-        assert _define(frame_h, "HK_SIZE") == hk.SIZE == 64
+        assert _define(frame_h, "HK_SIZE") == hk.SIZE == 76
 
     def test_the_ground_scale_is_the_ipropi_chain(self):
         """The board comment and the ground constant have to agree on which

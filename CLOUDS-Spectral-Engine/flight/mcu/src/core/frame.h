@@ -75,11 +75,13 @@ typedef struct {
     uint16_t plen;
 } frame_view_t;
 
-/* Housekeeping payload - 64 bytes, mirror of clouds_link/hk.py.
+/* Housekeeping payload - 76 bytes, mirror of clouds_link/hk.py.
  *
  * Chamber temperature, humidity and pressure come from a SECOND BME280 on
  * SPI_1 (hw/board.h PIN_BME_CHAMBER_CS), at the end of the packet and
- * behind a flag of their own.
+ * behind a flag of their own. Chamber acceleration and rate come from a
+ * SECOND BNO055 on i2c0 at 0x28, appended after those, behind
+ * HKE_IMU_CHM_FAIL.
  *
  * There is no second humidity channel on i2c0.
  *
@@ -90,8 +92,13 @@ typedef struct {
  * The ceiling is 67 B: the 2 kbit/s continuous E-Link budget leaves ~83 B for
  * a framed HK packet alongside a 1 Hz quick-look. Growing past that means
  * binning the quick-look harder or slowing its cadence, and
- * tests/test_fsw_telemetry.py::TestDownlinkBudget fails first, by design. */
-#define HK_SIZE 64
+ * tests/test_fsw_telemetry.py::TestDownlinkBudget fails first, by design.
+ *
+ * 76 B is OVER that ceiling: the chamber IMU's 12 B were added on the
+ * operator's instruction (2026-09-28) to get both IMUs on screen, with the
+ * downlink budget explicitly deferred. The budget test fails until that is
+ * settled. */
+#define HK_SIZE 76
 
 /* "No reading" for a rail_mv entry - mirror of RAIL_MV_INVALID in
  * clouds_link/hk.py. Not 0: a rail can legitimately *be* at 0 mV when its
@@ -176,6 +183,11 @@ typedef struct {
     int16_t chm_temp_cc;
     uint16_t chm_rh_cpct;
     uint32_t chm_p_pa;
+    /* Chamber BNO055 (i2c0, 0x28, COM3 low): same units as the ambient
+     * part's accel_mg / gyro_ddps. Appended after chm_p_pa so every older
+     * field keeps its offset. Zeros behind HKE_IMU_CHM_FAIL when the part has
+     * nothing to give. Instrumentation only - nothing in core/ reads it. */
+    int16_t chm_accel_mg[3], chm_gyro_ddps[3];
 } hk_t;
 
 /* MCU flag bits (hk_t.flags) - mirror of clouds_link/hk.py McuFlags. */
@@ -207,11 +219,14 @@ typedef struct {
                                          * parts are on different buses and
                                          * only the ambient one feeds the
                                          * sequencer */
-#define HKE_IMU_FAIL (1u << 4)      /* IMU absent or reporting a fault */
+#define HKE_IMU_FAIL (1u << 4)      /* ambient IMU (0x29) absent or faulted */
 #define HKE_NO_TEMP (1u << 5)       /* STLM20 pair not fitted: temps unsourced */
 #define HKE_RAIL_FAIL (1u << 6)     /* one or more INA226 rails unreadable;
                                      * that rail's rail_mv is
                                      * RAIL_MV_INVALID */
+#define HKE_IMU_CHM_FAIL (1u << 7)  /* chamber IMU (0x28) absent or faulted:
+                                     * chm_accel_mg / chm_gyro_ddps are
+                                     * zeros. The last free bit. */
 
 /* Actuator drive bits (hk_t.valve_status) - mirror of clouds_link/hk.py
  * ValveStatus. A set bit means that line is energized *now*, which is how

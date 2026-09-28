@@ -135,15 +135,25 @@ SENSOR_FIELDS = [
      lambda h: f"{h.chm_temp_cc / 100:.1f} C", HkErrors.BME280_CHM_FAIL),
     ("Chamber RH", "BME280 SPI_1",
      lambda h: f"{h.chm_rh_cpct / 100:.1f} %", HkErrors.BME280_CHM_FAIL),
-    ("Accel", "BNO055",
+    ("Accel", "BNO055 0x29",
      lambda h: "  ".join(f"{v:+d}" for v in h.accel_mg) + " mg",
      HkErrors.IMU_FAIL),
     # gyro_ddps is deci-dps on the wire, like every other scaled HK integer.
     # Printed raw it reads as a rate ten times the real one, which nothing on
     # screen would contradict.
-    ("Gyro", "BNO055",
+    ("Gyro", "BNO055 0x29",
      lambda h: "  ".join(f"{v / 10:+.1f}" for v in h.gyro_ddps) + " dps",
      HkErrors.IMU_FAIL),
+    # The chamber BNO055, a second part on the same i2c0 at 0x28 (COM3 low).
+    # The address is the part column because it is the only thing that tells
+    # the two IMUs apart on the bus, and the first thing to check when one
+    # of them reads "no data".
+    ("Chamber accel", "BNO055 0x28",
+     lambda h: "  ".join(f"{v:+d}" for v in h.chm_accel_mg) + " mg",
+     HkErrors.IMU_CHM_FAIL),
+    ("Chamber gyro", "BNO055 0x28",
+     lambda h: "  ".join(f"{v / 10:+.1f}" for v in h.chm_gyro_ddps) + " dps",
+     HkErrors.IMU_CHM_FAIL),
 ] + [
     # One row per rail rather than one packed line, so an operator can see at
     # a glance which rail is off. `None` for the flag: HKE_RAIL_FAIL says only
@@ -187,6 +197,7 @@ UNSOURCED_TEXT = {
     # not the sensor (hw/board.h PIN_BME_CHAMBER_CS).
     HkErrors.BME280_CHM_FAIL: "no read",
     HkErrors.IMU_FAIL: "no data",
+    HkErrors.IMU_CHM_FAIL: "no data",
 }
 
 #: Older than this and the state banner goes red - the numbers on screen are

@@ -27,7 +27,8 @@ The sensor picture it reports is the carrier as measured (DEVLOG 2026-09-11):
 both BME280s answering - the ambient one on i2c0 and the chamber one on
 SPI_1 - three INA226 rails live, the 24 V slot unfitted
 (``RAIL_MV_INVALID``), no STLM20 pair (``NO_TEMP``) and no IMU
-(``IMU_FAIL``, zeroed vectors). Pass ``imu=True`` for a board that has one.
+(``IMU_FAIL`` / ``IMU_CHM_FAIL``, zeroed vectors). Pass ``imu=True`` for a
+board with both BNO055s fitted (ambient 0x29, chamber 0x28).
 
 The chamber part answering here is an assumption, not a measurement: it has
 never been run against the fitted hardware. ``--mock`` therefore exercises
@@ -418,13 +419,20 @@ class SimMcu:
         with self._lock:
             now = time.monotonic()
             err = hk.HkErrors.NO_TEMP          # STLM20 pair not populated
-            accel = gyro = (0, 0, 0)
+            accel = gyro = chm_accel = chm_gyro = (0, 0, 0)
             if self._imu:
                 accel = (int(random.gauss(0, 30)), int(random.gauss(0, 30)),
                          int(random.gauss(1000, 30)))
                 gyro = tuple(int(random.gauss(0, 50)) for _ in range(3))
+                # Same gondola, so same gravity; its own noise so the two
+                # rows on screen are visibly two parts.
+                chm_accel = (int(random.gauss(0, 30)),
+                             int(random.gauss(0, 30)),
+                             int(random.gauss(1000, 30)))
+                chm_gyro = tuple(int(random.gauss(0, 50)) for _ in range(3))
             else:
-                err |= hk.HkErrors.IMU_FAIL    # absent on the carrier
+                err |= hk.HkErrors.IMU_FAIL        # absent on the carrier
+                err |= hk.HkErrors.IMU_CHM_FAIL
 
             # Three monitors fitted; the 24 V slot has no part (RAIL_I2C_ADDR),
             # so it carries the sentinel and no current is derived from it.
@@ -489,7 +497,8 @@ class SimMcu:
                 # that moved them together would hide it.
                 chm_temp_cc=int(random.gauss(2450, 20)),
                 chm_rh_cpct=int(random.gauss(3800, 50)),
-                chm_p_pa=int(random.gauss(P_GROUND_PA, 30)))
+                chm_p_pa=int(random.gauss(P_GROUND_PA, 30)),
+                chm_accel_mg=chm_accel, chm_gyro_ddps=chm_gyro)
 
     def _membrane_phase_ms(self) -> float:
         """How long the simulated drive holds one level, in ms - the longer

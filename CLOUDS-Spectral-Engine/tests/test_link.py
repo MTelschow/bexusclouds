@@ -111,8 +111,8 @@ class TestFrame:
 
 
 class TestHousekeeping:
-    def test_size_is_64(self):
-        assert hk.SIZE == 64
+    def test_size_is_76(self):
+        assert hk.SIZE == 76
 
     def test_roundtrip(self):
         h = hk.Housekeeping(state=hk.SeqState.AUTO_MEMBRANE,
@@ -270,12 +270,12 @@ class TestHousekeeping:
         """
         old = hk.Housekeeping(error_flags=0b0000_1100)
         assert old.error_text == "NO_MEMBRANE_SENSE BME280_CHM_FAIL"
-        # Bit 7 is the free one now, and an unnamed bit must still survive as
-        # a mask - that is what keeps a log written by a NEWER MCU readable
-        # by this decoder.
-        assert not any(e == 1 << 7 for e in hk.HkErrors)
-        h = hk.Housekeeping(error_flags=0b1000_0000 | hk.HkErrors.NO_TEMP)
-        assert h.error_text == "NO_TEMP 0x0080"
+        # Bit 7 went to the chamber IMU (2026-09-28), so all eight bits of the
+        # u8 are named. An unnamed bit must still survive as a mask - that is
+        # what keeps a value from a NEWER source readable by this decoder.
+        assert sum(1 for _ in hk.HkErrors) == 8
+        h = hk.Housekeeping(error_flags=0x100 | hk.HkErrors.NO_TEMP)
+        assert h.error_text == "NO_TEMP 0x0100"
 
     def test_an_older_mcus_shorter_hk_still_decodes(self):
         """An MCU flashed before the chamber BME280 sends 56 B, and the ground
@@ -304,6 +304,31 @@ class TestHousekeeping:
         # reach a display would be a pressure no sensor produced.
         assert g.error_flags & hk.HkErrors.BME280_CHM_FAIL
         assert (g.chm_p_pa, g.chm_temp_cc, g.chm_rh_cpct) == (0, 0, 0)
+
+    def test_hk_before_the_chamber_imu_still_decodes(self):
+        """A 64 B packet from an MCU flashed before the chamber BNO055 decodes
+        in full, with the chamber IMU declared unsourced rather than zero."""
+        g0 = hk.Housekeeping(accel_mg=(1, -2, 981), chm_p_pa=98_765,
+                             chm_accel_mg=(7, 7, 7))
+        payload = g0.pack()[:hk.SIZE_PRE_CHM_IMU]
+        assert hk.SIZE_PRE_CHM_IMU == 64
+        g = hk.Housekeeping.unpack(payload)
+        assert g.accel_mg == (1, -2, 981) and g.chm_p_pa == 98_765
+        assert g.error_flags & hk.HkErrors.IMU_CHM_FAIL
+        assert g.chm_accel_mg == (0, 0, 0) and g.chm_gyro_ddps == (0, 0, 0)
+
+    def test_the_two_imus_roundtrip_separately(self):
+        """Ambient (0x29) and chamber (0x28) vectors must not cross: values
+        that differ are the only thing that would catch a swapped pack."""
+        h = hk.Housekeeping(accel_mg=(1, 2, 1000), gyro_ddps=(3, 4, 5),
+                            chm_accel_mg=(-6, -7, -981),
+                            chm_gyro_ddps=(-8, -9, -10))
+        g = hk.Housekeeping.unpack(h.pack())
+        assert g.accel_mg == (1, 2, 1000) and g.gyro_ddps == (3, 4, 5)
+        assert g.chm_accel_mg == (-6, -7, -981)
+        assert g.chm_gyro_ddps == (-8, -9, -10)
+        row = g.to_row()
+        assert row["chm_accel_z_mg"] == -981 and row["accel_z_mg"] == 1000
 
     def test_a_truncated_hk_is_still_an_error(self):
         """Tolerating a shorter *known* layout must not become tolerating any

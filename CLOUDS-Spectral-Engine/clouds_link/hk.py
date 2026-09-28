@@ -36,8 +36,15 @@ import struct
 from dataclasses import dataclass, field, asdict
 from enum import IntEnum
 
-_HK = struct.Struct("<BBBBBBhhhHIhhhhhhHHHHhhhhIIHhHI")
-SIZE = _HK.size  # 64
+_HK = struct.Struct("<BBBBBBhhhHIhhhhhhHHHHhhhhIIHhHIhhhhhh")
+SIZE = _HK.size  # 76
+
+#: The layout before the chamber BNO055's twelve bytes were appended
+#: (2026-09-28): ends at ``chm_p_pa``. Decoded with the chamber IMU fields as
+#: zeros behind ``HkErrors.IMU_CHM_FAIL``, on the same reasoning as
+#: ``_HK_PRE_CHAMBER`` below.
+_HK_PRE_CHM_IMU = struct.Struct("<BBBBBBhhhHIhhhhhhHHHHhhhhIIHhHI")
+SIZE_PRE_CHM_IMU = _HK_PRE_CHM_IMU.size  # 64
 
 #: The layout before the chamber BME280's eight bytes were appended
 #: (2026-09-17), and the size an MCU flashed before that date still sends.
@@ -59,7 +66,7 @@ _HK_PRE_CHAMBER = struct.Struct("<BBBBBBhhhHIhhhhhhHHHHhhhhIIH")
 SIZE_PRE_CHAMBER = _HK_PRE_CHAMBER.size  # 56
 
 #: Payload sizes this decoder understands, smallest first.
-KNOWN_SIZES = (SIZE_PRE_CHAMBER, SIZE)
+KNOWN_SIZES = (SIZE_PRE_CHAMBER, SIZE_PRE_CHM_IMU, SIZE)
 
 
 class SeqState(IntEnum):
@@ -246,9 +253,11 @@ class HkErrors(IntEnum):
                                 # from BME280_FAIL - different bus, different
                                 # part, and only the ambient one feeds the
                                 # MCU's launch detection
-    IMU_FAIL = 1 << 4       # IMU absent or reporting a fault
+    IMU_FAIL = 1 << 4       # ambient IMU (BNO055 0x29) absent or faulted
     NO_TEMP = 1 << 5        # STLM20 pair not fitted, temps unsourced
     RAIL_FAIL = 1 << 6      # an INA226 rail is unreadable (see RAIL_MV_INVALID)
+    IMU_CHM_FAIL = 1 << 7   # chamber IMU (BNO055 0x28) absent or faulted:
+                            # chm_accel_mg / chm_gyro_ddps are zeros
 
 
 @dataclass
@@ -301,6 +310,11 @@ class Housekeeping:
     chm_temp_cc: int = 0
     chm_rh_cpct: int = 0
     chm_p_pa: int = 101325
+    #: Chamber BNO055 (i2c0, 0x28): same units as ``accel_mg`` /
+    #: ``gyro_ddps``. Zeros behind ``HkErrors.IMU_CHM_FAIL`` when the part
+    #: has nothing to give.
+    chm_accel_mg: tuple = field(default=(0, 0, 0))
+    chm_gyro_ddps: tuple = field(default=(0, 0, 0))
 
     def pack(self) -> bytes:
         return _HK.pack(self.state, self.flags, self.reserved0,
@@ -312,7 +326,8 @@ class Housekeeping:
                         *self.rail_mv, *self.shunt_raw,
                         self.uptime_s, self.mission_t_s,
                         self.hb_sense_raw,
-                        self.chm_temp_cc, self.chm_rh_cpct, self.chm_p_pa)
+                        self.chm_temp_cc, self.chm_rh_cpct, self.chm_p_pa,
+                        *self.chm_accel_mg, *self.chm_gyro_ddps)
 
     @classmethod
     def unpack(cls, payload: bytes) -> "Housekeeping":
@@ -325,11 +340,26 @@ class Housekeeping:
         decoded and the chamber fields are reported as having no source rather
         than the whole packet being thrown away. See ``_HK_PRE_CHAMBER``.
 
+        One that is ``SIZE_PRE_CHM_IMU`` long predates the chamber BNO055 and
+        is decoded the same way, with the chamber IMU fields zero behind
+        ``HkErrors.IMU_CHM_FAIL``.
+
         Anything shorter than that is genuinely undecodable and raises, as
         before - a truncated frame is not an old one.
         """
         n = len(payload)
-        if n < SIZE:
+        chm_imu = dict(chm_accel_mg=(0, 0, 0), chm_gyro_ddps=(0, 0, 0))
+        if n >= SIZE:
+            v = _HK.unpack_from(payload)
+            chm = dict(chm_temp_cc=v[28], chm_rh_cpct=v[29], chm_p_pa=v[30])
+            chm_imu = dict(chm_accel_mg=(v[31], v[32], v[33]),
+                           chm_gyro_ddps=(v[34], v[35], v[36]))
+            err = v[5]
+        elif n >= SIZE_PRE_CHM_IMU:
+            v = _HK_PRE_CHM_IMU.unpack_from(payload)
+            chm = dict(chm_temp_cc=v[28], chm_rh_cpct=v[29], chm_p_pa=v[30])
+            err = v[5] | HkErrors.IMU_CHM_FAIL
+        else:
             if n < SIZE_PRE_CHAMBER:
                 raise struct.error(
                     f"HK payload is {n} B, shorter than any known layout "
@@ -340,11 +370,7 @@ class Housekeeping:
             # chm_p_pa, and defaulting to that here would put a pressure on
             # screen that no sensor produced.
             chm = dict(chm_temp_cc=0, chm_rh_cpct=0, chm_p_pa=0)
-            err = v[5] | HkErrors.BME280_CHM_FAIL
-        else:
-            v = _HK.unpack_from(payload)
-            chm = dict(chm_temp_cc=v[28], chm_rh_cpct=v[29], chm_p_pa=v[30])
-            err = v[5]
+            err = v[5] | HkErrors.BME280_CHM_FAIL | HkErrors.IMU_CHM_FAIL
         return cls(state=v[0], flags=v[1], reserved0=v[2], valve_status=v[3],
                    membrane_duty=v[4], error_flags=err,
                    temp1_cc=v[6], temp2_cc=v[7], bme_temp_cc=v[8],
@@ -354,7 +380,7 @@ class Housekeeping:
                    rail_mv=(v[17], v[18], v[19], v[20]),
                    shunt_raw=(v[21], v[22], v[23], v[24]),
                    uptime_s=v[25], mission_t_s=v[26],
-                   hb_sense_raw=v[27], **chm)
+                   hb_sense_raw=v[27], **chm, **chm_imu)
 
     def rail_uv(self, i: int) -> float | None:
         """Shunt voltage of rail ``i`` in microvolts, or None if that monitor
@@ -534,6 +560,10 @@ class Housekeeping:
         gx, gy, gz = d.pop("gyro_ddps")
         d.update(accel_x_mg=ax, accel_y_mg=ay, accel_z_mg=az,
                  gyro_x_ddps=gx, gyro_y_ddps=gy, gyro_z_ddps=gz)
+        ax, ay, az = d.pop("chm_accel_mg")
+        gx, gy, gz = d.pop("chm_gyro_ddps")
+        d.update(chm_accel_x_mg=ax, chm_accel_y_mg=ay, chm_accel_z_mg=az,
+                 chm_gyro_x_ddps=gx, chm_gyro_y_ddps=gy, chm_gyro_z_ddps=gz)
         # Derived current per rail, alongside the raw register it came from:
         # a session log has to stay re-derivable if a shunt value turns out
         # to be wrong, and it has to be readable without doing the arithmetic.

@@ -18,7 +18,31 @@ without re-deriving anything. Newest entries first.
 
 ---
 
-## 2026-09-28 (newest) - The valves are gone
+## 2026-09-28 (newest) - A second BNO055, in the chamber
+
+**Asked for:** configure the BNO055 at `0x28` - the chamber part - leave the
+ambient one alone, and show both in the GUI. Downlink budget explicitly
+deferred by the operator.
+
+`hw/bno055.c` becomes one `bno055_t` per part, like `bme280_t`:
+`bno055_ambient` at 0x29 and `bno055_chamber` at 0x28, same bring-up
+(TSup 400 ms, RST_SYS, TPOR 650 ms, ID block, CONFIGMODE 19 ms, PWR_NORMAL,
+internal clock, `UNIT_SEL 0x01`, ACCGYRO 7 ms, `OPR_MODE` read-back; checked
+again against BST-BNO055-DS000-18 rev 1.8). The old "try both, latch the
+winner" address discovery is gone: with both parts on i2c0 it would identify
+whichever answered first and downlink it under either name.
+
+HK grows by appending `chm_accel_mg[3]`, `chm_gyro_ddps[3]` (offsets 64..75)
+to **76 B**, behind the last free error bit, `HKE_IMU_CHM_FAIL` (bit 7). A
+64 B packet from an older MCU still decodes, chamber IMU flagged unsourced.
+GUI: `Chamber accel` / `Chamber gyro` rows (part column `BNO055 0x28`; the
+ambient rows now say `BNO055 0x29`) and a `BNO055 chamber` timeline group.
+`SimMcu(imu=True)` drives both.
+
+**Open:** 76 B is over the 67 B ceiling; `TestDownlinkBudget` fails, by
+design, until the budget is settled. Neither part has yet run on the carrier.
+
+## 2026-09-28 - The valves are gone
 
 **Asked for:** remove the valve path. The two pinch valves and the two
 equalisation ball valves are not on the experiment any more; the dispersion

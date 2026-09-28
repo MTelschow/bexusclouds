@@ -44,10 +44,16 @@ behaviour changes.
   loads. `docs/HARDWARE.md`.
 - **Never `printf` on the MCU's `uart0`** — `pico_enable_stdio_uart` stays 0,
   it is the HK downlink.
-- **HK payload ceiling is 67 B**; `hk.SIZE` is 64 B — **3 B of margin**, plus
-  the retired `fired` byte at offset 2, kept at 0 so no field moved. One
-  more `uint32_t` in `Housekeeping` busts the 2 kbit/s budget;
-  `tests/test_fsw_telemetry.py::TestDownlinkBudget` fails first, by design.
+- **HK payload ceiling is 67 B**; `hk.SIZE` is **76 B — 9 B over**, since the
+  chamber BNO055's 12 B were appended (2026-09-28, operator deferred the
+  budget). `tests/test_fsw_telemetry.py::TestDownlinkBudget` fails until that
+  is settled — expected, don't "fix" it by editing the test. Retired `fired`
+  byte at offset 2 stays 0 so no field moved; `error_flags` has no free bit
+  left (bit 7 = `IMU_CHM_FAIL`).
+- **Two BNO055s on i2c0, fixed addresses**: ambient `0x29` (`accel_mg`,
+  `IMU_FAIL`), chamber `0x28` (`chm_accel_mg`, `IMU_CHM_FAIL`). One
+  `bno055_t` each; never re-add address discovery — it would claim the wrong
+  part.
 - **Two spectrum sources, operator's explicit choice.** Detector (live, every
   pixel, bench only) vs downlink quick-look (1 Hz, mean-binned). Nothing in the
   app may switch `self.source` on its own. `docs/GUI_SOURCES.md`.

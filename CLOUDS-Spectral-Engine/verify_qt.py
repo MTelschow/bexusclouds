@@ -986,10 +986,32 @@ try:
     # has to say which bus, or two identical BME280s are indistinguishable
     # on screen when one of them fails.
     _chm = {n: _p for n, _p, _f, _fg in _fl.SENSOR_FIELDS
-            if n.startswith("Chamber")}
+            if n.startswith("Chamber") and "BME280" in _p}
     check("flight: the chamber BME280 has its three rows",
           set(_chm) == {"Chamber p", "Chamber T", "Chamber RH"}
           and all("SPI" in v for v in _chm.values()), str(_chm))
+    # Two BNO055s share i2c0; the address in the part column is what tells
+    # them apart, and each has its own flag.
+    _imus = {n: (_p, _fg) for n, _p, _f, _fg in _fl.SENSOR_FIELDS
+             if "BNO055" in _p}
+    check("flight: both BNO055s have their rows, by address and flag",
+          _imus == {"Accel": ("BNO055 0x29", _hk.HkErrors.IMU_FAIL),
+                    "Gyro": ("BNO055 0x29", _hk.HkErrors.IMU_FAIL),
+                    "Chamber accel": ("BNO055 0x28",
+                                      _hk.HkErrors.IMU_CHM_FAIL),
+                    "Chamber gyro": ("BNO055 0x28",
+                                     _hk.HkErrors.IMU_CHM_FAIL)},
+          str(_imus))
+    _both = _hk.Housekeeping(accel_mg=(1, -2, 1000), gyro_ddps=(10, 0, 0),
+                             chm_accel_mg=(3, 4, -981),
+                             chm_gyro_ddps=(0, -25, 0))
+    _gse._refresh_sensors(_both)
+    _t2 = {n: _gse._sensor_labels[n].text()
+           for n in ("Accel", "Chamber accel", "Chamber gyro")}
+    check("flight: both IMUs show their own readings",
+          _t2["Accel"] == "+1  -2  +1000 mg"
+          and _t2["Chamber accel"] == "+3  +4  -981 mg"
+          and _t2["Chamber gyro"] == "+0.0  -2.5  +0.0 dps", str(_t2))
     check("flight: HKE_NO_TEMP is still declared in the Errors row",
           "NO_TEMP" in _unsourced.error_text, _unsourced.error_text)
     check("flight: the BME280 readings are shown, being real",

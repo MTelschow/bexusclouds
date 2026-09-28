@@ -244,6 +244,18 @@ SERIES: tuple[Series, ...] = (
            _vec("gyro_ddps", i, 0.1), HkErrors.IMU_FAIL)
     for i, ax in enumerate("xyz")
 ) + tuple(
+    # The chamber BNO055 (0x28): its own group, like the chamber BME280, so
+    # chamber against ambient is two ticks away.
+    Series(f"chm_acc_{ax}", f"Chamber accel {ax.upper()}", "mg",
+           "BNO055 chamber", _AXIS_C[i],
+           _vec("chm_accel_mg", i), HkErrors.IMU_CHM_FAIL)
+    for i, ax in enumerate("xyz")
+) + tuple(
+    Series(f"chm_gyr_{ax}", f"Chamber gyro {ax.upper()}", "dps",
+           "BNO055 chamber", _AXIS_C[i],
+           _vec("chm_gyro_ddps", i, 0.1), HkErrors.IMU_CHM_FAIL)
+    for i, ax in enumerate("xyz")
+) + tuple(
     Series(f"rail_v{i}", f"{name} bus", "V", "INA226", _RAIL_C[i],
            _rail_v(i), None, fitted=RAIL_I2C_ADDR[i] is not None)
     for i, name in enumerate(RAIL_NAMES)

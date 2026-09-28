@@ -134,6 +134,10 @@ static void test_hk_pack_layout(void)
     hk.chm_temp_cc = 2450;    /* chamber BME280 on SPI_1: 24.50 C */
     hk.chm_rh_cpct = 3812;    /* 38.12 %RH */
     hk.chm_p_pa = 98765;
+    hk.accel_mg[2] = 1000;    /* ambient BNO055 (0x29) */
+    hk.chm_accel_mg[2] = -981; /* chamber BNO055 (0x28): differs, so a
+                                * pack that crossed the two is caught */
+    hk.chm_gyro_ddps[0] = 25;  /* 2.5 dps */
     hk_pack(&hk, out);
     TEST_ASSERT_EQUAL_UINT8(5, out[0]);
     /* Byte 2 was `fired`, the pinch-valve bits. The valves are gone and the
@@ -179,7 +183,15 @@ static void test_hk_pack_layout(void)
     TEST_ASSERT_EQUAL_HEX8(0x81, out[61]);
     TEST_ASSERT_EQUAL_HEX8(0x01, out[62]);
     TEST_ASSERT_EQUAL_HEX8(0x00, out[63]);
-    TEST_ASSERT_EQUAL_UINT32(64, (uint32_t)HK_SIZE);
+    /* ambient accel z at offset 22, inside the original IMU slot */
+    TEST_ASSERT_EQUAL_HEX8(0xE8, out[22]); /* 1000 = 0x03E8 */
+    TEST_ASSERT_EQUAL_HEX8(0x03, out[23]);
+    /* The chamber BNO055 pair at offsets 64..75, appended after chm_p_pa */
+    TEST_ASSERT_EQUAL_HEX8(0x2B, out[68]); /* -981 = 0xFC2B */
+    TEST_ASSERT_EQUAL_HEX8(0xFC, out[69]);
+    TEST_ASSERT_EQUAL_HEX8(0x19, out[70]); /* 25 = 0x0019 */
+    TEST_ASSERT_EQUAL_HEX8(0x00, out[71]);
+    TEST_ASSERT_EQUAL_UINT32(76, (uint32_t)HK_SIZE);
 }
 
 /* ---- config ------------------------------------------------------------ */
