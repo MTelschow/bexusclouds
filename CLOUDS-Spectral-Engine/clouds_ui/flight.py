@@ -350,8 +350,14 @@ class FlightPanel(QtCore.QObject):
 
         form = QtWidgets.QFormLayout()
         form.setContentsMargins(0, 0, 0, 0)
-        form.setSpacing(2)
+        form.setHorizontalSpacing(12)
+        form.setVerticalSpacing(2)
         form.setLabelAlignment(QtCore.Qt.AlignLeft)
+        # The macOS defaults centre the form and hold fields at their hint,
+        # which floated a narrow block in the middle of the column with no
+        # gap between key and value.
+        form.setFormAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignTop)
+        form.setFieldGrowthPolicy(QtWidgets.QFormLayout.AllNonFixedFieldsGrow)
         self._hk_labels: dict[str, QtWidgets.QLabel] = {}
         for name, _ in HK_FIELDS:
             val = QtWidgets.QLabel("-")

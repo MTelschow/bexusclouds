@@ -12,6 +12,17 @@ than left to Cocoa/Aqua.
 """
 from __future__ import annotations
 
+import os
+
+from PyQt5 import QtGui
+
+# Repo root (assets/ lives there, and the PyInstaller bundle mirrors it).
+# Forward slashes: a QSS url() with Windows backslashes does not resolve.
+_ASSETS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
+    __file__))), "assets").replace(os.sep, "/")
+ARROW_DOWN = f"{_ASSETS}/chevron_down.svg"
+ARROW_UP = f"{_ASSETS}/chevron_up.svg"
+
 NAVY = "#01386a"          # brand navy: headings, accent buttons, stats
 PANEL_BG = "#ffffff"      # sidebar background
 VIEW_BG = "#eef3f8"       # plot viewport
@@ -32,6 +43,40 @@ DANGER = "#b3261e"        # irreversible actions, error text
 # resolve (Consolas on macOS/Linux) makes it scan every installed family to
 # build the alias table - ~100 ms at startup.
 MONO = "Menlo,DejaVu Sans Mono,Consolas,monospace"
+
+
+def light_palette() -> QtGui.QPalette:
+    """The palette every widget falls back on when no stylesheet names a
+    colour. Without it macOS dark mode leaks in: an unstyled label draws
+    white text on the white sidebar (the Sensors readings vanished) and an
+    unstyled spin box goes black. See docs/TRAPS.md."""
+    pal = QtGui.QPalette()
+    c = QtGui.QColor
+    for role, col in (
+            (QtGui.QPalette.Window, PANEL_BG),
+            (QtGui.QPalette.WindowText, TEXT),
+            (QtGui.QPalette.Base, "#ffffff"),
+            (QtGui.QPalette.AlternateBase, CARD_BG),
+            (QtGui.QPalette.Text, TEXT),
+            (QtGui.QPalette.PlaceholderText, SECTION),
+            (QtGui.QPalette.Button, "#eef1f4"),
+            (QtGui.QPalette.ButtonText, TEXT),
+            (QtGui.QPalette.BrightText, "#ffffff"),
+            (QtGui.QPalette.ToolTipBase, "#ffffff"),
+            (QtGui.QPalette.ToolTipText, TEXT),
+            (QtGui.QPalette.Highlight, NAVY),
+            (QtGui.QPalette.HighlightedText, "#ffffff"),
+            (QtGui.QPalette.Link, NAVY),
+            (QtGui.QPalette.Light, "#ffffff"),
+            (QtGui.QPalette.Midlight, RULE),
+            (QtGui.QPalette.Mid, BORDER),
+            (QtGui.QPalette.Dark, SECTION),
+            (QtGui.QPalette.Shadow, MUTED)):
+        pal.setColor(role, c(col))
+    for role in (QtGui.QPalette.WindowText, QtGui.QPalette.Text,
+                 QtGui.QPalette.ButtonText):
+        pal.setColor(QtGui.QPalette.Disabled, role, c("#aebccb"))
+    return pal
 
 
 def primary_btn() -> str:
@@ -59,7 +104,10 @@ def danger_btn() -> str:
 
 
 def checkbox_style() -> str:
-    return ("QCheckBox{color:#33414d; spacing:8px;}"
+    # min-height: the macOS style sizes a checkbox from the native small
+    # indicator, not the 15 px one drawn here, so rows in a grid came out
+    # ~13 px tall and their boxes and descenders ran into each other.
+    return ("QCheckBox{color:#33414d; spacing:8px; min-height:20px;}"
             "QCheckBox::indicator{width:15px; height:15px;"
             "border:1px solid #c3cfd9; border-radius:3px; background:#ffffff;}"
             "QCheckBox::indicator:hover{border-color:#8fa3b3;}"
@@ -77,10 +125,26 @@ def radio_style() -> str:
 
 
 def spin_style() -> str:
-    return (f"QSpinBox{{background:#ffffff; color:{TEXT};"
-            f"border:1px solid {BORDER}; border-radius:5px; padding:4px 6px;}}"
-            f"QDoubleSpinBox{{background:#ffffff; color:{TEXT};"
-            f"border:1px solid {BORDER}; border-radius:5px; padding:4px 6px;}}")
+    """Box and step buttons both. Styling only the box leaves Qt drawing the
+    buttons natively inside a stylesheet frame - two stray lines on macOS."""
+    box = (f"background:#ffffff; color:{TEXT}; border:1px solid {BORDER};"
+           "border-radius:5px; padding:4px 20px 4px 6px;")
+    btn = ("subcontrol-origin:border; width:16px; border:0;"
+           "background:transparent;")
+    out = ""
+    for w in ("QSpinBox", "QDoubleSpinBox"):
+        out += (f"{w}{{{box}}}"
+                f"{w}:disabled{{color:#aebccb; background:#f5f7f9;}}"
+                f"{w}::up-button{{{btn} subcontrol-position:top right;"
+                "border-top-right-radius:5px;}"
+                f"{w}::down-button{{{btn} subcontrol-position:bottom right;"
+                "border-bottom-right-radius:5px;}"
+                f"{w}::up-button:hover, {w}::down-button:hover"
+                "{background:#e2e8ee;}"
+                f"{w}::up-arrow{{image:url({ARROW_UP}); width:8px; height:8px;}}"
+                f"{w}::down-arrow{{image:url({ARROW_DOWN}); width:8px;"
+                "height:8px;}")
+    return out
 
 
 def combo_style() -> str:
@@ -89,10 +153,10 @@ def combo_style() -> str:
             "padding:5px 24px 5px 8px;}"
             "QComboBox:hover{background:#e2e8ee;}"
             "QComboBox::drop-down{border:0; width:22px;}"
-            "QComboBox::down-arrow{image:none; width:0; height:0;"
-            "border-left:4px solid transparent;"
-            "border-right:4px solid transparent;"
-            "border-top:5px solid #5a6b7a; margin-right:8px;}"
+            # An SVG, not the CSS border-triangle trick: Qt's QSS does not
+            # draw that and it rendered as a flat bar.
+            f"QComboBox::down-arrow{{image:url({ARROW_DOWN});"
+            "width:10px; height:10px; margin-right:8px;}"
             f"QComboBox QAbstractItemView{{background:#ffffff; color:#33414d;"
             f"selection-background-color:{NAVY}; selection-color:#ffffff;"
             f"border:1px solid {BORDER}; outline:0;}}")

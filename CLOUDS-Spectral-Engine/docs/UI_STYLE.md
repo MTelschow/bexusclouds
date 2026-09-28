@@ -29,6 +29,11 @@ Reference implementation for the widgets we reuse: that engine's
 * offscreen `verify_qt.py` headless QC (`QT_QPA_PLATFORM=offscreen`, stub the
   plot/driver, drive controls programmatically, `grab()` a screenshot).
 
+* one palette, `style.light_palette()`, forced on the app (see TRAPS: macOS
+  dark mode). Control styles come from `clouds_ui/style.py`; combo and spin
+  arrows are SVGs (`assets/chevron_{down,up}.svg`) - QSS border triangles do
+  not draw in Qt5.
+
 ## Spectrometer-specific layout (this app)
 
 `QMainWindow` -> a **horizontal `QSplitter`**: **live spectrum view**

@@ -129,6 +129,23 @@ driver method fail where the UI cannot handle it. The flight half's own timer
 slot (`_tick_flight`) is wrapped for exactly this reason: a downlink problem
 must not be able to take the instrument half down with it.
 
+**macOS dark mode leaks into every widget without a stylesheet colour.**
+The Sensors readings were white on the white sidebar and half the spin boxes
+drew black - and `verify_qt.py` never saw it, because offscreen Qt has no dark
+mode. Setting the palette on the window was not enough: macOS registers
+per-class application palettes that outrank inheritance, so the sidebar
+under the splitter stayed white-on-white. `CloudsWindow.__init__` sets
+`style.light_palette()` on the `QApplication` (which clears those) and on the
+window. Check UI changes with a native (cocoa) grab, not only offscreen.
+
+**A box layout's sizeHint ignores heightForWidth.** A sidebar column laid
+out `AlignTop` gets its hint, and a section ending in a wrapped note wants
+more; the deficit came out of the rows above (the timeline checkboxes ran
+into each other). `SectionFlow.relayout` floors each column holder at
+`column_heights()`. Separately, the macOS style sizes a `QCheckBox` from the
+native indicator, not the 15 px styled one - `checkbox_style()` carries a
+`min-height`.
+
 **`socketserver.shutdown()` blocks forever if `serve_forever()` never ran.**
 Guard `stop()` on "was it started", or an error path unwinding before `start()`
 hangs the app instead of exiting.

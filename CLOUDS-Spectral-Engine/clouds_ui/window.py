@@ -188,6 +188,14 @@ class CloudsWindow(QtWidgets.QMainWindow):
                  source="detector", persist_dark=True,
                  mock_stack=None, link_factory=None):
         super().__init__()
+        # Before anything is built: an unstyled widget falls back on the
+        # palette, and on macOS dark mode that is white text on this panel.
+        # The application's, not only the window's: macOS registers
+        # per-class palettes that outrank inheritance from the window (the
+        # sidebar under the splitter still drew white), and setting the app
+        # palette without a class name clears them.
+        QtWidgets.QApplication.setPalette(style.light_palette())
+        self.setPalette(style.light_palette())
         # The title is the one label that is on screen even when the window is
         # behind something else or in a screenshot someone later argues from,
         # so the simulation is named there first.
@@ -823,6 +831,7 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self.sp_smooth = QtWidgets.QSpinBox()
         self.sp_smooth.setRange(3, 51); self.sp_smooth.setSingleStep(2)
         self.sp_smooth.setValue(9); self.sp_smooth.setPrefix("win ")
+        self.sp_smooth.setStyleSheet(style.spin_style())
         self.sp_smooth.valueChanged.connect(self._on_smooth)
         srow.addWidget(self.smooth_combo, 1); srow.addWidget(self.sp_smooth)
         v.addLayout(srow)
@@ -831,10 +840,15 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self.yscale_combo.setStyleSheet(self._combo_style())
         self.yscale_combo.addItems(["y: linear", "y: log", "y: sqrt"])
         self.yscale_combo.currentIndexChanged.connect(self._on_yscale)
+        # Its hint as a floor: the spin boxes beside it expand, and without
+        # one they squeezed this down to "y: line".
+        self.yscale_combo.setMinimumWidth(self.yscale_combo.sizeHint().width())
         self.sp_xlo = QtWidgets.QDoubleSpinBox(); self.sp_xlo.setRange(300, 1100)
         self.sp_xlo.setDecimals(0); self.sp_xlo.setValue(350); self.sp_xlo.setPrefix("lo ")
         self.sp_xhi = QtWidgets.QDoubleSpinBox(); self.sp_xhi.setRange(300, 1100)
         self.sp_xhi.setDecimals(0); self.sp_xhi.setValue(850); self.sp_xhi.setPrefix("hi ")
+        self.sp_xlo.setStyleSheet(style.spin_style())
+        self.sp_xhi.setStyleSheet(style.spin_style())
         self.sp_xlo.valueChanged.connect(self._on_zoom); self.sp_xhi.valueChanged.connect(self._on_zoom)
         btn_full = QtWidgets.QPushButton("full"); btn_full.setStyleSheet(self._flat_btn())
         btn_full.clicked.connect(self._zoom_full)
@@ -1097,26 +1111,13 @@ class CloudsWindow(QtWidgets.QMainWindow):
     def _checkbox_style(self):
         """Same native-rendering gap as combo boxes (see _combo_style) - the
         label text silently fails to draw on recent macOS without this."""
-        return ("QCheckBox{color:#33414d; spacing:8px;}"
-                "QCheckBox::indicator{width:15px; height:15px; border:1px solid #c3cfd9;"
-                "border-radius:3px; background:#ffffff;}"
-                "QCheckBox::indicator:hover{border-color:#8fa3b3;}"
-                f"QCheckBox::indicator:checked{{background:{NAVY}; border-color:{NAVY};}}")
+        return style.checkbox_style()
 
     def _combo_style(self):
         """PyQt5's native macOS combo box renders blank text on recent macOS
         (Qt5 is EOL, untested past ~macOS 13) - style it explicitly like the
         buttons above instead of relying on Cocoa/Aqua drawing."""
-        return (f"QComboBox{{background:#eef1f4; color:#33414d; border:1px solid #d3dde6;"
-                "border-radius:5px; padding:5px 24px 5px 8px;}"
-                "QComboBox:hover{background:#e2e8ee;}"
-                "QComboBox::drop-down{border:0; width:22px;}"
-                "QComboBox::down-arrow{image:none; width:0; height:0;"
-                "border-left:4px solid transparent; border-right:4px solid transparent;"
-                "border-top:5px solid #5a6b7a; margin-right:8px;}"
-                f"QComboBox QAbstractItemView{{background:#ffffff; color:#33414d;"
-                f"selection-background-color:{NAVY}; selection-color:#ffffff;"
-                "border:1px solid #d3dde6; outline:0;}")
+        return style.combo_style()
 
     def _slider_style(self):
         """Same native-rendering gap as combo boxes (see _combo_style) - the
@@ -1152,6 +1153,7 @@ class CloudsWindow(QtWidgets.QMainWindow):
         sp.setRange(lo, hi)
         sp.setValue(val)
         sp.setFixedWidth(84)
+        sp.setStyleSheet(style.spin_style())
         top.addWidget(lab)
         top.addStretch(1)
         top.addWidget(sp)
@@ -1211,6 +1213,7 @@ class CloudsWindow(QtWidgets.QMainWindow):
         sp.setRange(lo, hi)
         sp.setValue(val)
         sp.setFixedWidth(96)
+        sp.setStyleSheet(style.spin_style())
         sp.setKeyboardTracking(False)   # don't fire a driver round-trip per keystroke
 
         def restep(v):
@@ -2249,7 +2252,14 @@ class CloudsWindow(QtWidgets.QMainWindow):
         view = getattr(self, "_view", None)
         if view is None or not hasattr(self, "src_banner"):
             return
-        self.src_banner.move(max(16, (view.width() - self.src_banner.width()) // 2), 14)
+        # Centred, but never over the LIVE box in the top-left corner - on a
+        # narrow pane the centred position lands on it.
+        left = 16
+        box = getattr(self, "stats_box", None)
+        if box is not None and box.isVisible():
+            left = box.x() + box.width() + 12
+        self.src_banner.move(
+            max(left, (view.width() - self.src_banner.width()) // 2), 14)
         self.src_banner.raise_()
 
     def _ref(self):
@@ -2514,13 +2524,17 @@ class CloudsWindow(QtWidgets.QMainWindow):
         dpi = 105
         fig = Figure(figsize=(w / dpi, h / dpi), dpi=dpi)
         fig.patch.set_facecolor("#eef3f8")
+        # Top margin in pixels, not a fraction: the source banner sits a
+        # fixed 14 px + its height down the view, and 8 % of a short pane is
+        # less than that - the banner covered the title and the top tick.
+        top = 1.0 - 72.0 / h
         if self.axis == "nm":
             gs = fig.add_gridspec(2, 1, height_ratios=[20, 1.5], hspace=0.06,
-                                  left=0.10, right=0.97, top=0.92, bottom=0.17)
+                                  left=0.10, right=0.97, top=top, bottom=0.17)
             ax = fig.add_subplot(gs[0])
             bar = fig.add_subplot(gs[1])
         else:
-            ax = fig.add_axes([0.10, 0.12, 0.87, 0.80])
+            ax = fig.add_axes([0.10, 0.12, 0.87, top - 0.12])
             bar = None
         ax.set_facecolor("#ffffff")
         ax.grid(alpha=0.15)

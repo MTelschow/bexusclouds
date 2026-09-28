@@ -38,7 +38,10 @@ class Section(QtWidgets.QWidget):
         outer.setSpacing(4)
 
         self._btn = QtWidgets.QToolButton()
-        self._btn.setText(self._title)
+        # A leading gap: the arrow sits flush against the text otherwise,
+        # and with letter-spacing the chevron reads as the first letter.
+        self._btn.setText("  " + self._title)
+        self._btn.setIconSize(QtCore.QSize(8, 8))
         self._btn.setCheckable(True)
         self._btn.setChecked(open_)
         self._btn.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
@@ -154,8 +157,12 @@ class SectionFlow(QtWidgets.QWidget):
         """Append a section. Order is preserved across every re-pack: a
         column break moves a section sideways, never past its neighbours."""
         w.setParent(self)
+        # Vertically Preferred, not Maximum: Maximum caps a section at its
+        # sizeHint, and a section ending in a wrapped note wants its
+        # heightForWidth, which is taller - the difference was taken out of
+        # the rows above, squashing the timeline checkboxes into each other.
         w.setSizePolicy(QtWidgets.QSizePolicy.Preferred,
-                        QtWidgets.QSizePolicy.Maximum)
+                        QtWidgets.QSizePolicy.Preferred)
         self._items.append(w)
         if isinstance(w, Section):
             # A fold changes the content height, so it changes the packing.
@@ -342,8 +349,13 @@ class SectionFlow(QtWidgets.QWidget):
                 col.insertWidget(at, self._items[i])
                 self._items[i].show()
                 at += 1
-        for col in self._cols:
+        for col, h in zip(self._cols, self.column_heights()):
             col.parentWidget().setFixedWidth(self._col_w)
+            # A floor at what the sections want at this width. The row lays
+            # the holder out AlignTop, i.e. at its sizeHint, and a box
+            # layout's hint ignores heightForWidth - so a column holding a
+            # wrapped note came up short and squeezed the rows above it.
+            col.parentWidget().setMinimumHeight(h)
         self.setFixedWidth(len(cols) * self._col_w
                            + max(0, len(cols) - 1) * self.GAP)
 
