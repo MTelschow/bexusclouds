@@ -123,6 +123,11 @@ class Commander:
         Always accepted by the MCU (it can only de-energize)."""
         return self._transact(Command.DISPERSE, key=int(DisperseKey.STOP))
 
+    def autopilot(self) -> AckResult:
+        """Run automatic mode's cycle now, with the link up. The heartbeat
+        does not end it; ``STOP``, ``START`` or a manual drive does."""
+        return self._transact(Command.AUTOPILOT)
+
     def ping(self, origin: str = "operator") -> AckResult:
         """``origin`` separates the 5 s heartbeat from an operator's own PING
         in the session log - one is the link proving itself, the other is

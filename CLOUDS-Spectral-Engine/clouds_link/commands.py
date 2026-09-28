@@ -32,6 +32,13 @@ the numbers are not reused. They are not silently mapped onto `STOP`: an old
 `HOLD` asked for the actuators to keep running, and `STOP` shuts them off, so
 honouring it would execute something other than what was sent. A refusal the
 operator can see beats a command that did something else.
+
+`AUTOPILOT` (0x0B, 2026-09-28) runs automatic mode's cycle on demand, with
+the link up. The heartbeat, `SET_PARAM` and `STATUS?` do not end it; `STOP`
+does (-> SAFE, inhibit latched), and so do `START` and a `MEMBRANE` or
+`DISPERSE` drive (-> RUNNING), because the operator has taken the hardware
+back and the cycle must not overwrite that drive at its next phase. A reset
+ends it too. `McuFlags.AUTOPILOT` reports it.
 """
 
 from __future__ import annotations
@@ -56,6 +63,8 @@ class Command(IntEnum):
     ARM = 0x08         # retired: answered OK, does nothing
     MEMBRANE = 0x09    # key = duty percent, 0 = off (M-07 manual drive)
     DISPERSE = 0x0A    # key = DisperseKey: stop / one pulse / run
+    AUTOPILOT = 0x0B   # run the automatic cycle now, link up or not;
+                       # STOP, START or a manual drive ends it
 
 
 class DisperseKey(IntEnum):
@@ -81,7 +90,7 @@ MANUAL_ACTUATORS = frozenset({Command.MEMBRANE, Command.DISPERSE})
 #: it even while the RP2350 is silent; PISTATUS.uart_ok reports that instead.
 MCU_CONFIRMED = frozenset({Command.START, Command.STOP, Command.RELEASE,
                            Command.SET_PARAM, Command.MEMBRANE,
-                           Command.DISPERSE})
+                           Command.DISPERSE, Command.AUTOPILOT})
 
 
 class Param(IntEnum):

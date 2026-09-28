@@ -21,6 +21,10 @@
  *                 AUTO_WAIT      PARAM_AUTO_WAIT_S      neither
  *             at PARAM_DISPERSE_DUTY / PARAM_MEMBRANE_DUTY+MHZ, and starts
  *             again at AUTO_DISPERSE. Measurement and storage never stop.
+ *             AUTOPILOT (2026-09-28) runs the same cycle with the link up:
+ *             entered on the command from any state, it ignores PING,
+ *             SET_PARAM and the rest of the link traffic, and ends on STOP
+ *             (-> SAFE), START or a manual drive (-> RUNNING), or a reset.
  *   TERMINATION/SAFE  STOP: actuators off and they stay off.
  *
  * Invariants (spec S.1..S.3):
@@ -144,6 +148,10 @@ typedef struct {
      * docs/TRAPS.md - but not a reset, which lands in ST_STANDBY where the
      * cycle cannot start anyway. Reported as MCUF_STOPPED. */
     bool stopped;
+    /* The cycle is running on the operator's AUTOPILOT, not on a link loss,
+     * so ground traffic does not end it. Not persisted: a reset lands in
+     * RUNNING like any other AUTO_* state. Reported as MCUF_AUTOPILOT. */
+    bool autopilot;
     uint64_t state_entered_ms;
     uint32_t mission_start_s;
     autonomy_t autonomy;
@@ -170,9 +178,11 @@ void seq_step(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
  * above 100, a parameter outside its envelope - because a corrupted frame
  * must not come back as an OK. ACK_REJECTED is no longer produced.
  *
- * ANY command also ends automatic mode before it is acted on: the link is
- * back, so the cycle stops at once and both actuators are de-energized. The
- * command then runs from RUNNING, where ground owns the hardware.
+ * ANY command also ends link-loss automatic mode before it is acted on: the
+ * link is back, so the cycle stops at once and both actuators are
+ * de-energized. The command then runs from RUNNING, where ground owns the
+ * hardware. Under AUTOPILOT only STOP, START, MEMBRANE and DISPERSE end the
+ * cycle; PING, SET_PARAM and the rest leave it running.
  *
  * CMD_RELEASE is answered ACK_INVALID: the valves it drove are off the
  * experiment, so it is a command this build cannot act on at all, like any
@@ -188,8 +198,8 @@ void seq_step(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
 uint8_t seq_command(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
                     uint8_t cmd, uint8_t key, int32_t value, cfg_t *cfg);
 /* Any valid ground command refreshes the link-loss latch (O.2) and ends
- * automatic mode, including the ones core/link answers itself and never
- * passes on. */
+ * link-loss automatic mode (not AUTOPILOT), including the ones core/link
+ * answers itself and never passes on. */
 void seq_note_ground_cmd(sequencer_t *s, uint64_t t_ms);
 /* Mission-elapsed seconds for HK (0 before START). */
 uint32_t seq_mission_t_s(const sequencer_t *s, uint32_t wall_s);

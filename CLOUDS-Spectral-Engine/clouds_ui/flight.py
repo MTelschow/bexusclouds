@@ -528,6 +528,16 @@ class FlightPanel(QtCore.QObject):
             btn.clicked.connect(lambda _, c=cmd: self._send(c))
             grid.addWidget(btn, i // 3, (i % 3) * 2, 1, 2)
             self._cmd_buttons.append(btn)
+        # AUTOPILOT runs the automatic cycle with the link up. A row of its
+        # own, full width: it is a mode, not a peer of the three above, and
+        # STOP (or START, or a drive below) is what ends it.
+        btn = QtWidgets.QPushButton("AUTOPILOT")
+        btn.setStyleSheet(style.flat_btn())
+        btn.setToolTip("Run the motor / solenoid / wait cycle now, link up "
+                       "or not. STOP, START or a manual drive ends it.")
+        btn.clicked.connect(lambda _: self._send(Command.AUTOPILOT))
+        grid.addWidget(btn, 1, 0, 1, 6)
+        self._cmd_buttons.append(btn)
         for col in range(6):
             grid.setColumnStretch(col, 1)
         for btn in self._cmd_buttons:

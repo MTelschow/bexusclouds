@@ -443,6 +443,63 @@ def test_a_command_ends_the_cycle_at_once(sim_auto):
     assert not mcu.housekeeping().valve_status & hk.ValveStatus.DISPERSE
 
 
+def _wait_pinging(pi, predicate, timeout=6.0):
+    """_wait with the GSE heartbeat running: the link never goes silent."""
+    t0 = time.time()
+    while time.time() - t0 < timeout:
+        assert pi.command(Command.PING) == AckResult.OK
+        if predicate():
+            return True
+        time.sleep(0.05)
+    return False
+
+
+def test_autopilot_runs_the_cycle_with_the_link_up(sim_auto):
+    """AUTOPILOT is the cycle on demand: the heartbeat does not end it, and
+    it goes round like link-loss mode does."""
+    mcu, pi = sim_auto
+    assert pi.command(Command.START) == AckResult.OK
+    assert pi.command(Command.AUTOPILOT) == AckResult.OK
+    assert mcu.state == hk.SeqState.AUTO_DISPERSE and mcu.motor_running
+    flags = mcu.housekeeping().flags
+    assert flags & hk.McuFlags.AUTOPILOT
+    assert not flags & hk.McuFlags.AUTONOMOUS_LATCHED
+
+    assert _wait_pinging(pi, lambda: mcu.state == hk.SeqState.AUTO_MEMBRANE)
+    assert not mcu.motor_running and mcu.membrane_duty == 20
+    assert _wait_pinging(pi, lambda: mcu.state == hk.SeqState.AUTO_WAIT)
+    assert _wait_pinging(pi, lambda: mcu.state == hk.SeqState.AUTO_DISPERSE)
+    assert mcu.housekeeping().flags & hk.McuFlags.AUTOPILOT
+
+
+def test_stop_ends_autopilot(sim_auto):
+    mcu, pi = sim_auto
+    assert pi.command(Command.AUTOPILOT) == AckResult.OK
+    assert mcu.motor_running
+    assert pi.command(Command.STOP) == AckResult.OK
+    assert _wait(lambda: mcu.state == hk.SeqState.SAFE)
+    assert not mcu.motor_running and mcu.membrane_duty == 0
+    flags = mcu.housekeeping().flags
+    assert not flags & hk.McuFlags.AUTOPILOT
+    assert flags & hk.McuFlags.STOPPED
+    time.sleep(1.2)                                  # linkloss_s is 0.5 s
+    assert mcu.state == hk.SeqState.SAFE
+
+
+def test_start_or_a_manual_drive_ends_autopilot(sim_auto):
+    mcu, pi = sim_auto
+    assert pi.command(Command.AUTOPILOT) == AckResult.OK
+    assert pi.command(Command.START) == AckResult.OK
+    assert mcu.state == hk.SeqState.RUNNING and not mcu.motor_running
+    assert not mcu.autopilot
+
+    assert pi.command(Command.AUTOPILOT) == AckResult.OK
+    assert pi.command(Command.MEMBRANE, key=40) == AckResult.OK
+    assert mcu.state == hk.SeqState.RUNNING
+    assert not mcu.motor_running and mcu.membrane_duty == 40
+    assert not mcu.housekeeping().flags & hk.McuFlags.AUTOPILOT
+
+
 def test_standby_never_starts_the_cycle(sim_auto):
     """A link that was never up is not a link that was lost: without the
     start button the experiment does nothing at all."""

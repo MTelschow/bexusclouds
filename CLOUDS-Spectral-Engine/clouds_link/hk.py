@@ -135,6 +135,8 @@ class McuFlags(IntEnum):
     SEAL_VERIFIED = 1 << 3        # retired with the SEAL state; always 0
     STOPPED = 1 << 4              # STOP latched automatic mode off until
                                   # the next START (was HOLD; same bit)
+    AUTOPILOT = 1 << 5            # the cycle runs on the operator's
+                                  # AUTOPILOT, not on a link loss
 
 
 #: "No reading" for a ``rail_mv`` entry - mirror of RAIL_MV_INVALID in
@@ -584,7 +586,8 @@ class Housekeeping:
         short = {McuFlags.AUTONOMOUS_LATCHED: "AUTONOMOUS",
                  McuFlags.LINK_OK: "GND", McuFlags.PI_OK: "PI",
                  McuFlags.SEAL_VERIFIED: "SEALED",
-                 McuFlags.STOPPED: "STOPPED"}
+                 McuFlags.STOPPED: "STOPPED",
+                 McuFlags.AUTOPILOT: "AUTOPILOT"}
         set_bits = [name for flag, name in short.items() if self.flags & flag]
         return " ".join(set_bits) if set_bits else "-"
 

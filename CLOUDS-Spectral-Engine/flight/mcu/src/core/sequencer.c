@@ -81,20 +81,32 @@ static void enter_auto_phase(sequencer_t *s, seq_state_t st, uint64_t t_ms)
     enter(s, st, t_ms);
 }
 
-static void enter_auto(sequencer_t *s, uint64_t t_ms)
+static void enter_auto(sequencer_t *s, uint64_t t_ms, const char *why)
 {
-    s->ops->event(s->ops->ctx, EV_AUTO_ENTERED, "link silent");
+    s->ops->event(s->ops->ctx, EV_AUTO_ENTERED, why);
     enter_auto_phase(s, ST_AUTO_DISPERSE, t_ms);
 }
 
-/* The link is back. Everything the cycle energized stops now, in the same
- * pass that saw the command - not at the end of the current phase. */
-static void leave_auto(sequencer_t *s, uint64_t t_ms)
+/* The link is back, or the operator ended AUTOPILOT. Everything the cycle
+ * energized stops now, in the same pass that saw the command - not at the
+ * end of the current phase. */
+static void leave_auto(sequencer_t *s, uint64_t t_ms, const char *why)
 {
+    s->autopilot = false;
     set_motor(s, false);
     set_membrane(s, 0);
-    s->ops->event(s->ops->ctx, EV_AUTO_LEFT, "link back");
+    s->ops->event(s->ops->ctx, EV_AUTO_LEFT, why);
     enter(s, ST_RUNNING, t_ms);
+}
+
+/* The operator took the hardware back by hand (START or a manual drive):
+ * AUTOPILOT ends before the command is acted on, so the cycle cannot
+ * overwrite that drive at its next phase change. */
+static void end_autopilot(sequencer_t *s, uint64_t t_ms)
+{
+    if (s->autopilot && ST_IS_AUTO(s->state))
+        leave_auto(s, t_ms, "autopilot off");
+    s->autopilot = false;
 }
 
 /* How long the current automatic phase lasts. */
@@ -215,16 +227,17 @@ void seq_step(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
         if (s->stopped)
             break;
         if (s->autonomy.autonomous_latched)
-            enter_auto(s, t_ms);
+            enter_auto(s, t_ms, "link silent");
         break;
 
     case ST_AUTO_DISPERSE:
     case ST_AUTO_MEMBRANE:
     case ST_AUTO_WAIT:
         /* seq_note_ground_cmd() normally gets here first; this covers the
-         * latch being cleared by anything else. */
-        if (!s->autonomy.autonomous_latched) {
-            leave_auto(s, t_ms);
+         * latch being cleared by anything else. AUTOPILOT does not depend
+         * on the link, so the latch does not end it. */
+        if (!s->autopilot && !s->autonomy.autonomous_latched) {
+            leave_auto(s, t_ms, "link back");
             break;
         }
         if (elapsed(s, t_ms) >= auto_phase_ms(s))
@@ -247,9 +260,11 @@ void seq_note_ground_cmd(sequencer_t *s, uint64_t t_ms)
     autonomy_cmd_seen(&s->autonomy, t_ms);
     /* The link is back and the operator is at the panel: the cycle stops
      * before their command is even acted on, so nothing they send lands on
-     * a motor that is already turning for its own reasons. */
-    if (ST_IS_AUTO(s->state))
-        leave_auto(s, t_ms);
+     * a motor that is already turning for its own reasons. AUTOPILOT is
+     * the exception: the operator asked for the cycle with the link up, so
+     * the link being up is no reason to end it. */
+    if (ST_IS_AUTO(s->state) && !s->autopilot)
+        leave_auto(s, t_ms, "link back");
 }
 
 /* A drive commanded after a STOP takes the experiment out of SAFE rather
@@ -270,7 +285,8 @@ static void wake_from_safe(sequencer_t *s, uint64_t t_ms)
 uint8_t seq_command(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
                     uint8_t cmd, uint8_t key, int32_t value, cfg_t *cfg)
 {
-    seq_note_ground_cmd(s, t_ms); /* any traffic = link alive, cycle off */
+    seq_note_ground_cmd(s, t_ms); /* any traffic = link alive, cycle off
+                                     (unless it is AUTOPILOT's) */
 
     switch (cmd) {
     case CMD_PING:
@@ -286,15 +302,29 @@ uint8_t seq_command(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
          * the next seq_step(), and if a link loss were latched in between, a
          * cleared flag would let enter_auto() take the motor straight back. */
         s->stopped = true;
+        s->autopilot = false; /* TERMINATION de-energizes on the next step */
         if (s->state != ST_SAFE)
             enter(s, ST_TERMINATION, t_ms);
         return ACK_OK;
     case CMD_START: /* autonomy armed, from any state */
+        end_autopilot(s, t_ms);
         s->stopped = false;
         if (s->mission_start_s == 0)
             s->mission_start_s = wall_s;
         if (s->state != ST_RUNNING)
             enter(s, ST_RUNNING, t_ms);
+        return ACK_OK;
+    case CMD_AUTOPILOT: /* the cycle now, link up or not, from any state */
+        /* Lifts the inhibit like START does: the operator asked for the
+         * actuators to run. A second AUTOPILOT leaves the running cycle
+         * alone rather than restarting it at the motor phase. */
+        s->stopped = false;
+        if (s->mission_start_s == 0)
+            s->mission_start_s = wall_s;
+        if (s->autopilot && ST_IS_AUTO(s->state))
+            return ACK_OK;
+        s->autopilot = true;
+        enter_auto(s, t_ms, "autopilot");
         return ACK_OK;
     case CMD_RELEASE:
         /* The pinch valves are off the experiment (2026-09-18). There is no
@@ -305,6 +335,7 @@ uint8_t seq_command(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
     case CMD_MEMBRANE: /* operator drive of the push-pull solenoid */
         if (key > 100)
             return ACK_INVALID;
+        end_autopilot(s, t_ms);
         wake_from_safe(s, t_ms);
         set_membrane(s, key);
         s->ops->event(s->ops->ctx, EV_MANUAL_DRIVE,
@@ -313,6 +344,7 @@ uint8_t seq_command(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
     case CMD_DISPERSE: /* the CaCO3 motor: stop, one bounded pulse, or run */
         if (key > DISPERSE_RUN)
             return ACK_INVALID;
+        end_autopilot(s, t_ms);
         if (key == DISPERSE_STOP) {
             set_motor(s, false);
             s->ops->event(s->ops->ctx, EV_MANUAL_DRIVE, "disperse stop");

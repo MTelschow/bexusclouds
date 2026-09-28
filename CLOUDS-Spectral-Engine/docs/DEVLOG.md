@@ -18,7 +18,31 @@ without re-deriving anything. Newest entries first.
 
 ---
 
-## 2026-09-28 (newest) - Encoder: what is really on the ACT_EC pins, and a counter that fits it
+## 2026-09-28 (newest) - AUTOPILOT: the automatic cycle on demand
+
+**Asked for:** a command that starts the automatic cycle without waiting for
+a link loss ("autopilot"), ended by STOP. Before this the cycle was only
+reachable by 10 min of ground silence, and the GSE's 5 s PING made that
+impossible to reach with the panel connected (a bench build with 1 min
+timings was used once to watch it, then reverted).
+
+**What it does.** New opcode `AUTOPILOT = 0x0B` (`frame.h`,
+`clouds_link/commands.py`, MCU-confirmed). `sequencer_t.autopilot` marks the
+cycle as operator-requested, so `seq_note_ground_cmd()` and the latch check
+in `seq_step()` no longer end it. Ends on STOP (-> SAFE, inhibit latched),
+START or a manual drive (operator decision: the hand drive wins, the cycle
+cannot overwrite it at its next phase), and a reset (operator decision: not
+persisted, no change to the persist record). HK `flags` bit 5
+`MCUF_AUTOPILOT`. Panel: full-width AUTOPILOT button under PING/START/STOP;
+`Commander.autopilot()`; `sim_mcu` mirrors it.
+
+**Evidence.** 4 new core tests (`run_native.sh`, 65/65), 3 new sim tests;
+Python suite green apart from the known `TestDownlinkBudget`; `verify_qt.py`
+VERIFY OK; flight image builds.
+
+---
+
+## 2026-09-28 - Encoder: what is really on the ACT_EC pins, and a counter that fits it
 
 **Asked for:** fix the encoder. `motor_rpm` read 0 with the shaft turning
 because the counter sat on GP31/GP32 and the encoder's legs are on the

@@ -56,6 +56,8 @@ enum command {
     CMD_ARM = 0x08,
     CMD_MEMBRANE = 0x09, /* key = duty percent, 0 = off */
     CMD_DISPERSE = 0x0A, /* key = DISPERSE_* below: stop / pulse / run */
+    CMD_AUTOPILOT = 0x0B, /* run the automatic cycle now, link up or not;
+                           * STOP, START or a manual drive ends it */
 };
 
 /* CMD_DISPERSE keys - mirror of clouds_link/commands.py DisperseKey. The key
@@ -237,6 +239,10 @@ typedef struct {
 /* Automatic mode is inhibited: the operator sent STOP and no START has
  * lifted it. Bit unchanged from the MCUF_HOLD it replaces. */
 #define MCUF_STOPPED (1u << 4)
+/* The automatic cycle is running because the operator sent AUTOPILOT, not
+ * because the link went silent. Cleared by STOP, START, a manual drive and
+ * a reset. */
+#define MCUF_AUTOPILOT (1u << 5)
 
 /* Sensor error bits (hk_t.error_flags) - mirror of clouds_link/hk.py
  * HkErrors. A set bit means the matching HK field is NOT a live measurement,

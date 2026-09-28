@@ -791,6 +791,147 @@ static void test_the_cycle_restarts_at_the_motor_phase(void)
     TEST_ASSERT_EQUAL_INT(ST_AUTO_MEMBRANE, s.state);
 }
 
+/* AUTOPILOT: the cycle on demand, with the link up. The heartbeat and a
+ * SET_PARAM must not end it - only STOP, START or a manual drive. */
+static void test_autopilot_runs_the_cycle_with_the_link_up(void)
+{
+    cfg_t cfg;
+    sequencer_t s;
+    uint32_t t0;
+
+    mock_reset();
+    cfg_defaults(&cfg);
+    seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
+    start_experiment(&s, &cfg);
+
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 2000ull, 2, CMD_AUTOPILOT,
+                                                0, 0, &cfg));
+    TEST_ASSERT_TRUE(s.autopilot);
+    TEST_ASSERT_EQUAL_INT(ST_AUTO_DISPERSE, s.state);
+    TEST_ASSERT_TRUE(M.motor_on);
+    TEST_ASSERT_EQUAL_INT(0, M.membrane_duty);
+
+    /* The GSE heartbeat and a parameter change arrive mid-phase. */
+    SIM_T = 3;
+    quiet_to(&s, 60);
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 61000ull, 61, CMD_PING,
+                                                0, 0, &cfg));
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK,
+                            seq_command(&s, 61000ull, 61, CMD_SET_PARAM,
+                                        PARAM_AUTO_WAIT_S, 30, &cfg));
+    TEST_ASSERT_EQUAL_INT(ST_AUTO_DISPERSE, s.state);
+    TEST_ASSERT_TRUE(M.motor_on);
+
+    /* Same phase lengths as link-loss mode, and it goes round. */
+    SIM_T = 62;
+    t0 = phase_t0(&s);
+    quiet_to(&s, t0 + 120);
+    TEST_ASSERT_EQUAL_INT(ST_AUTO_MEMBRANE, s.state);
+    TEST_ASSERT_FALSE(M.motor_on);
+    t0 = phase_t0(&s);
+    quiet_to(&s, t0 + 180);
+    TEST_ASSERT_EQUAL_INT(ST_AUTO_WAIT, s.state);
+    t0 = phase_t0(&s);
+    quiet_to(&s, t0 + 30); /* the SET_PARAM above */
+    TEST_ASSERT_EQUAL_INT(ST_AUTO_DISPERSE, s.state);
+
+    /* A second AUTOPILOT does not restart the phase it is in. */
+    t0 = phase_t0(&s);
+    seq_command(&s, (uint64_t)SIM_T * 1000u, SIM_T, CMD_AUTOPILOT, 0, 0,
+                &cfg);
+    TEST_ASSERT_EQUAL_UINT32(t0, phase_t0(&s));
+}
+
+static void test_stop_ends_autopilot(void)
+{
+    cfg_t cfg;
+    sequencer_t s;
+
+    mock_reset();
+    cfg_defaults(&cfg);
+    seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
+    start_experiment(&s, &cfg);
+    seq_command(&s, 2000ull, 2, CMD_AUTOPILOT, 0, 0, &cfg);
+    SIM_T = 3;
+    quiet_to(&s, 10);
+    TEST_ASSERT_TRUE(M.motor_on);
+
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 11000ull, 11, CMD_STOP,
+                                                0, 0, &cfg));
+    TEST_ASSERT_FALSE(s.autopilot);
+    TEST_ASSERT_TRUE(s.stopped);
+    SIM_T = 11;
+    quiet_to(&s, 12);
+    TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
+    TEST_ASSERT_FALSE(M.motor_on);
+    TEST_ASSERT_EQUAL_INT(0, M.membrane_duty);
+
+    /* And STOP's inhibit holds through a link loss afterwards. */
+    quiet_to(&s, 2000);
+    TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
+    TEST_ASSERT_FALSE(M.motor_on);
+}
+
+/* START and a manual drive hand the hardware back to the operator: the
+ * cycle stops at once, and cannot overwrite the drive at its next phase. */
+static void test_start_or_a_manual_drive_ends_autopilot(void)
+{
+    cfg_t cfg;
+    sequencer_t s;
+
+    mock_reset();
+    cfg_defaults(&cfg);
+    seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
+    start_experiment(&s, &cfg);
+    seq_command(&s, 2000ull, 2, CMD_AUTOPILOT, 0, 0, &cfg);
+    TEST_ASSERT_EQUAL_INT(ST_AUTO_DISPERSE, s.state);
+    seq_command(&s, 3000ull, 3, CMD_START, 0, 0, &cfg);
+    TEST_ASSERT_FALSE(s.autopilot);
+    TEST_ASSERT_EQUAL_INT(ST_RUNNING, s.state);
+    TEST_ASSERT_FALSE(M.motor_on);
+
+    seq_command(&s, 4000ull, 4, CMD_AUTOPILOT, 0, 0, &cfg);
+    TEST_ASSERT_TRUE(M.motor_on);
+    TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 5000ull, 5, CMD_MEMBRANE,
+                                                40, 0, &cfg));
+    TEST_ASSERT_FALSE(s.autopilot);
+    TEST_ASSERT_EQUAL_INT(ST_RUNNING, s.state);
+    TEST_ASSERT_FALSE(M.motor_on);
+    TEST_ASSERT_EQUAL_INT(40, M.membrane_duty);
+    SIM_T = 6;
+    quiet_to(&s, 400); /* past a whole motor phase: nothing overwrites it */
+    TEST_ASSERT_EQUAL_INT(ST_RUNNING, s.state);
+    TEST_ASSERT_EQUAL_INT(40, M.membrane_duty);
+}
+
+/* Out of SAFE after a STOP, and a reset does not bring it back. */
+static void test_autopilot_from_safe_and_not_across_a_reset(void)
+{
+    cfg_t cfg;
+    sequencer_t s;
+    seq_persist_t p;
+
+    mock_reset();
+    cfg_defaults(&cfg);
+    seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
+    start_experiment(&s, &cfg);
+    seq_command(&s, 2000ull, 2, CMD_STOP, 0, 0, &cfg);
+    SIM_T = 2;
+    quiet_to(&s, 3);
+    TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
+
+    seq_command(&s, 4000ull, 4, CMD_AUTOPILOT, 0, 0, &cfg);
+    TEST_ASSERT_TRUE(s.autopilot);
+    TEST_ASSERT_FALSE(s.stopped);
+    TEST_ASSERT_EQUAL_INT(ST_AUTO_DISPERSE, s.state);
+    TEST_ASSERT_TRUE(M.motor_on);
+
+    p = (seq_persist_t){.state = (uint8_t)s.state, .mission_start_s = 1};
+    seq_init(&s, &cfg, &mock_ops, &p, 5000ull, 5);
+    TEST_ASSERT_FALSE(s.autopilot);
+    TEST_ASSERT_EQUAL_INT(ST_RUNNING, s.state);
+}
+
 static void test_standby_never_starts_the_cycle(void)
 {
     cfg_t cfg;
@@ -1804,6 +1945,10 @@ int main(void)
     RUN_TEST(test_link_loss_runs_the_cycle);
     RUN_TEST(test_a_command_ends_the_cycle_at_once);
     RUN_TEST(test_the_cycle_restarts_at_the_motor_phase);
+    RUN_TEST(test_autopilot_runs_the_cycle_with_the_link_up);
+    RUN_TEST(test_stop_ends_autopilot);
+    RUN_TEST(test_start_or_a_manual_drive_ends_autopilot);
+    RUN_TEST(test_autopilot_from_safe_and_not_across_a_reset);
     RUN_TEST(test_standby_never_starts_the_cycle);
     RUN_TEST(test_the_cycle_runs_without_a_dispersion_motor);
     RUN_TEST(test_resume_after_reset_keeps_the_state_and_the_clock);

@@ -112,6 +112,7 @@ class SimMcu:
         # -- sequencer state (mirror of sequencer_t) -------------------------
         self.state = hk.SeqState.STANDBY   # self-test passes instantly here
         self.stopped = False   # automatic mode inhibited (MCUF_STOPPED)
+        self.autopilot = False  # cycle on operator demand (MCUF_AUTOPILOT)
         self.membrane_duty = 0
         self.membrane_mhz = 2000            # PARAM_MEMBRANE_MHZ default
         self.disperse_duty = 50          # PARAM_DISPERSE_DUTY, motor speed
@@ -211,8 +212,14 @@ class SimMcu:
         self._last_ground_cmd = now
         self._has_seen_cmd = True
         # Any command means the link is back: the cycle stops in this call,
-        # before the command itself is acted on (seq_note_ground_cmd).
-        self._leave_auto()
+        # before the command itself is acted on (seq_note_ground_cmd) -
+        # unless it is AUTOPILOT's, which the link being up does not end.
+        if not self.autopilot:
+            self._leave_auto()
+        if cmd in (Command.START, Command.MEMBRANE, Command.DISPERSE) and \
+                self.autopilot:
+            # The operator took the hardware back (end_autopilot).
+            self._leave_auto("autopilot off")
 
         if cmd == Command.ARM:
             # Retired with the arm/execute gate: answered, does nothing.
@@ -226,6 +233,7 @@ class SimMcu:
             self._event(EventCode.ABORTED, "ground stop",
                         EventSeverity.CRITICAL)
             self.stopped = True
+            self.autopilot = False
             if self.state != hk.SeqState.SAFE:
                 self._enter(hk.SeqState.TERMINATION)
             return AckResult.OK
@@ -237,6 +245,18 @@ class SimMcu:
                 self._mission_start = now
             if self.state != hk.SeqState.RUNNING:
                 self._enter(hk.SeqState.RUNNING)
+            return AckResult.OK
+        if cmd == Command.AUTOPILOT:
+            # The cycle now, link up or not, from any state. A second one
+            # leaves the running cycle alone.
+            self.stopped = False
+            if self._mission_start is None:
+                self._mission_start = now
+            if self.autopilot and self.state.is_auto:
+                return AckResult.OK
+            self.autopilot = True
+            self._event(EventCode.AUTO_ENTERED, "autopilot")
+            self._enter_auto_phase(hk.SeqState.AUTO_DISPERSE)
             return AckResult.OK
         if cmd == Command.RELEASE:
             # The pinch valves are off the experiment (2026-09-18). No line
@@ -333,7 +353,7 @@ class SimMcu:
                 self._enter_auto_phase(st.AUTO_DISPERSE)
             return
         if self.state.is_auto:
-            if not self._link_silent(now):
+            if not self.autopilot and not self._link_silent(now):
                 self._leave_auto()
             elif now - self._state_entered >= self._auto_s[self.state]:
                 self._enter_auto_phase(self._AUTO_NEXT[self.state])
@@ -362,13 +382,15 @@ class SimMcu:
                               else 0)          # PARAM_MEMBRANE_DUTY
         self._enter(state)
 
-    def _leave_auto(self) -> None:
-        """The link is back: stop at once, not at the end of the phase."""
+    def _leave_auto(self, why: str = "link back") -> None:
+        """The link is back, or AUTOPILOT ended: stop at once, not at the
+        end of the phase."""
+        self.autopilot = False
         if not self.state.is_auto:
             return
         self._stop_motor()
         self.membrane_duty = 0
-        self._event(EventCode.AUTO_LEFT, "link back")
+        self._event(EventCode.AUTO_LEFT, why)
         self._enter(hk.SeqState.RUNNING)
 
     def _queue_drive(self, bit: int) -> None:
@@ -437,6 +459,8 @@ class SimMcu:
         # MCUF_SEAL_VERIFIED went with the SEAL state and stays 0.
         if self.stopped:
             f |= hk.McuFlags.STOPPED
+        if self.autopilot:
+            f |= hk.McuFlags.AUTOPILOT
         return f
 
     def housekeeping(self) -> hk.Housekeeping:

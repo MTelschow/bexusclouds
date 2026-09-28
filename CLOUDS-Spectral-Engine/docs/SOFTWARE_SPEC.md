@@ -62,7 +62,7 @@ spectra, storage of spectra, and all external communication.
 | Interface | Spec |
 |---|---|
 | E-Link downlink | UDP over Ethernet; ~1.9 kbit/s average (limit 2 kbit/s continuous; bursts ≤ 400 kbit/s max, 100 kbit/s avg per Table 6-3); self-contained packets (seq + timestamp + CRC-16), loss-tolerant |
-| E-Link uplink | TCP, ≤ 1 kbit/s; command set `PING, START, STOP, SET_PARAM, STATUS?, MEMBRANE, DISPERSE` (+ `ARM`, `RELEASE 1\|2` and the retired `HOLD`/`RESUME` opcodes `0x02`/`0x03` — `ARM` is answered OK and does nothing, the rest are answered `INVALID`; `STOP` is `ABORT`'s old opcode `0x04`); mandatory ACK. **Nothing is gated (2026-09-18)**: no arm/execute, no ground interlock, no state refusal - a command the chain can parse is executed and answered `OK`, and `INVALID` is left for input it cannot act on at all (unknown command, duty > 100, parameter out of envelope). `MEMBRANE` (duty %, 0 = off) and `DISPERSE` (pulse / run / stop, speed from `SET_PARAM DISPERSE_DUTY`) are the operator's drives of the dispersion hardware |
+| E-Link uplink | TCP, ≤ 1 kbit/s; command set `PING, START, STOP, AUTOPILOT, SET_PARAM, STATUS?, MEMBRANE, DISPERSE` (+ `ARM`, `RELEASE 1\|2` and the retired `HOLD`/`RESUME` opcodes `0x02`/`0x03` — `ARM` is answered OK and does nothing, the rest are answered `INVALID`; `STOP` is `ABORT`'s old opcode `0x04`); mandatory ACK. **Nothing is gated (2026-09-18)**: no arm/execute, no ground interlock, no state refusal - a command the chain can parse is executed and answered `OK`, and `INVALID` is left for input it cannot act on at all (unknown command, duty > 100, parameter out of envelope). `MEMBRANE` (duty %, 0 = off) and `DISPERSE` (pulse / run / stop, speed from `SET_PARAM DISPERSE_DUTY`) are the operator's drives of the dispersion hardware |
 | IP addressing | 2 addresses: FSW-PI, GSE bench port |
 | Pi ↔ RP2350 | UART, COBS-framed, CRC-16. Down: HK @ 1 Hz, state changes, actuator events. Up: forwarded commands, time sync every 10 s |
 | Spectrometer ↔ Pi | USB (FTDI FT2232H, VID 0403/PID 6010) → `/dev/ttyUSB*`, vendor library `libe9u_LSMD.so` (built from `drivers/e9u_LSMD_LIB_Linux/`, same API as the Windows DLL) — driven by this repo's `spectro/eureca_driver.py`; needs the vendor udev rules |
@@ -148,6 +148,15 @@ de-energized, data preserved, HK + downlink continue).
   actuators de-energize and the state returns to RUNNING. The next entry
   always restarts at the motor phase - the cycle carries nothing across a
   link-up period or a reset.
+- **autopilot (2026-09-28)** — `AUTOPILOT` (`0x0B`) runs the same cycle
+  **with the link up**, from any state (lifts the `STOP` inhibit like
+  `START`). PING, `SET_PARAM` and `STATUS?` leave it running, and a link
+  loss under it changes nothing. It ends on `STOP` (`TERMINATION → SAFE`,
+  inhibit latched), on `START` or a `MEMBRANE`/`DISPERSE` drive (actuators
+  off, `RUNNING`, then the command runs - the cycle must not overwrite a
+  hand drive at its next phase), and on a reset (not persisted; lands in
+  `RUNNING`). A second `AUTOPILOT` leaves the running cycle alone.
+  `MCUF_AUTOPILOT` (flags bit 5) reports it.
 - **there is nothing irreversible left to drive.** The pinch and
   equalisation valves came off the experiment on 2026-09-18; `RELEASE` is
   answered `INVALID` and the persist-before-fire rule (S.3) has nothing to
