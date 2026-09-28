@@ -196,8 +196,8 @@ class TestCommander:
 
     def test_hold_allowed_on_ground(self, cmd_link):
         commander, forwarded = cmd_link
-        assert commander.send(Command.HOLD) == AckResult.OK
-        assert forwarded == [(Command.HOLD, 0, 0)]
+        assert commander.send(Command.STOP) == AckResult.OK
+        assert forwarded == [(Command.STOP, 0, 0)]
 
     def test_command_error_on_dead_link(self, cmd_link):
         commander, _ = cmd_link

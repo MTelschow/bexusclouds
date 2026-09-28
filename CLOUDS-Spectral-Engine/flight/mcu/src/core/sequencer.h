@@ -21,11 +21,12 @@
  *                 AUTO_WAIT      PARAM_AUTO_WAIT_S      neither
  *             at PARAM_DISPERSE_DUTY / PARAM_MEMBRANE_DUTY+MHZ, and starts
  *             again at AUTO_DISPERSE. Measurement and storage never stop.
- *   TERMINATION/SAFE  abort: actuators off and they stay off.
+ *   TERMINATION/SAFE  STOP: actuators off and they stay off.
  *
  * Invariants (spec S.1..S.3):
- *  - No state waits indefinitely for ground input; commands only start,
- *    hold, or abort - and automatic mode needs no command at all.
+ *  - No state waits indefinitely for ground input; the mission is carried
+ *    by two commands, START and STOP - and automatic mode needs no command
+ *    at all.
  *  - While ground is connected nothing is refused: every command executes
  *    in every state (see seq_command).
  *  - The cycle always restarts at AUTO_DISPERSE. Nothing about it is
@@ -138,7 +139,11 @@ typedef struct {
     /* True while the motor is held on - by DISPERSE_RUN or by automatic
      * mode's motor phase. */
     bool motor_running;
-    bool hold;
+    /* Automatic mode is inhibited: STOP set it, START clears it, and
+     * nothing else touches it. It outlives a link loss on purpose - see
+     * docs/TRAPS.md - but not a reset, which lands in ST_STANDBY where the
+     * cycle cannot start anyway. Reported as MCUF_STOPPED. */
+    bool stopped;
     uint64_t state_entered_ms;
     uint32_t mission_start_s;
     autonomy_t autonomy;

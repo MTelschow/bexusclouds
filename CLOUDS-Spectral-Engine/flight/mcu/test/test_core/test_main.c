@@ -762,7 +762,7 @@ static void test_self_test_failure_goes_safe(void)
     TEST_ASSERT_EQUAL_INT(0, M.membrane_duty);
 }
 
-static void test_hold_keeps_the_cycle_off(void)
+static void test_stop_keeps_the_cycle_off(void)
 {
     cfg_t cfg;
     sequencer_t s;
@@ -772,25 +772,76 @@ static void test_hold_keeps_the_cycle_off(void)
     seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
     start_experiment(&s, &cfg);
 
-    /* HOLD is how an operator says "do nothing without me", and it outlives
+    /* STOP is how an operator says "do nothing without me", and it outlives
      * the link: ten minutes of silence do not start the cycle. */
-    seq_command(&s, 2000, 2, CMD_HOLD, 0, 0, &cfg);
+    seq_command(&s, 2000, 2, CMD_STOP, 0, 0, &cfg);
+    seq_step(&s, 2500, 2, 101325); /* TERMINATION de-energizes, then SAFE */
     SIM_T = 3;
     quiet_to(&s, 1200);
-    TEST_ASSERT_EQUAL_INT(ST_RUNNING, s.state);
-    TEST_ASSERT_TRUE(s.hold);
+    TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
+    TEST_ASSERT_TRUE(s.stopped);
     TEST_ASSERT_FALSE(M.motor_on);
 
-    /* RESUME is itself a command, so the link is up again; the next silence
-     * runs the cycle as usual. */
-    seq_command(&s, 1201000ull, 1201, CMD_RESUME, 0, 0, &cfg);
+    /* START is itself a command, so the link is up again; it lifts the
+     * inhibit, and the next silence runs the cycle as usual. */
+    seq_command(&s, 1201000ull, 1201, CMD_START, 0, 0, &cfg);
+    TEST_ASSERT_FALSE(s.stopped);
     SIM_T = 1202;
     quiet_to(&s, 1850);
     TEST_ASSERT_EQUAL_INT(ST_AUTO_DISPERSE, s.state);
     TEST_ASSERT_TRUE(M.motor_on);
 }
 
-static void test_abort_goes_safe_and_de_energizes(void)
+/* A drive sent after a STOP wakes the state out of SAFE, because the hardware
+ * really is energized. It must not also lift the inhibit: the operator asked
+ * for that one actuator, not for automatic mode back. */
+static void test_a_manual_drive_after_stop_does_not_re_arm_the_cycle(void)
+{
+    cfg_t cfg;
+    sequencer_t s;
+
+    mock_reset();
+    cfg_defaults(&cfg);
+    seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
+    start_experiment(&s, &cfg);
+
+    seq_command(&s, 2000, 2, CMD_STOP, 0, 0, &cfg);
+    seq_step(&s, 2500, 2, 101325);
+    TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
+
+    seq_command(&s, 3000, 3, CMD_MEMBRANE, 40, 0, &cfg);
+    TEST_ASSERT_EQUAL_INT(ST_RUNNING, s.state);
+    TEST_ASSERT_EQUAL_INT(40, M.membrane_duty);
+    TEST_ASSERT_TRUE(s.stopped);
+
+    SIM_T = 4;
+    quiet_to(&s, 1200);
+    TEST_ASSERT_EQUAL_INT(ST_RUNNING, s.state);
+    TEST_ASSERT_FALSE(M.motor_on);
+}
+
+/* 0x02 (HOLD) and 0x03 (RESUME) are retired. Not mapped onto STOP: an old
+ * HOLD asked for the actuators to keep running, which STOP does not do, so a
+ * refusal ground can see beats a command that did something else. */
+static void test_the_retired_hold_and_resume_opcodes_are_refused(void)
+{
+    cfg_t cfg;
+    sequencer_t s;
+
+    mock_reset();
+    cfg_defaults(&cfg);
+    seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
+    start_experiment(&s, &cfg);
+
+    TEST_ASSERT_EQUAL_UINT8(ACK_INVALID,
+                            seq_command(&s, 2000, 2, 0x02, 0, 0, &cfg));
+    TEST_ASSERT_EQUAL_UINT8(ACK_INVALID,
+                            seq_command(&s, 2100, 2, 0x03, 0, 0, &cfg));
+    TEST_ASSERT_FALSE(s.stopped);
+    TEST_ASSERT_EQUAL_INT(ST_RUNNING, s.state);
+}
+
+static void test_stop_goes_safe_and_de_energizes(void)
 {
     cfg_t cfg;
     sequencer_t s;
@@ -803,7 +854,7 @@ static void test_abort_goes_safe_and_de_energizes(void)
     TEST_ASSERT_EQUAL_INT(ST_AUTO_DISPERSE, s.state);
     TEST_ASSERT_TRUE(M.motor_on);
 
-    seq_command(&s, 701000ull, 701, CMD_ABORT, 0, 0, &cfg);
+    seq_command(&s, 701000ull, 701, CMD_STOP, 0, 0, &cfg);
     seq_step(&s, 702000ull, 702, 101325);
     TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
     TEST_ASSERT_EQUAL_INT(0, M.membrane_duty);
@@ -865,8 +916,8 @@ static void test_start_button_starts_and_restarts(void)
     TEST_ASSERT_EQUAL_INT(ST_RUNNING, s.state);
     TEST_ASSERT_EQUAL_UINT32(8, seq_mission_t_s(&s, 10));
 
-    /* and it is the way back out of SAFE after an abort */
-    seq_command(&s, 4000, 4, CMD_ABORT, 0, 0, &cfg);
+    /* and it is the way back out of SAFE after a STOP */
+    seq_command(&s, 4000, 4, CMD_STOP, 0, 0, &cfg);
     seq_step(&s, 5000, 5, 101325);
     TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
     TEST_ASSERT_EQUAL_UINT8(ACK_OK,
@@ -1260,7 +1311,7 @@ static void test_no_command_is_refused_for_state(void)
     TEST_ASSERT_EQUAL_INT(ST_RUNNING, s.state);
 }
 
-static void test_a_drive_after_an_abort_wakes_the_experiment(void)
+static void test_a_drive_after_a_stop_wakes_the_experiment(void)
 {
     cfg_t cfg;
     sequencer_t s;
@@ -1269,7 +1320,7 @@ static void test_a_drive_after_an_abort_wakes_the_experiment(void)
     cfg_defaults(&cfg);
     seq_init(&s, &cfg, &mock_ops, NULL, 0, 0);
     start_experiment(&s, &cfg);
-    seq_command(&s, 3000, 3, CMD_ABORT, 0, 0, &cfg);
+    seq_command(&s, 3000, 3, CMD_STOP, 0, 0, &cfg);
     seq_step(&s, 4000, 4, 101325);
     TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
     TEST_ASSERT_EQUAL_INT(0, M.membrane_duty);
@@ -1281,7 +1332,7 @@ static void test_a_drive_after_an_abort_wakes_the_experiment(void)
     TEST_ASSERT_EQUAL_INT(60, M.membrane_duty);
     TEST_ASSERT_EQUAL_INT(ST_RUNNING, s.state);
 
-    seq_command(&s, 6000, 6, CMD_ABORT, 0, 0, &cfg);
+    seq_command(&s, 6000, 6, CMD_STOP, 0, 0, &cfg);
     seq_step(&s, 7000, 7, 101325);
     TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
     TEST_ASSERT_EQUAL_INT(0, M.membrane_duty);
@@ -1470,14 +1521,14 @@ static void test_termination_stops_a_running_motor(void)
                                                 DISPERSE_RUN, 0, &cfg));
     TEST_ASSERT_TRUE(M.motor_on);
 
-    /* an abort takes the held motor down with the membrane */
-    seq_command(&s, 3000, 3, CMD_ABORT, 0, 0, &cfg);
+    /* a STOP takes the held motor down with the membrane */
+    seq_command(&s, 3000, 3, CMD_STOP, 0, 0, &cfg);
     seq_step(&s, 4000, 4, 101325); /* TERMINATION -> SAFE */
     TEST_ASSERT_EQUAL_INT(ST_SAFE, s.state);
     TEST_ASSERT_FALSE(M.motor_on);
     TEST_ASSERT_FALSE(s.motor_running);
 
-    /* SAFE is not a lock-out: a Start after the abort runs the motor again
+    /* SAFE is not a lock-out: a drive after the STOP runs the motor again
      * and takes the state with it, and Stop still only de-energizes. */
     TEST_ASSERT_EQUAL_UINT8(ACK_OK, seq_command(&s, 5000, 5, CMD_DISPERSE,
                                                 DISPERSE_RUN, 0, &cfg));
@@ -1616,8 +1667,10 @@ int main(void)
     RUN_TEST(test_resume_after_reset_keeps_the_state_and_the_clock);
     RUN_TEST(test_resume_out_of_automatic_mode_comes_back_running);
     RUN_TEST(test_self_test_failure_goes_safe);
-    RUN_TEST(test_hold_keeps_the_cycle_off);
-    RUN_TEST(test_abort_goes_safe_and_de_energizes);
+    RUN_TEST(test_stop_keeps_the_cycle_off);
+    RUN_TEST(test_a_manual_drive_after_stop_does_not_re_arm_the_cycle);
+    RUN_TEST(test_the_retired_hold_and_resume_opcodes_are_refused);
+    RUN_TEST(test_stop_goes_safe_and_de_energizes);
     RUN_TEST(test_release_is_a_command_this_build_cannot_act_on);
     RUN_TEST(test_start_button_starts_and_restarts);
     RUN_TEST(test_launch_and_float_are_reported_but_move_nothing);
@@ -1636,7 +1689,7 @@ int main(void)
     RUN_TEST(test_pi_declared_lost_after_the_configured_silence);
     RUN_TEST(test_pi_silence_threshold_is_settable);
     RUN_TEST(test_no_command_is_refused_for_state);
-    RUN_TEST(test_a_drive_after_an_abort_wakes_the_experiment);
+    RUN_TEST(test_a_drive_after_a_stop_wakes_the_experiment);
     RUN_TEST(test_manual_membrane_drive_and_stop);
     RUN_TEST(test_manual_disperse_runs_one_motor_pulse);
     RUN_TEST(test_manual_disperse_run_and_stop);

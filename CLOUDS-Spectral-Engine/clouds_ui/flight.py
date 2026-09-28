@@ -472,14 +472,19 @@ class FlightPanel(QtCore.QObject):
         grid = QtWidgets.QGridLayout()
         grid.setContentsMargins(0, 0, 0, 0)
         grid.setSpacing(6)
+        # Three commands carry the mission (2026-09-28): PING asks whether
+        # the chain answers, START arms autonomy, STOP de-energizes and keeps
+        # automatic mode off until the next START. HOLD and RESUME are gone -
+        # with no pressure-driven sequence left to pause, the only thing they
+        # decided between them was that inhibit, which is what STOP holds.
         simple = [("PING", Command.PING), ("START", Command.START),
-                  ("HOLD", Command.HOLD), ("RESUME", Command.RESUME),
-                  ("ABORT", Command.ABORT)]
+                  ("STOP", Command.STOP)]
         # Six columns, the short commands spanning 2 of them - three per row,
         # equal column stretch, so every button in a row is the same width.
         # The RELEASE pair that spanned 3 went with the pinch valves
-        # (2026-09-18); the geometry is kept because the actuator drives
-        # below may yet want a wide button.
+        # (2026-09-18), and HOLD/RESUME with the sequence they paused
+        # (2026-09-28), which leaves one full row; the geometry is kept
+        # because the actuator drives below may yet want a wide button.
         #
         # Pinning columns to the widest button's own hint is what NOT to do
         # here, even though it does produce equal widths: three long labels
@@ -514,9 +519,13 @@ class FlightPanel(QtCore.QObject):
         move hardware with no arm/execute handshake, because neither drive is
         irreversible - the membrane stops on Stop, the motor stops on its own
         Stop and its pulse is bounded on the MCU - and running them is how
-        the mechanism gets exercised on the bench. The MCU still refuses both
-        in TERMINATION and SAFE, so nothing here can restart an aborted
-        experiment.
+        the mechanism gets exercised on the bench.
+
+        A drive sent after a STOP takes the MCU back out of SAFE and runs
+        (seq_command's wake_from_safe) - the state follows the hardware. What
+        it does not do is lift the automatic-mode inhibit: only START does
+        that, so hand-driving an actuator here cannot hand the experiment
+        back to the cycle behind the operator's back.
         """
         sec.add(group_label("Membrane solenoid"))
         row = QtWidgets.QHBoxLayout()

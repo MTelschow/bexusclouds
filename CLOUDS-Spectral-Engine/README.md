@@ -69,8 +69,8 @@ UART (`clouds_fsw/sim_mcu.py`), and the real ground station decoding real UDP
 and TCP on loopback. So housekeeping, events, the quick-look, the timeline and
 the whole command path behave as they do on the bench: `START` begins the
 experiment, ground silence hands it to the automatic cycle (motor, then
-solenoid, then a wait) until the next command, and an `ABORT` de-energizes
-everything.
+solenoid, then a wait) until the next command, and a `STOP` de-energizes
+everything and keeps the cycle off until the next `START`.
 
 Because a simulated spectrum that looked real would be the worst failure this
 app has, the mock says so in the window title, in the plot's source banner and

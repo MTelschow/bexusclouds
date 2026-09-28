@@ -44,10 +44,12 @@ enum ack_result {
 enum command {
     CMD_NONE = 0xFF, /* internal sentinel, never on the wire */
     CMD_PING = 0x00,
-    CMD_START = 0x01,
-    CMD_HOLD = 0x02,
-    CMD_RESUME = 0x03,
-    CMD_ABORT = 0x04,
+    CMD_START = 0x01,   /* autonomy armed: -> RUNNING, inhibit lifted */
+    /* 0x02 (HOLD) and 0x03 (RESUME) are retired (2026-09-28): answered
+     * ACK_INVALID, numbers not reused. See clouds_link/commands.py. */
+    CMD_STOP = 0x04,    /* manual, and stay manual: -> TERMINATION -> SAFE
+                         * with automatic mode inhibited. Was CMD_ABORT, and
+                         * keeps its opcode because it keeps its effect. */
     CMD_RELEASE = 0x05, /* retired with the valves: answered ACK_INVALID */
     CMD_SET_PARAM = 0x06,
     CMD_STATUS_REQ = 0x07,
@@ -181,7 +183,9 @@ typedef struct {
 #define MCUF_LINK_OK (1u << 1)
 #define MCUF_PI_OK (1u << 2)
 #define MCUF_SEAL_VERIFIED (1u << 3)
-#define MCUF_HOLD (1u << 4)
+/* Automatic mode is inhibited: the operator sent STOP and no START has
+ * lifted it. Bit unchanged from the MCUF_HOLD it replaces. */
+#define MCUF_STOPPED (1u << 4)
 
 /* Sensor error bits (hk_t.error_flags) - mirror of clouds_link/hk.py
  * HkErrors. A set bit means the matching HK field is NOT a live measurement,

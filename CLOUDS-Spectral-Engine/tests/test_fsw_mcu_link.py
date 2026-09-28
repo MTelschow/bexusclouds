@@ -96,12 +96,12 @@ class TestCommandAcks:
         end.auto_ack = AckResult.NOT_ARMED
         assert mcu.send_command(Command.RELEASE, key=1) == AckResult.NOT_ARMED
         end.auto_ack = AckResult.OK
-        assert mcu.send_command(Command.HOLD) == AckResult.OK
+        assert mcu.send_command(Command.STOP) == AckResult.OK
 
     def test_missing_ack_is_a_rejection(self, link):
         mcu, end, _ = link
         t0 = time.time()
-        assert mcu.send_command(Command.HOLD) == AckResult.REJECTED
+        assert mcu.send_command(Command.STOP) == AckResult.REJECTED
         assert 0.3 <= time.time() - t0 < 2.0       # waited, then gave up
         assert mcu.acks_missed == 1
         assert end.frames and end.frames[0].type == PacketType.CMD
@@ -109,22 +109,22 @@ class TestCommandAcks:
     def test_ack_for_another_command_does_not_release_the_waiter(self, link):
         mcu, end, _ = link
         end.ack(cmd_seq=9999)                      # unsolicited / stale
-        assert mcu.send_command(Command.HOLD) == AckResult.REJECTED
+        assert mcu.send_command(Command.STOP) == AckResult.REJECTED
 
     def test_acks_are_matched_by_sequence_number(self, link):
         mcu, end, _ = link
         results = {}
 
         def fire(name):
-            results[name] = mcu.send_command(Command.HOLD)
+            results[name] = mcu.send_command(Command.STOP)
 
         threads = [threading.Thread(target=fire, args=(n,)) for n in "ab"]
         for t in threads:
             t.start()
         assert _wait(lambda: len(end.frames) == 2)
         # answer them in reverse order, with distinct results
-        end.ack(end.frames[1].seq, Command.HOLD, AckResult.INVALID)
-        end.ack(end.frames[0].seq, Command.HOLD, AckResult.OK)
+        end.ack(end.frames[1].seq, Command.STOP, AckResult.INVALID)
+        end.ack(end.frames[0].seq, Command.STOP, AckResult.OK)
         for t in threads:
             t.join(timeout=2.0)
         assert sorted(results.values()) == [AckResult.OK, AckResult.INVALID]
@@ -142,7 +142,7 @@ class TestCommandAcks:
         mcu.start()
         result = []
         t = threading.Thread(target=lambda: result.append(
-            mcu.send_command(Command.HOLD)), daemon=True)
+            mcu.send_command(Command.STOP)), daemon=True)
         t.start()
         time.sleep(0.1)
         mcu.stop()                                  # must not hang for 30 s
@@ -176,7 +176,7 @@ class TestCommandAcks:
     def test_acks_are_not_relayed_to_the_app(self, link):
         mcu, end, received = link
         end.auto_ack = AckResult.OK
-        mcu.send_command(Command.HOLD)
+        mcu.send_command(Command.STOP)
         end.send_hk(hk.SeqState.STANDBY)
         assert _wait(lambda: received)
         # the ACK answered this class's own command; only real telemetry goes on

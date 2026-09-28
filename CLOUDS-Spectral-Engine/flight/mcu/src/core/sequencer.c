@@ -210,9 +210,9 @@ void seq_step(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
         break;
 
     case ST_RUNNING:
-        /* HOLD is what says "stay passive": it is the only way to sit out a
+        /* STOP is what says "stay passive": it is the only way to sit out a
          * link loss, and it survives one - see docs/TRAPS.md. */
-        if (s->hold)
+        if (s->stopped)
             break;
         if (s->autonomy.autonomous_latched)
             enter_auto(s, t_ms);
@@ -252,11 +252,15 @@ void seq_note_ground_cmd(sequencer_t *s, uint64_t t_ms)
         leave_auto(s, t_ms);
 }
 
-/* A drive commanded after an abort takes the experiment out of SAFE rather
+/* A drive commanded after a STOP takes the experiment out of SAFE rather
  * than being refused (2026-09-18: while ground is connected, every command
  * executes). The state has to follow the hardware - SAFE means "nothing is
  * energized", so it cannot be what HK reports while the operator is running
- * the motor. ABORT remains the way back to SAFE, and START the other way. */
+ * the motor. STOP remains the way back to SAFE, and START the other way.
+ *
+ * Waking does NOT clear s->stopped: the operator drove one actuator by hand,
+ * which is manual mode working as intended, and is not a decision to hand the
+ * experiment back to automatic mode if the link then drops. Only START is. */
 static void wake_from_safe(sequencer_t *s, uint64_t t_ms)
 {
     if (s->state == ST_TERMINATION || s->state == ST_SAFE)
@@ -276,20 +280,17 @@ uint8_t seq_command(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
          * that still sends one gets an OK for a command that now does
          * nothing, rather than a refusal it cannot act on. */
         return ACK_OK;
-    case CMD_HOLD:
-        s->hold = true;
-        return ACK_OK;
-    case CMD_RESUME:
-        s->hold = false;
-        return ACK_OK;
-    case CMD_ABORT:
-        s->ops->event(s->ops->ctx, EV_ABORTED, "ground abort");
-        s->hold = false;
+    case CMD_STOP: /* manual, and stay manual - from any state */
+        s->ops->event(s->ops->ctx, EV_ABORTED, "ground stop");
+        /* Set before the transition, not after: TERMINATION de-energizes on
+         * the next seq_step(), and if a link loss were latched in between, a
+         * cleared flag would let enter_auto() take the motor straight back. */
+        s->stopped = true;
         if (s->state != ST_SAFE)
             enter(s, ST_TERMINATION, t_ms);
         return ACK_OK;
-    case CMD_START: /* the start button, from any state */
-        s->hold = false;
+    case CMD_START: /* autonomy armed, from any state */
+        s->stopped = false;
         if (s->mission_start_s == 0)
             s->mission_start_s = wall_s;
         if (s->state != ST_RUNNING)
@@ -326,7 +327,7 @@ uint8_t seq_command(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
         }
         /* PULSE while the motor is already held on: the bounded drive it
          * asks for cannot be scheduled on top of a running motor, so the
-         * hold stands and the command is answered OK - the motor is turning,
+         * run stands and the command is answered OK - the motor is turning,
          * which is what was asked for. */
         if (!s->motor_running && s->ops->disperse != NULL)
             s->ops->disperse(s->ops->ctx);
@@ -343,6 +344,11 @@ uint8_t seq_command(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
     case CMD_STATUS_REQ:
         return ACK_OK; /* answered by the Pi's PISTATUS, nothing to do here */
     default:
+        /* Also where retired 0x02 (HOLD) and 0x03 (RESUME) land, which is
+         * the whole reason they are not listed above: an old HOLD asked for
+         * the actuators to keep running and STOP shuts them off, so mapping
+         * one onto the other would execute something other than what was
+         * sent. A refusal ground can see beats that. */
         return ACK_INVALID; /* a command this build does not know */
     }
 }

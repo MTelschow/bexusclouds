@@ -8,7 +8,32 @@ connected, every command the chain can parse is executed, and the operator's
 START is what begins the experiment. `Command.ARM` stays in the enum so an
 older ground station is still understood - it is forwarded, answered OK, and
 does nothing.
+
+**Three commands carry the mission (2026-09-28).** `PING`, `START`, `STOP`.
+The pressure profile stopped driving the sequence on 2026-09-18, so there was
+no longer a sequence to pause, and `HOLD`/`RESUME` had shrunk to one job
+between them: deciding whether automatic mode may take over when the link
+drops. That is a mode, not a pause, and a mode wants two commands, not three:
+
+  START  autonomy armed   - RUNNING; if ground goes silent for
+                            PARAM_LINKLOSS_S, the MCU runs the cycle alone
+  STOP   manual, and stay manual - actuators de-energized, TERMINATION ->
+                            SAFE, and automatic mode inhibited until the next
+                            START, link loss included
+
+`STOP` keeps `ABORT`'s opcode (0x04) because it keeps `ABORT`'s effect and
+adds to it: an older ground station's `ABORT` still de-energizes, and now
+also latches the inhibit that the old `ABORT` cleared. That clearing was a
+hole - abort, then lose the link, and automatic mode restarted the motor the
+operator had just shut down.
+
+`HOLD` (0x02) and `RESUME` (0x03) are retired and answered `ACK_INVALID`;
+the numbers are not reused. They are not silently mapped onto `STOP`: an old
+`HOLD` asked for the actuators to keep running, and `STOP` shuts them off, so
+honouring it would execute something other than what was sent. A refusal the
+operator can see beats a command that did something else.
 """
+
 from __future__ import annotations
 
 from enum import IntEnum
@@ -20,10 +45,11 @@ LINK_LOSS_LATCH_S = 600.0       # MCU runs automatic mode after this much
 
 class Command(IntEnum):
     PING = 0x00        # heartbeat; also refreshes link-ok on the MCU
-    START = 0x01       # the start button: STANDBY -> RUNNING
-    HOLD = 0x02
-    RESUME = 0x03
-    ABORT = 0x04       # -> TERMINATION -> SAFE
+    START = 0x01       # autonomy armed: -> RUNNING, inhibit lifted
+    # 0x02 (HOLD) and 0x03 (RESUME) are RETIRED (2026-09-28). The MCU
+    # answers both ACK_INVALID and the numbers are not reused.
+    STOP = 0x04        # manual, and stay manual: -> TERMINATION -> SAFE,
+                       # automatic mode inhibited. Was ABORT, same opcode.
     RELEASE = 0x05     # key = 1 | 2
     SET_PARAM = 0x06   # key = Param, value = i32
     STATUS_REQ = 0x07
@@ -53,9 +79,9 @@ MANUAL_ACTUATORS = frozenset({Command.MEMBRANE, Command.DISPERSE})
 #: for the MCU's ACK over UART and relays its result. PING is deliberately
 #: absent - it is the heartbeat addressed to the Pi (S.8), which must answer
 #: it even while the RP2350 is silent; PISTATUS.uart_ok reports that instead.
-MCU_CONFIRMED = frozenset({Command.START, Command.HOLD, Command.RESUME,
-                           Command.ABORT, Command.RELEASE, Command.SET_PARAM,
-                           Command.MEMBRANE, Command.DISPERSE})
+MCU_CONFIRMED = frozenset({Command.START, Command.STOP, Command.RELEASE,
+                           Command.SET_PARAM, Command.MEMBRANE,
+                           Command.DISPERSE})
 
 
 class Param(IntEnum):

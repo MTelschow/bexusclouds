@@ -86,12 +86,22 @@ class TestNothingIsGated:
         assert harness.forwarded == [(Command.RELEASE, 1, 0)]
 
     def test_every_command_reaches_the_mcu(self, harness):
-        for c in (Command.START, Command.HOLD, Command.RESUME, Command.ABORT,
-                  Command.RELEASE, Command.MEMBRANE, Command.DISPERSE):
+        for c in (Command.START, Command.STOP, Command.RELEASE,
+                  Command.MEMBRANE, Command.DISPERSE):
             assert harness.send(c)[2] == AckResult.OK
         assert [f[0] for f in harness.forwarded] == [
-            Command.START, Command.HOLD, Command.RESUME, Command.ABORT,
-            Command.RELEASE, Command.MEMBRANE, Command.DISPERSE]
+            Command.START, Command.STOP, Command.RELEASE, Command.MEMBRANE,
+            Command.DISPERSE]
+
+    def test_retired_opcodes_are_forwarded_not_swallowed(self, harness):
+        """0x02 and 0x03 were HOLD and RESUME. The Pi does not know which
+        opcodes the MCU still implements - it forwards and relays the
+        verdict - so they go down the UART like anything else and come back
+        with whatever the RP2350 said."""
+        harness.forward_result = AckResult.INVALID
+        for opcode in (0x02, 0x03):
+            assert harness.send(opcode)[2] == AckResult.INVALID
+        assert [f[0] for f in harness.forwarded] == [0x02, 0x03]
 
     def test_a_stale_arm_is_forwarded_and_harmless(self, harness):
         """An older ground station still sends ARM. It is passed on like
@@ -107,13 +117,13 @@ class TestMcuVerdict:
 
     def test_forward_result_reaches_the_client(self, harness):
         harness.forward_result = AckResult.REJECTED
-        assert harness.send(Command.HOLD)[2] == AckResult.REJECTED
+        assert harness.send(Command.STOP)[2] == AckResult.REJECTED
         harness.forward_result = AckResult.NOT_ARMED
-        assert harness.send(Command.ABORT)[2] == AckResult.NOT_ARMED
+        assert harness.send(Command.START)[2] == AckResult.NOT_ARMED
 
     def test_none_means_nothing_to_report(self, harness):
         harness.forward_result = None
-        assert harness.send(Command.HOLD)[2] == AckResult.OK
+        assert harness.send(Command.STOP)[2] == AckResult.OK
 
     def test_ping_is_answered_even_when_the_mcu_is_gone(self, harness):
         def boom(*_):
@@ -132,12 +142,12 @@ class TestPlainCommands:
         assert harness.state.last_heartbeat > before
         assert harness.forwarded == [(Command.PING, 0, 0)]
 
-    def test_hold_abort_forwarded(self, harness):
-        for c in (Command.HOLD, Command.RESUME, Command.ABORT):
+    def test_start_stop_forwarded(self, harness):
+        for c in (Command.START, Command.STOP):
             _, _, r = harness.send(c)
             assert r == AckResult.OK
         assert [f[0] for f in harness.forwarded] == \
-            [Command.HOLD, Command.RESUME, Command.ABORT]
+            [Command.START, Command.STOP]
 
     def test_status_req_triggers_pistatus(self, harness):
         _, _, r = harness.send(Command.STATUS_REQ)
@@ -153,7 +163,7 @@ class TestPlainCommands:
         def boom(*_):
             raise OSError("uart gone")
         harness.server._forward = boom
-        _, _, r = harness.send(Command.HOLD)
+        _, _, r = harness.send(Command.STOP)
         assert r == AckResult.REJECTED
 
 
@@ -161,11 +171,11 @@ class TestStreamFraming:
     def test_two_frames_in_one_segment(self, harness):
         f1 = Frame(type=PacketType.CMD, payload=frames.pack_cmd(Command.PING),
                    seq=1).stamp()
-        f2 = Frame(type=PacketType.CMD, payload=frames.pack_cmd(Command.HOLD),
+        f2 = Frame(type=PacketType.CMD, payload=frames.pack_cmd(Command.STOP),
                    seq=2).stamp()
         harness.sock.sendall(f1.encode() + f2.encode())
         acks = [harness.recv_ack(), harness.recv_ack()]
-        assert [a[1] for a in acks] == [Command.PING, Command.HOLD]
+        assert [a[1] for a in acks] == [Command.PING, Command.STOP]
 
     def test_garbage_before_frame_resyncs(self, harness):
         f = Frame(type=PacketType.CMD, payload=frames.pack_cmd(Command.PING),

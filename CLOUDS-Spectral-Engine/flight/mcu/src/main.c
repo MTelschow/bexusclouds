@@ -83,7 +83,7 @@ static void send_hk(uint64_t t_ms)
                               ? MCUF_LINK_OK
                               : 0) |
                          (pi_link.pi_ok ? MCUF_PI_OK : 0) |
-                         (seq.hold ? MCUF_HOLD : 0));
+                         (seq.stopped ? MCUF_STOPPED : 0));
     hk.uptime_s = (uint32_t)(t_ms / 1000u);
     hk.mission_t_s = seq_mission_t_s(&seq, wall);
 

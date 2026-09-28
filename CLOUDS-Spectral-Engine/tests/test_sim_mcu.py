@@ -145,7 +145,7 @@ def test_start_is_accepted_in_every_state(sim):
     assert pi.command(Command.START) == AckResult.OK
     assert pi.command(Command.START) == AckResult.OK
     assert mcu.state == hk.SeqState.RUNNING
-    assert pi.command(Command.ABORT) == AckResult.OK
+    assert pi.command(Command.STOP) == AckResult.OK
     assert _wait(lambda: mcu.state == hk.SeqState.SAFE)
     # and it is the way back out of SAFE
     assert pi.command(Command.START) == AckResult.OK
@@ -256,13 +256,13 @@ def test_motor_current_sense_follows_the_dispersion_drive(sim):
     assert highs, "the sense should rise while the motor drive is up"
 
 
-def test_an_abort_de_energizes_but_does_not_lock_out(sim):
-    """The abort itself leaves nothing running; a drive commanded afterwards
+def test_a_stop_de_energizes_but_does_not_lock_out(sim):
+    """The STOP itself leaves nothing running; a drive commanded afterwards
     is honoured and takes the state with it, so HK never reports SAFE over a
     turning motor."""
     mcu, pi = sim
     assert pi.command(Command.MEMBRANE, key=40) == AckResult.OK
-    assert pi.command(Command.ABORT) == AckResult.OK
+    assert pi.command(Command.STOP) == AckResult.OK
     assert _wait(lambda: mcu.state == hk.SeqState.SAFE)
     assert mcu.housekeeping().membrane_duty == 0
     assert not mcu.motor_running
@@ -277,30 +277,59 @@ def test_an_abort_de_energizes_but_does_not_lock_out(sim):
     assert not mcu.motor_running
 
 
-def test_abort_stops_a_running_motor(sim):
+def test_stop_stops_a_running_motor(sim):
     mcu, pi = sim
     assert pi.command(Command.DISPERSE, key=DisperseKey.RUN) == AckResult.OK
-    assert pi.command(Command.ABORT) == AckResult.OK
+    assert pi.command(Command.STOP) == AckResult.OK
     assert _wait(lambda: mcu.state == hk.SeqState.SAFE)
     assert not mcu.motor_running
     assert not mcu.housekeeping().valve_status & hk.ValveStatus.DISPERSE
 
 
-def test_hold_keeps_the_cycle_off(sim_auto):
-    """HOLD is how an operator says "do nothing without me", and it outlives
+def test_stop_keeps_the_cycle_off(sim_auto):
+    """STOP is how an operator says "do nothing without me", and it outlives
     the link: silence alone does not start the cycle while it is set."""
     mcu, pi = sim_auto
     assert pi.command(Command.START) == AckResult.OK
     assert mcu.state == hk.SeqState.RUNNING
-    assert pi.command(Command.HOLD) == AckResult.OK
-    assert mcu.housekeeping().flags & hk.McuFlags.HOLD
+    assert pi.command(Command.STOP) == AckResult.OK
+    assert _wait(lambda: mcu.state == hk.SeqState.SAFE)
+    assert mcu.housekeeping().flags & hk.McuFlags.STOPPED
     time.sleep(1.2)                                  # linkloss_s is 0.5 s
-    assert mcu.state == hk.SeqState.RUNNING, "HOLD did not hold the cycle off"
+    assert mcu.state == hk.SeqState.SAFE, "STOP did not hold the cycle off"
     assert not mcu.motor_running
-    # RESUME is itself a command, so the link is up again; the next silence
+    # START is itself a command, so the link is up again; the next silence
     # runs the cycle as usual.
-    assert pi.command(Command.RESUME) == AckResult.OK
+    assert pi.command(Command.START) == AckResult.OK
+    assert not mcu.housekeeping().flags & hk.McuFlags.STOPPED
     assert _wait(lambda: mcu.state == hk.SeqState.AUTO_DISPERSE)
+
+
+def test_a_manual_drive_after_stop_does_not_re_arm_the_cycle(sim_auto):
+    """A drive sent after a STOP wakes the state out of SAFE, because the
+    hardware really is energized. It must not also lift the inhibit: the
+    operator asked for that one actuator, not for automatic mode back."""
+    mcu, pi = sim_auto
+    assert pi.command(Command.START) == AckResult.OK
+    assert pi.command(Command.STOP) == AckResult.OK
+    assert _wait(lambda: mcu.state == hk.SeqState.SAFE)
+    assert pi.command(Command.MEMBRANE, key=40) == AckResult.OK
+    assert mcu.state == hk.SeqState.RUNNING
+    assert mcu.housekeeping().flags & hk.McuFlags.STOPPED
+    time.sleep(1.2)                                  # linkloss_s is 0.5 s
+    assert mcu.state == hk.SeqState.RUNNING, "the drive re-armed the cycle"
+    assert not mcu.motor_running
+
+
+def test_the_retired_hold_and_resume_opcodes_are_refused(sim_auto):
+    """0x02 and 0x03. Not mapped onto STOP: an old HOLD asked for the
+    actuators to keep running, which STOP does not do."""
+    mcu, pi = sim_auto
+    assert pi.command(Command.START) == AckResult.OK
+    assert pi.command(0x02) == AckResult.INVALID
+    assert pi.command(0x03) == AckResult.INVALID
+    assert not mcu.housekeeping().flags & hk.McuFlags.STOPPED
+    assert mcu.state == hk.SeqState.RUNNING
 
 
 def test_the_cycle_runs_while_the_link_is_down(sim_auto):

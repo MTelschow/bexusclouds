@@ -97,7 +97,8 @@ class McuFlags(IntEnum):
     LINK_OK = 1 << 1
     PI_OK = 1 << 2
     SEAL_VERIFIED = 1 << 3        # retired with the SEAL state; always 0
-    HOLD = 1 << 4
+    STOPPED = 1 << 4              # STOP latched automatic mode off until
+                                  # the next START (was HOLD; same bit)
 
 
 #: "No reading" for a ``rail_mv`` entry - mirror of RAIL_MV_INVALID in
@@ -420,7 +421,8 @@ class Housekeeping:
         """
         short = {McuFlags.AUTONOMOUS_LATCHED: "AUTONOMOUS",
                  McuFlags.LINK_OK: "GND", McuFlags.PI_OK: "PI",
-                 McuFlags.SEAL_VERIFIED: "SEALED", McuFlags.HOLD: "HOLD"}
+                 McuFlags.SEAL_VERIFIED: "SEALED",
+                 McuFlags.STOPPED: "STOPPED"}
         set_bits = [name for flag, name in short.items() if self.flags & flag]
         return " ".join(set_bits) if set_bits else "-"
 

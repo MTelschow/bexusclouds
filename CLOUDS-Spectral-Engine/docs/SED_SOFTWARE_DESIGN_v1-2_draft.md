@@ -114,6 +114,14 @@ External (E-Link, Ethernet, per §4.2.2 and Table 6-3):
   `ABORT`, `RELEASE 1|2`, `SET_PARAM key value`, `STATUS?`.
   Safety-critical commands require a two-byte arm/execute pattern so a
   corrupted or truncated command can never fire an actuator.
+
+  > **This paragraph is superseded and is kept as the v1-2 record.** The
+  > arm/execute pattern and the ground interlock were removed on 2026-09-18
+  > together with the pinch valves and `RELEASE`; `HOLD` and `RESUME` were
+  > retired on 2026-09-28. The flown command set is `PING`, `START`, `STOP`,
+  > `SET_PARAM`, `STATUS?`, `MEMBRANE`, `DISPERSE`. `docs/SOFTWARE_SPEC.md`
+  > §5 and `clouds_link/commands.py` are the source of truth; this document
+  > needs a full reconciliation pass before the next SED issue.
 - Two IP addresses: one for the Pi flight application, one reserved for
   GSE bench access through the same port.
 

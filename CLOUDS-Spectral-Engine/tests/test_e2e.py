@@ -191,10 +191,10 @@ class TestEndToEnd:
         assert _wait(lambda: app.mcu.in_flight)
 
         mcu.ack_result = AckResult.REJECTED
-        assert commander.send(Command.HOLD) == AckResult.REJECTED
+        assert commander.send(Command.STOP) == AckResult.REJECTED
 
         mcu.ack_result = AckResult.OK
-        assert commander.send(Command.HOLD) == AckResult.OK
+        assert commander.send(Command.STOP) == AckResult.OK
 
     def test_silent_mcu_rejects_commands_and_keeps_the_heartbeat(self, stack):
         """The Pi answers its own heartbeat while reporting the MCU gone."""
@@ -203,7 +203,7 @@ class TestEndToEnd:
         mcu.stop()
         assert _wait(lambda: not app.mcu.alive(), timeout=15.0)
 
-        assert commander.send(Command.HOLD) == AckResult.REJECTED  # no ACK
+        assert commander.send(Command.STOP) == AckResult.REJECTED  # no ACK
         assert commander.ping() == AckResult.OK                    # Pi is up
         assert _wait(lambda: ground_rx.last_pistatus is not None
                      and not ground_rx.last_pistatus["uart_ok"])

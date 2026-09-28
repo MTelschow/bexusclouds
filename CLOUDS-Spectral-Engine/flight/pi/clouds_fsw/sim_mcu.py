@@ -94,7 +94,7 @@ class SimMcu:
 
         # -- sequencer state (mirror of sequencer_t) -------------------------
         self.state = hk.SeqState.STANDBY   # self-test passes instantly here
-        self.hold = False
+        self.stopped = False   # automatic mode inhibited (MCUF_STOPPED)
         self.membrane_duty = 0
         self.membrane_mhz = 2000            # PARAM_MEMBRANE_MHZ default
         self.disperse_duty = 50          # PARAM_DISPERSE_DUTY, motor speed
@@ -194,23 +194,19 @@ class SimMcu:
 
         if cmd == Command.PING or cmd == Command.STATUS_REQ:
             return AckResult.OK
-        if cmd == Command.HOLD:
-            self.hold = True
-            return AckResult.OK
-        if cmd == Command.RESUME:
-            self.hold = False
-            return AckResult.OK
-        if cmd == Command.ABORT:
-            self._event(EventCode.ABORTED, "ground abort",
+        if cmd == Command.STOP:
+            # Manual, and stay manual: de-energize and latch automatic mode
+            # off until the next START, link loss included.
+            self._event(EventCode.ABORTED, "ground stop",
                         EventSeverity.CRITICAL)
-            self.hold = False
+            self.stopped = True
             if self.state != hk.SeqState.SAFE:
                 self._enter(hk.SeqState.TERMINATION)
             return AckResult.OK
         if cmd == Command.START:
-            # The start button. Accepted in any state - including back out of
-            # SAFE after an abort.
-            self.hold = False
+            # Autonomy armed. Accepted in any state - including back out of
+            # SAFE after a STOP.
+            self.stopped = False
             if self._mission_start is None:
                 self._mission_start = now
             if self.state != hk.SeqState.RUNNING:
@@ -279,9 +275,14 @@ class SimMcu:
         return AckResult.INVALID
 
     def _wake_from_safe(self) -> None:
-        """A drive commanded after an abort takes the experiment back out of
+        """A drive commanded after a STOP takes the experiment back out of
         SAFE rather than being refused: the state has to follow the hardware,
-        and SAFE means "nothing is energized"."""
+        and SAFE means "nothing is energized".
+
+        Does not clear ``stopped``: driving one actuator by hand is manual
+        mode working, not a decision to hand the experiment back to automatic
+        mode if the link then drops. Only START is that.
+        """
         if self.state in (hk.SeqState.TERMINATION, hk.SeqState.SAFE):
             self._enter(hk.SeqState.RUNNING)
 
@@ -301,7 +302,7 @@ class SimMcu:
             # Nothing on its own: the experiment starts with the button.
             return
         if self.state == st.RUNNING:
-            if not self.hold and self._link_silent(now):
+            if not self.stopped and self._link_silent(now):
                 self._event(EventCode.AUTO_ENTERED, "link silent")
                 self._enter_auto_phase(st.AUTO_DISPERSE)
             return
@@ -408,8 +409,8 @@ class SimMcu:
         if self._last_pi_rx and now - self._last_pi_rx <= 60.0:
             f |= hk.McuFlags.PI_OK                      # PARAM_PI_SILENT_S
         # MCUF_SEAL_VERIFIED went with the SEAL state and stays 0.
-        if self.hold:
-            f |= hk.McuFlags.HOLD
+        if self.stopped:
+            f |= hk.McuFlags.STOPPED
         return f
 
     def housekeeping(self) -> hk.Housekeeping:

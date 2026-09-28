@@ -47,7 +47,7 @@ spectra, storage of spectra, and all external communication.
 | ID | Requirement | Rationale |
 |---|---|---|
 | S.1 | ~~FSW-MCU shall execute the full sequence (seal → release ×2 → measure ×2 → terminate) autonomously, triggered by pressure-derived launch/float detection~~ — **replaced 2026-09-18** (see §5): the operator's `START` begins the experiment and ground silence hands it to the automatic cycle. Launch and float are still detected and reported, and drive nothing | O.2; T-07 |
-| S.2 | Ground commands shall only accelerate, hold, or abort the default sequence; no state may block indefinitely on ground input | O.2 |
+| S.2 | Ground commands shall only start or stop the experiment; no state may block indefinitely on ground input. **Reworded 2026-09-28**: with S.1's pressure-driven sequence gone there is no "default sequence" left to accelerate or pause, so `HOLD`/`RESUME` were retired and the mission is carried by `PING`, `START` and `STOP` | O.2 |
 | S.3 | ~~Fired-valve flags shall be persisted **before** actuation; on reset the sequence resumes, never re-fires~~ — **moot since 2026-09-18**: with the valves gone there is no irreversible actuator to guard. The state and the mission clock are still persisted on every transition, so a reset resumes where it was | irreversible actuators + brownout risk |
 | S.4 | Spectra and HK shall share one timebase (Pi RTC master, UART sync ≤ 10 s interval, target skew < 100 ms) | §7.1 paired analysis needs synchronized channels |
 | S.5 | Every stored record and downlink packet shall carry a sequence number and CRC-16 | SED §4.11 safety concepts |
@@ -62,7 +62,7 @@ spectra, storage of spectra, and all external communication.
 | Interface | Spec |
 |---|---|
 | E-Link downlink | UDP over Ethernet; ~1.9 kbit/s average (limit 2 kbit/s continuous; bursts ≤ 400 kbit/s max, 100 kbit/s avg per Table 6-3); self-contained packets (seq + timestamp + CRC-16), loss-tolerant |
-| E-Link uplink | TCP, ≤ 1 kbit/s; command set `PING, START, HOLD, RESUME, ABORT, SET_PARAM, STATUS?, MEMBRANE, DISPERSE` (+ `ARM` and `RELEASE 1\|2`, both retired — `ARM` is answered OK and does nothing, `RELEASE` is answered `INVALID` because the valves are gone); mandatory ACK. **Nothing is gated (2026-09-18)**: no arm/execute, no ground interlock, no state refusal - a command the chain can parse is executed and answered `OK`, and `INVALID` is left for input it cannot act on at all (unknown command, duty > 100, parameter out of envelope). `MEMBRANE` (duty %, 0 = off) and `DISPERSE` (pulse / run / stop, speed from `SET_PARAM DISPERSE_DUTY`) are the operator's drives of the dispersion hardware |
+| E-Link uplink | TCP, ≤ 1 kbit/s; command set `PING, START, STOP, SET_PARAM, STATUS?, MEMBRANE, DISPERSE` (+ `ARM`, `RELEASE 1\|2` and the retired `HOLD`/`RESUME` opcodes `0x02`/`0x03` — `ARM` is answered OK and does nothing, the rest are answered `INVALID`; `STOP` is `ABORT`'s old opcode `0x04`); mandatory ACK. **Nothing is gated (2026-09-18)**: no arm/execute, no ground interlock, no state refusal - a command the chain can parse is executed and answered `OK`, and `INVALID` is left for input it cannot act on at all (unknown command, duty > 100, parameter out of envelope). `MEMBRANE` (duty %, 0 = off) and `DISPERSE` (pulse / run / stop, speed from `SET_PARAM DISPERSE_DUTY`) are the operator's drives of the dispersion hardware |
 | IP addressing | 2 addresses: FSW-PI, GSE bench port |
 | Pi ↔ RP2350 | UART, COBS-framed, CRC-16. Down: HK @ 1 Hz, state changes, actuator events. Up: forwarded commands, time sync every 10 s |
 | Spectrometer ↔ Pi | USB (FTDI FT2232H, VID 0403/PID 6010) → `/dev/ttyUSB*`, vendor library `libe9u_LSMD.so` (built from `drivers/e9u_LSMD_LIB_Linux/`, same API as the Windows DLL) — driven by this repo's `spectro/eureca_driver.py`; needs the vendor udev rules |
@@ -130,7 +130,7 @@ profile. It is started by the operator and, when the operator goes away,
 runs a fixed cycle until they come back.
 
 `INIT → STANDBY → RUNNING → {AUTO_DISPERSE → AUTO_MEMBRANE → AUTO_WAIT}* →
-RUNNING`; abort or any critical fault → `TERMINATION → SAFE` (actuators
+RUNNING`; `STOP` or any critical fault → `TERMINATION → SAFE` (actuators
 de-energized, data preserved, HK + downlink continue).
 
 - **STANDBY** — on the pad. Nothing happens on its own; `START` from the
@@ -152,11 +152,23 @@ de-energized, data preserved, HK + downlink continue).
   equalisation valves came off the experiment on 2026-09-18; `RELEASE` is
   answered `INVALID` and the persist-before-fire rule (S.3) has nothing to
   guard. Both remaining actuators stop when they are told to.
-- **HOLD** keeps the cycle off and survives a link loss (docs/TRAPS.md).
+- **Three commands carry the mission (2026-09-28).** `PING` asks whether the
+  chain answers, `START` arms autonomy (`RUNNING`, inhibit lifted), and
+  `STOP` means *manual, and stay manual*: actuators de-energized,
+  `TERMINATION → SAFE`, and automatic mode inhibited until the next `START`,
+  link loss included (`MCUF_STOPPED`, docs/TRAPS.md). `STOP` keeps `ABORT`'s
+  opcode `0x04` because it keeps its effect and adds the inhibit that the old
+  `ABORT` *cleared* - abort, then lose the link, and the cycle used to
+  restart the motor the operator had just shut down. `HOLD` (`0x02`) and
+  `RESUME` (`0x03`) are retired, answered `INVALID`, numbers not reused: an
+  old `HOLD` asked for the actuators to keep running, which `STOP` does not
+  do, so mapping one onto the other would execute something other than what
+  was sent.
 - **Nothing is refused while ground is connected (2026-09-18).** `START` is
-  accepted in any state, including back out of `SAFE` after an abort; a drive
-  commanded after an abort re-energizes and takes the state to `RUNNING` with
-  it, so housekeeping never reports `SAFE` over a turning motor. `INVALID`
+  accepted in any state, including back out of `SAFE` after a `STOP`; a drive
+  commanded after a `STOP` re-energizes and takes the state to `RUNNING` with
+  it, so housekeeping never reports `SAFE` over a turning motor - but it does
+  **not** lift the inhibit, which only `START` does. `INVALID`
   is left for input the firmware cannot act on at all: an unknown command, a
   duty above 100, a parameter outside its envelope, or a `RELEASE` for
   hardware that is not on the experiment any more.
