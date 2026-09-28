@@ -47,3 +47,22 @@ from source on ARM. Deployment lives in `/opt/clouds` with `clouds_fsw/`,
 `spectro/`** (`_DEFAULT_JSON` resolves to `spectro/../calibration.json`).
 Vendor library: `/usr/local/lib/libe9u_LSMD.so` via
 `drivers/e9u_LSMD_LIB_Linux/install.sh`.
+
+## Redeploy
+
+`/opt/clouds` is a copy, not a checkout: a fix in the tree changes nothing on
+the Pi until it is pushed there, and a partly-updated deployment reads as a bug
+in code that is already correct (`docs/TRAPS.md`). Push the three packages, drop
+the stale bytecode, restart:
+
+```sh
+rsync -av --delete --exclude __pycache__ \
+      spectro/ clouds_link/ flight/pi/clouds_fsw/ \
+      clouds@192.168.100.10:/opt/clouds/            # one dir per run, or:
+scp spectro/*.py clouds@192.168.100.10:/opt/clouds/spectro/
+ssh clouds@192.168.100.10 'sudo rm -rf /opt/clouds/*/__pycache__ &&
+                           sudo systemctl restart clouds-fsw'
+```
+
+Then confirm what is running, not what was sent — `md5sum` the file on both
+ends, or grep the deployed copy for the symbol the fix added.

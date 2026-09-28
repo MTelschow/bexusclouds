@@ -18,6 +18,43 @@ vendor library auto-detects the camera; no COM port or tty is hardcoded.
   `Dark_Pixel: 0 x 16` *before* `Pixel: 1 x 2048` — parse with care.
 - `saturation_count` is **65520**, i.e. the 16-bit scale (12-bit × 16), not 4095.
 
+### The shortest integration the camera actually runs is ~60 µs, not 10 µs
+
+`e9u_LSMD_minimum_exposure()` reports **10 µs** on this PRO and the camera does
+not honour it. Swept 10 µs … 150 µs on S/N 20260312-004, 2026-09-18, reading the
+FPGA's own exposure timestamps (`CH0_T_STAMP_EXP_STOP − _START`) beside the
+frame:
+
+| asked | timestamps | covered gap (px 236-1515) |
+|---|---|---|
+| 150 / 130 / 120 / 110 / 100 / 90 / 80 / 70 / 60 µs | equal the register, exactly | ~23 000 ct |
+| 50 / 40 / 30 µs | free-running wall time (~0.25 s per read), not an exposure | **~1 700 ct** |
+| 20 / 10 µs | same, unpaired | ~22 500 ct — the *previous* exposure |
+
+Below the edge the camera stops producing integration windows. The frame still
+arrives and the frame counter still advances, so nothing upstream can tell: it
+is either collapsed to ~1 700 ct **including the covered gap** — which no
+scene can do, the gap cannot see light — or it is the last valid frame served
+again. Both read as instrument data.
+
+`spectro/driver.py`'s `MIN_EXPOSURE_US` = **100 µs** is therefore the floor,
+enforced by the driver (`eureca_driver._MIN_USABLE_EXPOSURE_US`, over the
+library's claim) and used as the rail by the operator interface's exposure
+control and both of its servos. 100 rather than 60: the edge sits at 50/60 and
+the exposure step is 10 µs.
+
+### One exposure, two unequal channels
+
+Measured on the bench lamp, 2026-09-18: the reference channel collects
+**~4.7× faster** than the measurement channel (Ch2 1375 ct/ms, Ch1 293 ct/ms,
+from a 100 µs … 50 ms sweep). Both share one readout, so the exposure that fills
+Ch2 leaves Ch1 at about a fifth of its range, and the exposure that gives Ch1 a
+usable signal clips Ch2 flat. Add the ~22 600 ct pedestal (34 % of full scale,
+present at every exposure) and Ch1's usable swing is ~42 000 ct of which it
+reaches ~8 800 before Ch2 pins at 65 520 — i.e. **Ch2 clips from ~30 ms up**.
+That is an optical imbalance, not a software one: it is fixed by attenuating
+the reference fibre, not by a setting.
+
 ## RP2350 carrier - measured, not from the drawings
 
 `board.h` calls itself preliminary and it means it: five of its pin

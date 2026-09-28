@@ -16,6 +16,16 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 
+#: Shortest integration time the Duo actually runs, microseconds - the floor the
+#: real driver clamps to (``eureca_driver._MIN_USABLE_EXPOSURE_US``) and the rail
+#: the operator interface's exposure control and servos stop at. It lives here
+#: because the UI must know it without importing a concrete driver: over ``--net``
+#: the clamp happens on the far side, and a control that offers what the camera
+#: cannot run just hands the servos a rail made of invalid frames.
+#: Measured, not vendor-quoted - see ``eureca_driver`` and docs/HARDWARE.md.
+MIN_EXPOSURE_US = 100
+
+
 class DriverError(RuntimeError):
     """Raised when the spectrometer cannot be reached or read."""
 

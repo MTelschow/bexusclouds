@@ -32,7 +32,8 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 from spectro import dark as darkstore
 from spectro.calibration import Calibration, subtract_dark
-from spectro.driver import DriverError, open_driver, resolve_kind
+from spectro.driver import (DriverError, MIN_EXPOSURE_US, open_driver,
+                            resolve_kind)
 from spectro import processing as P
 
 from . import style
@@ -84,6 +85,7 @@ C_MEAS = NAVY
 C_REF = "#4d8fd1"
 C_TRANS = "#1D9E75"
 C_ABS = "#b0413e"
+EXP_FLOOR_MS = MIN_EXPOSURE_US / 1000.0   # the shortest integration the Duo runs
 
 # --------------------------------------------------------------------- widgets
 def _wl_rgb(nm):
@@ -685,8 +687,13 @@ class CloudsWindow(QtWidgets.QMainWindow):
 
         # --- Acquisition ---
         v = sec("Acquisition")
+        # 0.1 ms is the detector's real floor, not the vendor library's 0.01 -
+        # below ~60 us the camera stops running the integration it is asked for
+        # (spectro.eureca_driver._MIN_USABLE_EXPOSURE_US, docs/HARDWARE.md), and
+        # the driver clamps there anyway. A rail the hardware honours keeps the
+        # servos below from hunting into counts that are not a measurement.
         row, self.sl_exp, self.sp_exp = self._log_slider_row(
-            self._EXP_LABEL, 0.01, 1000, self.exposure_ms, self._on_exposure)
+            self._EXP_LABEL, EXP_FLOOR_MS, 1000, self.exposure_ms, self._on_exposure)
         self.lbl_exp = row.label
         v.addWidget(row)
         row, self.sl_avg, self.sp_avg = self._lin_slider_row(
@@ -715,7 +722,7 @@ class CloudsWindow(QtWidgets.QMainWindow):
         # so a direct connect called _auto_expose(target=False). tgt then came
         # out 0, the proportional step clamped to its 0.2 floor every iteration,
         # and the hunt could only ever DIVIDE the exposure: it ran all `iters`
-        # probes down to the 0.02 ms rail and returned a black spectrum, unless
+        # probes down to the exposure rail and returned a black spectrum, unless
         # the very first probe happened to land in the band.
         self.btn_auto.clicked.connect(lambda: self._auto_expose())
         run.addWidget(self.btn_run)
@@ -1855,7 +1862,7 @@ class CloudsWindow(QtWidgets.QMainWindow):
     #: who owns the control when it greys it.
     _EXP_LABEL = "Integration  [ms]"
 
-    def _auto_expose(self, target=0.70, lo_ms=0.02, hi_ms=1000.0, iters=8,
+    def _auto_expose(self, target=0.70, lo_ms=EXP_FLOOR_MS, hi_ms=1000.0, iters=8,
                      budget_s=15.0):
         """Hunt the integration time so the brightest channel peaks near `target` of
         full scale, without saturating. Uses a GLITCH-DESPIKED peak (so a stray spike
@@ -1975,7 +1982,7 @@ class CloudsWindow(QtWidgets.QMainWindow):
         elif not self.running:
             self._single()              # show the frame the new exposure produces
 
-    def _track_exposure(self, lo_ms=0.02, hi_ms=1000.0):
+    def _track_exposure(self, lo_ms=EXP_FLOOR_MS, hi_ms=1000.0):
         """Continuous auto-exposure servo - one nudge per live frame so the brightest
         channel stays in a comfortable band as the scene changes (sweep the fibre around
         the room). Log-proportional (signal is linear in integration time) so a static

@@ -130,7 +130,17 @@ class TestFrameTime:
     def test_below_the_minimum_exposure_is_raised_not_silently_zeroed(self, monkeypatch):
         drv, lib = make_driver(monkeypatch)
         drv.set_times_us(1)
-        assert lib.reg_exp == MIN_EXP               # 0 would mean "exposure = frame"
+        assert lib.reg_exp == ed._MIN_USABLE_EXPOSURE_US   # 0 would mean "exposure = frame"
+
+    def test_the_floor_is_the_measured_one_not_the_library_s_claim(self, monkeypatch):
+        """The library reports 10 us; the camera does not run an integration that
+        short (docs/HARDWARE.md). The driver's own floor wins, so nothing above it
+        can ask for a frame whose exposure timestamps do not pair."""
+        drv, lib = make_driver(monkeypatch)
+        assert lib.e9u_LSMD_minimum_exposure(0) < ed._MIN_USABLE_EXPOSURE_US
+        assert drv._limits["min_exp"] == ed._MIN_USABLE_EXPOSURE_US
+        drv.set_times_us(MIN_EXP)
+        assert lib.reg_exp == ed._MIN_USABLE_EXPOSURE_US
 
     def test_exposure_is_rounded_up_to_a_step_multiple(self, monkeypatch):
         drv, lib = make_driver(monkeypatch)

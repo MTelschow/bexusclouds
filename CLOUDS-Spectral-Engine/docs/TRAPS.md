@@ -10,6 +10,34 @@ share the shift; `CLOUDS_E9U_COUNT_SHIFT=0` disables). Without it every
 `saturation_count` threshold breaks: clipping is undetectable and the P-09
 exposure servo only ever ramps up. See `docs/CALIBRATION.md`.
 
+**The Pi runs `/opt/clouds`, not your working tree.** On 2026-09-18 the panel
+clipped at every exposure and the driver in the repo already had the fix:
+`/opt/clouds/spectro/{driver,eureca_driver}.py` were two weeks older than the
+rest of the deployment, so the flight app imported the pre-fix driver while
+`git log` said the bug was solved. The frames it serves over `--bench-stream`
+come from *that* copy. Before debugging detector behaviour from the panel,
+compare what is deployed against the tree — `md5sum` both, or `grep` for the
+symbol you just added — and redeploy `spectro/` before concluding anything.
+
+**The camera's own `minimum_exposure()` is not a minimum.** It reports 10 µs;
+below ~60 µs the camera stops running integrations and hands back either a
+frame collapsed to ~1 700 ct (covered gap included) or the previous exposure
+again, with the frame counter advancing either way. An exposure servo asked to
+escape a bright scene walks straight into that hole and reads whatever comes
+back as a measurement. The floor is `spectro/driver.py`'s `MIN_EXPOSURE_US`
+(100 µs), enforced in the driver and used as the UI rail. `docs/HARDWARE.md`.
+
+**"The first frame after a pause carries the pause" did not reproduce.** The
+idle-flush in `grab()` was written against that theory (see `docs/DRIVER.md`).
+Re-measured 2026-09-18 on S/N 20260312-004 at 100 µs / 1 ms / 10 ms, one grab
+1.0 s after the previous readout against three back to back: **equal within
+noise**, with the flush on, off (`CLOUDS_E9U_FLUSH=0`) and on the pre-fix
+driver that never had one. So it is not the explanation for a saturated live
+trace, and the next such report should be measured before the flush is
+trusted to have handled it. The flush stays — it costs one frame per idle grab
+and the original observation is not disproved for every firmware — but it is a
+belt, not the diagnosis.
+
 **The vendor library owns the USB device exclusively.** The FSW and a
 standalone `spectro.net_server` cannot both hold it. To run the flight chain and
 the live panel together use `clouds_fsw.main --bench-stream`, which serves

@@ -21,7 +21,8 @@ import time
 
 import numpy as np
 
-from .driver import DeviceInfo, DriverError, SpectrometerDriver
+from .driver import (DeviceInfo, DriverError, MIN_EXPOSURE_US,
+                     SpectrometerDriver)
 
 _IS_WINDOWS = sys.platform == "win32"
 _IS_MACOS = sys.platform == "darwin"
@@ -77,6 +78,17 @@ _SETTLE_MAX_FRAMES = 3                 # frames spent waiting for a new exposure
 # than a readout; a too-generous frame time costs nothing in async mode, where
 # nothing runs the frame timer.
 _FALLBACK_LIMITS = {"min_exp": 10, "step_exp": 10, "min_frame": 10_000, "step_frame": 10}
+
+# The vendor's `minimum_exposure()` under-reports: it says 10 us on this PRO and
+# the camera does not run an integration that short. Measured on S/N 20260312-004
+# (docs/HARDWARE.md, 2026-09-18): >= 60 us gives a frame whose exposure timestamps
+# match the register; at <= 50 us the timestamps stop pairing (the diff becomes
+# free-running wall time) and the frame comes back either collapsed to ~1700 ct -
+# the covered gap included, so it is not a darker scene - or still carrying the
+# previous exposure. Neither is a short exposure, and both read as instrument
+# data. So the floor the driver enforces is its own, not the library's; 100 us
+# keeps a margin over the 50/60 us edge and the 10 us step.
+_MIN_USABLE_EXPOSURE_US = MIN_EXPOSURE_US
 
 
 def _round_up(value: int, step: int) -> int:
@@ -214,7 +226,7 @@ class EurecaDriver(SpectrometerDriver):
         self._ptr = None
         self._info = None
         self._count_shift = _resolve_count_shift()
-        self._limits = dict(_FALLBACK_LIMITS)
+        self._limits = dict(_FALLBACK_LIMITS, min_exp=_MIN_USABLE_EXPOSURE_US)
         self._exposure_us = None        # what the camera's register actually holds
         self._frame_us = None
         self._last_read = None          # monotonic time the last frame was read out
@@ -316,6 +328,9 @@ class EurecaDriver(SpectrometerDriver):
                 continue
             if value > 0:
                 self._limits[key] = value
+        # The library's own floor is not a floor - see _MIN_USABLE_EXPOSURE_US.
+        self._limits["min_exp"] = max(int(self._limits["min_exp"]),
+                                      _MIN_USABLE_EXPOSURE_US)
 
     def _reg(self, register: int, bank: int = _BANK_TX):
         """One camera register, or None if this library cannot read registers."""

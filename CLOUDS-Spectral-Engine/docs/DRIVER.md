@@ -56,11 +56,11 @@ A frame is 2048 x uint16 read from the pixel pointer after each
 frames so the new timing settles before trusting the data - `set_times_us()`
 now does that itself, see **Integration time** below.
 
-### Integration time - three traps, all in the vendor's own arithmetic
+### Integration time - four traps, three in the vendor's own arithmetic
 
 The vendor ships its source (`drivers/e9u_LSMD_LIB_Linux/e9u_lsmd_camera_library_Linux-2.4.02.tar.gz`,
-`lib/src/e9u_LSMD_macros.c`), which is the authority for all three. Per-camera
-limits come from its type table; this bench's part is
+`lib/src/e9u_LSMD_macros.c`), which is the authority for the first three.
+Per-camera limits come from its type table; this bench's part is
 `e9u_LSMD-TCD1304-PRO` (type `0x02290003`): **exposure min/step 10 µs, frame
 min 3750 µs, frame step 10 µs**. `minimum_exposure/step_exposure/minimum_frame/step_frame`
 report them at runtime and the driver reads them at connect - never hardcode them.
@@ -94,7 +94,19 @@ the exposure (always on the first grab after connect), so the kept frame starts
 from a known readout. `CLOUDS_E9U_FLUSH=0` disables it, `=always` flushes every
 grab; the cost is one extra frame time per idle grab.
 
-`exposure_probe.py` measures all three against real hardware: FPGA-timestamped
+**4. The reported minimum exposure is not a minimum.** `minimum_exposure()`
+says 10 µs; the camera stops running integrations below ~60 µs and returns a
+collapsed or repeated frame instead, while the frame counter keeps advancing.
+The driver clamps at `spectro.driver.MIN_EXPOSURE_US` (100 µs) over the
+library's value, so `_limits["min_exp"]` is the floor everything else sees, and
+the UI's exposure control and servos rail there too. The sweep and the
+timestamp evidence are in `docs/HARDWARE.md`.
+
+> Trap 3 is the one that has not held up: re-measured on 2026-09-18 an idle
+> grab matched a back-to-back one within noise, flush or no flush, on this
+> firmware. `docs/TRAPS.md`. The flush stays, the explanation is on probation.
+
+`exposure_probe.py` measures the first three against real hardware: FPGA-timestamped
 exposure per frame, peak counts back to back, and peak counts for a frame taken
 after a 1 s pause. Run it detector-local (not over `--net`), with the FSW and
 `spectro.net_server` stopped.

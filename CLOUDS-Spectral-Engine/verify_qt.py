@@ -98,9 +98,18 @@ check("each frame appends a row as it arrives",
       f"{_rows_after_one} -> {win.logger.count if win.logger else 0}")
 check("short exposure not clipping", win._last_sat < 0.5, f"sat={win._last_sat:.3f}")
 
-win.sp_exp.setValue(0.05)
+# The floor is the detector's, not the widget's: below ~60 us the camera stops
+# running the integration it is asked for (spectro.driver.MIN_EXPOSURE_US), so
+# the control must not offer shorter - and must reach the floor exactly.
+_floor = clouds_ui_window.EXP_FLOOR_MS
+win.sp_exp.setValue(_floor)
 app.processEvents()
-check("sub-ms integration (0.05 ms = 50 us)", abs(win.exposure_ms - 0.05) < 1e-6, str(win.exposure_ms))
+check(f"sub-ms integration ({_floor:g} ms = {_floor * 1000:.0f} us)",
+      abs(win.exposure_ms - _floor) < 1e-6, str(win.exposure_ms))
+win.sp_exp.setValue(_floor / 10)
+app.processEvents()
+check("integration cannot be set below the detector's floor",
+      win.exposure_ms >= _floor - 1e-9, str(win.exposure_ms))
 
 win.sp_exp.setValue(1000)
 app.processEvents()
@@ -413,7 +422,7 @@ check("tracking on: the disabled slider is drawn as disabled",
 # slider and spin box are two views of ONE value: what the servo set must be
 # what the spin box prints, and the slider must sit at that position.
 win.chk_track.setChecked(False); app.processEvents()
-for _ms in (0.01, 0.023, 7.0, 123.456, 1000.0):
+for _ms in (0.1, 0.23, 7.0, 123.456, 1000.0):
     win._show_exposure(_ms)
     check(f"integration {_ms:g} ms: slider and spin agree",
           abs(float(win.sp_exp.value()) - _ms) < 10 ** -win.sp_exp.decimals()
@@ -438,9 +447,9 @@ for _pos in range(0, 121, 3):
 check("integration: the handle sits at the value it shows, decade by decade",
       not _off, f"{len(_off)} positions disagree, first {_off[:3]}")
 # one arrow click is ~10%, at both ends of the five-decade range
-win._show_exposure(0.01)
+win._show_exposure(0.1)
 check("integration: the spin step follows the decade (low end)",
-      abs(win.sp_exp.singleStep() - 0.001) < 1e-9, str(win.sp_exp.singleStep()))
+      abs(win.sp_exp.singleStep() - 0.01) < 1e-9, str(win.sp_exp.singleStep()))
 win._show_exposure(1000.0)
 check("integration: the spin step follows the decade (high end)",
       abs(win.sp_exp.singleStep() - 100.0) < 1e-9, str(win.sp_exp.singleStep()))
