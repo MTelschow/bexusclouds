@@ -31,12 +31,11 @@
  *  - The cycle always restarts at AUTO_DISPERSE. Nothing about it is
  *    carried across a link-up period or a reset, so what the electronics do
  *    after a given drop-out is the same every time.
- *  - The pinch valves are NOT part of the automatic path. They fire only on
- *    a ground RELEASE: irreversible, and not something to do while nobody
- *    is watching.
- *  - persist() is called with the fired bit set BEFORE fire_pinch(): a
- *    brownout between the two loses one release but can never double-fire.
- *  - Any restore path never re-fires a valve whose bit is persisted.
+ *  - There are no irreversible actuators left (2026-09-18): the pinch and
+ *    equalisation valves are off the experiment, so nothing here is a
+ *    one-shot and the persist-before-fire ordering that guarded them (S.3)
+ *    has nothing to guard. What survives a reset is the state and the
+ *    mission clock.
  */
 #ifndef CLOUDS_SEQUENCER_H
 #define CLOUDS_SEQUENCER_H
@@ -76,9 +75,9 @@ enum seq_event {
     EV_SELF_TEST_FAIL = 0x02,
     EV_LAUNCH_DETECTED = 0x03,
     EV_FLOAT_DETECTED = 0x04,
-    EV_SEAL_FAILED = 0x05, /* retired with the seal state; kept so an old
-                              log record still decodes to its own name */
-    EV_RELEASE_FIRED = 0x06,
+    EV_SEAL_FAILED = 0x05,   /* retired with the seal state; kept so an old
+                                log record still decodes to its own name */
+    EV_RELEASE_FIRED = 0x06, /* retired with the valves, likewise */
     EV_ABORTED = 0x07,
     EV_RESUMED_AFTER_RESET = 0x08,
     EV_AUTONOMOUS_LATCHED = 0x09,
@@ -97,22 +96,20 @@ enum seq_event {
  * to know them. */
 uint8_t event_severity(uint8_t code);
 
-/* What survives a reset (persisted to SD/flash before it matters, S.3). */
+/* What survives a reset (persisted to SD/flash, S.3). The `fired` byte that
+ * carried the two pinch valves is gone with them; the record is versioned by
+ * its own CRC in hw.c, and a record written by an older image restores its
+ * state and clock with the byte simply absent. */
 typedef struct {
     uint8_t state;
-    uint8_t fired; /* bit0 = pinch valve 1, bit1 = pinch valve 2 */
     uint32_t mission_start_s; /* wall-clock s of START, 0 = none */
     bool launch_detected;
 } seq_persist_t;
 
 typedef struct {
     void *ctx;
-    /* MUST be durable before returning - called before every fire. */
+    /* MUST be durable before returning - called on every state change. */
     void (*persist)(void *ctx, const seq_persist_t *p);
-    /* The actuator calls only *schedule* the drive (core/pulse): they
-     * return immediately, so nothing here can outrun the watchdog. */
-    void (*fire_pinch)(void *ctx, uint8_t n); /* n = 1 | 2 */
-    void (*close_eq_valves)(void *ctx);
     /* CaCO3 dispersion motor, one bounded drive. Optional (may be NULL):
      * the carrier grew it after the SED was written, so a board without it
      * still sequences. */
@@ -120,8 +117,8 @@ typedef struct {
     /* The same motor held on (true) or released (false) for as long as it
      * is wanted - DISPERSE_RUN / DISPERSE_STOP, and automatic mode's motor
      * phase. Not a pulse: it sits beside core/pulse rather than in its
-     * one-at-a-time queue, so a run can neither delay a release's pinch
-     * valve nor keep busy() true. STOP also cuts a running pulse short.
+     * one-at-a-time queue, so a run cannot keep busy() true or delay
+     * whatever else is queued. STOP also cuts a running pulse short.
      * Optional, like disperse. */
     void (*disperse_run)(void *ctx, bool on);
     void (*membrane)(void *ctx, uint8_t duty_pct); /* 0 = off */
@@ -134,7 +131,6 @@ typedef struct {
 
 typedef struct {
     seq_state_t state;
-    uint8_t fired;
     /* Last duty handed to ops->membrane, i.e. what the solenoid is doing
      * now. Kept here so HK reports the drive rather than a constant 0 - the
      * membrane is the one actuator whose state is not a short pulse. */
@@ -172,6 +168,10 @@ void seq_step(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
  * ANY command also ends automatic mode before it is acted on: the link is
  * back, so the cycle stops at once and both actuators are de-energized. The
  * command then runs from RUNNING, where ground owns the hardware.
+ *
+ * CMD_RELEASE is answered ACK_INVALID: the valves it drove are off the
+ * experiment, so it is a command this build cannot act on at all, like any
+ * other unknown one. The code number is not reused.
  *
  * CMD_MEMBRANE (key = duty percent, 0 = off) and CMD_DISPERSE (key =
  * DISPERSE_PULSE for the bounded drive, DISPERSE_RUN to hold the motor on,

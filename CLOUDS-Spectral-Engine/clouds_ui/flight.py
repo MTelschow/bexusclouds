@@ -36,7 +36,6 @@ HK_FIELDS = [
     ("State", lambda h: h.state_name),
     ("Mission t", lambda h: f"{h.mission_t_s} s"),
     ("Uptime", lambda h: f"{h.uptime_s} s"),
-    ("Fired", lambda h: f"{h.fired:02b}"),
     # Commanded duty plus the GP30 switch: plunger position at the sample and
     # whether it moved in the last second (`cycling`). The row is what shows
     # a drive that moves nothing (`60 %  pushed, not cycling`), or a switch
@@ -196,8 +195,8 @@ STALE_HK_S = 5.0
 
 #: The MCU's PARAM_MEMBRANE_MHZ default (core/config.c), in hertz. The panel
 #: judges the position switch against the drive it believes is running, and
-#: until it has sent a frequency of its own, that is the MCU's default - a
-#: release drives the membrane at it with no panel involved.
+#: until it has sent a frequency of its own, that is the MCU's default - the
+#: automatic cycle drives the membrane at it with no panel involved.
 MEMBRANE_HZ_DEFAULT = 2.0
 
 #: Housekeeping arrives once a second, so an edge is only *expected* inside a
@@ -470,10 +469,11 @@ class FlightPanel(QtCore.QObject):
         simple = [("PING", Command.PING), ("START", Command.START),
                   ("HOLD", Command.HOLD), ("RESUME", Command.RESUME),
                   ("ABORT", Command.ABORT)]
-        # Six columns so the grid can hold two different button widths without
-        # going ragged: the short commands span 2 (three per row), the release
-        # pair spans 3 (two per row). Equal column stretch then makes every
-        # button in a row the same width.
+        # Six columns, the short commands spanning 2 of them - three per row,
+        # equal column stretch, so every button in a row is the same width.
+        # The RELEASE pair that spanned 3 went with the pinch valves
+        # (2026-09-18); the geometry is kept because the actuator drives
+        # below may yet want a wide button.
         #
         # Pinning columns to the widest button's own hint is what NOT to do
         # here, even though it does produce equal widths: three long labels
@@ -487,12 +487,6 @@ class FlightPanel(QtCore.QObject):
             btn.setStyleSheet(style.flat_btn())
             btn.clicked.connect(lambda _, c=cmd: self._send(c))
             grid.addWidget(btn, i // 3, (i % 3) * 2, 1, 2)
-            self._cmd_buttons.append(btn)
-        for n in (1, 2):
-            btn = QtWidgets.QPushButton(f"RELEASE {n}")
-            btn.setStyleSheet(style.danger_btn())
-            btn.clicked.connect(lambda _, v=n: self._release(v))
-            grid.addWidget(btn, 2, (n - 1) * 3, 1, 3)
             self._cmd_buttons.append(btn)
         for col in range(6):
             grid.setColumnStretch(col, 1)
@@ -635,8 +629,8 @@ class FlightPanel(QtCore.QObject):
 
         # Start/Stop mirror the membrane's Drive/Stop: a run is a state the
         # operator holds, ended only by Stop (or an abort). One pulse is the
-        # bounded 5 s drive a release also schedules, kept as its own button
-        # so the flight drive can still be rehearsed exactly.
+        # bounded 5 s drive, kept as its own button so it can be rehearsed
+        # exactly as the MCU times it.
         row3 = QtWidgets.QHBoxLayout()
         row3.setContentsMargins(0, 0, 0, 0)
         row3.setSpacing(6)
@@ -657,9 +651,9 @@ class FlightPanel(QtCore.QObject):
         self.btn_pulse = QtWidgets.QPushButton("One pulse")
         self.btn_pulse.setStyleSheet(style.flat_btn())
         self.btn_pulse.setToolTip("One forward pulse at the speed above, "
-                                  "timed on the MCU (5 s) - what a release "
-                                  "schedules. Stop cuts it short. Refused "
-                                  "while the motor is running")
+                                  "timed on the MCU (5 s). Stop cuts it "
+                                  "short. Does nothing while the motor is "
+                                  "already running")
         self.btn_pulse.clicked.connect(self._disperse)
         sec.add(self.btn_pulse)
 
@@ -688,25 +682,6 @@ class FlightPanel(QtCore.QObject):
         try:
             r = self._cmd.send(cmd)
             self.lbl_cmd_status.setText(f"{cmd.name} -> {r.name}")
-        except CommandError as e:
-            self.lbl_cmd_status.setText(str(e))
-
-    def _release(self, valve: int) -> None:
-        if self._cmd is None:
-            self.lbl_cmd_status.setText("no command link")
-            return
-        # The dialog is the only thing between the click and the valve: the
-        # ground interlock and the ARM step that used to stand in front of it
-        # are gone (2026-09-18).
-        ok = QtWidgets.QMessageBox.question(
-            self.sec_cmd, "Confirm release",
-            f"Fire pinch valve {valve}?",
-            QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
-        if ok != QtWidgets.QMessageBox.Yes:
-            return
-        try:
-            r = self._cmd.release(valve)
-            self.lbl_cmd_status.setText(f"RELEASE {valve} -> {r.name}")
         except CommandError as e:
             self.lbl_cmd_status.setText(str(e))
 

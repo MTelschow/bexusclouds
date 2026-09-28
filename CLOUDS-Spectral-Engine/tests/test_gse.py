@@ -187,20 +187,17 @@ class TestCommander:
         assert commander.tx_frames == 1
         assert forwarded == [(Command.START, 0, 0)]
 
-    def test_release_is_one_frame_without_an_arm(self, cmd_link):
-        commander, forwarded = cmd_link
-        assert commander.release(2) == AckResult.OK
-        assert forwarded == [(Command.RELEASE, 2, 0)]
+    def test_release_is_gone_from_the_commander(self, cmd_link):
+        """The pinch valves are off the experiment (2026-09-18), so the GSE
+        has no helper for them. A raw frame still goes out and the MCU
+        answers it - the panel simply cannot send one."""
+        commander, _forwarded = cmd_link
+        assert not hasattr(commander, "release")
 
     def test_hold_allowed_on_ground(self, cmd_link):
         commander, forwarded = cmd_link
         assert commander.send(Command.HOLD) == AckResult.OK
         assert forwarded == [(Command.HOLD, 0, 0)]
-
-    def test_bad_valve_number(self, cmd_link):
-        commander, _ = cmd_link
-        with pytest.raises(ValueError):
-            commander.release(3)
 
     def test_command_error_on_dead_link(self, cmd_link):
         commander, _ = cmd_link
@@ -393,11 +390,11 @@ class TestUplinkLogging:
                               on_result=seen.append)
         try:
             assert commander.send(Command.START) == AckResult.OK
-            assert commander.release(1) == AckResult.OK
+            assert commander.send(Command.MEMBRANE, key=40) == AckResult.OK
         finally:
             commander.close()
             server.stop()
-        assert [r["cmd_name"] for r in seen] == ["START", "RELEASE"]
+        assert [r["cmd_name"] for r in seen] == ["START", "MEMBRANE"]
         assert all(r["result_name"] == "OK" for r in seen)
         assert all(r["seq"] != "" for r in seen)
 

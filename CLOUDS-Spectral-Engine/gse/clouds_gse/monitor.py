@@ -1,7 +1,7 @@
 """Headless console monitor: live HK lines + command REPL (late-access /
 integration use, and the fallback when no display is available).
 
-Commands:  ping start hold resume abort  release 1|2  set <key> <value>
+Commands:  ping start hold resume abort  set <key> <value>
            membrane <duty%|off>  disperse [pulse|run|stop]  status quit
 """
 from __future__ import annotations
@@ -18,7 +18,7 @@ from .session_log import SessionLog
 
 def _fmt_hk(h) -> str:
     # 13 = len("AUTO_MEMBRANE"), the longest state name.
-    return (f"[{h.state_name:13s}] fired={h.fired:02b} "
+    return (f"[{h.state_name:13s}] "
             f"p_amb={h.p_amb_pa / 100:8.1f} hPa "
             f"T1={h.temp1_cc / 100:6.1f} C RH1={h.rh1_cpct / 100:5.1f}% "
             f"membrane={h.membrane_text} drive={h.actuator_text} "
@@ -57,7 +57,7 @@ class ConsoleMonitor:
 
     def repl(self, input_fn=input) -> None:
         self._print("GSE console - commands: ping start hold resume abort "
-                    "release 1|2, membrane <duty%|off>, "
+                    "membrane <duty%|off>, "
                     "disperse [pulse|run|stop], "
                     "set <param> <value>, status, quit")
         while True:
@@ -97,8 +97,6 @@ class ConsoleMonitor:
             self._print("no command link (started with --listen-only)")
             return
         try:
-            if parts[0] == "release" and len(parts) == 2:
-                r = self._cmd.release(int(parts[1]))
             elif parts[0] == "membrane" and len(parts) == 2:
                 # The frequency knob is `membrane_hz <hz>` (tenths allowed):
                 # it is read when the drive starts, so set it before driving.

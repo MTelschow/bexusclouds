@@ -46,7 +46,7 @@ from clouds_link.commands import Command, DisperseKey, Param
 from clouds_link.frames import (AckResult, EventCode, EventSeverity, Frame,
                                 PacketType, SeqCounter)
 
-#: Valve/motor drive length on the real MCU (VALVE_PULSE_MS in core/pulse.h).
+#: Motor drive length on the real MCU (DISPERSE_PULSE_MS in hw/board.h).
 VALVE_PULSE_S = 5.0
 
 #: Ground-level ambient pressure the sim starts from, in pascals.
@@ -94,7 +94,6 @@ class SimMcu:
 
         # -- sequencer state (mirror of sequencer_t) -------------------------
         self.state = hk.SeqState.STANDBY   # self-test passes instantly here
-        self.fired = 0
         self.hold = False
         self.membrane_duty = 0
         self.membrane_mhz = 2000            # PARAM_MEMBRANE_MHZ default
@@ -218,14 +217,9 @@ class SimMcu:
                 self._enter(hk.SeqState.RUNNING)
             return AckResult.OK
         if cmd == Command.RELEASE:
-            if key not in (1, 2):
-                return AckResult.INVALID
-            # A release is an act, not a phase: it fires where it stands and
-            # leaves the state alone. Answered OK whatever the state; the
-            # fired bit, not the ACK, is what stops a second one (S.3).
-            self._wake_from_safe()
-            self._fire(key)
-            return AckResult.OK
+            # The pinch valves are off the experiment (2026-09-18). No line
+            # to drive, so this is input the firmware cannot act on.
+            return AckResult.INVALID
         if cmd == Command.MEMBRANE:
             if key > 100:
                 return AckResult.INVALID
@@ -297,19 +291,6 @@ class SimMcu:
         self.state = state
         self._state_entered = time.monotonic()
         self._event(EventCode.STATE_CHANGE, f"state={int(state)}")
-
-    def _fire(self, n: int) -> None:
-        bit = 1 << (n - 1)
-        if self.fired & bit:
-            return                       # never re-fire (S.3)
-        self.fired |= bit
-        self._queue_drive(hk.ValveStatus.PINCH_1 if n == 1
-                          else hk.ValveStatus.PINCH_2)
-        # The motor moves the CaCO3 the valve just let out. The membrane is
-        # not started here: it is the operator's to drive and automatic
-        # mode's to cycle.
-        self._queue_drive(hk.ValveStatus.DISPERSE)
-        self._event(EventCode.RELEASE_FIRED, f"valve {n}")
 
     def _step(self, now: float) -> None:
         self._step_pressure(now)
@@ -481,7 +462,7 @@ class SimMcu:
                 valves |= hk.ValveStatus.MEMBRANE_CYCLING
             # The current sense on GP46 is the dispersion motor's, not the
             # membrane's: it reads while the DISPERSE drive is up and ~0
-            # otherwise, including every second between releases. ~980 counts
+            # otherwise, including every second between drives. ~980 counts
             # is 0.79 V over the 1.5 kOhm IPROPI resistor, i.e. ~0.35 A of
             # motor current through hk.HB_SENSE_A_PER_V - a plausible draw,
             # not a measured one.
@@ -489,7 +470,6 @@ class SimMcu:
                 980 if valves & hk.ValveStatus.DISPERSE else 3, 8))
             return hk.Housekeeping(
                 state=int(self.state), flags=self._flags(now),
-                fired=self.fired,
                 valve_status=valves,
                 membrane_duty=self.membrane_duty, error_flags=int(err),
                 bme_temp_cc=int(random.gauss(2200, 20)),

@@ -65,15 +65,21 @@ header.** Two boards are in play; keep them apart by USB serial - bare Pico 2
 `182A9FD0C5146E6F`, CLOUDS carrier `21DD2AE08840C863`.
 
 **The carrier schematic (`pin_layout.jpeg`, 2026-09-11) confirms every measured
-pin and contradicts two that were never measured.** The full net table is in
-`board.h`. `PIN_PINCH_1`/`PIN_PINCH_2` (GP2/GP3) are the Pi's **`PI_RTS`/
-`PI_CTS`**, and `PIN_EQ1/2_OPEN/CLOSE` (GP4..GP7) are **`SPI_0` + `SD_1_SENS`**
-- so firing a pinch valve today toggles a UART flow-control line. Those defines
-are **deliberately left wrong** with the contradiction written beside them: the
-board's actuator channels are `ACT_R_1..4` (GP26/25/24/23), `ACT_EC`
-(GP19..GP22) and `ACT_HB` (GP17/GP18/GP46), but the page names *channels, not
-loads*, and guessing which relay holds pinch 1 is how an actuator gets driven
-from the wrong pin. Needs the load side of the schematic or a measurement.
+pin.** The full net table is in `board.h`.
+
+**The valve pins are gone (2026-09-18), and with them the contradiction they
+carried.** `PIN_PINCH_1`/`PIN_PINCH_2` named GP2/GP3, which are the Pi's
+`PI_RTS`/`PI_CTS`, and `PIN_EQ1/2_OPEN/CLOSE` named GP4..GP7, which are
+`SPI_0` + `SD_1_SENS` - so firing a pinch valve would have toggled a UART
+flow-control line or the SD bus. The two pinch valves and the two
+equalisation valves were removed from the experiment, so the defines, their
+drives and their HK bits went with them rather than being corrected. Two
+actuators remain: the **dispersion motor** on `ACT_HB` (GP17 fwd / GP18 rev,
+sense GP46) and the **membrane solenoid** on GP26 (`ACT_R_1`), both measured.
+The board's other actuator channels - `ACT_R_2..4` (GP25/24/23) and `ACT_EC`
+(GP19..GP22) - are unused by the firmware and unmapped: the schematic page
+names *channels, not loads*, and guessing which relay holds which load is how
+an actuator gets driven from the wrong pin.
 Also: the carrier is an **RP2350B** (GP0..GP47). The build was
 `-DPICO_BOARD=pico2` (RP2350A, 30 GPIOs) until 2026-09-17, which left the
 INA226 alert pins, the 24 V regulator enable, five ADC channels and
@@ -93,7 +99,7 @@ scratch** after pulling this: `PICO_BOARD` is cached.
 | Membrane solenoid | **GP26** (not GP8, unconnected) | **2 Hz**, loop-toggled via `core/sqwave`; driven from the GSE panel end to end (`MEMBRANE` duty), duty read back in HK |
 | Membrane position switch | **GP30**, input, internal pull-up, switch to ground | **LOW = actuated (plunger presses the button), HIGH = resting (button released)** - `hw_membrane_pulled()` inverts the pin (2026-09-17). Downlinked as `HKV_MEMBRANE_PULLED` (bit 5 of `valve_status`, a *sensed* bit that may sit beside a drive bit); the panel's `Membrane` row reads `60 %  pulled` / `pushed`, `actuator_text` leaves it out. The **light beside Drive/Stop is a verdict, not a position**: green = drive on and `MEMBRANE_CYCLING` set (plunger following), red = drive on, an edge was due inside the 1 s packet and none came, grey = solenoid off, drive slower than the 1 Hz sample can judge, or no reading. Rate comes from the last ACKed `SET_PARAM MEMBRANE_MHZ` (`FlightPanel._membrane_hz`, default 2 Hz) - it is not in HK. At 2 Hz the 1 Hz HK sample catches a random phase, so with the drive on it alternates between packets - stuck either way against the drive is the fault it exists to show. Needs the RP2350B board header (above). **Measured 2026-09-17 with `tools/membrane_switch_probe`: follows GP26 one for one** - LOW at rest, HIGH the whole time GP26 is high, ~40 ms release lag when it drops; the H-bridge (GP17/GP18) does not move it. A first run that read LOW throughout was the solenoid not moving. **That measurement disagrees with the decode now in the firmware** (pin follows the drive, so LOW-at-rest would downlink `pulled` at rest): the inversion is the mechanical assignment as specified, and the probe needs re-running against the fitted plunger to settle it |
 | CaCO₃ motor current sense | **GP46** (`ACT_HB_SENS`), ADC6 on the RP2350B | It senses the **dispersion motor**, not the membrane solenoid: `ACT_HB` is one driver channel carrying GP17/GP18 (drive) + GP46 (sense). **Downlinked raw**: 12-bit counts in `hk.hb_sense_raw` (8-sample mean, one point per 1 Hz sweep against a 5 s motor pulse). Driver is a **DRV8251A**; IPROPI mirrors the low-side current at `AIPROPI` 1500 µA/A into `R_IPROPI` 1.5 kΩ, so ground scales by `HB_SENSE_A_PER_V = 1/(R×A)` = **0.444 A/V** (3.3 V full scale = 1.47 A) - counts stay raw so a wrong resistor is correctable against a logged session. **IPROPI reads 0 in coast** (low-side current only), so 0 A ≠ no current, and zeros between releases are expected. Sentinel `HB_SENSE_INVALID` (0xFFFF) from a pico2 build, never 0. Panel row `Motor I`, timeline `Dispersion motor current`. **Not yet read against a running motor** |
-| CaCO₃ dispersion motor | **GP17 fwd / GP18 rev** | one 5 s scheduled pulse per release or per `DISPERSE pulse` (key 1), seen in `valve_status` for ~5 s; runs concurrently with the membrane, measured. **Start/Stop as well** (2026-09-17): `DISPERSE run` (key 2) holds the motor on until `DISPERSE stop` (key 0), which also cuts a pulse short and is the one drive command accepted in TERMINATION/SAFE. A run is a *hold beside* `core/pulse` (`motor_held` in `hw.c`), not a queued pulse - in the queue it would delay a release's pinch valve indefinitely and keep `busy()` true through SEAL; so `HKV_DISPERSE` can sit beside a pinch bit while an operator run overlaps a release, and nothing on the MCU times a run out. **Speed is `PARAM_DISPERSE_DUTY`** (percent, default 50, floor 20): GP17 is a 20 kHz hardware PWM for the length of the drive - not `core/sqwave`, which is for the sub-9 Hz membrane - latched when a pulse is *queued* or a run starts, and re-latched at once by a `SET_PARAM` while running. The panel's Speed slider sends `SET_PARAM DISPERSE_DUTY` before a pulse or Start, and again on **any** change while running; the release path reads the same parameter, so there is no bench-only speed. It listens on `valueChanged` *and* `sliderReleased`, not the release alone - `sliderReleased` is emitted only for a drag of the handle, so until 2026-09-17 the arrow keys, the wheel and a click on the groove moved the number beside the slider and never told the MCU, leaving the panel showing a speed the motor was not turning at. `valueChanged` defers while `isSliderDown()`, so a drag still spends one SET_PARAM rather than one per step, and an unchanged duty is never re-sent. **Not in HK** - the SET_PARAM ACK is the confirmation. **not in the SED**, reverse sense untested, **current sensed on GP46 (row above) but not yet read against a running motor; on no monitored rail**, PWM path not yet run against the motor |
+| CaCO₃ dispersion motor | **GP17 fwd / GP18 rev** | one 5 s scheduled pulse per `DISPERSE pulse` (key 1), held on through automatic mode's motor phase or a `DISPERSE run`, seen in `valve_status` for ~5 s; runs concurrently with the membrane, measured. **Start/Stop as well** (2026-09-17): `DISPERSE run` (key 2) holds the motor on until `DISPERSE stop` (key 0), which also cuts a pulse short and is the one drive command accepted in TERMINATION/SAFE. A run is a *hold beside* `core/pulse` (`motor_held` in `hw.c`), not a queued pulse - in the queue it would delay a release's pinch valve indefinitely and keep `busy()` true through SEAL; so `HKV_DISPERSE` can sit beside a pinch bit while an operator run overlaps a release, and nothing on the MCU times a run out. **Speed is `PARAM_DISPERSE_DUTY`** (percent, default 50, floor 20): GP17 is a 20 kHz hardware PWM for the length of the drive - not `core/sqwave`, which is for the sub-9 Hz membrane - latched when a pulse is *queued* or a run starts, and re-latched at once by a `SET_PARAM` while running. The panel's Speed slider sends `SET_PARAM DISPERSE_DUTY` before a pulse or Start, and again on **any** change while running; the release path reads the same parameter, so there is no bench-only speed. It listens on `valueChanged` *and* `sliderReleased`, not the release alone - `sliderReleased` is emitted only for a drag of the handle, so until 2026-09-17 the arrow keys, the wheel and a click on the groove moved the number beside the slider and never told the MCU, leaving the panel showing a speed the motor was not turning at. `valueChanged` defers while `isSliderDown()`, so a drag still spends one SET_PARAM rather than one per step, and an unchanged duty is never re-sent. **Not in HK** - the SET_PARAM ACK is the confirmation. **not in the SED**, reverse sense untested, **current sensed on GP46 (row above) but not yet read against a running motor; on no monitored rail**, PWM path not yet run against the motor |
 | STLM20 ×2 | none | **not populated**; the old `ADC_TEMP1` collided with GP26 |
 | SD / SPI0 | **pinout now known** from the carrier schematic (2026-09-11): SPI_0 on GP4/GP6/GP7, `SD_1_CS` GP14 + `SD_1_SENS` GP5, `SD_2_CS` GP16 + `SD_2_SENS` GP15 | still no defines. **M-11 is no longer blocked on the schematic but on a pin conflict**: `board.h` currently gives GP4..GP7 to the equalisation valves, and an `spi_init()` would drive whatever the valve code thinks it owns. `hardware_spi` is now linked (for the chamber BME280 on **SPI_1**, a different bus with no such conflict) - that does not unblock this, which still needs FatFs and the valve pins moved |
 
@@ -134,8 +140,10 @@ change, because the part has never been read against real hardware and a seal
 check is a flight decision. Do it once the chamber part has been shown to
 answer, and only then.
 
-**S.3 does not hold yet.** Persistence is still a RAM stub, so brownout resume
-does not survive a real reset: the `fired` bit that prevents a second CaCO₃
-release is lost on power loss. Largest open flight risk, blocked on the
-carrier schematic.
+**Persistence is still a RAM stub**, so a brownout loses the state and the
+mission clock and the experiment restarts in STANDBY - which now needs a
+ground `START` to leave. Less serious than it was: with the valves gone
+(2026-09-18) there is no irreversible actuator whose "already fired" bit
+could be lost, which is what S.3 existed for. Still open, blocked on the SD
+path (M-11).
 

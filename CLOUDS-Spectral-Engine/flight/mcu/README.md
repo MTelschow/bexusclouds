@@ -29,11 +29,11 @@ pio test -e native          # PlatformIO (bundles Unity)
 ./test/run_native.sh        # or: plain cc + vendored unity_min shim
 ```
 
-50 tests: protocol vectors shared with the Python side, plus the T-07
-rehearsals — full autonomous double release from a simulated pressure
-profile, hold/resume/abort, ground overrides, float-timer fallback, seal
-retry, link-loss latch, and reset-resume without re-firing (S.3). The
-rehearsal runs twice: once with instant mock actuators, once with every
+54 tests: protocol vectors shared with the Python side, plus the T-07
+rehearsals — the automatic-mode cycle walked phase by phase, the immediate
+stop on the first command back, STANDBY never cycling, hold/abort, launch and
+float reported without moving anything, and reset-resume. The cycle runs
+twice: once with instant mock actuators, once with every
 drive taking its real 5 s through `core/pulse` (one solenoid at a time,
 nothing energized in SAFE).
 
@@ -92,16 +92,14 @@ unplugged, and nothing on the link may delay a state transition (S.7).
 | MCU → Pi | `HK` (44 B payload), `EVENT`, `ACK` | 1 Hz + on demand |
 | Pi → MCU | `CMD`, `TIMESYNC` | on demand + 10 s |
 
-- **Every command is answered.** `handle_command()` gates it through
-  `core/link.c` (arm/execute) and, if it passes, `seq_command()` — whose
-  return value *is* the ACK result. Ground therefore hears the MCU's own
-  verdict: `REJECTED` for a release in the wrong state or a valve already
-  fired, `NOT_ARMED` for an unarmed release, `INVALID` for an unknown
-  command or an out-of-range parameter.
-- **The MCU keeps its own arm latch.** The Pi enforces S.8 first, but a
-  corrupted `CMD_RELEASE` that survives CRC-16 must not be able to fire a
-  valve on the strength of the wire alone. One `ARM` authorises exactly one
-  execute, inside `LINK_ARM_WINDOW_MS` (mirrors `ARM_WINDOW_S` on the Pi).
+- **Every command is answered, and none is refused for state**
+  (2026-09-18). `handle_command()` hands the frame straight to
+  `seq_command()`, whose return value *is* the ACK result. `OK` for anything
+  the firmware can act on, in any state; `INVALID` for what it cannot — an
+  unknown command, a duty above 100, a parameter outside its envelope.
+  `REJECTED` and `NOT_ARMED` are no longer produced: the arm/execute gate
+  that lived in `core/link.c` is gone, and so is the ground interlock on the
+  Pi in front of it.
 - **Pi liveness is reported, never acted on.** Any valid frame refreshes it;
   after `PARAM_PI_SILENT_S` (default 60 s, against the Pi's 10 s TIMESYNC
   beat) `MCUF_PI_OK` clears and one `EV_PI_LINK_LOST` event goes out.

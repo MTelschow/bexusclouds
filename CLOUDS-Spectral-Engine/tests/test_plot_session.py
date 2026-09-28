@@ -81,8 +81,8 @@ def session(tmp_path):
            list(SessionLog.COMMAND_FIELDS),
            [{"send_t": t0 + 1, "origin": "operator", "cmd": 1,
              "cmd_name": "START", "key": 0, "value": 0, "seq": "",
-             "result": "", "result_name": "INTERLOCK_GROUND", "rtt_ms": "",
-             "note": "refused on the ground"},
+             "result": "", "result_name": "NO_LINK", "rtt_ms": "",
+             "note": "uplink down"},
             {"send_t": t0 + 3, "origin": "heartbeat", "cmd": 0,
              "cmd_name": "PING", "key": 0, "value": 0, "seq": 1, "result": 0,
              "result_name": "OK", "rtt_ms": 1.2, "note": ""}])

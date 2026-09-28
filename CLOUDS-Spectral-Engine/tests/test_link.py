@@ -115,7 +115,7 @@ class TestHousekeeping:
         assert hk.SIZE == 64
 
     def test_roundtrip(self):
-        h = hk.Housekeeping(state=hk.SeqState.AUTO_MEMBRANE, fired=0b01,
+        h = hk.Housekeeping(state=hk.SeqState.AUTO_MEMBRANE,
                             temp1_cc=-5512, p_amb_pa=5300,
                             accel_mg=(12, -34, 980),
                             rail_mv=(24012, hk.RAIL_MV_INVALID, 5003, 3298),
@@ -155,15 +155,14 @@ class TestHousekeeping:
         assert h.to_row()["actuator_text"] == "DISPERSE"
 
     def test_each_actuator_line_gets_its_own_logged_column(self):
-        """A session log has to answer "when did pinch 1 fire, and for how
+        """A session log has to answer "when did the motor run, and for how
         long" without masking bits by hand, and `actuator_text` cannot be
         that: filtering a space-joined list is a substring match."""
-        h = hk.Housekeeping(valve_status=hk.ValveStatus.PINCH_1
-                            | hk.ValveStatus.EQ2_CLOSE)
+        h = hk.Housekeeping(valve_status=hk.ValveStatus.DISPERSE)
         row = h.to_row()
-        assert row["valve_pinch_1"] == 1
-        assert row["valve_eq2_close"] == 1
-        assert row["valve_pinch_2"] == 0 and row["valve_disperse"] == 0
+        assert row["valve_disperse"] == 1
+        # The retired valve bits have no column any more.
+        assert "valve_pinch_1" not in row and "valve_eq2_close" not in row
         # The raw field stays beside them, as the shunt registers do.
         assert row["valve_status"] == int(h.valve_status)
         # Every drive bit has a column, and the sensed ones are not among

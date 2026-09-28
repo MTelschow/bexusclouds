@@ -122,46 +122,34 @@ def test_sensor_picture_matches_the_carrier(sim):
         assert h.rail_a(i) is not None
 
 
-def test_release_without_arm_is_refused(sim):
+def test_release_is_a_command_the_build_cannot_act_on(sim):
+    """The pinch valves are off the experiment (2026-09-18): no line to
+    drive, so RELEASE is INVALID like any other unimplemented command."""
     mcu, pi = sim
-    assert pi.command(Command.RELEASE, key=1) == AckResult.NOT_ARMED
-    assert mcu.fired == 0
+    assert pi.command(Command.RELEASE, key=1) == AckResult.INVALID
+    assert pi.command(Command.RELEASE, key=7) == AckResult.INVALID
 
 
-def test_release_on_the_pad_is_rejected_even_when_armed(sim):
-    """The state check that keeps a stray RELEASE harmless before flight."""
+
+
+
+
+def test_a_stale_arm_is_answered_and_does_nothing(sim):
     mcu, pi = sim
     assert pi.command(Command.ARM, key=int(Command.RELEASE)) == AckResult.OK
-    assert pi.command(Command.RELEASE, key=1) == AckResult.REJECTED
-    assert mcu.fired == 0
+    assert pi.command(Command.ARM, key=int(Command.MEMBRANE)) == AckResult.OK
 
 
-def test_arm_release_fires_once(sim):
+def test_start_is_accepted_in_every_state(sim):
     mcu, pi = sim
     assert pi.command(Command.START) == AckResult.OK
-    assert pi.command(Command.ARM, key=int(Command.RELEASE)) == AckResult.OK
-    assert pi.command(Command.RELEASE, key=1) == AckResult.OK
-    # The release fires where it stands: no state change, and the valve bit
-    # is set by the time the ACK comes back.
-    assert mcu.fired & 1
+    assert pi.command(Command.START) == AckResult.OK
     assert mcu.state == hk.SeqState.RUNNING
-    # One ARM authorises one execute, and a fired valve never fires again.
-    assert pi.command(Command.RELEASE, key=1) == AckResult.NOT_ARMED
-    assert pi.command(Command.ARM, key=int(Command.RELEASE)) == AckResult.OK
-    assert pi.command(Command.RELEASE, key=1) == AckResult.REJECTED
-    assert mcu.fired == 1
-
-
-def test_arm_only_accepts_an_armable_command(sim):
-    mcu, pi = sim
-    assert pi.command(Command.ARM, key=int(Command.MEMBRANE)) \
-        == AckResult.INVALID
-
-
-def test_start_is_rejected_outside_standby(sim):
-    mcu, pi = sim
+    assert pi.command(Command.ABORT) == AckResult.OK
+    assert _wait(lambda: mcu.state == hk.SeqState.SAFE)
+    # and it is the way back out of SAFE
     assert pi.command(Command.START) == AckResult.OK
-    assert pi.command(Command.START) == AckResult.REJECTED
+    assert mcu.state == hk.SeqState.RUNNING
 
 
 def test_manual_drives_show_up_in_valve_status(sim):
@@ -199,8 +187,9 @@ def test_motor_run_holds_until_stop(sim):
     assert mcu.housekeeping().valve_status & hk.ValveStatus.DISPERSE
     assert mcu.housekeeping().actuator_text == "DISPERSE"
     assert mcu.housekeeping().hb_sense_a() > 0.2
-    assert pi.command(Command.DISPERSE, key=DisperseKey.PULSE) \
-        == AckResult.REJECTED
+    # a pulse on top of a held motor schedules nothing and is answered OK
+    assert pi.command(Command.DISPERSE, key=DisperseKey.PULSE) == AckResult.OK
+    assert mcu.motor_running
     assert pi.command(Command.SET_PARAM, key=Param.DISPERSE_DUTY,
                       value=30) == AckResult.OK
     assert mcu.disperse_duty == 30 and mcu.motor_running
@@ -267,20 +256,25 @@ def test_motor_current_sense_follows_the_dispersion_drive(sim):
     assert highs, "the sense should rise while the motor drive is up"
 
 
-def test_abort_locks_the_actuators_out(sim):
-    """TERMINATION/SAFE mean off and stay off - an abort is not reversible
-    from the panel."""
+def test_an_abort_de_energizes_but_does_not_lock_out(sim):
+    """The abort itself leaves nothing running; a drive commanded afterwards
+    is honoured and takes the state with it, so HK never reports SAFE over a
+    turning motor."""
     mcu, pi = sim
     assert pi.command(Command.MEMBRANE, key=40) == AckResult.OK
     assert pi.command(Command.ABORT) == AckResult.OK
     assert _wait(lambda: mcu.state == hk.SeqState.SAFE)
     assert mcu.housekeeping().membrane_duty == 0
-    assert pi.command(Command.MEMBRANE, key=40) == AckResult.REJECTED
-    assert pi.command(Command.DISPERSE, key=1) == AckResult.REJECTED
-    assert pi.command(Command.DISPERSE, key=DisperseKey.RUN) \
-        == AckResult.REJECTED
-    # Stop can only de-energize, so it is the one drive command SAFE takes
+    assert not mcu.motor_running
+
+    assert pi.command(Command.MEMBRANE, key=40) == AckResult.OK
+    assert mcu.housekeeping().membrane_duty == 40
+    assert mcu.state == hk.SeqState.RUNNING
+    assert pi.command(Command.DISPERSE, key=DisperseKey.RUN) == AckResult.OK
+    assert mcu.motor_running
+    # Stop can only de-energize, and leaves the state where it is.
     assert pi.command(Command.DISPERSE, key=DisperseKey.STOP) == AckResult.OK
+    assert not mcu.motor_running
 
 
 def test_abort_stops_a_running_motor(sim):
@@ -326,8 +320,6 @@ def test_the_cycle_runs_while_the_link_is_down(sim_auto):
 
     # ...and it repeats, from the motor phase.
     assert _wait(lambda: mcu.state == hk.SeqState.AUTO_DISPERSE)
-    # No valve was fired along the way: a release is never automatic.
-    assert mcu.fired == 0
     assert mcu.housekeeping().flags & hk.McuFlags.AUTONOMOUS_LATCHED
 
 

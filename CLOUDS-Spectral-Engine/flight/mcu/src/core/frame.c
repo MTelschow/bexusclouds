@@ -82,7 +82,7 @@ void hk_pack(const hk_t *hk, uint8_t out[HK_SIZE])
 
     *p++ = hk->state;
     *p++ = hk->flags;
-    *p++ = hk->fired;
+    *p++ = hk->reserved0; /* was `fired`; always 0 since 2026-09-18 */
     *p++ = hk->valve_status;
     *p++ = hk->membrane_duty;
     *p++ = hk->error_flags;

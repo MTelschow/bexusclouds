@@ -1,17 +1,17 @@
 /* Timed actuator pulses without blocking the main loop.
  *
- * The valves want a 5 s drive (VALVE_PULSE_MS) and the hardware watchdog
- * bites at 2 s (WATCHDOG_TIMEOUT_MS): a `sleep_ms(VALVE_PULSE_MS)` inside
- * the sequencer's fire path therefore resets the MCU *mid-actuation*, and
- * with the fired bits persisted the resume path would fire again. So the
- * drive is scheduled here instead - the loop starts a pulse, keeps kicking
- * the watchdog, and ends the pulse when its deadline passes (S.9 vs F.4).
+ * The dispersion motor wants a 5 s drive (DISPERSE_PULSE_MS) and the
+ * hardware watchdog bites at 2 s (WATCHDOG_TIMEOUT_MS): a
+ * `sleep_ms(DISPERSE_PULSE_MS)` inside the drive path therefore resets the
+ * MCU *mid-actuation*. So the drive is scheduled here instead - the loop
+ * starts a pulse, keeps kicking the watchdog, and ends the pulse when its
+ * deadline passes (S.9 vs F.4).
  *
  * Portable logic, no hardware includes: the pin edges go out through a
  * caller-supplied sink, so this is unit-tested natively (test/test_core).
  *
  * One pulse drives at a time. Requests queue and run in order, which keeps
- * the peak actuator current at one solenoid and preserves the sequential
+ * the peak actuator current at one drive and preserves the sequential
  * behaviour the blocking version had.
  */
 #ifndef CLOUDS_PULSE_H
@@ -22,10 +22,13 @@
 
 #define PULSE_PIN_NONE 0xFFu
 
-/* One slot per drivable output on the board (2 pinch + 4 valve lines +
- * 2 dispersion-motor lines). Requests coalesce per pin, so the queue cannot
- * exceed that. */
-#define PULSE_SLOTS 8
+/* One slot per drivable output on the board. Since the valves were removed
+ * (2026-09-18) that is the dispersion motor's pair, GP17/GP18, of which only
+ * the forward line is ever driven. Requests coalesce per pin, so the queue
+ * cannot exceed the number of pins. Two, not one: the queue is what keeps
+ * peak actuator current at a single drive, and a second drivable load is the
+ * case it exists for. */
+#define PULSE_SLOTS 2
 
 /* Sink for a single pin edge (gpio_put on the Pico, a recorder in tests). */
 typedef void (*pulse_drive_fn)(void *ctx, uint8_t pin, bool level);
@@ -65,8 +68,7 @@ bool pulse_busy(const pulse_sched_t *s);
 /* Cut `pin` short: release it now if it is the one driving (one edge, low),
  * and drop any queued request for it. Other pins are untouched, and the
  * queue moves on at the next pulse_service. Returns true if anything was
- * ended or dropped. Exists for the dispersion motor's STOP - a solenoid
- * pulse is always run to its end. */
+ * ended or dropped. Exists for the dispersion motor's STOP. */
 bool pulse_cancel(pulse_sched_t *s, uint8_t pin, pulse_drive_fn drive,
                   void *ctx);
 

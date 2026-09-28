@@ -48,7 +48,7 @@ enum command {
     CMD_HOLD = 0x02,
     CMD_RESUME = 0x03,
     CMD_ABORT = 0x04,
-    CMD_RELEASE = 0x05,
+    CMD_RELEASE = 0x05, /* retired with the valves: answered ACK_INVALID */
     CMD_SET_PARAM = 0x06,
     CMD_STATUS_REQ = 0x07,
     CMD_ARM = 0x08,
@@ -117,8 +117,15 @@ typedef struct {
  * enum ina226_rail in hw/ina226.h. */
 #define RAIL_COUNT 4
 
+/* `reserved0` was `fired`, the two pinch-valve bits, until the valves were
+ * removed from the experiment (2026-09-18). The byte stays, always 0: the HK
+ * packet has only ever grown by appending, and every field after this one
+ * keeps the offset that every logged session and every flashed image was
+ * written with. Dropping the byte instead would have moved all of them for a
+ * saving of one byte in eighty. The next field that needs a byte takes this
+ * one. */
 typedef struct {
-    uint8_t state, flags, fired, valve_status, membrane_duty, error_flags;
+    uint8_t state, flags, reserved0, valve_status, membrane_duty, error_flags;
     int16_t temp1_cc, temp2_cc, bme_temp_cc;
     uint16_t rh1_cpct;
     uint32_t p_amb_pa;
@@ -204,15 +211,12 @@ typedef struct {
 
 /* Actuator drive bits (hk_t.valve_status) - mirror of clouds_link/hk.py
  * ValveStatus. A set bit means that line is energized *now*, which is how
- * ground sees a manually commanded drive happen: the pinch valves and the
- * dispersion motor's pulse are bounded drives that are over long before the
- * next 1 Hz HK, so an operator who cannot see this field cannot see them at
- * all. core/pulse drives one line at a time to cap peak actuator current, so
- * at most one *pulsed* drive bit is set; HKV_DISPERSE is also set for the
- * length of a DISPERSE_RUN hold, which is not a pulse and may sit beside a
- * pinch bit if a release fires while the operator has the motor running.
- * The membrane drive is not here; it is a repeating waveform, reported as a
- * percentage in hk_t.membrane_duty.
+ * ground sees a commanded drive happen: the dispersion motor's pulse is a
+ * bounded drive that is over long before the next 1 Hz HK, so an operator
+ * who cannot see this field cannot see it at all. HKV_DISPERSE is also set
+ * for the length of a DISPERSE_RUN hold, which is not a pulse. The membrane
+ * drive is not here; it is a repeating waveform, reported as a percentage in
+ * hk_t.membrane_duty.
  *
  * Bit 5 is different in kind: it is an INPUT, the membrane position switch on
  * GP30 (hw/board.h PIN_MEMBRANE_SENSE), set while the plunger holds the
@@ -233,10 +237,10 @@ typedef struct {
  * the switch every pass and latches any edge into this bit. Drive on: CYCLING
  * set every packet. Drive off: clear, with PULLED clear too. Drive on and
  * CYCLING clear: the plunger is not moving. */
-#define HKV_PINCH_1 (1u << 0)
-#define HKV_PINCH_2 (1u << 1)
-#define HKV_EQ1_CLOSE (1u << 2)
-#define HKV_EQ2_CLOSE (1u << 3)
+/* Bits 0..3 were the two pinch valves and the two equalisation valves. They
+ * are retired with the valves (2026-09-18) and deliberately not reused: an
+ * old session log still decodes bit 0 as the pinch valve it was, and a new
+ * packet never sets it. */
 #define HKV_DISPERSE (1u << 4)
 #define HKV_MEMBRANE_PULLED (1u << 5)
 #define HKV_MEMBRANE_CYCLING (1u << 6)

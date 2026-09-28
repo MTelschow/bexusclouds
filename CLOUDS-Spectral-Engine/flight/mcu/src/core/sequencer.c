@@ -8,7 +8,6 @@ static void persist_now(sequencer_t *s)
 {
     seq_persist_t p = {
         .state = (uint8_t)s->state,
-        .fired = s->fired,
         .mission_start_s = s->mission_start_s,
         .launch_detected = s->autonomy.launch_detected,
     };
@@ -129,28 +128,6 @@ static seq_state_t auto_next(seq_state_t st)
     }
 }
 
-static void fire(sequencer_t *s, uint8_t n, uint64_t t_ms)
-{
-    uint8_t bit = (uint8_t)(1u << (n - 1));
-
-    (void)t_ms;
-    if (s->fired & bit)
-        return; /* never re-fire (S.3) */
-    s->fired |= bit;
-    persist_now(s); /* durable BEFORE the irreversible action */
-    s->ops->fire_pinch(s->ops->ctx, n);
-    /* Dispersion runs with the release, not instead of it: the motor moves
-     * the CaCO3 the pinch valve just let out. A bounded pulse, so this
-     * returns at once. The membrane is NOT started here - it is the
-     * operator's to drive (CMD_MEMBRANE) and automatic mode's to cycle;
-     * latching it on behind a release left it oscillating with nothing
-     * saying why. */
-    if (s->ops->disperse != NULL && !s->motor_running)
-        s->ops->disperse(s->ops->ctx);
-    s->ops->event(s->ops->ctx, EV_RELEASE_FIRED, n == 1 ? "valve 1"
-                                                        : "valve 2");
-}
-
 void seq_init(sequencer_t *s, const cfg_t *cfg, const seq_ops_t *ops,
               const seq_persist_t *restored, uint64_t t_ms, uint32_t wall_s)
 {
@@ -163,7 +140,6 @@ void seq_init(sequencer_t *s, const cfg_t *cfg, const seq_ops_t *ops,
     s->state_entered_ms = t_ms;
 
     if (restored != NULL && restored->state != (uint8_t)ST_INIT) {
-        s->fired = restored->fired;
         s->mission_start_s = restored->mission_start_s;
         autonomy_restore(&s->autonomy, restored->launch_detected, t_ms);
         /* A reset drops out of automatic mode into RUNNING with both
@@ -258,7 +234,6 @@ void seq_step(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
     case ST_TERMINATION:
         set_membrane(s, 0);
         set_motor(s, false);
-        s->ops->close_eq_valves(s->ops->ctx);
         enter(s, ST_SAFE, t_ms);
         break;
 
@@ -321,14 +296,11 @@ uint8_t seq_command(sequencer_t *s, uint64_t t_ms, uint32_t wall_s,
             enter(s, ST_RUNNING, t_ms);
         return ACK_OK;
     case CMD_RELEASE:
-        if (key != 1 && key != 2)
-            return ACK_INVALID;
-        wake_from_safe(s, t_ms);
-        /* The fired bit still cannot be set twice - that is the hardware's
-         * own limit, not a state rule - but a second command is answered OK
-         * like every other. */
-        fire(s, key, t_ms);
-        return ACK_OK;
+        /* The pinch valves are off the experiment (2026-09-18). There is no
+         * line to drive, so this is input the firmware cannot act on -
+         * INVALID, like any other command it does not implement, rather than
+         * an OK for something that did not happen. */
+        return ACK_INVALID;
     case CMD_MEMBRANE: /* operator drive of the push-pull solenoid */
         if (key > 100)
             return ACK_INVALID;

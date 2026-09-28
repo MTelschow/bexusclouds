@@ -3,7 +3,7 @@ FSW-PI app <-> real GSE, over the real transports (pipe UART, UDP, TCP).
 
 Verifies the full chain: MCU housekeeping relayed byte-identical to the
 GSE; mock spectrometer frames stored with valid CRCs and quick-looked to
-the GSE; a ground RELEASE traverses GSE -> Pi -> MCU; timesync reaches
+the GSE; a ground command traverses GSE -> Pi -> MCU; timesync reaches
 the MCU (S.4).
 """
 import glob
@@ -158,8 +158,8 @@ class TestEndToEnd:
         # not, with no ARM in front of it.
         assert commander.ping() == AckResult.OK
         assert (Command.PING, 0, 0) in mcu.commands
-        assert commander.release(1) == AckResult.OK
-        assert _wait(lambda: (Command.RELEASE, 1, 0) in mcu.commands)
+        assert commander.membrane(40) == AckResult.OK
+        assert _wait(lambda: (Command.MEMBRANE, 40, 0) in mcu.commands)
         assert (Command.ARM, int(Command.RELEASE), 0) not in mcu.commands
 
         # 5. timesync flows to the MCU (S.4)
@@ -182,7 +182,7 @@ class TestEndToEnd:
         # 7. comms log recorded uplink traffic
         logs = glob.glob(str(tmp_path / "data" / "comms_*.log"))
         content = "".join(open(p, encoding="utf-8").read() for p in logs)
-        assert "cmd=RELEASE" in content
+        assert "cmd=MEMBRANE" in content
 
     def test_ground_hears_the_mcu_verdict_not_the_pi_optimism(self, stack):
         """A command the MCU refuses must not reach ground as OK (S.8)."""

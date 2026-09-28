@@ -28,7 +28,7 @@ spectra, storage of spectra, and all external communication.
 | SED ID | Requirement | Falls on |
 |---|---|---|
 | F.1/F.2 | Measure solar intensity and spectral distribution, 350–850 nm | FSW-PI |
-| F.3/F.4 | Uniform dispersion; controlled CaCO₃ release | FSW-MCU |
+| F.3/F.4 | Uniform dispersion; ~~controlled CaCO₃ release~~ — **the pinch and equalisation valves were removed from the experiment 2026-09-18**; the dispersion motor and the membrane solenoid are the only actuators left, so nothing in software releases anything | FSW-MCU |
 | F.5 | Temperature measurement during ascent | FSW-MCU |
 | F.6 | Humidity during ascent **and** inside chamber (two locations) | FSW-MCU |
 | P.3 | Spectrometer sampling rate ≥ 1 Hz | FSW-PI |
@@ -46,29 +46,29 @@ spectra, storage of spectra, and all external communication.
 
 | ID | Requirement | Rationale |
 |---|---|---|
-| S.1 | FSW-MCU shall execute the full sequence (seal → release ×2 → measure ×2 → terminate) autonomously, triggered by pressure-derived launch/float detection with timer fallback | O.2; T-07 |
+| S.1 | ~~FSW-MCU shall execute the full sequence (seal → release ×2 → measure ×2 → terminate) autonomously, triggered by pressure-derived launch/float detection~~ — **replaced 2026-09-18** (see §5): the operator's `START` begins the experiment and ground silence hands it to the automatic cycle. Launch and float are still detected and reported, and drive nothing | O.2; T-07 |
 | S.2 | Ground commands shall only accelerate, hold, or abort the default sequence; no state may block indefinitely on ground input | O.2 |
-| S.3 | Fired-valve flags shall be persisted to non-volatile storage **before** actuation; on reset the sequence resumes, never re-fires | irreversible actuators + brownout risk |
+| S.3 | ~~Fired-valve flags shall be persisted **before** actuation; on reset the sequence resumes, never re-fires~~ — **moot since 2026-09-18**: with the valves gone there is no irreversible actuator to guard. The state and the mission clock are still persisted on every transition, so a reset resumes where it was | irreversible actuators + brownout risk |
 | S.4 | Spectra and HK shall share one timebase (Pi RTC master, UART sync ≤ 10 s interval, target skew < 100 ms) | §7.1 paired analysis needs synchronized channels |
 | S.5 | Every stored record and downlink packet shall carry a sequence number and CRC-16 | SED §4.11 safety concepts |
 | S.6 | HK data shall be written redundantly to both RP2350 SD cards; files rotated every 10 min | O.3; corruption containment |
 | S.7 | Loss of FSW-PI shall not delay or prevent any FSW-MCU state transition | compute-split design |
-| S.8 | Actuator commands over TCP shall require an arm/execute two-step; open/close valve lines are additionally hardware-interlocked | command safety |
+| S.8 | ~~Actuator commands over TCP shall require an arm/execute two-step~~ — **dropped 2026-09-18** by operator decision: while ground is connected every command executes, and the GSE's confirm dialog is the only step in front of a release. Open/close valve lines remain hardware-interlocked on the board | command safety |
 | S.9 | Both processors shall run hardware watchdogs (RP2350 2 s; Pi systemd `RuntimeWatchdogSec=15`) with automatic restart + state resume | SED watchdog concept |
-| S.10 | GSE shall block particle-release commands while on ground (software interlock) | SED §4.12.2 |
+| S.10 | ~~GSE shall block particle-release commands while on ground (software interlock)~~ — **dropped 2026-09-18** by operator decision, together with the flight-mode switch that lifted it. `START` is now the single operator action that begins the experiment | SED §4.12.2 |
 
 ## 3. Interfaces
 
 | Interface | Spec |
 |---|---|
 | E-Link downlink | UDP over Ethernet; ~1.9 kbit/s average (limit 2 kbit/s continuous; bursts ≤ 400 kbit/s max, 100 kbit/s avg per Table 6-3); self-contained packets (seq + timestamp + CRC-16), loss-tolerant |
-| E-Link uplink | TCP, ≤ 1 kbit/s; command set `PING, START, HOLD, RESUME, ABORT, RELEASE 1\|2, SET_PARAM, STATUS?, ARM, MEMBRANE, DISPERSE`; mandatory ACK; arm/execute for the particle release. `MEMBRANE` (duty %, 0 = off) and `DISPERSE` (one pulse, speed from `SET_PARAM DISPERSE_DUTY`) are direct operator drives of the dispersion hardware, beyond the SED set: neither is irreversible, so neither is armed or ground-interlocked, and the MCU refuses both in TERMINATION/SAFE |
+| E-Link uplink | TCP, ≤ 1 kbit/s; command set `PING, START, HOLD, RESUME, ABORT, SET_PARAM, STATUS?, MEMBRANE, DISPERSE` (+ `ARM` and `RELEASE 1\|2`, both retired — `ARM` is answered OK and does nothing, `RELEASE` is answered `INVALID` because the valves are gone); mandatory ACK. **Nothing is gated (2026-09-18)**: no arm/execute, no ground interlock, no state refusal - a command the chain can parse is executed and answered `OK`, and `INVALID` is left for input it cannot act on at all (unknown command, duty > 100, parameter out of envelope). `MEMBRANE` (duty %, 0 = off) and `DISPERSE` (pulse / run / stop, speed from `SET_PARAM DISPERSE_DUTY`) are the operator's drives of the dispersion hardware |
 | IP addressing | 2 addresses: FSW-PI, GSE bench port |
 | Pi ↔ RP2350 | UART, COBS-framed, CRC-16. Down: HK @ 1 Hz, state changes, actuator events. Up: forwarded commands, time sync every 10 s |
 | Spectrometer ↔ Pi | USB (FTDI FT2232H, VID 0403/PID 6010) → `/dev/ttyUSB*`, vendor library `libe9u_LSMD.so` (built from `drivers/e9u_LSMD_LIB_Linux/`, same API as the Windows DLL) — driven by this repo's `spectro/eureca_driver.py`; needs the vendor udev rules |
 | SD ↔ RP2350 | SPI, 2 cards, redundant HK + actuator log |
 | Sensors ↔ RP2350 | BME280 ×2 - **ambient** on I²C (`0x76`) and **chamber** on SPI_1 (chip select GP9); STLM20 analog/ADC; IMU I²C/SPI; INA226 ×3 I²C (rail voltage + shunt voltage) |
-| Actuators ↔ RP2350 | 4× valve via GPIO→MOSFET (HW interlock on open/close pairs); membrane solenoid via PWM → inverter stage, 12 V |
+| Actuators ↔ RP2350 | CaCO₃ dispersion motor on the `ACT_HB` H-bridge (GP17 fwd / GP18 rev, current sense GP46); membrane solenoid via PWM → inverter stage, 12 V. The four valves (2 pinch + 2 equalisation) were removed from the experiment 2026-09-18, with their pins, drives and HK bits |
 
 ## 4. Data & performance budget
 
@@ -148,10 +148,18 @@ de-energized, data preserved, HK + downlink continue).
   actuators de-energize and the state returns to RUNNING. The next entry
   always restarts at the motor phase - the cycle carries nothing across a
   link-up period or a reset.
-- **the pinch valves are not in the automatic path.** A release is
-  irreversible, so it happens only on an arm-gated ground `RELEASE`, fires
-  where it stands and changes no state.
+- **there is nothing irreversible left to drive.** The pinch and
+  equalisation valves came off the experiment on 2026-09-18; `RELEASE` is
+  answered `INVALID` and the persist-before-fire rule (S.3) has nothing to
+  guard. Both remaining actuators stop when they are told to.
 - **HOLD** keeps the cycle off and survives a link loss (docs/TRAPS.md).
+- **Nothing is refused while ground is connected (2026-09-18).** `START` is
+  accepted in any state, including back out of `SAFE` after an abort; a drive
+  commanded after an abort re-energizes and takes the state to `RUNNING` with
+  it, so housekeeping never reports `SAFE` over a turning motor. `INVALID`
+  is left for input the firmware cannot act on at all: an unknown command, a
+  duty above 100, a parameter outside its envelope, or a `RELEASE` for
+  hardware that is not on the experiment any more.
 
 Autonomy triggers (pre-flight configurable): link-loss latch after 10 min
 without a ground command (`LINKLOSS_S`); phase lengths `AUTO_DISPERSE_S` /

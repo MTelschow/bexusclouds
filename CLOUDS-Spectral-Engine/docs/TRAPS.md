@@ -116,12 +116,13 @@ must not be able to take the instrument half down with it.
 Guard `stop()` on "was it started", or an error path unwinding before `start()`
 hangs the app instead of exiting.
 
-**A command ACK is only worth what enforced it.** Before `core/link.c` the
-MCU acted on any `CMD_RELEASE` that passed CRC-16, and the Pi answered ground
-`OK` as soon as it had written to the UART - so a release the MCU ignored
-(wrong state, already fired) and one it never received looked identical to a
-success on the console. The rule now: each end answers with what *it* decided,
-and the Pi waits for the MCU's answer before speaking for it.
+**A command ACK is only worth what enforced it.** The Pi used to answer ground
+`OK` as soon as it had written to the UART - so a command the MCU ignored and
+one it never received looked identical to a success on the console. The rule
+now: each end answers with what *it* decided, and the Pi waits for the MCU's
+answer before speaking for it. This matters more, not less, since the gates
+were removed (2026-09-18): `OK` now means "executed", and the only refusal
+left, `INVALID`, means the firmware could not act on the frame at all.
 
 **Sequence numbers are per packet type**, on both the MCU (`hk_seq_no`,
 `ev_seq_no`) and the Pi (`Downlink._next_seq`). A single shared counter makes

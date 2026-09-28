@@ -1,12 +1,13 @@
 """GSE command uplink (G-03): TCP client, ACK-checked.
 
-**No interlock and no arm handshake (2026-09-18).** The ground interlock and
-the flight-mode toggle that switched it off are gone, and so is the
-ARM→RELEASE two-step: the operator's `START` is what begins the experiment,
-and from then on every command goes out as sent and is answered by the MCU's
-own verdict. Nothing is refused on the laptop any more - a command that does
-not reach the Pi raises `CommandError`, which is a link failure, not a
-policy.
+**No interlock and no arm handshake (2026-09-18).** The ground interlock, the
+flight-mode toggle that switched it off and the ARM→RELEASE two-step are all
+gone: the operator's `START` is what begins the experiment, and from then on
+every command goes out as sent and is answered by the MCU's own verdict.
+`release()` went with the pinch valves themselves - the MCU answers a
+`RELEASE` frame `INVALID`. Nothing is refused on the laptop any more; a
+command that does not reach the Pi raises `CommandError`, which is a link
+failure, not a policy.
 """
 from __future__ import annotations
 
@@ -71,12 +72,6 @@ class Commander:
     def send(self, cmd: Command, key: int = 0, value: int = 0) -> AckResult:
         """Send one command and wait for its ACK. Raises on link failure."""
         return self._transact(cmd, key, value)
-
-    def release(self, valve: int) -> AckResult:
-        """One RELEASE, sent as it stands - no ARM in front of it."""
-        if valve not in (1, 2):
-            raise ValueError("valve must be 1 or 2")
-        return self._transact(Command.RELEASE, key=valve)
 
     def set_param(self, key: int, value: int) -> AckResult:
         return self._transact(Command.SET_PARAM, key=key, value=value)

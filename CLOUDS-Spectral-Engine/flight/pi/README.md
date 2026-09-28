@@ -5,7 +5,7 @@ spectrometer acquisition at 1 Hz (P.3), CRC'd onboard storage (O.3, S.5),
 UDP telemetry downlink within the 2 kbit/s budget (O.4), TCP command
 uplink with arm/execute (S.8), UART link + time sync to the RP2350 (S.4).
 **Never sequences the experiment** — losing the Pi degrades the mission,
-it cannot block the release (S.7).
+it cannot block the experiment (S.7).
 
 ## The link to the RP2350 (P-05, P-06, S.8, S.10)
 
@@ -16,11 +16,7 @@ Three rules decide what an ACK to ground is allowed to mean:
    sequence number, and that result is what ground gets. No ACK inside
    `mcu_ack_timeout_s` is a `REJECTED`, not an OK — a UART write is not
    evidence of anything.
-2. **`ARM` reaches the MCU too.** It keeps its own arm latch (defence in
-   depth against a corrupted `CMD_RELEASE`), so an ARM the Pi swallowed
-   would make every release `NOT_ARMED` at the far end. The Pi arms locally
-   only once the MCU has confirmed, so "armed" never means one end.
-3. **`PING` is answered here.** The heartbeat is addressed to the Pi; a
+2. **`PING` is answered here.** The heartbeat is addressed to the Pi; a
    silent MCU is reported through `PISTATUS.uart_ok` and the MCU-silent
    event, not by failing the operator's heartbeat.
 

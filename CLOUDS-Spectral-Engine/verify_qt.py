@@ -922,32 +922,21 @@ try:
     _rows = {}
     for _b in _gse._cmd_buttons:
         _rows.setdefault(_b.y(), []).append(_b.width())
-    # Uniform within a row, which is what reads as a tidy block; the release
-    # pair is deliberately wider (it spans 3 of 6 columns, not 2).
+    # Uniform within a row, which is what reads as a tidy block.
     check("flight: command buttons are even across each row",
           all(max(r) - min(r) <= 8 for r in _rows.values()),
           str({y: sorted(r) for y, r in _rows.items()}))
 
-    # The release confirmation must not ask about something it will refuse.
-    _dialogs = []
-    _real_question = QtWidgets.QMessageBox.question
-    QtWidgets.QMessageBox.question = staticmethod(
-        lambda *a, **k: _dialogs.append(a[2]) or QtWidgets.QMessageBox.Yes)
-    try:
-        _gse._cmd = _commander
-        _commander.flight_mode = False
-        _gse._release(1)
-        check("flight: checks the interlock before the confirm dialog",
-              _dialogs == []
-              and "interlock" in _gse.lbl_cmd_status.text().lower(),
-              f"{_dialogs} / {_gse.lbl_cmd_status.text()}")
-        _commander.flight_mode = True
-        _gse._release(1)
-        check("flight: still confirms a release it will send",
-              len(_dialogs) == 1, str(_dialogs))
-    finally:
-        QtWidgets.QMessageBox.question = _real_question
-        _commander.flight_mode = False
+    # The pinch valves are off the experiment (2026-09-18), so the panel has
+    # no control that can fire one - and no flight-mode switch either, since
+    # START is the single control that starts the experiment.
+    _gse._cmd = _commander
+    check("flight: no release control is left on the panel",
+          not hasattr(_gse, "_release")
+          and all("RELEASE" not in _b.text() for _b in _gse._cmd_buttons),
+          str([_b.text() for _b in _gse._cmd_buttons]))
+    check("flight: no flight-mode switch is left on the panel",
+          not hasattr(_gse, "chk_flight_mode"))
 
     # Events are named, not numbered: `[1] 12: membrane on` told an operator
     # nothing. EventCode 0x0C is MANUAL_DRIVE.
@@ -1244,21 +1233,22 @@ try:
     # what is checked is that the bit lands in the buffer as a 1 and that the
     # lane axis renders beside the measured ones instead of on their scale.
     _rx.last_hk = _hk.Housekeeping(
-        p_amb_pa=99248, valve_status=int(_hk.ValveStatus.PINCH_1
+        p_amb_pa=99248, valve_status=int(_hk.ValveStatus.DISPERSE
                                          | _hk.ValveStatus.MEMBRANE_PULLED))
     _rx.last_hk_time = 5300.0
     _win._sample_timeline()
-    for _k in ("valve_pinch_1", "valve_disperse", "membrane_pulled"):
+    for _k in ("valve_disperse", "membrane_pulled"):
         _win._tl_boxes[_k].setChecked(True)
     app.processEvents()
-    _x, _cols = _win.tl_buf.window(["valve_pinch_1", "valve_disperse"], None)
+    _x, _cols = _win.tl_buf.window(["valve_disperse", "membrane_pulled"],
+                                   None)
     check("timeline: an energized line is a 1 and an idle one a 0",
-          _cols["valve_pinch_1"][-1] == 1.0
-          and _cols["valve_disperse"][-1] == 0.0,
-          f"pinch {_cols['valve_pinch_1'][-1]}, "
-          f"disperse {_cols['valve_disperse'][-1]}")
+          _cols["valve_disperse"][-1] == 1.0
+          and _cols["membrane_pulled"][-1] == 1.0,
+          f"disperse {_cols['valve_disperse'][-1]}, "
+          f"pulled {_cols['membrane_pulled'][-1]}")
     check("timeline: the lines get a lane axis, not the hPa one",
-          _tl.SERIES_BY_KEY["valve_pinch_1"].unit == _tl.DIGITAL_UNIT
+          _tl.SERIES_BY_KEY["valve_disperse"].unit == _tl.DIGITAL_UNIT
           and _tl.DIGITAL_UNIT != _tl.SERIES_BY_KEY["p_amb"].unit
           and _win.timeline.plot.pixmap() is not None
           and not _win.timeline.plot.pixmap().isNull())
@@ -1272,7 +1262,7 @@ try:
     check("timeline: an unread membrane switch is a gap, not 'pushed'",
           np.isnan(_cols["membrane_pulled"][-1]),
           str(float(_cols["membrane_pulled"][-1])))
-    for _k in ("valve_pinch_1", "valve_disperse", "membrane_pulled"):
+    for _k in ("valve_disperse", "membrane_pulled"):
         _win._tl_boxes[_k].setChecked(False)
     app.processEvents()
 
@@ -1405,7 +1395,6 @@ try:
     _win._link_factory = _factory
     _old_rx, _old_cmd, _old_session = _win.rx, _win.commander, _win.session
     _gse._cmd = _old_cmd                    # put the link back the earlier check took away
-    _gse.chk_flight_mode.setChecked(True)
     _win.rb_downlink.setChecked(True)
     app.processEvents()
     _win.restart()
@@ -1427,8 +1416,6 @@ try:
           _gse.event_list.count() == 0 and _gse.banner.text() == "NO TELEMETRY"
           and _gse._hk_labels["Membrane"].text() == "-"
           and _gse.lbl_switch.text() == "switch: no telemetry")
-    check("restart: the interlock setting survives and reaches the new link",
-          _gse.chk_flight_mode.isChecked() and _win.commander.flight_mode)
     check("restart: the flight tick is running again", _win.flight_timer.isActive())
     check("restart: the traffic counters start over on the new links",
           _win.traffic._rx is _win.rx and _win.traffic._cmd is _win.commander

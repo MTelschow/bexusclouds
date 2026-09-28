@@ -18,7 +18,115 @@ without re-deriving anything. Newest entries first.
 
 ---
 
-## 2026-09-18 (newest) - The sequence is the operator's, and the link's
+## 2026-09-28 (newest) - The valves are gone
+
+**Asked for:** remove the valve path. The two pinch valves and the two
+equalisation ball valves are not on the experiment any more; the dispersion
+motor and the membrane solenoid are.
+
+What went: `PIN_PINCH_1/2`, `PIN_EQ1/2_OPEN/CLOSE`, `ops_fire_pinch()`,
+`ops_close_eq_valves()` and their `seq_ops_t` slots, `fire()`,
+`sequencer_t.fired`, `seq_persist_t.fired`, `HKV_PINCH_*`/`HKV_EQ*`,
+`Commander.release()`, the panel's two RELEASE buttons, the console's
+`release 1|2`, and the valve lanes on the timeline.
+
+Decisions worth keeping:
+
+* **The `fired` byte stayed on the wire, at zero.** Removing it would have
+  moved every field after offset 2 in a packet that has only ever grown by
+  appending - and `Housekeeping.unpack()` leans on exactly that to decode an
+  older MCU's shorter packet. One byte in eighty is not worth invalidating
+  every logged session and every flashed image, so `hk_t.fired` is
+  `reserved0` and the next field that needs a byte takes it. The HK ceiling
+  (67 B) and the 64 B payload are unchanged.
+* **Retired code numbers are not reused.** `HKV_*` bits 0..3, `CMD_RELEASE`
+  (0x05) and `EV_RELEASE_FIRED` keep their values so an old log still decodes
+  to what it meant. A new packet never sets them.
+* **`RELEASE` answers `ACK_INVALID`, not `OK`.** The rule from 2026-09-18 is
+  that nothing is refused *for state*; a command for hardware that is not on
+  the experiment is not a state refusal, it is input the firmware cannot act
+  on - the same class as an unknown opcode. Answering `OK` would have told
+  ground a valve fired.
+* **S.3's persist-before-fire ordering is moot, and said so rather than
+  being quietly deleted.** With no irreversible actuator there is nothing to
+  guard; the state and mission clock are still persisted on every transition,
+  so a reset still resumes. The requirement is struck in the spec with the
+  reason, like S.8 and S.10 before it.
+* **`VALVE_PULSE_MS` became `DISPERSE_PULSE_MS`** and `PULSE_SLOTS` went 8 →
+  2. A constant named for hardware that no longer exists is how the next
+  person mis-times the one drive that does.
+* **`board.h`'s long-standing contradiction is settled by subtraction.** The
+  five "WRONG PER SCHEMATIC" pins were all valve pins - GP2/GP3 are the Pi's
+  RTS/CTS, GP4..GP7 are SPI_0 - so they are gone rather than corrected. The
+  board's other actuator channels (`ACT_R_2..4`, `ACT_EC`) stay unmapped: the
+  schematic page names channels, not loads.
+
+Evidence: `run_native.sh` 54 tests, `tests/` 391, `verify.py` and
+`verify_qt.py` green. The pulse-scheduler tests now exercise the motor pair
+instead of the valve lines, and the HK layout test pins byte 2 at zero.
+
+---
+
+## 2026-09-18 - One button, and nothing in its way
+
+**Asked for:** couple flight mode and the start button into one, and remove
+the system interlock, so that while the connection is present every action
+and command executes without rejection. Asked in the same breath: the pinch
+valves do not exist any more - only the motor and the solenoid are relevant.
+
+Three gates existed and all three are gone:
+
+* **The ground interlock (S.10)** - `GROUND_INTERLOCKED` on the GSE,
+  `FLIGHT_ONLY` + the `interlock` predicate on the Pi, `allow_ground_release`
+  in the flight config, and the **Flight mode** checkbox that switched it
+  off. The checkbox and `START` were two controls that had to agree about the
+  same thing; now there is one, and pressing it is what starts the
+  experiment.
+* **The arm/execute two-step (S.8)** - `ARMED_COMMANDS`, the Pi's one-shot
+  latch, and the MCU's own `link_gate()`. `core/link.c` is back to the one
+  job its name suggests: telling ground whether the Pi is alive.
+  `Command.ARM` stays in the enum and is answered `OK`, so an older ground
+  station is still understood rather than refused.
+* **Every state refusal in `seq_command()`** - `ACK_REJECTED` is no longer
+  produced anywhere in the firmware. `START` is accepted in any state, a
+  release fires on the pad as readily as in flight, and a drive commanded
+  after an abort re-energizes.
+
+Decisions inside that:
+
+* **`ACK_INVALID` stayed.** "No rejection" is about policy, not about
+  parsing: an unknown opcode, a duty of 200 % or a parameter outside its
+  envelope still comes back `INVALID`, because a corrupted frame that is
+  answered `OK` teaches ground the ACK means nothing.
+* **A drive after an abort wakes the experiment out of SAFE.** The
+  alternative - honour the drive but keep reporting `SAFE` - would put
+  housekeeping at odds with a turning motor, and HK is the only thing ground
+  has. `ABORT` is still the way to SAFE, `START` the other way back.
+* **The persisted fired bit is not a refusal.** A second `RELEASE 1` is
+  answered `OK` and still cannot fire the valve twice (S.3). That is the
+  hardware's own limit, not a rule about states, and it survives.
+* **What is left that can say no:** a command that cannot be *delivered* -
+  the UART to the RP2350 is down - is still `REJECTED` by the Pi, and the
+  GSE still raises on a dead socket. Both are link failures, which is the one
+  condition the operator's rule is explicitly about ("while connection is
+  present").
+
+Evidence: `run_native.sh` 59 tests, `tests/` 392, `verify.py` and
+`verify_qt.py` all green, with the old gate tests replaced by their
+opposites - `TestNothingIsGated` on the Pi, `test_no_command_is_refused_for_state`
+and `test_a_drive_after_an_abort_wakes_the_experiment` on the MCU, and a
+source-level test that the arm gate is gone from *both* ends at once, since a
+half-removed one would refuse releases at one end only.
+
+**Open:** the pinch valves reportedly no longer exist. Nothing in this change
+assumes they do, but the release path is still wired end to end -
+`CMD_RELEASE`, the `fired` bits, `HKV_PINCH_*`, the panel buttons, the
+equalisation valves and their pins. Stripping it is a separate change and
+needs a decision, because it moves the HK layout.
+
+---
+
+## 2026-09-18 - The sequence is the operator's, and the link's
 
 **Asked for:** start the experiment with a button; if the ground station GUI
 is then unreachable for 10 minutes straight, go into automatic mode until the

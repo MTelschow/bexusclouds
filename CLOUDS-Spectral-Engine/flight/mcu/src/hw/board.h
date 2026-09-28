@@ -31,16 +31,19 @@
  * measurement found), the membrane on GP26 (ACT_R_1), and GP12/GP13 as
  * SPI_1 chip selects rather than the i2c0 the old map claimed.
  *
- * It CONTRADICTS the valve pins below, and they have NOT been changed here.
- * GP2/GP3 are the Pi's RTS/CTS and GP4..GP7 are SPI_0 - firing a "pinch valve"
- * today toggles a UART flow-control line, and a "valve" drive toggles the SD
- * bus. The board's actuator channels are ACT_R_1..4 (GP26/25/24/23), the
- * ACT_EC driver (GP19..GP22) and the ACT_HB bridge (GP17/GP18/GP46), but the
- * schematic page names channels, not loads: it does not say which relay holds
- * pinch 1 or which holds an equalisation valve. Guessing that mapping is how
- * an actuator gets driven from the wrong pin, which is the failure this file's
- * header already carries. These need the load side of the schematic, or a
- * measurement in the manner of DEVLOG 2026-08-31, before they move.
+ * It CONTRADICTED the valve pins this file used to carry - GP2/GP3 are the
+ * Pi's RTS/CTS and GP4..GP7 are SPI_0, so firing a "pinch valve" would have
+ * toggled a UART flow-control line and a "valve" drive the SD bus. That is
+ * settled by subtraction: the valves came off the experiment on 2026-09-18
+ * and their defines went with them (see below).
+ *
+ * The board's remaining actuator channels are ACT_R_1..4 (GP26/25/24/23),
+ * the ACT_EC driver (GP19..GP22) and the ACT_HB bridge (GP17/GP18/GP46). Only
+ * two are mapped here - the membrane on ACT_R_1 and the dispersion motor on
+ * ACT_HB, both measured. The rest stay unmapped: the schematic page names
+ * channels, not loads, and guessing which relay holds which load is how an
+ * actuator gets driven from the wrong pin. They need the load side of the
+ * schematic, or a measurement in the manner of DEVLOG 2026-08-31.
  *
  * It also says the carrier is an RP2350B (80-pin, GP0..GP47). Since
  * 2026-09-17 the build says so too: PICO_BOARD defaults to clouds_carrier
@@ -64,18 +67,19 @@
 #define PIN_UART_RX 1
 #define UART_BAUD 115200
 
-/* Pinch valves (CaCO3 release) - one-shot fire via MOSFET.
- * WRONG PER SCHEMATIC: GP2/GP3 are PI_RTS/PI_CTS. See the header block. */
-#define PIN_PINCH_1 2
-#define PIN_PINCH_2 3
+/* THE VALVES ARE GONE (2026-09-18). The two pinch valves (GP2/GP3) and the
+ * two equalisation ball valves (GP4..GP7) are not on the experiment any
+ * more, so their pins, drives and HK bits went with them. Nothing in this
+ * file claims those nets now, which is also how the long-standing "WRONG PER
+ * SCHEMATIC" note on them is finally settled: GP2/GP3 are the Pi's RTS/CTS
+ * and GP4..GP7 are SPI_0, and no actuator is mapped onto either any more.
+ * Two actuators remain: the dispersion motor and the membrane solenoid. */
 
-/* Equalization ball valves: open/close line pairs (USS-MSV00025).
- * WRONG PER SCHEMATIC: GP4..GP7 are SPI_0. See the header block. */
-#define PIN_EQ1_OPEN 4
-#define PIN_EQ1_CLOSE 5
-#define PIN_EQ2_OPEN 6
-#define PIN_EQ2_CLOSE 7
-#define VALVE_PULSE_MS 5000 /* drive time per operation (datasheet) */
+/* Drive time for one scheduled dispersion-motor pulse. Was VALVE_PULSE_MS,
+ * from the ball valves' datasheet; the motor pulse has always used the same
+ * 5 s and keeps it. Longer than the 2 s watchdog on purpose - see
+ * core/pulse.h for why that is scheduled rather than slept. */
+#define DISPERSE_PULSE_MS 5000
 
 /* Membrane push-pull solenoid (HS-1564B) via inverter stage.
  * GP26, measured: a 0.5 Hz then 2 Hz square wave on GP26 visibly actuated the

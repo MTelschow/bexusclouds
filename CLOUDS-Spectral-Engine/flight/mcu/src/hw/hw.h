@@ -16,14 +16,14 @@ void hw_init(void);
 extern const seq_ops_t hw_seq_ops;
 
 /* Starts and ends the scheduled actuator drives. Must be called every pass
- * of the main loop: the 5 s valve pulse is timed here precisely so that no
+ * of the main loop: the 5 s motor pulse is timed here precisely so that no
  * actuation ever blocks past the 2 s watchdog (S.9). Never waits. */
 void hw_actuators_service(uint64_t now_ms);
 
 /* Which actuator line is energized right now, as HKV_* bits (core/frame.h),
- * for hk_t.valve_status. The drives are bounded pulses that finish between
- * two 1 Hz housekeeping packets, so this is the only way ground sees a
- * commanded valve or motor drive actually happen. Also carries
+ * for hk_t.valve_status. The motor pulse is a bounded drive that finishes
+ * between two 1 Hz housekeeping packets, so this is the only way ground sees
+ * a commanded drive actually happen. Also carries
  * HKV_MEMBRANE_PULLED, the one sensed bit: the membrane position switch on
  * GP30, read at the moment of the call. */
 uint8_t hw_actuator_status(void);

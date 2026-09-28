@@ -67,7 +67,6 @@ static void send_hk(uint64_t t_ms)
     memset(&hk, 0, sizeof hk);
     hw_read_sensors(&hk);
     hk.state = (uint8_t)seq.state;
-    hk.fired = seq.fired;
     /* What the actuators are doing, from the two places that know: the
      * sequencer owns the membrane duty, the pulse scheduler owns the line
      * currently energized. Neither was reported before, so the panel showed

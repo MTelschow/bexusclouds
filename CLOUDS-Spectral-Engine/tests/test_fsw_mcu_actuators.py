@@ -41,8 +41,8 @@ def board():
 class TestNoBlockingActuation:
     def test_pulse_outlives_the_watchdog(self, board):
         """The premise: if this ever stops holding, revisit the design."""
-        assert _define(board, "VALVE_PULSE_MS") > _define(board,
-                                                          "WATCHDOG_TIMEOUT_MS")
+        assert _define(board, "DISPERSE_PULSE_MS") > _define(
+            board, "WATCHDOG_TIMEOUT_MS")
 
     @pytest.mark.parametrize("src", sorted(
         os.path.basename(p) for p in glob.glob(os.path.join(MCU, "src", "hw",
@@ -58,8 +58,9 @@ class TestNoBlockingActuation:
 
     def test_drives_go_through_the_scheduler(self):
         hw = _read("src", "hw", "hw.c")
-        # every actuator op schedules; none touches gpio_put directly
-        for op in ("ops_fire_pinch", "ops_close_eq_valves", "ops_disperse"):
+        # every scheduled actuator op schedules; none touches gpio_put
+        # directly. Only the motor is left since the valves were removed.
+        for op in ("ops_disperse",):
             body = hw.split("static void %s" % op, 1)[1].split("\n}", 1)[0]
             assert "pulse_request(" in body, "%s does not schedule" % op
             assert "gpio_put(" not in body, "%s drives a pin directly" % op
@@ -184,9 +185,12 @@ class TestActuatorStateReachesHousekeeping:
         hw = _read("src", "hw", "hw.c")
         body = hw.split("uint8_t hw_actuator_status", 1)[1].split("\n}", 1)[0]
         assert "pulses.active_pin" in body
+        assert "PIN_DISPERSE_FWD" in body, "the motor line has no HK bit"
+        # The valve pins are gone with the valves (2026-09-18); a pin that
+        # comes back needs its bit back here too.
         for pin in ("PIN_PINCH_1", "PIN_PINCH_2", "PIN_EQ1_CLOSE",
-                    "PIN_EQ2_CLOSE", "PIN_DISPERSE_FWD"):
-            assert pin in body, "%s has no HK bit" % pin
+                    "PIN_EQ2_CLOSE"):
+            assert pin not in _read("src", "hw", "board.h")
 
 
 class TestManualActuatorDrives:
@@ -236,8 +240,8 @@ class TestManualActuatorDrives:
 
     def test_motor_run_is_a_hold_beside_the_pulse_queue(self):
         """A run must not sit in core/pulse's one-at-a-time queue: there it
-        would delay a release's pinch valve indefinitely and keep busy()
-        true for as long as automatic mode drives the motor. So hw.c holds
+        would keep busy() true for as long as automatic mode drives the
+        motor, and block whatever else is queued behind it. So hw.c holds
         the line directly, keeps
         HK honest about it, and Stop cancels any motor pulse as well."""
         hw = _read("src", "hw", "hw.c")
@@ -558,21 +562,24 @@ class TestDispersionMotor:
             body), ("the forward line must be driven with the reverse line as "
                     "its interlock, so the pair is never energized together")
 
-    def test_the_queue_has_a_slot_for_both_new_lines(self):
-        """A dropped request is an actuation that silently never happens."""
+    def test_the_queue_has_a_slot_for_every_drivable_line(self):
+        """A dropped request is an actuation that silently never happens.
+        One scheduled load is left, the motor's forward line."""
         pulse_h = _read("src", "core", "pulse.h")
-        assert _define(pulse_h, "PULSE_SLOTS") >= 8
+        assert _define(pulse_h, "PULSE_SLOTS") >= 1
 
-    def test_the_sequencer_disperses_on_every_release(self):
+    def test_automatic_mode_drives_the_motor(self):
         """Same failure mode as the GP8 membrane bug: a drive nothing calls
-        looks like working firmware and does nothing in flight."""
+        looks like working firmware and does nothing in flight. The motor
+        phase of the cycle is now the only automatic user of it."""
         seq = _read("src", "core", "sequencer.c")
-        body = seq.split("static void fire(", 1)[1].split("\n}", 1)[0]
-        assert "disperse" in body, (
-            "fire() must run the dispersion motor, or the motor never turns "
-            "in flight")
-        assert "!= NULL" in body, (
-            "disperse is optional - a board without the motor must still "
+        body = seq.split("static void enter_auto_phase(", 1)[1] \
+                  .split("\n}", 1)[0]
+        assert "set_motor(s, st == ST_AUTO_DISPERSE)" in body, (
+            "the motor phase must drive the motor, or it never turns")
+        setter = seq.split("static void set_motor(", 1)[1].split("\n}", 1)[0]
+        assert "!= NULL" in setter, (
+            "disperse_run is optional - a board without the motor must still "
             "sequence")
 
 

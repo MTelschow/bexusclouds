@@ -187,12 +187,12 @@ HB_SENSE_A_PER_V: float | None = 1.0 / (IPROPI_R_OHM * IPROPI_GAIN_A_PER_A)
 class ValveStatus(IntEnum):
     """Mirror of the HKV_* bits in flight/mcu/src/core/frame.h.
 
-    A set bit means that actuator line is energized *now*. The drives are
-    bounded pulses (5 s) that can finish between two 1 Hz packets, so this is
-    where ground sees a commanded valve or motor drive actually happen. Only
-    one *drive* bit is ever set at a time: the MCU drives one line at a time
-    to cap peak actuator current. The membrane drive is not here - it is a
-    repeating waveform, reported as ``membrane_duty``.
+    A set bit means that actuator line is energized *now*. The motor drive is
+    a bounded pulse (5 s) that can finish between two 1 Hz packets, so this is
+    where ground sees a commanded drive actually happen. Only one *drive* bit
+    is ever set at a time: the MCU drives one line at a time to cap peak
+    actuator current. The membrane drive is not here - it is a repeating
+    waveform, reported as ``membrane_duty``.
 
     ``MEMBRANE_PULLED`` is the exception in kind: it is an **input**, the
     position switch on GP30 on the solenoid plunger - released while the
@@ -210,10 +210,9 @@ class ValveStatus(IntEnum):
     same value packet after packet whether the plunger moves or not. The MCU
     samples the switch every 10 ms pass and latches any edge into this bit.
     """
-    PINCH_1 = 1 << 0
-    PINCH_2 = 1 << 1
-    EQ1_CLOSE = 1 << 2
-    EQ2_CLOSE = 1 << 3
+    # Bits 0..3 were PINCH_1, PINCH_2, EQ1_CLOSE and EQ2_CLOSE. They are
+    # retired with the valves (2026-09-18) and not reused: a new packet never
+    # sets them, and an old session log keeps meaning what it meant.
     DISPERSE = 1 << 4        # CaCO3 dispersion motor, forward line (pulse or run)
     MEMBRANE_PULLED = 1 << 5  # sensed, not driven: GP30 switch pressed (LOW) now
     MEMBRANE_CYCLING = 1 << 6  # sensed: GP30 switch changed since the last HK
@@ -255,7 +254,12 @@ class HkErrors(IntEnum):
 class Housekeeping:
     state: int = 0
     flags: int = 0
-    fired: int = 0            # bit0 pinch valve 1, bit1 pinch valve 2 (S.3)
+    #: Was ``fired``, the two pinch-valve bits, until the valves were removed
+    #: from the experiment (2026-09-18). The byte stays on the wire at 0: this
+    #: packet has only ever grown by appending, and every field after it keeps
+    #: the offset that every logged session was written with. Old sessions
+    #: still decode their real value here.
+    reserved0: int = 0
     valve_status: int = 0     # ValveStatus bits: line energized right now
     membrane_duty: int = 0    # percent
     error_flags: int = 0
@@ -298,7 +302,8 @@ class Housekeeping:
     chm_p_pa: int = 101325
 
     def pack(self) -> bytes:
-        return _HK.pack(self.state, self.flags, self.fired, self.valve_status,
+        return _HK.pack(self.state, self.flags, self.reserved0,
+                        self.valve_status,
                         self.membrane_duty, self.error_flags,
                         self.temp1_cc, self.temp2_cc, self.bme_temp_cc,
                         self.rh1_cpct, self.p_amb_pa,
@@ -339,7 +344,7 @@ class Housekeeping:
             v = _HK.unpack_from(payload)
             chm = dict(chm_temp_cc=v[28], chm_rh_cpct=v[29], chm_p_pa=v[30])
             err = v[5]
-        return cls(state=v[0], flags=v[1], fired=v[2], valve_status=v[3],
+        return cls(state=v[0], flags=v[1], reserved0=v[2], valve_status=v[3],
                    membrane_duty=v[4], error_flags=err,
                    temp1_cc=v[6], temp2_cc=v[7], bme_temp_cc=v[8],
                    rh1_cpct=v[9], p_amb_pa=v[10],
@@ -534,12 +539,12 @@ class Housekeeping:
             a = self.rail_a(i)
             d[f"rail_{name}_a"] = "" if a is None else round(a, 4)
         # One column per actuator line, beside the raw ``valve_status`` they
-        # are decoded from. A session log has to answer "when did pinch 1
-        # fire, and for how long" without the reader masking bits by hand,
+        # are decoded from. A session log has to answer "when did the motor
+        # run, and for how long" without the reader masking bits by hand,
         # and ``actuator_text`` cannot be that: it is a space-joined list, so
-        # a filter on it is a substring match and PINCH_1 matches nothing the
-        # day a PINCH_10 exists. 1/0 rather than True/False because these are
-        # plotted as lanes on the ground (``clouds_ui.timeline``).
+        # a filter on it is a substring match, and DISPERSE would match a
+        # DISPERSE_REV the day one exists. 1/0 rather than True/False because
+        # these are plotted as lanes on the ground (``clouds_ui.timeline``).
         for v in DRIVE_BITS:
             d[f"valve_{v.name.lower()}"] = int(bool(self.valve_status & v))
         # Same rule for the motor sense: the raw counts are in the row via

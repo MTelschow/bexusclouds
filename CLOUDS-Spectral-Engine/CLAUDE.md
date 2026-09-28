@@ -28,17 +28,24 @@ behaviour changes.
   detection and fires valves. Hold last good, flag `HKE_P_AMB_STALE`.
 - **Every command is confirmed end to end.** A UART write is not evidence of
   execution; a missing ACK is a rejection.
-- **The Pi never sequences the experiment** (S.7). The MCU is autonomous;
-  interlocks are re-checked on both ends.
-- **A pinch valve never fires unattended.** Automatic mode (10 min of ground
-  silence → the motor/solenoid/wait cycle) drives only reversible actuators;
-  `RELEASE` stays arm-gated and ground-only. `docs/SOFTWARE_SPEC.md` §5.
-- **`board.h` is preliminary and five pins were wrong.** Measure before
-  trusting it; `PIN_PINCH_*` / `PIN_EQ*` are deliberately still wrong and
-  documented as such. `docs/HARDWARE.md`.
+- **The Pi never sequences the experiment** (S.7). The MCU is autonomous; the
+  Pi forwards and confirms.
+- **Two actuators exist: the dispersion motor and the membrane solenoid.**
+  The pinch and equalisation valves were removed from the experiment
+  (2026-09-18) along with their pins, drives, HK bits and `RELEASE`, which is
+  now answered `ACK_INVALID`. `docs/SOFTWARE_SPEC.md` §5.
+- **While ground is connected, nothing is refused** (operator decision,
+  2026-09-18): no ground interlock, no arm/execute, no state check. `ACK_OK`
+  for anything the chain can parse; `ACK_INVALID` only for input it cannot act
+  on. Do not re-add a gate without being asked.
+- **`board.h` is preliminary — measure before trusting it.** The pins that
+  were wrong were the valves', and they are gone with the valves. `ACT_R_2..4`
+  and `ACT_EC` are unmapped on purpose: the schematic names channels, not
+  loads. `docs/HARDWARE.md`.
 - **Never `printf` on the MCU's `uart0`** — `pico_enable_stdio_uart` stays 0,
   it is the HK downlink.
-- **HK payload ceiling is 67 B**; `hk.SIZE` is 64 B — **3 B of margin**. One
+- **HK payload ceiling is 67 B**; `hk.SIZE` is 64 B — **3 B of margin**, plus
+  the retired `fired` byte at offset 2, kept at 0 so no field moved. One
   more `uint32_t` in `Housekeeping` busts the 2 kbit/s budget;
   `tests/test_fsw_telemetry.py::TestDownlinkBudget` fails first, by design.
 - **Two spectrum sources, operator's explicit choice.** Detector (live, every

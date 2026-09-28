@@ -11,7 +11,7 @@ import time
 import pytest
 
 from clouds_link import hk
-from clouds_link.commands import Command
+from clouds_link.commands import Command, DisperseKey
 from clouds_link.frames import AckResult
 
 
@@ -81,10 +81,12 @@ def test_commands_are_confirmed_end_to_end(stack):
         assert cmd.send(Command.START) == AckResult.OK
         assert _wait(lambda: rx.last_hk is not None
                      and rx.last_hk.state == hk.SeqState.RUNNING)
-        # Nothing gates the release any more: one frame, no ARM, no
-        # interlock, and the MCU's own OK comes back through the Pi.
-        assert cmd.release(1) == AckResult.OK
-        assert _wait(lambda: rx.last_hk.fired & 1)
+        # The MCU's own verdict comes back through the Pi, including for a
+        # command it cannot act on: the valves are off the experiment.
+        assert cmd.send(Command.RELEASE, key=1) == AckResult.INVALID
+        assert cmd.send(Command.DISPERSE, key=DisperseKey.RUN) == AckResult.OK
+        assert _wait(lambda: rx.last_hk.valve_status
+                     & hk.ValveStatus.DISPERSE)
     finally:
         cmd.close()
 

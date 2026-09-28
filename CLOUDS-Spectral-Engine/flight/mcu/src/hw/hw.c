@@ -64,10 +64,9 @@ void hw_watchdog_kick(void)
     watchdog_update();
 }
 
-/* ---- actuators (M-06, M-07) ---------------------------------------------- */
-/* VALVE_PULSE_MS (5 s) is longer than WATCHDOG_TIMEOUT_MS (2 s), so a drive
- * can NEVER be a blocking wait here - it would reset the MCU mid-actuation
- * and, with the fired bit already persisted, resume into a second fire.
+/* ---- actuators (M-07) ---------------------------------------------------- */
+/* DISPERSE_PULSE_MS (5 s) is longer than WATCHDOG_TIMEOUT_MS (2 s), so a drive
+ * can NEVER be a blocking wait here - it would reset the MCU mid-actuation.
  * Every drive is handed to core/pulse and released from the main loop by
  * hw_actuators_service(); nothing in this file sleeps. */
 
@@ -83,9 +82,9 @@ static uint8_t disperse_duty_pct = 100;
 
 /* True while the operator holds the motor on (DISPERSE_RUN .. DISPERSE_STOP).
  * A hold is a state like the membrane's, not a pulse: it lives beside
- * core/pulse rather than in its one-at-a-time queue, so a running motor can
- * neither delay a release's pinch valve nor keep ops_busy() true and stall
- * the SEAL step. While held, the pulse scheduler's release edge on the
+ * core/pulse rather than in its one-at-a-time queue, so a running motor
+ * cannot keep ops_busy() true or delay whatever else is queued. While held,
+ * the pulse scheduler's release edge on the
  * forward line is ignored (drive_pin) and a new motor pulse is not queued
  * (ops_disperse) - the motor is already turning. */
 static bool motor_held;
@@ -153,7 +152,7 @@ void hw_actuators_service(uint64_t now_ms)
 {
     bool pulled;
 
-    pulse_service(&pulses, now_ms, VALVE_PULSE_MS, drive_pin, NULL);
+    pulse_service(&pulses, now_ms, DISPERSE_PULSE_MS, drive_pin, NULL);
     /* The membrane's low-frequency edges are released here too, for the same
      * reason the valve pulses are: a hung loop must not be able to leave a
      * solenoid energized. Only touch the pin when an edge actually falls due. */
@@ -227,24 +226,12 @@ uint8_t hw_actuator_status(void)
 {
     uint8_t bits;
 
-    /* core/pulse drives one line at a time, so at most one pulsed drive bit
-     * is set. The open lines are never energized (they are interlocks forced
-     * low), and the membrane drive is a waveform, reported as a duty instead.
-     * A held motor (DISPERSE_RUN) is not a pulse and is added below, so it
-     * may sit beside a pinch bit if a release fires while it runs. */
+    /* One drivable load is left since the valves were removed: the
+     * dispersion motor's forward line. Its reverse line is an interlock and
+     * is never energized, and the membrane drive is a waveform, reported as
+     * a duty instead. A held motor (DISPERSE_RUN) is not a pulse and is
+     * added below. */
     switch (pulses.active_pin) {
-    case PIN_PINCH_1:
-        bits = HKV_PINCH_1;
-        break;
-    case PIN_PINCH_2:
-        bits = HKV_PINCH_2;
-        break;
-    case PIN_EQ1_CLOSE:
-        bits = HKV_EQ1_CLOSE;
-        break;
-    case PIN_EQ2_CLOSE:
-        bits = HKV_EQ2_CLOSE;
-        break;
     case PIN_DISPERSE_FWD:
         bits = HKV_DISPERSE;
         break;
@@ -267,33 +254,17 @@ uint8_t hw_actuator_status(void)
     return bits;
 }
 
-static void ops_fire_pinch(void *ctx, uint8_t n)
-{
-    (void)ctx;
-    /* one-shot fire via MOSFET; no open/close pair to interlock */
-    pulse_request(&pulses, n == 1 ? PIN_PINCH_1 : PIN_PINCH_2,
-                  PULSE_PIN_NONE);
-}
-
-static void ops_close_eq_valves(void *ctx)
-{
-    (void)ctx;
-    pulse_request(&pulses, PIN_EQ1_CLOSE, PIN_EQ1_OPEN);
-    pulse_request(&pulses, PIN_EQ2_CLOSE, PIN_EQ2_OPEN);
-}
-
 /* CaCO3 dispersion motor (M-07). GP17/GP18 are a driver pair; the reverse
  * sense has not been verified, so only the forward line is ever driven and
  * GP18 rides along as its interlock - forced low before GP17 goes high, so
  * the pair cannot be energized together whatever the wiring turns out to be.
  *
  * Scheduled, not slept: the drive is 5 s and the watchdog bites at 2 s. It
- * shares the one-at-a-time queue with the pinch valve fired in the same
- * step, so the motor runs after that valve rather than alongside it, which
- * keeps peak actuator current at one drive.
+ * goes through the one-at-a-time queue, which is what keeps peak actuator
+ * current at a single drive.
  *
  * Speed is PARAM_DISPERSE_DUTY, latched here and applied by disperse_drive()
- * when the queue reaches this pulse. The automatic release path and the
+ * when the queue reaches this pulse. Automatic mode's motor phase and the
  * manual CMD_DISPERSE both arrive through here, so both run the motor at the
  * one configured speed - there is no separate bench setting to forget. */
 static void ops_disperse(void *ctx)
@@ -313,8 +284,8 @@ static void ops_disperse(void *ctx)
  * Start (the sequencer sends one on SET_PARAM DISPERSE_DUTY while running)
  * only reprograms the duty. Stop releases the hold and also cancels any
  * motor pulse that is driving or queued - a Stop that left a 5 s pulse
- * running would be a button that does nothing for up to 5 s. The pinch and
- * equalisation pulses in the same queue are untouched. */
+ * running would be a button that does nothing for up to 5 s. Any other
+ * pulse in the same queue is untouched. */
 static void ops_disperse_run(void *ctx, bool on)
 {
     const cfg_t *c = (const cfg_t *)ctx;
@@ -464,8 +435,6 @@ static void ops_event(void *ctx, uint8_t code, const char *msg)
 const seq_ops_t hw_seq_ops = {
     .ctx = NULL,
     .persist = ops_persist,
-    .fire_pinch = ops_fire_pinch,
-    .close_eq_valves = ops_close_eq_valves,
     .disperse = ops_disperse,
     .disperse_run = ops_disperse_run,
     .membrane = ops_membrane,
@@ -635,10 +604,7 @@ void hw_init(void)
      * before hw_init they are floating inputs and the motor's state at boot is
      * whatever its driver makes of that. Driving both low is what makes it
      * off. */
-    const uint out_pins[] = {PIN_PINCH_1,      PIN_PINCH_2,
-                             PIN_EQ1_OPEN,     PIN_EQ1_CLOSE,
-                             PIN_EQ2_OPEN,     PIN_EQ2_CLOSE,
-                             PIN_MEMBRANE_PWM, PIN_DISPERSE_FWD,
+    const uint out_pins[] = {PIN_MEMBRANE_PWM, PIN_DISPERSE_FWD,
                              PIN_DISPERSE_REV};
 
     for (unsigned i = 0; i < sizeof out_pins / sizeof out_pins[0]; i++) {

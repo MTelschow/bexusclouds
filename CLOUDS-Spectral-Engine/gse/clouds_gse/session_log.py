@@ -138,10 +138,11 @@ class SessionLog:
     def log_command(self, record: dict) -> None:
         """One uplinked command and what came back (``Commander.on_result``).
 
-        Includes commands that never left the ground: an S.10 interlock
-        refusal is logged with ``result_name=INTERLOCK_GROUND`` and no
-        ``seq``, and a link failure with ``result_name=NO_LINK``. Both are
-        invisible to the Pi, so this is the only place they are recorded.
+        Includes commands that never left the ground: a link failure is
+        logged with ``result_name=NO_LINK`` and no ``seq``. The Pi cannot see
+        those, so this is the only place they are recorded. (Older sessions
+        also carry ``INTERLOCK_GROUND`` rows, from before the ground
+        interlock was removed on 2026-09-18.)
         """
         row = {k: record.get(k, "") for k in self.COMMAND_FIELDS}
         row["send_t"] = round(record.get("send_t") or time.time(), 3)

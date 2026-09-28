@@ -67,9 +67,10 @@ on the UART. Everything between them is real — the actual flight app
 (`clouds_fsw`) with a synthetic spectrometer, a simulated RP2350 answering its
 UART (`clouds_fsw/sim_mcu.py`), and the real ground station decoding real UDP
 and TCP on loopback. So housekeeping, events, the quick-look, the timeline and
-the whole arm/execute command path behave as they do on the bench: `START`
-flies a compressed ascent, `ARM`+`RELEASE` fires once and never twice, an
-`ABORT` locks the actuators out.
+the whole command path behave as they do on the bench: `START` begins the
+experiment, ground silence hands it to the automatic cycle (motor, then
+solenoid, then a wait) until the next command, and an `ABORT` de-energizes
+everything.
 
 Because a simulated spectrum that looked real would be the worst failure this
 app has, the mock says so in the window title, in the plot's source banner and
@@ -270,9 +271,9 @@ The flight and ground-station software (built to
 | Path             | Role                                                                                                                                                                             |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `clouds_link/` | shared packet protocol (CRC-16, COBS, frames, HK, commands) — one schema for MCU, Pi, GSE                                                                                       |
-| `flight/mcu/`  | **RP2350 sequencer firmware** (C, Pico SDK): autonomous double release, persist-before-fire, watchdog — native tests via `pio test -e native` or `test/run_native.sh` |
+| `flight/mcu/`  | **RP2350 sequencer firmware** (C, Pico SDK): start button, automatic link-loss cycle, watchdog — native tests via `pio test -e native` or `test/run_native.sh` |
 | `flight/pi/`   | **Raspberry Pi 5 flight app** (Python, systemd): 1 Hz spectra, CRC'd storage, UDP downlink, TCP commands, UART to MCU                                                      |
-| `gse/`         | **ground station** (Python): telemetry monitor + PyQt5 dashboard, arm/execute commanding, ground interlock, session export                                                 |
+| `gse/`         | **ground station** (Python): telemetry monitor + PyQt5 dashboard, commanding, session export                                                                       |
 | `tests/`       | pytest suite for all Python parts incl. the fake-MCU ↔ Pi ↔ GSE end-to-end chain                                                                                               |
 
 Run everything hardware-free: `python -m pytest tests/` (Python) and

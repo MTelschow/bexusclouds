@@ -38,7 +38,7 @@ only thing an engineering readout is for.
 The **actuator lines** are the one non-measurement here: the `valve_status`
 bits, one lane each on a single stacked axis (`DIGITAL_UNIT`), drawn as steps.
 They are on the plot for the same reason as everything else - the panel's
-`Driving` row is a snapshot, and a pinch valve's 5 s pulse is over before an
+`Driving` row is a snapshot, and the motor's 5 s pulse is over before an
 operator who looked elsewhere can see it happened at all.
 """
 from __future__ import annotations
@@ -263,20 +263,19 @@ SERIES: tuple[Series, ...] = (
            lambda h: h.hb_sense_a()),
 ) + tuple(
     # The actuator lines themselves, one lane each. The panel's `Driving` row
-    # answers "is a line energized now"; nothing answered "when did it fire,
+    # answers "is a line energized now"; nothing answered "when did it run,
     # and for how long" - a 5 s pulse is over before an operator who looked
     # away can see it, and afterwards the row is back to `-`. These are the
-    # same `valve_status` bits, kept.
+    # same `valve_status` bits, kept. Since the valves were removed
+    # (2026-09-18) one driven line is left; a session logged before that
+    # still carries its pinch and EQ columns, and `plot_session.py` still
+    # plots them.
     Series(f"valve_{v.name.lower()}", label, DIGITAL_UNIT, "Actuator lines",
            color, _bit(v))
     for v, label, color in (
-        (ValveStatus.PINCH_1, "Pinch 1", "#01386a"),
-        (ValveStatus.PINCH_2, "Pinch 2", "#4d8fd1"),
-        (ValveStatus.EQ1_CLOSE, "EQ1 close", "#1D9E75"),
-        (ValveStatus.EQ2_CLOSE, "EQ2 close", "#66b394"),
-        # A motor, not a solenoid, but it is a driven line in the same field
-        # and the question asked of it is the same one. Its sensed current is
-        # the `Actuators` group's `hb_sense`, on its own axis in amps.
+        # A motor, not a solenoid, but it is a driven line in the same field.
+        # Its sensed current is the `Actuators` group's `hb_sense`, on its own
+        # axis in amps.
         (ValveStatus.DISPERSE, "Dispersion drive", "#E8821E"),
     )
 ) + (

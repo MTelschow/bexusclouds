@@ -27,16 +27,20 @@ Moved out of `CLAUDE.md` 2026-09-18.
 - **`clouds_link/`** is one schema for MCU, Pi and GSE: CRC-16/CCITT-FALSE,
   COBS, 14-byte frame header, HK, commands.
 - **The Pi never sequences the experiment** (S.7). Losing it degrades the
-  mission; it cannot block the release. The MCU is autonomous; the Pi's command
-  server is authoritative for arm/execute and the ground interlock — and both
-  are re-checked on the MCU (`core/link.c`) and against MCU housekeeping
-  (`FLIGHT_ONLY`), because each of those enforcers can be bypassed on its own.
+  mission; it cannot block the release. The MCU is autonomous; the Pi forwards
+  and confirms, and decides nothing.
 - **The experiment is started by the operator, and run by the link.** Since
   2026-09-18 the MCU sits in STANDBY until a ground `START`, then RUNNING;
   ten minutes without any ground command puts it into automatic mode, which
   cycles the dispersion motor, the membrane solenoid and a wait until the
-  first command back. The pinch valves are outside that loop. Full state
+  first command back. Those two are the only actuators left - the pinch and
+  equalisation valves came off the experiment on 2026-09-18. Full state
   machine and parameters: `docs/SOFTWARE_SPEC.md` §5.
+- **Nothing gates a command (2026-09-18).** The ground interlock (S.10), the
+  flight-mode switch that lifted it and the arm/execute two-step (S.8) are
+  gone from all three ends — GSE, Pi and MCU. While ground is connected every
+  command executes; `START` is the single operator action that begins the
+  experiment.
 - **Every command is confirmed end to end.** The MCU answers each `CMD` with an
   `ACK` carrying its own verdict; the Pi correlates it by sequence number and
   relays that to ground. A UART write is not evidence a command was executed,
