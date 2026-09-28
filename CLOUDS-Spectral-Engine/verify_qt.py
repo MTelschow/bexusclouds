@@ -667,6 +667,11 @@ _gse = _win.flight
 _win.show()
 app.processEvents()
 try:
+    # The label is built before the slider's signal is connected, so it
+    # once said "100 %" beside a slider at the 50 % default until touched.
+    check("flight: the speed label starts at the slider's default",
+          _gse.lbl_motor_speed.text() == f"{_gse.sl_motor.value()} %"
+          == "50 %", _gse.lbl_motor_speed.text())
     _gse.sp_duty.setValue(70)
     _gse.sp_hz.setValue(0.5)   # tenths of a hertz must reach the MCU as mHz
     _gse._membrane_start()

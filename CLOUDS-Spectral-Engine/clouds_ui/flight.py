@@ -624,7 +624,7 @@ class FlightPanel(QtCore.QObject):
         self.sl_motor.valueChanged.connect(self._on_motor_speed)
         self.sl_motor.sliderReleased.connect(self._on_motor_speed_released)
         speed.addWidget(self.sl_motor, 1)
-        self.lbl_motor_speed = QtWidgets.QLabel("100 %")
+        self.lbl_motor_speed = QtWidgets.QLabel(f"{self.sl_motor.value()} %")
         self.lbl_motor_speed.setMinimumWidth(42)
         self.lbl_motor_speed.setAlignment(QtCore.Qt.AlignRight
                                           | QtCore.Qt.AlignVCenter)
