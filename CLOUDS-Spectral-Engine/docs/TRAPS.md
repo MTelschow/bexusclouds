@@ -3,6 +3,27 @@
 Moved out of `CLAUDE.md` 2026-09-18. Each entry is a failure that already
 happened here and looked like something else while it did.
 
+**Never drain a free-running PIO FIFO "until empty".** The encoder counter
+(`hw/quadrature_encoder.pio`) pushes its count every ~7 PIO cycles, faster
+than the CPU can pop, so `while (!pio_sm_is_rx_fifo_empty()) pio_sm_get()`
+never exits. On the carrier (2026-09-28) that looked like a dead board: no HK
+on the Pi, USB CDC appearing and vanishing - a 2 s watchdog reset loop. Read
+`pio_sm_get_rx_fifo_level()` once and pop that many. `picotool load -x
+<uf2> --ser <serial> -f` still catches the board in its brief USB window.
+
+**New HK fields read "no data" when the carrier runs an older image.** The
+ground decodes a shorter known layout rather than dropping it, so after an
+HK change and no reflash the panel looks healthy and the new rows just say
+"no data", which reads as a sensor fault (2026-09-28, chamber BNO055). Check
+`link.hk_reject_reason` in `gse_sessions/session_*_summary.json`, or listen on
+UDP 4000 with the GUI closed and compare `len(payload)` with `hk.SIZE`. The Pi
+forwards raw HK frames, so only the MCU needs reflashing.
+
+**GP28/GP29 are not 0x28/0x29.** GP28/GP29 are i2c0's SDA/SCL pins, which
+every part on the bus shares. 0x28/0x29 are the chamber/ambient BNO055
+addresses. The numbers coincide, nothing more; `bno055_probe` settles what
+is actually on the bus.
+
 **Data scaling differs by platform.** The Windows DLL returns each sample
 left-shifted into 16 bits (0..65520); the **Linux `.so` returns raw 12-bit**.
 `spectro/eureca_driver.py` normalises Linux up (`grab()` and `dark_value()`
@@ -210,3 +231,114 @@ does **not** lift the inhibit, so the panel can read `RUNNING` with
 `ACK_INVALID`, not a silent remap onto `STOP`, because an old `HOLD` asked
 for the actuators to keep running and `STOP` shuts them off.
 
+
+**Two parts on one SPI bus, two frame widths.** SPI_1 carries the chamber
+BME280 (bytes) and the BMV080 (16-bit words: a header word then payload
+words). `spi_set_format()` at bus init sets whichever the last driver to touch
+the bus wanted, so it is not called there at all - `bme280.c` and
+`bmv080_port.c` each set their own width inside `cs_select()`, before pulling
+CS low. The failure if you hoist it back is not a clean one: the BME280 would
+read plausible garbage compensated from a garbage trim block, and the BMV080's
+library would report a chip-id mismatch that looks exactly like a wiring
+fault.
+
+**`PICO_STACK_SIZE` alone cannot give you a big stack on an RP2350.** The SDK
+puts core 0's stack in SCRATCH_Y, which is 4 kB, so asking for 16 kB fails at
+link time with `region SCRATCH_Y overflowed by 12288 bytes`. The BMV080's
+vendor library wants 10 kB. The fix is to move the *regions*, not to override
+the SDK's linker fragments: `set_memory_locations.incl` reads every origin and
+length from a linker symbol if one is defined, so four `--defsym`s grow
+SCRATCH_Y downward out of the scratch banks and shrink RAM to match, leaving
+all of the SDK's `__StackTop` / `__StackLimit` / heap arithmetic correct -
+including the `ASSERT(__StackLimit >= __HeapLimit)` that keeps the heap out of
+it. `flight/mcu/CMakeLists.txt` has the numbers. Check `.scratch_x` /
+`.scratch_y` are still 0 bytes in the map before doing this again: SCRATCH_X
+is zero-length on purpose so a future `__scratch_x` placement fails the link
+instead of landing inside the stack.
+
+**Bosch ship two Cortex-M33 archives and only one links.** `arm_cortex_m33f`
+is tagged `Tag_ABI_VFP_args: VFP registers` (hard float); the Pico SDK builds
+RP2350 `-mfloat-abi=softfp`, so it wants the plain `arm_cortex_m33` archive,
+which carries no VFP-args tag. Check with
+`arm-none-eabi-readelf -A <lib_bmv080.a> | grep Tag_ABI_VFP_args`. And
+`lib_bmv080.a` and `lib_postProcessor.a` reference each other's symbols, so
+they go inside one `-Wl,--start-group … --end-group`: a single pass in either
+order leaves undefined references.
+
+**A particulate reading of 0 is not the absence of one.** Every other field on
+this wire has a sentinel - `RAIL_MV_INVALID`, `HB_SENSE_INVALID`, a zeroed
+vector behind a flag - because the absent case can be given a value no sensor
+produces. 0 µg/m³ is what clean air reads, so the BMV080 has none available.
+That is the whole reason `pm_status` exists as a byte, and why nothing may
+render `pm2_5_ugm3` without consulting it: `hk.pm_text` and `hk.pm_measured`
+are the only correct readers. A panel showing `0 ug/m3` for a dead sensor is
+the one wrong answer nothing else on screen contradicts.
+
+**A chip-select sweep that reads 0x00 everywhere tells you nothing about the
+chip selects.** On 2026-09-28 the carrier's SPI_1 returned 0x00 for the
+BME280's chip id on all four selects, in both modes, at both bauds, including
+the bit-banged swapped-pair read, and 107 from `bmv080_open()` on every select.
+The tempting reading is "wrong chip select, try the next one". Every select
+returns the same answer when nothing is on the bus, so the sweep cannot
+distinguish them. `tools/bme280_probe` now runs three bus-integrity tests
+first, and those are the ones to read.
+
+**Two ways a pin measurement lies, both found the same afternoon.**
+
+*One: you measured your own peripheral.* The probe reported GP8 held low
+against its internal pull-up. It was not the board — the other two bus pins
+had been left on `GPIO_FUNC_SPI`, so `spi1`'s MOSI was idling low and reaching
+GP8. **Park every pin not under test as a high-impedance input**
+(`gpio_disable_pulls`, direction in, function SIO) or the reading is about the
+SPI block, not the carrier.
+
+*Two: an RP2350 floating pad does not read as a float.* One on this project
+latched high against its own internal pull-down (2026-09-11,
+`sensor-driver/pico_bringup`), and a latched high-impedance input is nudged by
+a neighbour through a few pF — which a cross-short test reports as "TIED
+TOGETHER" when nothing is tied, and a drive test reports as "cannot be driven
+high". **Drive and cross-short results are meaningless until the net is known
+not to be floating.** Settle that physically: unplug the harness and re-run
+(output that does not change was never about the sensor), or fit an external
+10 kΩ pull-up and see whether the pin then behaves. Do not go looking for a
+solder bridge on the strength of a firmware test alone.
+
+**An unconfigured RP2350 GPIO is not idle - it is a pulled-down input, and an
+active-low chip select left there is asserted.** `PADS_BANK0_GPIOx` resets to
+`0x116` (PDE=1). The flight image drove GP9 high before clocking SPI_1 and left
+GP12 to a later driver and GP13/GP47 to nobody, so with parts fitted two
+slaves would have been selected during the chamber BME280's bring-up and a
+part behind an undriven select would never have seen a falling edge. **Park
+every select on a bus as a driven-high output before the first clock edge**,
+in `hw_init()` and in every probe tool, and name the unused selects in
+`board.h` so the parking loop can reach them (2026-09-28,
+`spi1_park_chip_selects`).
+
+**Init-once drivers never recover a part that missed its boot probe.** A
+`(void)bme280_init()` in `hw_init()` and a `dev->ready` that nothing sets
+again means one I2C glitch at power-up, or a harness plugged in after boot,
+is a sensor that stays failed until the next power cycle - and for the ambient
+BME280 that is `p_amb_pa` pinned at the cold-start value behind
+`HKE_P_AMB_STALE` for the whole flight. If the bring-up is a few
+timeout-bounded transfers, re-run it from the sweep on a slow cadence
+(`SENSOR_RETRY_MS`); if it sleeps (BMV080), it cannot be retried and the doc
+must say so (2026-09-28).
+
+**A single RS-422 leg on a GPIO counts, but not cleanly - time the edges
+before believing a count.** The dispersion motor encoder's TIA-422 pairs reach
+the carrier without a receiver. One leg (GP19) is a clean square wave with an
+~80 ns low glitch on ~37 % of its periods (crosstalk from the legs that are
+not on a pin): a raw edge count over-reads by a third, and the x4 decoder,
+fed that plus a "B" that is really the resistor midpoint of both channels,
+read 0 rpm on a turning shaft. Edge counts and a state histogram
+(`encoder_pin_probe`) could not tell this apart; a timestamped trace
+(`encoder_trace_probe`, 80 ns resolution, analysed on the host) settled it in
+one run. Deglitch in the PIO (hold, re-read), sample direction only where the
+midpoint is solid (the other channel's level at A's falling edge), and count
+x1 (2026-09-28, `hw/quadrature_encoder.pio`).
+
+**A host-side CDC reader opened before a reflash dies with the old port.**
+`read failed: [Errno 6] Device not configured` - the device it opened was the
+previous image's. The probes wait for `stdio_usb_connected()` before doing
+anything, so nothing is lost: reopen after the reboot (or make the reader
+retry on error).

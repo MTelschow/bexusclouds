@@ -84,6 +84,10 @@ CMakeFiles/bme280_probe.dir/src/hw/hw.c.o: \
  /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_resets/include/hardware/resets.h \
  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/resets.h \
  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/resets.h \
+ /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/include/hardware/pio.h \
+ /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/pio.h \
+ /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/pio.h \
+ /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/include/hardware/pio_instructions.h \
  /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pwm/include/hardware/pwm.h \
  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/pwm.h \
  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/pwm.h \
@@ -102,10 +106,13 @@ CMakeFiles/bme280_probe.dir/src/hw/hw.c.o: \
  /Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/include/pico/stdio_usb.h \
  /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/../core/config.h \
  /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/../core/crc16.h \
+ /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/../core/motor_enc.h \
  /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/../core/pulse.h \
  /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/../core/pwmdiv.h \
  /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/../core/sqwave.h \
  /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bme280.h \
+ /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bmv080_dev.h \
  /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bno055.h \
  /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/ina226.h \
- /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/board.h
+ /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/board.h \
+ /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/quadrature_encoder.pio.h

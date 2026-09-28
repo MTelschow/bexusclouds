@@ -9,7 +9,7 @@ OUT="${TMPDIR:-/tmp}/clouds_mcu_tests"
     src/core/crc16.c src/core/cobs.c src/core/frame.c src/core/config.c \
     src/core/link.c \
     src/core/autonomy.c src/core/sequencer.c src/core/pulse.c \
-    src/core/pwmdiv.c src/core/sqwave.c \
+    src/core/pwmdiv.c src/core/sqwave.c src/core/motor_enc.c \
     test/unity_min/unity.c test/test_core/test_main.c \
     -o "$OUT"
 exec "$OUT"

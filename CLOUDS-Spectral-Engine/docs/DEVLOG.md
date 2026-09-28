@@ -18,7 +18,457 @@ without re-deriving anything. Newest entries first.
 
 ---
 
-## 2026-09-28 (newest) - A second BNO055, in the chamber
+## 2026-09-28 (newest) - Encoder: what is really on the ACT_EC pins, and a counter that fits it
+
+**Asked for:** fix the encoder. `motor_rpm` read 0 with the shaft turning
+because the counter sat on GP31/GP32 and the encoder's legs are on the
+`ACT_EC` nets (the pin probe, earlier today). Which leg is which was open.
+
+**Measured, not guessed.** New bench tool `tools/encoder_trace_probe`
+(standalone, drives the motor like `encoder_pin_probe`): a tight SIO loop
+records every change of GP19..GP22 with its iteration number, 6000
+transitions per capture at 80.3 ns/iteration, at 50 %, 25 % and coasting,
+printed raw over USB CDC and decoded on the Mac (scratch scripts; the
+findings are in `docs/HARDWARE.md`). The picture:
+
+- **GP19** `ACT_EC_AL`: one channel. 50 % square, period 22.3 µs at 50 %
+  (~2170 rpm), 37.5 µs at 25 %, scales with duty, keeps going on the coast.
+  **With an ~80 ns low glitch on 423 of 1126 periods** - coincident with
+  edges on the legs that are not on a pin.
+- **GP21** `ACT_EC_IN1`: **not a channel.** 73 % high, low only in the
+  quarter-period after GP19 falls, and at ~2.5 V (reads high, with dips in
+  ~14 % of periods) whenever exactly one channel is high: the resistor
+  midpoint of GP19's channel and the other one. Under the forward drive the
+  other channel leads GP19 by 90°, so at every genuine GP19 falling edge GP21
+  is a solid low - 3374 of 3381 across the three captures.
+- **GP22** `ACT_EC_IN2`: 80 ns glitches when the others move, 99.7 % high.
+  A victim, not a signal. **GP20** static high.
+
+This is exactly what the pin probe's histogram had shown and could not
+explain: "not clean quadrature", two lines flipping together a third of the
+time, one line high 99.6 %.
+
+**The counter, rewritten to what the board has.** The pico-examples x4
+decoder needs two clean channels on consecutive pins. `hw/quadrature_encoder.pio`
+now: wait for GP19's falling edge, hold 46 PIO cycles (0.31 µs - long
+against the 80 ns glitch, short against the other channel's 90° lead even at
+the rated 430 kHz), re-read GP19 and restart if it is high again, then
+`JMP PIN` on GP21: low counts up, high counts down. One count per line,
+`MOTOR_ENC_COUNTS_PER_REV` = 1024. Forward drive counts up, so `motor_rpm`
+is positive for the flight direction. `PIN_ENC_A` 19 / `PIN_ENC_B` 21, both
+at their reset pull-down (an unplugged encoder reads 0, never a phantom
+speed; and the schematic calls these nets driver inputs, so no pull-up).
+The FIFO is now written per edge, not per loop - still read bounded.
+
+**On the carrier.** Flight image, one `DISPERSE pulse` at the default 50 %,
+HK sniffed on the Pi: `motor_rpm` 0, 0, 0, **1395, 2161, 2184, 2194, 2197**
+(drive on, `HKV_DISPERSE` set, `HKV_DISPERSE_STALLED` clear), **832** on
+the coast second, then 0. Positive, as intended. 2190 rpm agrees with the
+trace once its glitch edges are taken out (2254 real edges in 30.5 ms). The
+motor current sense read 23..281 counts alongside.
+
+**Tests.** Native: rpm scaling and the wrap test expressed in
+`MOTOR_ENC_COUNTS_PER_REV`. Python: the pins are the measured ones and
+GP20/GP22 stay unclaimed, the pulls are down, the program holds/re-reads/
+`JMP PIN`s, x1 mirrored. `docs/TRAPS.md` has the lesson: time the edges
+before believing a count.
+
+**Open:** sign in reverse (never driven), stall thresholds, and a receiver +
+clean B if x4 or a robust reverse decode is ever needed.
+
+## 2026-09-28 - "Sensors configured but not working": what the HK says, what firmware could fix
+
+**Asked for:** several sensors are configured and not working; investigate
+and fix.
+
+**Measured first, on the bench Pi, with the GUI holding UDP 4000** (sniffed
+outgoing HK on the Pi with an `AF_PACKET` socket and decoded it with the
+working-tree `clouds_link.hk`; carrier running the 80 B image):
+
+| sensor | HK | verdict |
+|---|---|---|
+| ambient BME280, i2c0 `0x76` | 99954 Pa, 34.07 °C, 27.19 %RH | works |
+| INA226 V_in / 5 V / 3.3 V | 19986 / 5093 / 3295 mV | works |
+| chamber BME280, SPI_1 CS1 | `BME280_CHM_FAIL`, fields 0 | dead - SPI_1 silent (HARDWARE.md) |
+| BMV080, SPI_1 CS2 | `pm_status = FAIL` | dead - same bus |
+| BNO055 `0x29` / `0x28` | `IMU_FAIL`, `IMU_CHM_FAIL`, vectors 0 | dead - 0/50 ACK while four other parts on i2c0 answer |
+| STLM20 ×2 | `NO_TEMP`, temp1/2 = 0 | not populated, by design |
+| INA226 24 V | `rail_mv[1] = 0xFFFF` | not fitted, by design |
+| encoder | `motor_rpm 0` | placeholder pins GP31/32, by design |
+
+So the four that "should" work are all hardware: i2c0 is proven healthy by
+the parts that answer on it, and SPI_1 has nothing driving MISO on any select
+even with every select parked high (`bme280_probe` does that before its
+tests). Nothing in the working tree disconnects a sensor - every init and
+read call is present and the HK wire layout matches C ↔ Python at 80 B. The
+hardware checklist is in HARDWARE.md: 3.3 V at each footprint, GP8 to the
+parts' SDO, BMV080 PS low at power-up, BNO055 PS0/PS1 both low and nRESET
+free.
+
+**Three firmware faults found on the way, all fixed, none the cause of
+today's silence:**
+
+1. *Undriven chip selects are asserted.* An RP2350 pad resets as a
+   pulled-down input, so an active-low select nobody configures is low. The
+   flight image drove GP9 before clocking the chamber BME280, claimed GP12
+   later inside `bmv080_dev_init()` and never touched GP13/GP47. With parts
+   fitted: two slaves on MISO during the BME280's id and calibration reads,
+   8-bit traffic into an unopened BMV080, and a part behind an undriven select
+   that never sees a falling edge. `hw_init()` now parks all four before
+   `spi_init(spi1)` (`spi1_park_chip_selects`; `PIN_SPI1_CS3`/`CS4` in
+   `board.h`). TRAPS.md.
+2. *Init-once sensors never recover.* `bme280_read()` fails forever once
+   `ready` is false and nothing re-ran `bme280_init()`; same for the INA226
+   `present[]` table. One I2C glitch at boot = ambient pressure pinned at
+   101325 Pa behind `P_AMB_STALE` for the flight, launch detection blind; on
+   the bench, a harness plugged in after boot never comes up. Both BME280s
+   and the rail set are now retried from the 1 Hz sweep every
+   `SENSOR_RETRY_MS` (5 s) while failing. The BMV080 is not - its bring-up
+   sleeps inside the vendor library and stays pre-watchdog. The
+   hold-last-good path is untouched (`TestSensorFailureIsSafe` still guards
+   it; the retry call sits after the flag line so the test's fallback slice
+   is unchanged).
+3. *The SPI read cannot fail.* `read_regs()` on SPI returns true whatever the
+   bus did, and the only guard was the 0x80000 reset value, so a chamber part
+   that dropped out would downlink a compensated idle level as weather.
+   `bme280_read()` now rejects eight identical `0x00`/`0xFF` bytes and drops
+   `ready` so the retry re-runs the chip-id check.
+
+**Tests.** `TestSpi1ChipSelects` (all four selects named once in `board.h`,
+parked before `spi_init`, probes inherit it) and `TestSensorReinit` (both
+BME280s and the rails retried, the sleeping BMV080 bring-up not, flat frame
+rejected) in `tests/test_fsw_mcu_actuators.py`. 430 passed; `TestDownlinkBudget`
+still red as deferred. Native core 61/61. Both cmake trees build with no
+warnings (`PICO_SDK_PATH` must be exported - the shell had it unset).
+
+**On the carrier:** flashed the rebuilt flight image (`picotool load -x
+… --ser 21DD2AE08840C863 -f`; a `picotool info -f` immediately before it
+makes the load fail with `returned an error: rebooting` - let the reboot
+finish first) and re-sniffed HK 36 s after boot: 99937 Pa / 33.94 °C on the
+ambient part, 19986 / 5093 / 3296 mV on the rails, `BME280_CHM_FAIL IMU_FAIL
+NO_TEMP IMU_CHM_FAIL`, `pm FAIL`. Exactly the picture before the flash, which
+is the point: with the harness untouched the retries find nothing, cost
+nothing, and the parts that work still work. The hot-plug case (boot with the
+SPI_1 harness off, plug it in, watch `BME280_CHM_FAIL` clear within 5 s
+without a reset) waits for a harness that answers.
+
+## 2026-09-28 - Dispersion motor encoder: speed and stall in HK
+
+**Asked for:** configure the dispersion motor's "analog encoder" from
+`data-sheets/DE_IE3-1024L_DFF.pdf`. Operator choices: receiver onto free
+GPIOs, speed in HK plus a stall flag, no gearhead.
+
+**It is not analog.** The IE3-1024L is a magnetic incremental encoder with
+digital A/B quadrature and an index, 1024 lines/rev, and every output is a
+differential TIA-422 pair from a line driver. So nothing about it goes on an
+ADC pin, and nothing about it goes straight onto a GPIO either: a receiver
+(ST26C32AB / AM26C32, or a 3.3 V AM26LV32-class part) has to turn each pair
+back into one line. The carrier has no such receiver and no encoder net.
+
+**Why PIO.** The minimum edge spacing is 421 ns (430 kHz x4). A 10 ms loop
+sees one sample in ~24 000 edges and a GPIO IRQ per edge would eat the core;
+the pico-examples quadrature program counts every edge in a state machine
+and the CPU only reads the latest count. It needs A and B on consecutive
+pins, which is why **GP31/GP32** - the only two pins the schematic leaves
+unnamed next to GP30. They are a placeholder: nobody has checked they are
+broken out. On the RP2350B one PIO sees 32 pins, so the counter is claimed
+with `pio_claim_free_sm_and_add_program_for_gpio_range`, which sets GPIO
+base 16. A pico2 build compiles it out and sends the sentinel.
+
+**What goes down.** `motor_rpm`, i16 appended after `pm2_5_ugm3` (80 B, 13 B
+over the ceiling - the operator chose to build on top of the deferred
+budget rather than wait). It is the *mean* since the previous packet, not a
+snapshot, so a speed-vs-duty plot reads the whole second. Signed, because
+the sign is the direction and which one is forward is unverified.
+`MOTOR_RPM_INVALID` = INT16_MIN for no encoder: 0 rpm is what a stall
+reads, and the two must stay apart - the rule `hb_sense_raw` already follows.
+
+**The stall flag went into `valve_status` bit 7, not `error_flags`.** It is a
+sensed actuator state like `MEMBRANE_CYCLING`, and `error_flags` is full.
+Same latch rule too: judged every 10 ms pass over 100 ms windows (drive on,
+past a 500 ms spin-up grace, |speed| < 100 rpm), latched, consumed by the
+packet. **Flag only** - no automatic stop, because the MCU acting on an
+encoder nobody has seen turn would be a new failure mode, not a safety
+feature. The thresholds are guesses and say so in `core/motor_enc.h`.
+
+**Evidence.** Native tests for rpm scaling, the wrap through INT32_MAX, the
+grace and latch rules; mirror tests for the field, the sentinel, the pins
+and every hw.c target building the PIO header; both the carrier and pico2
+images and all bench tools build clean. The sim MCU models speed from duty
+and a jammed shaft.
+
+**On the carrier, same evening.** The first image reset-looped: the FIFO
+read drained "until empty" and the counter refills faster than that, so the
+watchdog fired every 2 s (`docs/TRAPS.md`). Bounded to the FIFO level and
+reflashed. HK was then read by sniffing the Pi's outgoing UDP 4000 (the GUI
+held the port on the Mac): 80 B, `motor_rpm` 0 at rest, and one 5 s
+`DISPERSE pulse` drew current on GP46 while the speed stayed 0 and the stall
+bit latched after the grace. The operator confirmed the motor did not turn,
+so that was a correct stall verdict, not a missing encoder - but it also
+means the encoder has not yet seen a moving shaft. `docs/HARDWARE.md` has the
+numbers.
+
+**Then the motor turned, and still 0 rpm.** `tools/encoder_pin_probe`
+(standalone, drives the motor, never touches pulls because GP19..GP25 and
+GP39 switch loads) counted edges on all 45 undriven pins: GP31/GP32 silent,
+GP19/GP21/GP22 (`ACT_EC_*`) alive only with the shaft turning - and not
+clean quadrature. The encoder is on the ACT_EC connector, apparently without
+a receiver; which line is which is a harness question, not a firmware one.
+
+## 2026-09-28 - SPI_1: nothing answers, and two pin tests that lied
+
+**Asked for:** run it again and see whether the sensor answers. Then add the
+probe tests that would narrow it down.
+
+**Neither SPI_1 part answers**, and the useful part of the afternoon was
+finding out that two of my own measurements were artifacts. Carrier serial
+`21DD2AE08840C863`, both probes flashed over USB CDC.
+
+### What is solid
+
+`tools/bmv080_probe`: `bmv080_open()` = 107
+(`E_BMV080_ERROR_MISMATCH_CHIP_ID`) on GP12, GP13 and GP47.
+`tools/bme280_probe`: chip id `0x00` on **all four** SPI_1 chip selects, both
+modes, both bauds, and on the bit-banged swapped-pair read. Nothing on that
+bus — the chamber BME280 included.
+
+And from the three new bus-integrity tests, the one result that survives
+scrutiny: **with the bus parked as high-impedance inputs, MISO idles high on
+its pull-up as it should, and asserting each of the four selects in turn
+changes nothing.** A fitted part leaves hi-Z when selected. Nothing is
+responding on any select.
+
+The capture, verbatim, so a later reader can re-derive the conclusions rather
+than take them on trust (`tools/bme280_probe`, USB CDC, after the two fixes
+described below):
+
+```
+=== BME280 probe (bench tool) ===
+i2c0 0x76 trim: dig_T1=28323 dig_P1=37257 dig_H1=75 (ambient DEVLOG 2026-08-31: 28323 37257 75)
+GP8 (MISO) as input, pull-up, all CS high: 0
+GP8 (MISO) as input, pull-up, GP9 low:     1
+-- (a) does a chip select change what MISO GP8 reads? --
+     baseline, all CS high, pull-up:  1   (an idle bus must read 1)
+     CS GP9  low: 1         released: 1
+     CS GP12 low: 1         released: 1
+     CS GP13 low: 1         released: 1
+     CS GP47 low: 1         released: 1
+-- (b) can each SPI_1 pin be driven high and low at the pad? --
+     GP8  driven high: 1         driven low: 0
+     GP10 driven high: 1         driven low: 1          <-- HELD HIGH, cannot drive it low
+     GP11 driven high: 0         driven low: 0          <-- HELD LOW, cannot drive it high
+-- (c) are any two SPI_1 bus pins tied together? --
+     GP8  driven 1 -> GP10 follows it   <-- TIED TOGETHER
+     GP8  driven 0 -> GP11 follows it   <-- TIED TOGETHER
+     GP10 driven 0 -> GP8  follows it   <-- TIED TOGETHER
+     GP10 driven 0 -> GP11 follows it   <-- TIED TOGETHER
+     GP11 driven 1 -> GP10 follows it   <-- TIED TOGETHER
+     GP11 driven 0 -> GP8  follows it   <-- TIED TOGETHER
+-- watching for 120 s (plug/reseat now) --
+t=  0 s:
+  MISO GP8 pulled up, CS GP9 mode 0: 0x00
+  bitbang CS GP9  MOSI/MISO SWAPPED: 0x00
+  ... 0x00 on all four selects, both modes, both bauds ...
+  i2c0 ACK: 0x40 0x44 0x45 0x76
+  i2c0 0x76: 0x60  <-- BME280
+  i2c0 0x77: NACK
+```
+
+**Read that capture with the two retractions below in hand.** The `(b)` and
+`(c)` blocks and the two `GP8 (MISO)` lines at the top are the ones not to
+believe; `(a)`, the i2c0 lines and the all-`0x00` table are the evidence. The
+`0` on the first `GP8` line against the `1` in `(a)`'s baseline, same pin and
+same configuration seconds apart, is itself the clue that these pads are not
+settling like connected ones.
+
+And `tools/bmv080_probe`:
+
+```
+vendor library 24.2.0.b8c488edbf8.0 (status 0) - no sensor needed
+flight-path open at boot returned status 107, id ""
+-- raw 16-bit SPI, no vendor library --
+  CS GP12  1000 kHz tx 0x0000: 0000 0000 0000 0000
+  ... all-0000 for every select, both bauds, tx 0000/FFFF/A5A5 ...
+-- bmv080_open per chip select --
+  CS GP12 bmv080_open: 107  (107: no answer on this select)
+  CS GP13 bmv080_open: 107  (107: no answer on this select)
+  CS GP47 bmv080_open: 107  (107: no answer on this select)
+```
+
+Note `bmv080_probe` does **not** yet run the three bus-integrity tests - they
+are `static` in `bme280_probe.c`. It does not need them to reach the same
+conclusion, and sharing them would mean lifting them into their own
+translation unit; worth doing if SPI_1 turns into a long investigation, not
+worth doing speculatively.
+
+The i2c0 half is healthy in the same run — BME280 `0x76` id `0x60`, trim
+`28323 / 37257 / 75` identical to 2026-08-31, three INA226s ACK at
+`0x40`/`0x44`/`0x45`, nothing at `0x28`/`0x29`. So the tool and the 1 Hz loop
+are not the problem. The vendor library is proven without a sensor too:
+`bmv080_get_driver_version()` returns `24.2.0.b8c488edbf8.0`.
+
+### The two retractions, because both are instructive
+
+**"GP8 is held low against its own pull-up."** Retracted. It was our own
+`spi1` MOSI idling low, reaching GP8 because the probe had left the other two
+bus pins on `GPIO_FUNC_SPI` while measuring. That is a measurement of the SPI
+peripheral, not of the carrier. The tell was there and I missed it for one
+round: the old block printed `0` two lines above a new test printing `1` for
+the same pin in the same configuration. Fixed by parking every pin not under
+test as a high-impedance input — and the old block was fixed too, rather than
+left to contradict the new one.
+
+**"GP8, GP10 and GP11 are tied together."** Also retracted, and this one
+matters more because it would have sent someone hunting a solder bridge. An
+RP2350 floating pad does not read as a clean float — *this project already
+measured one latching high against its own internal pull-down* on 2026-09-11
+(`sensor-driver/pico_bringup`), and I had written that down myself. A latched
+high-impedance input is nudged by a neighbour through a few pF, which the
+cross-short test duly reported as "TIED TOGETHER", and the drive test as
+"cannot be driven high". The asymmetry in those results (GP8 driving 1 moved
+GP10, driving 0 moved GP11) is not diode-like evidence of anything; it is what
+floating pads do.
+
+So the probe now prints, under its own cross-short output, that (b) and (c)
+mean nothing until the net is known not to be floating. A bench tool that can
+produce a confident wrong answer should say so where the answer is printed,
+not only in a doc.
+
+### Where that leaves it
+
+**The evidence fits the simplest explanation: the three SPI_1 bus pins are
+floating** — the harness is not connected, the parts are not fitted, or their
+supply rails are not up. That is a hardware state, not a firmware fault, and
+it is consistent with every reading including the 107s and the all-`0x00`
+table.
+
+Two physical tests settle it, and neither needs new firmware: **unplug the
+sensor harness and re-run** — output that does not change was never about the
+sensor — or **fit an external 10 kΩ pull-up to GP8** and see whether it then
+reads 1 and drives both ways. Only after that do the drive and cross-short
+results become usable, and only then is it worth asking whether the BMV080's
+PS pin and its four supply domains are right.
+
+### The firmware did run on the hardware
+
+The new flight image (`binary end 0x1001b658`, against `0x1000a908` before the
+vendor archives) boots and stays up across the observation: the core-0 stack
+relocated out of SCRATCH_Y is sound, `bmv080_dev_init()` failing with 107 is
+non-fatal as designed, and the 1 Hz sweep does not trip the 2 s watchdog with
+the part absent. HK goes out on `uart0` to the Pi and was not readable from
+this host, so packet contents are still only covered by `--mock` and the
+suite.
+
+---
+
+## 2026-09-28 - SPI_1 gets its second part: the BMV080
+
+**Asked for:** search SPI_1 for the BMV080 and the BME280 and configure both
+for the project. Datasheets in `data-sheets/`.
+
+**Half of it was already written.** The BME280 on SPI_1 has been in the tree
+since 2026-09-17 - `bme280_chamber`, CS1 on GP9, filling `chm_*` behind
+`HKE_BME280_CHM_FAIL`. What it has never had is a run against a fitted part,
+which `board.h` said in capitals. So that half is a bring-up, not a code
+change, and `src/tools/bme280_probe.c` already sweeps all four chip selects at
+two modes and two bauds with a bit-banged fallback for a crossed harness.
+Nothing was written for it; it needs a board and a USB cable.
+
+**The BMV080 is unlike every other part in this tree, and the differences are
+not incidental.** Worth stating once, because they drove every decision below:
+
+- **There is no register map.** The datasheet publishes the transaction shape
+  and nothing above it. The measurement algorithm ships as two prebuilt Bosch
+  archives. So there is no version of this driver that is ours; the job is a
+  port layer and a lifecycle wrapper.
+- **It is not a from-scratch port either.** A working one already existed in
+  the sibling `sensor-driver/pico_bringup/`, built and run on a bare Pico 2 on
+  2026-09-11. It moved into `src/hw/bmv080_port.c` nearly verbatim - the value
+  of that file is that its SPI mechanics have been on a scope, and rewriting
+  it would have thrown that away for nothing.
+- **It transfers 16-bit words**, where the BME280 on the same bus transfers
+  bytes. `hw_init()` used to set the format once. It no longer sets one at
+  all: each driver sets its own inside `cs_select()`, while CS is still high.
+  A format set at bus init is whichever driver touched the bus last, and the
+  failure is quiet - a BME280 compensating from a garbage trim block reads
+  plausible.
+- **It sleeps.** The vendor library takes a delay callback and calls it
+  synchronously from inside `bmv080_serve_interrupt()`, which the 1 Hz sweep
+  reaches. There is no asynchronous form of that API, so the "nothing in
+  `hw/` ever waits" rule genuinely cannot hold here. It is exempted **by name**
+  in `tests/test_fsw_mcu_actuators.py`, and the exemption costs something: a
+  second test asserts the wait is sliced, kicks the watchdog between slices,
+  and *refuses* anything over `BMV080_DELAY_MAX_MS`. Feeding the watchdog
+  through an unbounded delay would have masked the exact hang it exists to
+  catch.
+- **It wants a 10 kB stack**, where the SDK gives core 0 the 4 kB of
+  SCRATCH_Y. `PICO_STACK_SIZE=0x4000` alone fails at link time. Overriding the
+  SDK's linker fragments would have meant carrying a copy of
+  `section_end.incl` and its `__StackTop` / `__StackLimit` / heap arithmetic
+  and letting it rot on the next SDK bump; instead the *regions* move, via
+  four `--defsym`s, because `set_memory_locations.incl` reads every origin and
+  length from a linker symbol if one is defined. All of the SDK's symbol math
+  then stays correct by construction, including
+  `ASSERT(__StackLimit >= __HeapLimit)`. Verified in the map:
+  `__StackTop 0x20082000`, `__StackBottom 0x2007E000`, `__HeapLimit` exactly
+  at the boundary. `.scratch_x` and `.scratch_y` were checked to be 0 bytes
+  first, so nothing was evicted; SCRATCH_X is left zero-length so a future
+  `__scratch_x` placement fails the link rather than landing in the stack.
+
+**The wire problem, and why PM2.5 is one `uint16`.** `error_flags` had no bits
+left - bit 7 went to `HKE_IMU_CHM_FAIL` earlier the same day - and HK was
+already 76 B against a 67 B ceiling. So: the retired `fired` byte at offset 2
+becomes `pm_status`, which `frame.h` has promised to the next field needing a
+byte since the valves were removed, and `pm2_5_ugm3` (u16) goes on the end.
+78 B. The vendor library produces six floats; five are dropped at the MCU
+rather than binned on the ground, which is the only honest trade at 11 B over
+budget.
+
+`pm_status` carries four bits and not one, and that is the part worth keeping:
+**this sensor has more than one way of having no usable answer.** `PM_FAIL` is
+no sample. `PM_OBSTRUCTED` is a sensor answering correctly that cannot
+measure - and its obstruction cone is ~350 mm, so an enclosure can cause it
+permanently. `PM_RANGE` is saturation, where the number is a floor. `PM_STALE`
+is a repeated sample, which happens about one packet in thirty-three because
+the part makes 0.97 of them a second against a 1 Hz sweep - expected, not a
+fault. Collapsing those into one fail bit would make a blocked lens look like
+a dead sensor.
+
+**And the reason the byte exists at all:** 0 µg/m³ is what clean air reads.
+Every other field on this wire declares absence with a value no sensor can
+produce - `RAIL_MV_INVALID`, `HB_SENSE_INVALID`, a zeroed vector behind a
+flag. This one has none available, so absence *has* to live outside the field.
+`hk.pm_text` and `hk.pm_measured` are the only correct readers, the panel row
+carries `None` in its `HkErrors` column on purpose, and `verify_qt.py` checks
+the case directly: a dead BMV080 must not render `0 ug/m3`.
+
+**Evidence, and its limits.** 407 Python tests pass, 56 native firmware tests
+pass, `verify.py` and `verify_qt.py` both end OK, and all five firmware
+targets build warning-clean for rp2350 (`clouds_fsw_mcu` text 130 644 B / bss
+20 424 B, uf2 85 kB → 220 kB - the archives roughly double the image).
+`TestDownlinkBudget` is red at 2.086 kbit/s, as it already was at 2.070.
+
+**None of that is evidence the sensor works.** It has never answered on any
+board: the 2026-09-11 bench run got `E_BMV080_ERROR_MISMATCH_CHIP_ID` (107)
+with raw SPI reading all-`FFFF` on both selects it tried. The two likeliest
+causes are things software cannot fix - PS must be tied LOW at power-up
+because the protocol is latched once, and all four supply domains
+(VDDL/VDDA/VDDD, VDDIO) must be up. `src/tools/bmv080_probe.c` exists to tell
+those apart from a firmware fault: raw 16-bit reads per select first, then
+`bmv080_open()` per select, then PM lines.
+
+**Two things flagged and not fixed.** The archives and vendor headers are
+Bosch-confidential with no redistribution grant (`sensor-driver/LICENSE.md`),
+and the flight image now needs them to link - a published copy of this repo
+cannot be built by its recipients. And the part's specified operating range is
+**+15 °C to +65 °C** with a required heatsink, against stratospheric ambient.
+That is a thermal and mechanical decision, recorded in
+`docs/HARDWARE.md` → Open flight gaps, with `PM_FAIL` as the honest in-flight
+answer.
+
+---
+
+## 2026-09-28 - A second BNO055, in the chamber
 
 **Asked for:** configure the BNO055 at `0x28` - the chamber part - leave the
 ambient one alone, and show both in the GUI. Downlink budget explicitly
@@ -41,6 +491,42 @@ ambient rows now say `BNO055 0x29`) and a `BNO055 chamber` timeline group.
 
 **Open:** 76 B is over the 67 B ceiling; `TestDownlinkBudget` fails, by
 design, until the budget is settled. Neither part has yet run on the carrier.
+
+### Bench follow-up, same day: the GUI was right, the board is empty
+
+`./run_clouds_ui.sh` showed ambient BME280 numbers and "no data" for the
+chamber rows. Three separate causes, found in this order:
+
+1. **The carrier was on a 64 B image.** The session summary said so in
+   `link.hk_reject_reason` ("HK is 64 B, this GSE reads 76 B - the MCU is
+   running older firmware"). A 64 B packet has no chamber IMU fields, so the
+   decoder correctly flagged them unsourced. Reflashed with
+   `picotool load -x clouds_fsw_mcu.elf --ser 21DD2AE08840C863 -f`; a direct
+   UDP 4000 listen then showed `len=76` with uptime restarting. The Pi needs
+   no redeploy for an HK change: `mcu_link` forwards the raw frame.
+2. **Neither BNO055 answers.** After the reflash, 20 s of HK (uptime
+   13-33 s, far past the ~2 s bring-up) carried `IMU_FAIL IMU_CHM_FAIL` and
+   zero vectors. `bno055_probe`: 120 s live scan of 0x08-0x77 sees only
+   `0x40 0x44 0x45 0x76`; 0/50 read- and write-ACK at 0x28 and at 0x29;
+   every register `I2C ERROR -1` through RST_SYS, the 3 s boot curve, BIST
+   and the ACCGYRO attempt. Same result as 2026-09-11. Both parts are
+   electrically absent from i2c0 - unfitted, unpowered, held in nRESET,
+   PS0/PS1 not both low, or wired to other pins. That needs a meter, not
+   firmware. Flight image restored afterwards.
+3. **The chamber BME280 fails on every session today** (`BME280_CHM_FAIL`
+   in all rows of the twelve sessions from 14:28 on) - older than this
+   change; see "SPI_1: nothing answers" above.
+
+**Not a conflict:** GP28/GP29 are i2c0's SDA/SCL *pins*; 0x28/0x29 are the
+BNO055 *addresses* on that bus. The numbers coincide, nothing else. The
+scan above shows nothing else at 0x28/0x29, and the ID check would refuse a
+non-BNO055 there anyway.
+
+**GUI path proven without hardware:** the real app under `--mock --flight`
+with `SimMcu(imu=True)` (patched in - `--mock` alone passes `imu=False`)
+showed all four IMU rows updating each second through sim MCU -> FSW ->
+UDP -> receiver -> panel. The part column truncates to `BNO055 0...` at
+1600 px, the same way the BME280 rows already did.
 
 ## 2026-09-28 - The valves are gone
 

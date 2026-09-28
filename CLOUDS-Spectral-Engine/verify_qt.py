@@ -990,6 +990,14 @@ try:
     check("flight: the chamber BME280 has its three rows",
           set(_chm) == {"Chamber p", "Chamber T", "Chamber RH"}
           and all("SPI" in v for v in _chm.values()), str(_chm))
+    # The BMV080 is the second part on SPI_1, so the part column has to name
+    # the bus for the same reason the chamber BME280's does - and its flag
+    # column is None on purpose: its state is not an `HkErrors` bit at all.
+    _pm_rows = {n: (_p, _fg) for n, _p, _f, _fg in _fl.SENSOR_FIELDS
+                if "BMV080" in _p}
+    check("flight: the BMV080 has one row, on a named bus, with no HkErrors "
+          "bit",
+          _pm_rows == {"PM2.5": ("BMV080 SPI_1", None)}, str(_pm_rows))
     # Two BNO055s share i2c0; the address in the part column is what tells
     # them apart, and each has its own flag.
     _imus = {n: (_p, _fg) for n, _p, _f, _fg in _fl.SENSOR_FIELDS
@@ -1063,6 +1071,54 @@ try:
           and "stale" in _gse._sensor_labels["Ambient p"].text(),
           _gse._sensor_labels["Ambient p"].text())
 
+    # The particulate sensor is the one row whose absence is NOT in
+    # error_flags - that byte is full, so it reads pm_status at offset 2
+    # instead. Which means it needs the same pair of checks as the two
+    # BME280s: the flag column cannot cover it, so pm_text has to.
+    #
+    # It also has a case none of the others do. 0 ug/m3 is a reading clean
+    # air legitimately produces, so there is no value that can mean "no
+    # sensor" - the two must be told apart by the status byte alone, and a
+    # panel that showed "0 ug/m3" for a dead BMV080 would be the one wrong
+    # answer nothing else on screen contradicts.
+    _pm_dead = _hk.Housekeeping(p_amb_pa=99248, bme_temp_cc=3422,
+                                pm_status=_hk.PmStatus.FAIL, pm2_5_ugm3=0)
+    _gse._refresh_sensors(_pm_dead)
+    check("flight: a dead BMV080 shows no number, not 0 ug/m3",
+          not any(c.isdigit() for c in _gse._sensor_labels["PM2.5"].text())
+          and _gse._sensor_labels["Ambient T"].text() == "34.2 C",
+          f'{_gse._sensor_labels["PM2.5"].text()} / '
+          f'{_gse._sensor_labels["Ambient T"].text()}')
+
+    _pm_clean = _hk.Housekeeping(pm_status=0, pm2_5_ugm3=0)
+    _gse._refresh_sensors(_pm_clean)
+    check("flight: clean air reads 0 ug/m3 and is not mistaken for a fault",
+          _gse._sensor_labels["PM2.5"].text() == "0 ug/m3",
+          _gse._sensor_labels["PM2.5"].text())
+
+    # An obstructed part is answering correctly and still cannot measure, and
+    # that is the failure this sensor's enclosure can cause permanently
+    # (~350 mm obstruction cone, docs/HARDWARE.md). It has to be visibly
+    # different from both a number and a dead sensor.
+    _pm_blocked = _hk.Housekeeping(pm_status=_hk.PmStatus.OBSTRUCTED,
+                                   pm2_5_ugm3=37)
+    _gse._refresh_sensors(_pm_blocked)
+    check("flight: an obstructed BMV080 says so instead of showing a value",
+          "obstruct" in _gse._sensor_labels["PM2.5"].text()
+          and "37" not in _gse._sensor_labels["PM2.5"].text(),
+          _gse._sensor_labels["PM2.5"].text())
+
+    # A repeated sample is still the last real measurement - the part makes
+    # 0.97 of them a second against a 1 Hz sweep, so roughly one packet in
+    # thirty-three carries this and it must not read as a fault.
+    _pm_stale = _hk.Housekeeping(pm_status=_hk.PmStatus.STALE,
+                                 pm2_5_ugm3=412)
+    _gse._refresh_sensors(_pm_stale)
+    check("flight: a repeated PM sample is shown and marked stale",
+          "412" in _gse._sensor_labels["PM2.5"].text()
+          and "stale" in _gse._sensor_labels["PM2.5"].text(),
+          _gse._sensor_labels["PM2.5"].text())
+
     # With nothing wrong, every row is a number.
     _ok = _hk.Housekeeping(p_amb_pa=99248, bme_temp_cc=2140,
                            chm_p_pa=98765, chm_temp_cc=2450, chm_rh_cpct=3812,
@@ -1070,7 +1126,8 @@ try:
                            gyro_ddps=(0, 1, -1),
                            rail_mv=(24062, _hk.RAIL_MV_INVALID, 5095, 3297),
                            shunt_raw=(514, 0, -40, 6667), error_flags=0,
-                           hb_sense_raw=1500)
+                           hb_sense_raw=1500,
+                           pm_status=0, pm2_5_ugm3=412, motor_rpm=1480)
     _gse._refresh_sensors(_ok)
     check("flight: a fully sourced packet renders every sensor row",
           all(any(c.isdigit() for c in _gse._sensor_labels[n].text())
@@ -1078,6 +1135,23 @@ try:
               if n != "Rail 24 V"),
           str({n: _gse._sensor_labels[n].text()
                for n, _p, _f, _fg in _fl.SENSOR_FIELDS}))
+
+    # The encoder row: a speed with the stall verdict beside it, and `-`
+    # (never "0 rpm") from a build with no encoder counter.
+    check("flight: the motor speed row shows rpm and a stall",
+          _gse._sensor_labels["Motor speed"].text() == "1480 rpm",
+          _gse._sensor_labels["Motor speed"].text())
+    _gse._refresh_sensors(_hk.Housekeeping(
+        motor_rpm=0, valve_status=(_hk.ValveStatus.DISPERSE
+                                   | _hk.ValveStatus.DISPERSE_STALLED)))
+    check("flight: a stalled motor says STALLED",
+          "STALLED" in _gse._sensor_labels["Motor speed"].text(),
+          _gse._sensor_labels["Motor speed"].text())
+    _gse._refresh_sensors(_hk.Housekeeping())
+    check("flight: no encoder is '-', not 0 rpm",
+          _gse._sensor_labels["Motor speed"].text() == "-",
+          _gse._sensor_labels["Motor speed"].text())
+    _gse._refresh_sensors(_ok)
 
     # ...and it renders them with room to be read. The value column used to
     # be whatever the name and part columns left over, and both of those size

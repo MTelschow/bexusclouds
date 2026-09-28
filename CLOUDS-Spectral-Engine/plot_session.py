@@ -229,6 +229,15 @@ def load_hk(path: str) -> dict:
     # on, so it is drawn - but marked, because it is not a fresh measurement.
     d["p_stale"] = (err & int(HkErrors.P_AMB_STALE)).astype(bool)
 
+    # PM2.5 from the BMV080. Read from the derived column, which the GSE
+    # blanks whenever pm_status says the reading is not a measurement - the
+    # raw pm2_5_ugm3 column cannot be masked here, because 0 ug/m3 is what
+    # clean air reads and there is no in-band sentinel. Columns added
+    # 2026-09-28; a log written before that has neither.
+    if "pm2_5_measured_ugm3" in rows[0]:
+        d["pm2_5"] = np.array([_f(r.get("pm2_5_measured_ugm3"))
+                               for r in rows])
+
     imu = HkErrors.IMU_FAIL
     for ax in "xyz":
         d[f"accel_{ax}"] = mask(
@@ -247,6 +256,14 @@ def load_hk(path: str) -> dict:
     d["motor_a"] = np.array([_f(r.get("hb_sense_a")) for r in rows])
     raw = np.array([_f(r.get("hb_sense_raw")) for r in rows])
     d["motor_a"] = np.where(raw == HB_SENSE_INVALID, np.nan, d["motor_a"])
+    # Encoder speed and stall verdict (2026-09-28): blank where the MCU had
+    # no encoder, which _f() turns into a gap; absent in older logs.
+    if "motor_rpm_measured" in rows[0]:
+        d["motor_rpm"] = np.array([_f(r.get("motor_rpm_measured"))
+                                   for r in rows])
+    if "motor_stalled" in rows[0]:
+        d["motor_stalled"] = np.array([_f(r.get("motor_stalled"))
+                                       for r in rows])
 
     # Actuator lines: one lane each. Columns added 2026-09-18; a log written
     # before that has only the packed `valve_status`, so they are optional.
@@ -445,7 +462,8 @@ def plot_session(files: dict, gap_s: float = GAP_S, marks: bool = True):
              for k in ("valve_pinch_1", "valve_pinch_2", "valve_eq1_close",
                        "valve_eq2_close", "valve_disperse") if k in hk]
     lanes += [(k, k.replace("_", " ")) for k in
-              ("membrane_pulled", "membrane_cycling") if k in hk]
+              ("membrane_pulled", "membrane_cycling", "motor_stalled")
+              if k in hk]
 
     # One row per unit, and only for the units this session actually carried.
     # An empty axis is not neutral: it reads as a quantity that was recorded
@@ -458,11 +476,15 @@ def plot_session(files: dict, gap_s: float = GAP_S, marks: bool = True):
             rows.append("temperature")
         if _has(hk["rh_amb"], hk["rh_chm"]):
             rows.append("humidity")
+        if _has(hk.get("pm2_5", [])):
+            rows.append("particulate")
         if _has(*[hk.get(f"rail_v_{i}", []) for i in range(len(RAIL_NAMES))]):
             rows.append("rails")
         if _has(*[hk.get(f"rail_a_{i}", []) for i in range(len(RAIL_NAMES))],
                 hk["motor_a"]):
             rows.append("current")
+        if _has(hk.get("motor_rpm", [])):
+            rows.append("speed")
         if _has(hk["accel_x"], hk["accel_y"], hk["accel_z"]):
             rows.append("accel")
         if _has(hk["gyro_x"], hk["gyro_y"], hk["gyro_z"]):
@@ -508,6 +530,11 @@ def plot_session(files: dict, gap_s: float = GAP_S, marks: bool = True):
         _plot(ax, t0, t, hk["rh_chm"], gap_s, "chamber", ORANGE)
         _finish(ax, "%RH")
 
+    if "particulate" in drawn:
+        ax = drawn["particulate"]
+        _plot(ax, t0, t, hk["pm2_5"], gap_s, "PM2.5 (BMV080 SPI_1)", NAVY)
+        _finish(ax, "ug/m3")
+
     if "rails" in drawn:
         ax = drawn["rails"]
         for i, name in enumerate(RAIL_NAMES):
@@ -520,6 +547,11 @@ def plot_session(files: dict, gap_s: float = GAP_S, marks: bool = True):
             _plot(ax, t0, t, hk.get(f"rail_a_{i}", []), gap_s, name)
         _plot(ax, t0, t, hk["motor_a"], gap_s, "motor (IPROPI)", RED, ls="--")
         _finish(ax, "A")
+
+    if "speed" in drawn:
+        ax = drawn["speed"]
+        _plot(ax, t0, t, hk["motor_rpm"], gap_s, "motor (IE3-1024L)", NAVY)
+        _finish(ax, "rpm")
 
     if "accel" in drawn:
         ax = drawn["accel"]

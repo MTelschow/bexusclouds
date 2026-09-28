@@ -130,6 +130,19 @@ clouds_fsw_mcu/fast:
 .PHONY : clouds_fsw_mcu/fast
 
 #=============================================================================
+# Target rules for targets named clouds_fsw_mcu_quadrature_encoder_pio_h
+
+# Build rule for target.
+clouds_fsw_mcu_quadrature_encoder_pio_h: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 clouds_fsw_mcu_quadrature_encoder_pio_h
+.PHONY : clouds_fsw_mcu_quadrature_encoder_pio_h
+
+# fast build rule for target.
+clouds_fsw_mcu_quadrature_encoder_pio_h/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu_quadrature_encoder_pio_h.dir/build.make CMakeFiles/clouds_fsw_mcu_quadrature_encoder_pio_h.dir/build
+.PHONY : clouds_fsw_mcu_quadrature_encoder_pio_h/fast
+
+#=============================================================================
 # Target rules for targets named bno055_probe
 
 # Build rule for target.
@@ -141,6 +154,19 @@ bno055_probe: cmake_check_build_system
 bno055_probe/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/build
 .PHONY : bno055_probe/fast
+
+#=============================================================================
+# Target rules for targets named bno055_probe_quadrature_encoder_pio_h
+
+# Build rule for target.
+bno055_probe_quadrature_encoder_pio_h: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 bno055_probe_quadrature_encoder_pio_h
+.PHONY : bno055_probe_quadrature_encoder_pio_h
+
+# fast build rule for target.
+bno055_probe_quadrature_encoder_pio_h/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe_quadrature_encoder_pio_h.dir/build.make CMakeFiles/bno055_probe_quadrature_encoder_pio_h.dir/build
+.PHONY : bno055_probe_quadrature_encoder_pio_h/fast
 
 #=============================================================================
 # Target rules for targets named membrane_switch_probe
@@ -156,6 +182,45 @@ membrane_switch_probe/fast:
 .PHONY : membrane_switch_probe/fast
 
 #=============================================================================
+# Target rules for targets named membrane_switch_probe_quadrature_encoder_pio_h
+
+# Build rule for target.
+membrane_switch_probe_quadrature_encoder_pio_h: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 membrane_switch_probe_quadrature_encoder_pio_h
+.PHONY : membrane_switch_probe_quadrature_encoder_pio_h
+
+# fast build rule for target.
+membrane_switch_probe_quadrature_encoder_pio_h/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe_quadrature_encoder_pio_h.dir/build.make CMakeFiles/membrane_switch_probe_quadrature_encoder_pio_h.dir/build
+.PHONY : membrane_switch_probe_quadrature_encoder_pio_h/fast
+
+#=============================================================================
+# Target rules for targets named encoder_pin_probe
+
+# Build rule for target.
+encoder_pin_probe: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 encoder_pin_probe
+.PHONY : encoder_pin_probe
+
+# fast build rule for target.
+encoder_pin_probe/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/build
+.PHONY : encoder_pin_probe/fast
+
+#=============================================================================
+# Target rules for targets named encoder_trace_probe
+
+# Build rule for target.
+encoder_trace_probe: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 encoder_trace_probe
+.PHONY : encoder_trace_probe
+
+# fast build rule for target.
+encoder_trace_probe/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/build
+.PHONY : encoder_trace_probe/fast
+
+#=============================================================================
 # Target rules for targets named bme280_probe
 
 # Build rule for target.
@@ -167,6 +232,45 @@ bme280_probe: cmake_check_build_system
 bme280_probe/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/build
 .PHONY : bme280_probe/fast
+
+#=============================================================================
+# Target rules for targets named bme280_probe_quadrature_encoder_pio_h
+
+# Build rule for target.
+bme280_probe_quadrature_encoder_pio_h: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 bme280_probe_quadrature_encoder_pio_h
+.PHONY : bme280_probe_quadrature_encoder_pio_h
+
+# fast build rule for target.
+bme280_probe_quadrature_encoder_pio_h/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe_quadrature_encoder_pio_h.dir/build.make CMakeFiles/bme280_probe_quadrature_encoder_pio_h.dir/build
+.PHONY : bme280_probe_quadrature_encoder_pio_h/fast
+
+#=============================================================================
+# Target rules for targets named bmv080_probe
+
+# Build rule for target.
+bmv080_probe: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 bmv080_probe
+.PHONY : bmv080_probe
+
+# fast build rule for target.
+bmv080_probe/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/build
+.PHONY : bmv080_probe/fast
+
+#=============================================================================
+# Target rules for targets named bmv080_probe_quadrature_encoder_pio_h
+
+# Build rule for target.
+bmv080_probe_quadrature_encoder_pio_h: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 bmv080_probe_quadrature_encoder_pio_h
+.PHONY : bmv080_probe_quadrature_encoder_pio_h
+
+# fast build rule for target.
+bmv080_probe_quadrature_encoder_pio_h/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe_quadrature_encoder_pio_h.dir/build.make CMakeFiles/bmv080_probe_quadrature_encoder_pio_h.dir/build
+.PHONY : bmv080_probe_quadrature_encoder_pio_h/fast
 
 #=============================================================================
 # Target rules for targets named bs2_default
@@ -208,19 +312,6 @@ bs2_default_library/fast:
 .PHONY : bs2_default_library/fast
 
 #=============================================================================
-# Target rules for targets named pioasmBuild
-
-# Build rule for target.
-pioasmBuild: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 pioasmBuild
-.PHONY : pioasmBuild
-
-# fast build rule for target.
-pioasmBuild/fast:
-	$(MAKE) $(MAKESILENT) -f pico-sdk/src/rp2_common/pico_status_led/CMakeFiles/pioasmBuild.dir/build.make pico-sdk/src/rp2_common/pico_status_led/CMakeFiles/pioasmBuild.dir/build
-.PHONY : pioasmBuild/fast
-
-#=============================================================================
 # Target rules for targets named pico_status_led_ws2812_pio_h
 
 # Build rule for target.
@@ -241,7 +332,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.o
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.o
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.i: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.i
@@ -252,7 +346,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.i
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.i
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.s: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.s
@@ -263,7 +360,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.s
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.s
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.o: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.o
@@ -274,7 +374,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.o
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.o
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.i: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.i
@@ -285,7 +388,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.i
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.i
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.s: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.s
@@ -296,7 +402,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.s
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.s
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.o: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.o
@@ -307,7 +416,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.o
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.o
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.i: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.i
@@ -318,7 +430,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.i
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.i
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.s: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.s
@@ -329,7 +444,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.s
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.s
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.o: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.o
@@ -340,7 +458,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.o
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.o
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.i: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.i
@@ -351,7 +472,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.i
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.i
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.s: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.s
@@ -362,7 +486,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.s
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.s
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.o: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.o
@@ -373,7 +500,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.o
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.o
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.i: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.i
@@ -384,7 +514,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.i
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.i
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.s: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.s
@@ -395,7 +528,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.s
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.s
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.o: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.o
@@ -406,7 +542,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.o
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.o
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.i: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.i
@@ -417,7 +556,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.i
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.i
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.s: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.s
@@ -428,7 +570,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.s
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.s
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.o: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.o
@@ -439,7 +584,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.o
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.o
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.i: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.i
@@ -450,7 +598,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.i
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.i
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.s: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.s
@@ -461,7 +612,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.s
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.s
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.o: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.o
@@ -472,7 +626,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.o
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.o
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.i: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.i
@@ -483,7 +640,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.i
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.i
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.s: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.s
@@ -494,7 +654,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.s
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.s
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.o: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.o
@@ -505,7 +668,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.o
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.o
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.i: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.i
@@ -516,7 +682,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.i
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.i
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.s: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.s
@@ -527,7 +696,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.s
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.s
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.o: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.o
@@ -538,7 +710,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.o
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.o
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.i: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.i
@@ -549,7 +724,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.i
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.i
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.s: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.s
@@ -560,7 +738,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.s
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.s
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.o: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.o
@@ -571,7 +752,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.o
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.o
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.i: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.i
@@ -582,7 +766,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.i
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.i
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.s: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.s
@@ -593,7 +780,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.s
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.s
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.o: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.o
@@ -604,7 +794,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.o
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.o
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.i: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.i
@@ -615,7 +808,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.i
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.i
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.s: Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.s
@@ -626,7 +822,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.s
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.s
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.o: Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.o
@@ -637,7 +836,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.o
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.o
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.i: Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.i
@@ -648,7 +850,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.i
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.i
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.s: Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.s
@@ -659,7 +864,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.s
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.s
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.o: Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.o
@@ -670,7 +878,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.o
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.o
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.i: Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.i
@@ -681,7 +892,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.i
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.i
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.s: Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.s
@@ -692,7 +906,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.s
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.s
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.o: Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.o
@@ -703,7 +920,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.o
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.o
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.i: Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.i
@@ -714,7 +934,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.i
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.i
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.s: Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.s
@@ -725,7 +948,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.s
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.s
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.o: Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.o
@@ -736,7 +962,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.o
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.o
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.i: Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.i
@@ -747,7 +976,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.i
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.i
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.s: Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.s
@@ -758,7 +990,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.s
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.s
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.o: Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.o
@@ -769,7 +1004,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.o
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.o
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.i: Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.i
@@ -780,7 +1018,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.i
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.i
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.s: Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.s
@@ -791,7 +1032,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.s
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.s
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.o: Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.o
@@ -802,7 +1046,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.o
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.o
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.i: Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.i
@@ -813,7 +1060,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.i
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.i
 
 Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.s: Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.s
@@ -824,7 +1074,10 @@ Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.s
 .PHONY : Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.s
 
 Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.o: Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.o
@@ -835,7 +1088,10 @@ Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.o
 
 Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.i: Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.i
@@ -846,7 +1102,10 @@ Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.i
 
 Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.s: Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.s
@@ -857,7 +1116,10 @@ Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.s
 
 Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.o: Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.o
@@ -868,7 +1130,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.o
 
 Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.i: Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.i
@@ -879,7 +1144,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.i
 
 Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.s: Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.s
@@ -890,7 +1158,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.s
 
 Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.o: Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.o
@@ -901,7 +1172,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.o
 
 Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.i: Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.i
@@ -912,7 +1186,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.i
 
 Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.s: Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.s
@@ -923,7 +1200,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.s
 
 Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.o: Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.o
@@ -934,7 +1214,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.o
 
 Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.i: Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.i
@@ -945,7 +1228,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.i
 
 Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.s: Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.s
@@ -956,7 +1242,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.s
 
 Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.o: Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.o
@@ -967,7 +1256,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.o
 
 Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.i: Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.i
@@ -978,7 +1270,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.i
 
 Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.s: Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.s
@@ -989,7 +1284,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.s
 
 Users/mathistelschow/pico-sdk/src/common/pico_time/time.o: Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.o
@@ -1000,7 +1298,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.o
 
 Users/mathistelschow/pico-sdk/src/common/pico_time/time.i: Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.i
@@ -1011,7 +1312,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.i
 
 Users/mathistelschow/pico-sdk/src/common/pico_time/time.s: Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.s
@@ -1022,7 +1326,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.s
 
 Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.o: Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.o
@@ -1033,7 +1340,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.o
 
 Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.i: Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.i
@@ -1044,7 +1354,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.i
 
 Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.s: Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.s
@@ -1055,7 +1368,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.s
 
 Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.o: Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.o
@@ -1066,7 +1382,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.o
 
 Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.i: Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.i
@@ -1077,7 +1396,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.i
 
 Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.s: Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.s
@@ -1088,7 +1410,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.s
 
 Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.o: Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.o
@@ -1099,7 +1424,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.o
 
 Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.i: Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.i
@@ -1110,7 +1438,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.i
 
 Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.s: Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.s
@@ -1121,7 +1452,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.s
 
 Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.o: Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.o
@@ -1132,7 +1466,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.o
 
 Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.i: Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.i
@@ -1143,7 +1480,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.i
 
 Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.s: Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.s
@@ -1154,7 +1494,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.s
 
 Users/mathistelschow/pico-sdk/src/common/pico_util/queue.o: Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.o
@@ -1165,7 +1508,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.o
 
 Users/mathistelschow/pico-sdk/src/common/pico_util/queue.i: Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.i
@@ -1176,7 +1522,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.i
 
 Users/mathistelschow/pico-sdk/src/common/pico_util/queue.s: Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.s
@@ -1187,7 +1536,10 @@ Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.o: Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.o
@@ -1198,7 +1550,10 @@ Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.i: Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.i
@@ -1209,7 +1564,10 @@ Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.s: Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.s
@@ -1220,7 +1578,10 @@ Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.o: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.o
@@ -1232,6 +1593,7 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.i: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.i
@@ -1243,6 +1605,7 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.s: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.s
@@ -1254,6 +1617,7 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.o: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.o
@@ -1264,7 +1628,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.i: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.i
@@ -1275,7 +1642,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.s: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.s
@@ -1286,7 +1656,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.o: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.o
@@ -1297,7 +1670,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.i: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.i
@@ -1308,7 +1684,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.s: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.s
@@ -1319,7 +1698,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.o: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.o
@@ -1330,7 +1712,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.i: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.i
@@ -1341,7 +1726,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.s: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.s
@@ -1352,7 +1740,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.o: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.o
@@ -1363,7 +1754,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.i: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.i
@@ -1374,7 +1768,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.s: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.s
@@ -1385,7 +1782,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.o: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.o
@@ -1396,7 +1796,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.i: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.i
@@ -1407,7 +1810,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.s: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.s
@@ -1418,7 +1824,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.o: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.o
@@ -1430,6 +1839,7 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.i: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.i
@@ -1441,6 +1851,7 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.s: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.s
@@ -1452,6 +1863,7 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.o: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.o
@@ -1462,7 +1874,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.i: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.i
@@ -1473,7 +1888,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.s: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.s
@@ -1484,7 +1902,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq_handler_chain.o: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq_handler_chain.S.o
@@ -1495,8 +1916,47 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq_handler_chain.S.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq_handler_chain.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq_handler_chain.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq_handler_chain.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq_handler_chain.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq_handler_chain.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq_handler_chain.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq_handler_chain.S.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq_handler_chain.S.o
+
+Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.o: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.o
+.PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.o
+
+# target to build an object file
+Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.o
+.PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.o
+
+Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.i: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.i
+.PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.i
+
+# target to preprocess a source file
+Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.i
+.PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.i
+
+Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.s: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.s
+.PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.s
+
+# target to generate assembly for a file
+Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.s
+.PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.o: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.o
@@ -1506,7 +1966,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.i: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.i
@@ -1517,7 +1980,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.s: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.s
@@ -1528,7 +1994,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.o: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.o
@@ -1540,6 +2009,7 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.i: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.i
@@ -1551,6 +2021,7 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.s: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.s
@@ -1562,6 +2033,7 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.o: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.o
@@ -1572,7 +2044,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.i: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.i
@@ -1583,7 +2058,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.s: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.s
@@ -1594,7 +2072,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.o: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.o
@@ -1605,7 +2086,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_l
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.i: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.i
@@ -1616,7 +2100,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_l
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.s: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.s
@@ -1627,7 +2114,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_l
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.o: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.o
@@ -1638,7 +2128,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.i: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.i
@@ -1649,7 +2142,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.s: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.s
@@ -1660,7 +2156,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.o: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.o
@@ -1671,7 +2170,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.i: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.i
@@ -1682,7 +2184,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.s: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.s
@@ -1693,7 +2198,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.o: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.o
@@ -1704,7 +2212,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.i: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.i
@@ -1715,7 +2226,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.s: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.s
@@ -1726,7 +2240,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.o: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.o
@@ -1737,7 +2254,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.i: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.i
@@ -1748,7 +2268,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.s: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.s
@@ -1759,7 +2282,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.o: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.o
@@ -1770,7 +2296,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.i: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.i
@@ -1781,7 +2310,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.s: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.s
@@ -1792,7 +2324,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.o: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.o
@@ -1803,7 +2338,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.i: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.i
@@ -1814,7 +2352,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.s: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.s
@@ -1825,7 +2366,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.o: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.o
@@ -1836,7 +2380,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.i: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.i
@@ -1847,7 +2394,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.s: Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.s
@@ -1858,7 +2408,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.o
@@ -1869,7 +2422,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.i: Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.i
@@ -1880,7 +2436,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.s: Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.s
@@ -1891,7 +2450,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.o
@@ -1902,7 +2464,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.o
@@ -1913,7 +2478,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.i: Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.i
@@ -1924,7 +2492,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.s: Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.s
@@ -1935,7 +2506,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.o
@@ -1946,7 +2520,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.i: Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.i
@@ -1957,7 +2534,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.s: Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.s
@@ -1968,7 +2548,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.o
@@ -1979,7 +2562,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.i: Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.i
@@ -1990,7 +2576,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.s: Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.s
@@ -2001,7 +2590,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.o
@@ -2012,7 +2604,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interfac
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.i: Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.i
@@ -2023,7 +2618,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interfac
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.s: Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.s
@@ -2034,7 +2632,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interfac
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_crt0/crt0.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_crt0/crt0.S.o
@@ -2045,7 +2646,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_crt0/crt0.S.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_crt0/crt0.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_crt0/crt0.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_crt0/crt0.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_crt0/crt0.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_crt0/crt0.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_crt0/crt0.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_crt0/crt0.S.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_crt0/crt0.S.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.o
@@ -2056,7 +2660,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.i: Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.i
@@ -2067,7 +2674,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.s: Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.s
@@ -2078,7 +2688,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.o
@@ -2089,7 +2702,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.i: Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.i
@@ -2100,7 +2716,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.s: Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.s
@@ -2111,7 +2730,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_aeabi_dcp.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_aeabi_dcp.S.o
@@ -2122,7 +2744,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_aeabi_dcp.S.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_aeabi_dcp.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_aeabi_dcp.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_aeabi_dcp.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_aeabi_dcp.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_aeabi_dcp.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_aeabi_dcp.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_aeabi_dcp.S.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_aeabi_dcp.S.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_conv_m33.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_conv_m33.S.o
@@ -2133,7 +2758,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_conv_m33.S.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_conv_m33.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_conv_m33.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_conv_m33.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_conv_m33.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_conv_m33.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_conv_m33.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_conv_m33.S.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_conv_m33.S.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_fma_dcp.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_fma_dcp.S.o
@@ -2144,7 +2772,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_fma_dcp.S.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_fma_dcp.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_fma_dcp.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_fma_dcp.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_fma_dcp.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_fma_dcp.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_fma_dcp.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_fma_dcp.S.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_fma_dcp.S.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.o
@@ -2155,7 +2786,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.i: Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.i
@@ -2166,7 +2800,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.s: Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.s
@@ -2177,7 +2814,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_sci_m33.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_sci_m33.S.o
@@ -2188,7 +2828,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_sci_m33.S.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_sci_m33.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_sci_m33.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_sci_m33.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_sci_m33.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_sci_m33.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_sci_m33.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_sci_m33.S.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_sci_m33.S.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.o
@@ -2199,7 +2842,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumerat
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.i: Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.i
@@ -2210,7 +2856,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumerat
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.s: Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.s
@@ -2221,7 +2870,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumerat
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.o
@@ -2232,7 +2884,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.i: Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.i
@@ -2243,7 +2898,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.s: Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.s
@@ -2254,7 +2912,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_common_m33.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_common_m33.S.o
@@ -2265,7 +2926,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_common_m33.S.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_common_m33.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_common_m33.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_common_m33.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_common_m33.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_common_m33.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_common_m33.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_common_m33.S.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_common_m33.S.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_conv32_vfp.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_conv32_vfp.S.o
@@ -2276,7 +2940,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_conv32_vfp.S.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_conv32_vfp.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_conv32_vfp.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_conv32_vfp.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_conv32_vfp.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_conv32_vfp.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_conv32_vfp.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_conv32_vfp.S.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_conv32_vfp.S.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.o
@@ -2287,7 +2954,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.i: Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.i
@@ -2298,7 +2968,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.s: Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.s
@@ -2309,7 +2982,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_sci_m33_vfp.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_sci_m33_vfp.S.o
@@ -2320,7 +2996,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_sci_m33_vfp.S.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_sci_m33_vfp.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_sci_m33_vfp.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_sci_m33_vfp.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_sci_m33_vfp.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_sci_m33_vfp.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_sci_m33_vfp.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_sci_m33_vfp.S.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_sci_m33_vfp.S.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.o
@@ -2331,7 +3010,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.i: Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.i
@@ -2342,7 +3024,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.s: Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.s
@@ -2353,7 +3038,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.o
@@ -2364,7 +3052,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.i: Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.i
@@ -2375,7 +3066,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.s: Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.s
@@ -2386,7 +3080,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/custom_panic_function.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/custom_panic_function.S.o
@@ -2397,7 +3094,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/custom_panic_fu
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/custom_panic_function.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/custom_panic_function.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/custom_panic_function.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/custom_panic_function.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/custom_panic_function.S.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/custom_panic_function.S.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/custom_panic_function.S.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/custom_panic_function.S.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.o
@@ -2408,7 +3108,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.i: Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.i
@@ -2419,7 +3122,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.s: Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.s
@@ -2430,7 +3136,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.o
@@ -2441,7 +3150,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.i: Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.i
@@ -2452,7 +3164,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.s: Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.s
@@ -2463,7 +3178,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.o
@@ -2474,7 +3192,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.i: Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.i
@@ -2485,7 +3206,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.s: Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.s
@@ -2496,7 +3220,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.o
@@ -2507,7 +3234,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.i: Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.i
@@ -2518,7 +3248,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.s: Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.s
@@ -2529,7 +3262,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.o
@@ -2540,7 +3276,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_cloc
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.i: Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.i
@@ -2551,7 +3290,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_cloc
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.s: Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.s
@@ -2562,7 +3304,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_cloc
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.o
@@ -2573,7 +3318,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stac
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.i: Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.i
@@ -2584,7 +3332,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stac
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.s: Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.s
@@ -2595,7 +3346,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stac
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.o
@@ -2606,7 +3360,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.i: Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.i
@@ -2617,7 +3374,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.s: Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.s
@@ -2628,7 +3388,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.o
@@ -2639,7 +3402,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.i: Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.i
@@ -2650,7 +3416,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.s: Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.s
@@ -2661,7 +3430,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.o
@@ -2672,7 +3444,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.i: Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.i
@@ -2683,7 +3458,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.s: Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.s
@@ -2694,7 +3472,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.o
@@ -2705,7 +3486,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptor
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.i: Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.i
@@ -2716,7 +3500,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptor
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.s: Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.s
@@ -2727,7 +3514,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptor
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.o
@@ -2738,7 +3528,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.i: Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.i
@@ -2749,7 +3542,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.s: Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.s
@@ -2760,7 +3556,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.o
@@ -2771,7 +3570,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.i: Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.i
@@ -2782,7 +3584,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.s: Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.s
@@ -2793,7 +3598,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.o
@@ -2804,7 +3612,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.i: Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.i
@@ -2815,7 +3626,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.s: Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.s
@@ -2826,7 +3640,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.s
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.o: Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.o
@@ -2837,7 +3654,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.o
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.o
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.i: Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.i
@@ -2848,7 +3668,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.i
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.i
 
 Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.s: Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.s
@@ -2859,7 +3682,10 @@ Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.s
 .PHONY : Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.s
 
 src/core/autonomy.o: src/core/autonomy.c.o
@@ -2871,6 +3697,7 @@ src/core/autonomy.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/autonomy.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/autonomy.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/autonomy.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/autonomy.c.o
 .PHONY : src/core/autonomy.c.o
 
 src/core/autonomy.i: src/core/autonomy.c.i
@@ -2882,6 +3709,7 @@ src/core/autonomy.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/autonomy.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/autonomy.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/autonomy.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/autonomy.c.i
 .PHONY : src/core/autonomy.c.i
 
 src/core/autonomy.s: src/core/autonomy.c.s
@@ -2893,6 +3721,7 @@ src/core/autonomy.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/autonomy.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/autonomy.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/autonomy.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/autonomy.c.s
 .PHONY : src/core/autonomy.c.s
 
 src/core/cobs.o: src/core/cobs.c.o
@@ -2904,6 +3733,7 @@ src/core/cobs.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/cobs.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/cobs.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/cobs.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/cobs.c.o
 .PHONY : src/core/cobs.c.o
 
 src/core/cobs.i: src/core/cobs.c.i
@@ -2915,6 +3745,7 @@ src/core/cobs.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/cobs.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/cobs.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/cobs.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/cobs.c.i
 .PHONY : src/core/cobs.c.i
 
 src/core/cobs.s: src/core/cobs.c.s
@@ -2926,6 +3757,7 @@ src/core/cobs.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/cobs.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/cobs.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/cobs.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/cobs.c.s
 .PHONY : src/core/cobs.c.s
 
 src/core/config.o: src/core/config.c.o
@@ -2937,6 +3769,7 @@ src/core/config.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/config.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/config.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/config.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/config.c.o
 .PHONY : src/core/config.c.o
 
 src/core/config.i: src/core/config.c.i
@@ -2948,6 +3781,7 @@ src/core/config.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/config.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/config.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/config.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/config.c.i
 .PHONY : src/core/config.c.i
 
 src/core/config.s: src/core/config.c.s
@@ -2959,6 +3793,7 @@ src/core/config.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/config.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/config.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/config.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/config.c.s
 .PHONY : src/core/config.c.s
 
 src/core/crc16.o: src/core/crc16.c.o
@@ -2970,6 +3805,7 @@ src/core/crc16.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/crc16.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/crc16.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/crc16.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/crc16.c.o
 .PHONY : src/core/crc16.c.o
 
 src/core/crc16.i: src/core/crc16.c.i
@@ -2981,6 +3817,7 @@ src/core/crc16.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/crc16.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/crc16.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/crc16.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/crc16.c.i
 .PHONY : src/core/crc16.c.i
 
 src/core/crc16.s: src/core/crc16.c.s
@@ -2992,6 +3829,7 @@ src/core/crc16.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/crc16.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/crc16.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/crc16.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/crc16.c.s
 .PHONY : src/core/crc16.c.s
 
 src/core/frame.o: src/core/frame.c.o
@@ -3003,6 +3841,7 @@ src/core/frame.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/frame.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/frame.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/frame.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/frame.c.o
 .PHONY : src/core/frame.c.o
 
 src/core/frame.i: src/core/frame.c.i
@@ -3014,6 +3853,7 @@ src/core/frame.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/frame.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/frame.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/frame.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/frame.c.i
 .PHONY : src/core/frame.c.i
 
 src/core/frame.s: src/core/frame.c.s
@@ -3025,6 +3865,7 @@ src/core/frame.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/frame.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/frame.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/frame.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/frame.c.s
 .PHONY : src/core/frame.c.s
 
 src/core/link.o: src/core/link.c.o
@@ -3036,6 +3877,7 @@ src/core/link.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/link.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/link.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/link.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/link.c.o
 .PHONY : src/core/link.c.o
 
 src/core/link.i: src/core/link.c.i
@@ -3047,6 +3889,7 @@ src/core/link.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/link.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/link.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/link.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/link.c.i
 .PHONY : src/core/link.c.i
 
 src/core/link.s: src/core/link.c.s
@@ -3058,7 +3901,44 @@ src/core/link.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/link.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/link.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/link.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/link.c.s
 .PHONY : src/core/link.c.s
+
+src/core/motor_enc.o: src/core/motor_enc.c.o
+.PHONY : src/core/motor_enc.o
+
+# target to build an object file
+src/core/motor_enc.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/src/core/motor_enc.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/motor_enc.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/motor_enc.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/motor_enc.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/motor_enc.c.o
+.PHONY : src/core/motor_enc.c.o
+
+src/core/motor_enc.i: src/core/motor_enc.c.i
+.PHONY : src/core/motor_enc.i
+
+# target to preprocess a source file
+src/core/motor_enc.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/src/core/motor_enc.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/motor_enc.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/motor_enc.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/motor_enc.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/motor_enc.c.i
+.PHONY : src/core/motor_enc.c.i
+
+src/core/motor_enc.s: src/core/motor_enc.c.s
+.PHONY : src/core/motor_enc.s
+
+# target to generate assembly for a file
+src/core/motor_enc.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/src/core/motor_enc.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/motor_enc.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/motor_enc.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/motor_enc.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/motor_enc.c.s
+.PHONY : src/core/motor_enc.c.s
 
 src/core/pulse.o: src/core/pulse.c.o
 .PHONY : src/core/pulse.o
@@ -3069,6 +3949,7 @@ src/core/pulse.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/pulse.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/pulse.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/pulse.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/pulse.c.o
 .PHONY : src/core/pulse.c.o
 
 src/core/pulse.i: src/core/pulse.c.i
@@ -3080,6 +3961,7 @@ src/core/pulse.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/pulse.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/pulse.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/pulse.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/pulse.c.i
 .PHONY : src/core/pulse.c.i
 
 src/core/pulse.s: src/core/pulse.c.s
@@ -3091,6 +3973,7 @@ src/core/pulse.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/pulse.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/pulse.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/pulse.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/pulse.c.s
 .PHONY : src/core/pulse.c.s
 
 src/core/pwmdiv.o: src/core/pwmdiv.c.o
@@ -3101,7 +3984,10 @@ src/core/pwmdiv.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/src/core/pwmdiv.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/pwmdiv.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/pwmdiv.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/src/core/pwmdiv.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/src/core/pwmdiv.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/pwmdiv.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/pwmdiv.c.o
 .PHONY : src/core/pwmdiv.c.o
 
 src/core/pwmdiv.i: src/core/pwmdiv.c.i
@@ -3112,7 +3998,10 @@ src/core/pwmdiv.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/src/core/pwmdiv.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/pwmdiv.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/pwmdiv.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/src/core/pwmdiv.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/src/core/pwmdiv.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/pwmdiv.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/pwmdiv.c.i
 .PHONY : src/core/pwmdiv.c.i
 
 src/core/pwmdiv.s: src/core/pwmdiv.c.s
@@ -3123,7 +4012,10 @@ src/core/pwmdiv.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/src/core/pwmdiv.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/pwmdiv.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/pwmdiv.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/src/core/pwmdiv.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/src/core/pwmdiv.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/pwmdiv.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/pwmdiv.c.s
 .PHONY : src/core/pwmdiv.c.s
 
 src/core/sequencer.o: src/core/sequencer.c.o
@@ -3135,6 +4027,7 @@ src/core/sequencer.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/sequencer.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/sequencer.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/sequencer.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/sequencer.c.o
 .PHONY : src/core/sequencer.c.o
 
 src/core/sequencer.i: src/core/sequencer.c.i
@@ -3146,6 +4039,7 @@ src/core/sequencer.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/sequencer.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/sequencer.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/sequencer.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/sequencer.c.i
 .PHONY : src/core/sequencer.c.i
 
 src/core/sequencer.s: src/core/sequencer.c.s
@@ -3157,6 +4051,7 @@ src/core/sequencer.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/sequencer.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/sequencer.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/sequencer.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/sequencer.c.s
 .PHONY : src/core/sequencer.c.s
 
 src/core/sqwave.o: src/core/sqwave.c.o
@@ -3168,6 +4063,7 @@ src/core/sqwave.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/sqwave.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/sqwave.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/sqwave.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/sqwave.c.o
 .PHONY : src/core/sqwave.c.o
 
 src/core/sqwave.i: src/core/sqwave.c.i
@@ -3179,6 +4075,7 @@ src/core/sqwave.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/sqwave.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/sqwave.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/sqwave.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/sqwave.c.i
 .PHONY : src/core/sqwave.c.i
 
 src/core/sqwave.s: src/core/sqwave.c.s
@@ -3190,6 +4087,7 @@ src/core/sqwave.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/core/sqwave.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/core/sqwave.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/core/sqwave.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/core/sqwave.c.s
 .PHONY : src/core/sqwave.c.s
 
 src/hw/bme280.o: src/hw/bme280.c.o
@@ -3201,6 +4099,7 @@ src/hw/bme280.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/hw/bme280.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/hw/bme280.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/hw/bme280.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/hw/bme280.c.o
 .PHONY : src/hw/bme280.c.o
 
 src/hw/bme280.i: src/hw/bme280.c.i
@@ -3212,6 +4111,7 @@ src/hw/bme280.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/hw/bme280.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/hw/bme280.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/hw/bme280.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/hw/bme280.c.i
 .PHONY : src/hw/bme280.c.i
 
 src/hw/bme280.s: src/hw/bme280.c.s
@@ -3223,7 +4123,80 @@ src/hw/bme280.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/hw/bme280.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/hw/bme280.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/hw/bme280.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/hw/bme280.c.s
 .PHONY : src/hw/bme280.c.s
+
+src/hw/bmv080_dev.o: src/hw/bmv080_dev.c.o
+.PHONY : src/hw/bmv080_dev.o
+
+# target to build an object file
+src/hw/bmv080_dev.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/src/hw/bmv080_dev.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/hw/bmv080_dev.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/hw/bmv080_dev.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/hw/bmv080_dev.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/hw/bmv080_dev.c.o
+.PHONY : src/hw/bmv080_dev.c.o
+
+src/hw/bmv080_dev.i: src/hw/bmv080_dev.c.i
+.PHONY : src/hw/bmv080_dev.i
+
+# target to preprocess a source file
+src/hw/bmv080_dev.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/src/hw/bmv080_dev.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/hw/bmv080_dev.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/hw/bmv080_dev.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/hw/bmv080_dev.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/hw/bmv080_dev.c.i
+.PHONY : src/hw/bmv080_dev.c.i
+
+src/hw/bmv080_dev.s: src/hw/bmv080_dev.c.s
+.PHONY : src/hw/bmv080_dev.s
+
+# target to generate assembly for a file
+src/hw/bmv080_dev.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/src/hw/bmv080_dev.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/hw/bmv080_dev.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/hw/bmv080_dev.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/hw/bmv080_dev.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/hw/bmv080_dev.c.s
+.PHONY : src/hw/bmv080_dev.c.s
+
+src/hw/bmv080_port.o: src/hw/bmv080_port.c.o
+.PHONY : src/hw/bmv080_port.o
+
+# target to build an object file
+src/hw/bmv080_port.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/src/hw/bmv080_port.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/hw/bmv080_port.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/hw/bmv080_port.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/hw/bmv080_port.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/hw/bmv080_port.c.o
+.PHONY : src/hw/bmv080_port.c.o
+
+src/hw/bmv080_port.i: src/hw/bmv080_port.c.i
+.PHONY : src/hw/bmv080_port.i
+
+# target to preprocess a source file
+src/hw/bmv080_port.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/src/hw/bmv080_port.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/hw/bmv080_port.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/hw/bmv080_port.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/hw/bmv080_port.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/hw/bmv080_port.c.i
+.PHONY : src/hw/bmv080_port.c.i
+
+src/hw/bmv080_port.s: src/hw/bmv080_port.c.s
+.PHONY : src/hw/bmv080_port.s
+
+# target to generate assembly for a file
+src/hw/bmv080_port.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/clouds_fsw_mcu.dir/build.make CMakeFiles/clouds_fsw_mcu.dir/src/hw/bmv080_port.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/hw/bmv080_port.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/hw/bmv080_port.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/hw/bmv080_port.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/hw/bmv080_port.c.s
+.PHONY : src/hw/bmv080_port.c.s
 
 src/hw/bno055.o: src/hw/bno055.c.o
 .PHONY : src/hw/bno055.o
@@ -3234,6 +4207,7 @@ src/hw/bno055.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/hw/bno055.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/hw/bno055.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/hw/bno055.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/hw/bno055.c.o
 .PHONY : src/hw/bno055.c.o
 
 src/hw/bno055.i: src/hw/bno055.c.i
@@ -3245,6 +4219,7 @@ src/hw/bno055.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/hw/bno055.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/hw/bno055.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/hw/bno055.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/hw/bno055.c.i
 .PHONY : src/hw/bno055.c.i
 
 src/hw/bno055.s: src/hw/bno055.c.s
@@ -3256,6 +4231,7 @@ src/hw/bno055.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/hw/bno055.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/hw/bno055.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/hw/bno055.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/hw/bno055.c.s
 .PHONY : src/hw/bno055.c.s
 
 src/hw/hw.o: src/hw/hw.c.o
@@ -3267,6 +4243,7 @@ src/hw/hw.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/hw/hw.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/hw/hw.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/hw/hw.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/hw/hw.c.o
 .PHONY : src/hw/hw.c.o
 
 src/hw/hw.i: src/hw/hw.c.i
@@ -3278,6 +4255,7 @@ src/hw/hw.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/hw/hw.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/hw/hw.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/hw/hw.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/hw/hw.c.i
 .PHONY : src/hw/hw.c.i
 
 src/hw/hw.s: src/hw/hw.c.s
@@ -3289,6 +4267,7 @@ src/hw/hw.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/hw/hw.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/hw/hw.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/hw/hw.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/hw/hw.c.s
 .PHONY : src/hw/hw.c.s
 
 src/hw/ina226.o: src/hw/ina226.c.o
@@ -3300,6 +4279,7 @@ src/hw/ina226.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/hw/ina226.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/hw/ina226.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/hw/ina226.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/hw/ina226.c.o
 .PHONY : src/hw/ina226.c.o
 
 src/hw/ina226.i: src/hw/ina226.c.i
@@ -3311,6 +4291,7 @@ src/hw/ina226.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/hw/ina226.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/hw/ina226.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/hw/ina226.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/hw/ina226.c.i
 .PHONY : src/hw/ina226.c.i
 
 src/hw/ina226.s: src/hw/ina226.c.s
@@ -3322,6 +4303,7 @@ src/hw/ina226.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/hw/ina226.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/hw/ina226.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/hw/ina226.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/hw/ina226.c.s
 .PHONY : src/hw/ina226.c.s
 
 src/hw/uart_io.o: src/hw/uart_io.c.o
@@ -3333,6 +4315,7 @@ src/hw/uart_io.c.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/hw/uart_io.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/hw/uart_io.c.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/hw/uart_io.c.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/hw/uart_io.c.o
 .PHONY : src/hw/uart_io.c.o
 
 src/hw/uart_io.i: src/hw/uart_io.c.i
@@ -3344,6 +4327,7 @@ src/hw/uart_io.c.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/hw/uart_io.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/hw/uart_io.c.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/hw/uart_io.c.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/hw/uart_io.c.i
 .PHONY : src/hw/uart_io.c.i
 
 src/hw/uart_io.s: src/hw/uart_io.c.s
@@ -3355,6 +4339,7 @@ src/hw/uart_io.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/hw/uart_io.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/membrane_switch_probe.dir/build.make CMakeFiles/membrane_switch_probe.dir/src/hw/uart_io.c.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/hw/uart_io.c.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/hw/uart_io.c.s
 .PHONY : src/hw/uart_io.c.s
 
 src/main.o: src/main.c.o
@@ -3405,6 +4390,30 @@ src/tools/bme280_probe.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bme280_probe.dir/build.make CMakeFiles/bme280_probe.dir/src/tools/bme280_probe.c.s
 .PHONY : src/tools/bme280_probe.c.s
 
+src/tools/bmv080_probe.o: src/tools/bmv080_probe.c.o
+.PHONY : src/tools/bmv080_probe.o
+
+# target to build an object file
+src/tools/bmv080_probe.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/tools/bmv080_probe.c.o
+.PHONY : src/tools/bmv080_probe.c.o
+
+src/tools/bmv080_probe.i: src/tools/bmv080_probe.c.i
+.PHONY : src/tools/bmv080_probe.i
+
+# target to preprocess a source file
+src/tools/bmv080_probe.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/tools/bmv080_probe.c.i
+.PHONY : src/tools/bmv080_probe.c.i
+
+src/tools/bmv080_probe.s: src/tools/bmv080_probe.c.s
+.PHONY : src/tools/bmv080_probe.s
+
+# target to generate assembly for a file
+src/tools/bmv080_probe.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/bmv080_probe.dir/build.make CMakeFiles/bmv080_probe.dir/src/tools/bmv080_probe.c.s
+.PHONY : src/tools/bmv080_probe.c.s
+
 src/tools/bno055_probe.o: src/tools/bno055_probe.c.o
 .PHONY : src/tools/bno055_probe.o
 
@@ -3428,6 +4437,54 @@ src/tools/bno055_probe.s: src/tools/bno055_probe.c.s
 src/tools/bno055_probe.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/bno055_probe.dir/build.make CMakeFiles/bno055_probe.dir/src/tools/bno055_probe.c.s
 .PHONY : src/tools/bno055_probe.c.s
+
+src/tools/encoder_pin_probe.o: src/tools/encoder_pin_probe.c.o
+.PHONY : src/tools/encoder_pin_probe.o
+
+# target to build an object file
+src/tools/encoder_pin_probe.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/src/tools/encoder_pin_probe.c.o
+.PHONY : src/tools/encoder_pin_probe.c.o
+
+src/tools/encoder_pin_probe.i: src/tools/encoder_pin_probe.c.i
+.PHONY : src/tools/encoder_pin_probe.i
+
+# target to preprocess a source file
+src/tools/encoder_pin_probe.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/src/tools/encoder_pin_probe.c.i
+.PHONY : src/tools/encoder_pin_probe.c.i
+
+src/tools/encoder_pin_probe.s: src/tools/encoder_pin_probe.c.s
+.PHONY : src/tools/encoder_pin_probe.s
+
+# target to generate assembly for a file
+src/tools/encoder_pin_probe.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_pin_probe.dir/build.make CMakeFiles/encoder_pin_probe.dir/src/tools/encoder_pin_probe.c.s
+.PHONY : src/tools/encoder_pin_probe.c.s
+
+src/tools/encoder_trace_probe.o: src/tools/encoder_trace_probe.c.o
+.PHONY : src/tools/encoder_trace_probe.o
+
+# target to build an object file
+src/tools/encoder_trace_probe.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/src/tools/encoder_trace_probe.c.o
+.PHONY : src/tools/encoder_trace_probe.c.o
+
+src/tools/encoder_trace_probe.i: src/tools/encoder_trace_probe.c.i
+.PHONY : src/tools/encoder_trace_probe.i
+
+# target to preprocess a source file
+src/tools/encoder_trace_probe.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/src/tools/encoder_trace_probe.c.i
+.PHONY : src/tools/encoder_trace_probe.c.i
+
+src/tools/encoder_trace_probe.s: src/tools/encoder_trace_probe.c.s
+.PHONY : src/tools/encoder_trace_probe.s
+
+# target to generate assembly for a file
+src/tools/encoder_trace_probe.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/encoder_trace_probe.dir/build.make CMakeFiles/encoder_trace_probe.dir/src/tools/encoder_trace_probe.c.s
+.PHONY : src/tools/encoder_trace_probe.c.s
 
 src/tools/membrane_switch_probe.o: src/tools/membrane_switch_probe.c.o
 .PHONY : src/tools/membrane_switch_probe.o
@@ -3461,14 +4518,21 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
+	@echo "... bme280_probe_quadrature_encoder_pio_h"
+	@echo "... bmv080_probe_quadrature_encoder_pio_h"
+	@echo "... bno055_probe_quadrature_encoder_pio_h"
 	@echo "... bs2_default_bin"
+	@echo "... clouds_fsw_mcu_quadrature_encoder_pio_h"
+	@echo "... membrane_switch_probe_quadrature_encoder_pio_h"
 	@echo "... pico_status_led_ws2812_pio_h"
-	@echo "... pioasmBuild"
 	@echo "... bme280_probe"
+	@echo "... bmv080_probe"
 	@echo "... bno055_probe"
 	@echo "... bs2_default"
 	@echo "... bs2_default_library"
 	@echo "... clouds_fsw_mcu"
+	@echo "... encoder_pin_probe"
+	@echo "... encoder_trace_probe"
 	@echo "... membrane_switch_probe"
 	@echo "... Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.o"
 	@echo "... Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.i"
@@ -3585,6 +4649,9 @@ help:
 	@echo "... Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.i"
 	@echo "... Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.s"
 	@echo "... Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq_handler_chain.o"
+	@echo "... Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.o"
+	@echo "... Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.i"
+	@echo "... Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.s"
 	@echo "... Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.o"
 	@echo "... Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.i"
 	@echo "... Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.s"
@@ -3727,6 +4794,9 @@ help:
 	@echo "... src/core/link.o"
 	@echo "... src/core/link.i"
 	@echo "... src/core/link.s"
+	@echo "... src/core/motor_enc.o"
+	@echo "... src/core/motor_enc.i"
+	@echo "... src/core/motor_enc.s"
 	@echo "... src/core/pulse.o"
 	@echo "... src/core/pulse.i"
 	@echo "... src/core/pulse.s"
@@ -3742,6 +4812,12 @@ help:
 	@echo "... src/hw/bme280.o"
 	@echo "... src/hw/bme280.i"
 	@echo "... src/hw/bme280.s"
+	@echo "... src/hw/bmv080_dev.o"
+	@echo "... src/hw/bmv080_dev.i"
+	@echo "... src/hw/bmv080_dev.s"
+	@echo "... src/hw/bmv080_port.o"
+	@echo "... src/hw/bmv080_port.i"
+	@echo "... src/hw/bmv080_port.s"
 	@echo "... src/hw/bno055.o"
 	@echo "... src/hw/bno055.i"
 	@echo "... src/hw/bno055.s"
@@ -3760,9 +4836,18 @@ help:
 	@echo "... src/tools/bme280_probe.o"
 	@echo "... src/tools/bme280_probe.i"
 	@echo "... src/tools/bme280_probe.s"
+	@echo "... src/tools/bmv080_probe.o"
+	@echo "... src/tools/bmv080_probe.i"
+	@echo "... src/tools/bmv080_probe.s"
 	@echo "... src/tools/bno055_probe.o"
 	@echo "... src/tools/bno055_probe.i"
 	@echo "... src/tools/bno055_probe.s"
+	@echo "... src/tools/encoder_pin_probe.o"
+	@echo "... src/tools/encoder_pin_probe.i"
+	@echo "... src/tools/encoder_pin_probe.s"
+	@echo "... src/tools/encoder_trace_probe.o"
+	@echo "... src/tools/encoder_trace_probe.i"
+	@echo "... src/tools/encoder_trace_probe.s"
 	@echo "... src/tools/membrane_switch_probe.o"
 	@echo "... src/tools/membrane_switch_probe.i"
 	@echo "... src/tools/membrane_switch_probe.s"

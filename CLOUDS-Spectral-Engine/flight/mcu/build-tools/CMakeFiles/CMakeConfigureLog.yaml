@@ -46,8 +46,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/"
     searched_directories:
       - "/opt/homebrew/opt/postgresql@15/bin/uname"
       - "/Users/mathistelschow/.bun/bin/uname"
@@ -93,8 +94,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
   -
     kind: "find-v1"
     backtrace:
@@ -158,8 +160,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
   -
     kind: "find-v1"
     backtrace:
@@ -223,8 +226,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
   -
     kind: "find-v1"
     backtrace:
@@ -288,8 +292,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
   -
     kind: "find-v1"
     backtrace:
@@ -353,8 +358,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
   -
     kind: "message-v1"
     backtrace:
@@ -410,8 +416,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/"
     searched_directories:
       - "/opt/homebrew/opt/postgresql@15/bin/gmake"
       - "/Users/mathistelschow/.bun/bin/gmake"
@@ -439,8 +446,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/gmake"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/gmake"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/gmake"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/gmake"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/gmake"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/gmake"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/gmake"
       - "/opt/homebrew/opt/postgresql@15/bin/make"
       - "/Users/mathistelschow/.bun/bin/make"
       - "/Users/mathistelschow/.local/bin/make"
@@ -485,8 +493,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
       CMAKE_FIND_ROOT_PATH: "/Users/mathistelschow/arm-gnu-toolchain"
   -
     kind: "find-v1"
@@ -550,8 +559,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
       CMAKE_FIND_ROOT_PATH: "/Users/mathistelschow/arm-gnu-toolchain"
   -
     kind: "message-v1"
@@ -657,8 +667,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
       CMAKE_FIND_ROOT_PATH: "/Users/mathistelschow/arm-gnu-toolchain"
   -
     kind: "message-v1"
@@ -730,8 +741,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/"
     found: "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-ar"
     search_context:
       ENV{PATH}:
@@ -769,8 +781,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
       CMAKE_FIND_ROOT_PATH: "/Users/mathistelschow/arm-gnu-toolchain"
   -
     kind: "find-v1"
@@ -820,8 +833,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/"
     found: "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-ranlib"
     search_context:
       ENV{PATH}:
@@ -859,8 +873,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
       CMAKE_FIND_ROOT_PATH: "/Users/mathistelschow/arm-gnu-toolchain"
   -
     kind: "find-v1"
@@ -910,8 +925,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/"
     found: "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-strip"
     search_context:
       ENV{PATH}:
@@ -949,8 +965,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
       CMAKE_FIND_ROOT_PATH: "/Users/mathistelschow/arm-gnu-toolchain"
   -
     kind: "find-v1"
@@ -1000,8 +1017,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/"
     found: "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-ld"
     search_context:
       ENV{PATH}:
@@ -1039,8 +1057,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
       CMAKE_FIND_ROOT_PATH: "/Users/mathistelschow/arm-gnu-toolchain"
   -
     kind: "find-v1"
@@ -1090,8 +1109,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/"
     found: "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-nm"
     search_context:
       ENV{PATH}:
@@ -1129,8 +1149,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
       CMAKE_FIND_ROOT_PATH: "/Users/mathistelschow/arm-gnu-toolchain"
   -
     kind: "find-v1"
@@ -1180,8 +1201,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/"
     found: "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-readelf"
     search_context:
       ENV{PATH}:
@@ -1219,8 +1241,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
       CMAKE_FIND_ROOT_PATH: "/Users/mathistelschow/arm-gnu-toolchain"
   -
     kind: "find-v1"
@@ -1270,8 +1293,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/"
     searched_directories:
       - "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-dlltool"
       - "/opt/homebrew/opt/postgresql@15/bin/arm-none-eabi-dlltool"
@@ -1300,8 +1324,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/arm-none-eabi-dlltool"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/arm-none-eabi-dlltool"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/arm-none-eabi-dlltool"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/arm-none-eabi-dlltool"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/arm-none-eabi-dlltool"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/arm-none-eabi-dlltool"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/arm-none-eabi-dlltool"
       - "/Users/mathistelschow/arm-gnu-toolchain/bin/dlltool"
       - "/opt/homebrew/opt/postgresql@15/bin/dlltool"
       - "/Users/mathistelschow/.bun/bin/dlltool"
@@ -1329,8 +1354,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/dlltool"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/dlltool"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/dlltool"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/dlltool"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/dlltool"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/dlltool"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/dlltool"
     found: false
     search_context:
       ENV{PATH}:
@@ -1368,8 +1394,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
       CMAKE_FIND_ROOT_PATH: "/Users/mathistelschow/arm-gnu-toolchain"
   -
     kind: "find-v1"
@@ -1419,8 +1446,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/"
     found: "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-addr2line"
     search_context:
       ENV{PATH}:
@@ -1458,8 +1486,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
       CMAKE_FIND_ROOT_PATH: "/Users/mathistelschow/arm-gnu-toolchain"
   -
     kind: "find-v1"
@@ -1509,8 +1538,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/"
     searched_directories:
       - "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-tapi"
       - "/opt/homebrew/opt/postgresql@15/bin/arm-none-eabi-tapi"
@@ -1539,8 +1569,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/arm-none-eabi-tapi"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/arm-none-eabi-tapi"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/arm-none-eabi-tapi"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/arm-none-eabi-tapi"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/arm-none-eabi-tapi"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/arm-none-eabi-tapi"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/arm-none-eabi-tapi"
       - "/Users/mathistelschow/arm-gnu-toolchain/bin/tapi"
       - "/opt/homebrew/opt/postgresql@15/bin/tapi"
       - "/Users/mathistelschow/.bun/bin/tapi"
@@ -1568,8 +1599,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/tapi"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/tapi"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/tapi"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/tapi"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/tapi"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/tapi"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/tapi"
     found: false
     search_context:
       ENV{PATH}:
@@ -1607,8 +1639,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
       CMAKE_FIND_ROOT_PATH: "/Users/mathistelschow/arm-gnu-toolchain"
   -
     kind: "find-v1"
@@ -1660,8 +1693,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/"
     searched_directories:
       - "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc-ar-15.3"
       - "/opt/homebrew/opt/postgresql@15/bin/arm-none-eabi-gcc-ar-15.3"
@@ -1690,8 +1724,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/arm-none-eabi-gcc-ar-15.3"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/arm-none-eabi-gcc-ar-15.3"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/arm-none-eabi-gcc-ar-15.3"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/arm-none-eabi-gcc-ar-15.3"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/arm-none-eabi-gcc-ar-15.3"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/arm-none-eabi-gcc-ar-15.3"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/arm-none-eabi-gcc-ar-15.3"
       - "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc-ar-15"
       - "/opt/homebrew/opt/postgresql@15/bin/arm-none-eabi-gcc-ar-15"
       - "/Users/mathistelschow/.bun/bin/arm-none-eabi-gcc-ar-15"
@@ -1719,8 +1754,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/arm-none-eabi-gcc-ar-15"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/arm-none-eabi-gcc-ar-15"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/arm-none-eabi-gcc-ar-15"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/arm-none-eabi-gcc-ar-15"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/arm-none-eabi-gcc-ar-15"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/arm-none-eabi-gcc-ar-15"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/arm-none-eabi-gcc-ar-15"
       - "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc-ar15"
       - "/opt/homebrew/opt/postgresql@15/bin/arm-none-eabi-gcc-ar15"
       - "/Users/mathistelschow/.bun/bin/arm-none-eabi-gcc-ar15"
@@ -1748,8 +1784,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/arm-none-eabi-gcc-ar15"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/arm-none-eabi-gcc-ar15"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/arm-none-eabi-gcc-ar15"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/arm-none-eabi-gcc-ar15"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/arm-none-eabi-gcc-ar15"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/arm-none-eabi-gcc-ar15"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/arm-none-eabi-gcc-ar15"
     found: "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc-ar"
     search_context:
       ENV{PATH}:
@@ -1787,8 +1824,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
       CMAKE_FIND_ROOT_PATH: "/Users/mathistelschow/arm-gnu-toolchain"
   -
     kind: "find-v1"
@@ -1840,8 +1878,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/"
     searched_directories:
       - "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc-ranlib-15.3"
       - "/opt/homebrew/opt/postgresql@15/bin/arm-none-eabi-gcc-ranlib-15.3"
@@ -1870,8 +1909,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/arm-none-eabi-gcc-ranlib-15.3"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/arm-none-eabi-gcc-ranlib-15.3"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/arm-none-eabi-gcc-ranlib-15.3"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/arm-none-eabi-gcc-ranlib-15.3"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/arm-none-eabi-gcc-ranlib-15.3"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/arm-none-eabi-gcc-ranlib-15.3"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/arm-none-eabi-gcc-ranlib-15.3"
       - "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc-ranlib-15"
       - "/opt/homebrew/opt/postgresql@15/bin/arm-none-eabi-gcc-ranlib-15"
       - "/Users/mathistelschow/.bun/bin/arm-none-eabi-gcc-ranlib-15"
@@ -1899,8 +1939,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/arm-none-eabi-gcc-ranlib-15"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/arm-none-eabi-gcc-ranlib-15"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/arm-none-eabi-gcc-ranlib-15"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/arm-none-eabi-gcc-ranlib-15"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/arm-none-eabi-gcc-ranlib-15"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/arm-none-eabi-gcc-ranlib-15"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/arm-none-eabi-gcc-ranlib-15"
       - "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc-ranlib15"
       - "/opt/homebrew/opt/postgresql@15/bin/arm-none-eabi-gcc-ranlib15"
       - "/Users/mathistelschow/.bun/bin/arm-none-eabi-gcc-ranlib15"
@@ -1928,8 +1969,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/arm-none-eabi-gcc-ranlib15"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/arm-none-eabi-gcc-ranlib15"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/arm-none-eabi-gcc-ranlib15"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/arm-none-eabi-gcc-ranlib15"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/arm-none-eabi-gcc-ranlib15"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/arm-none-eabi-gcc-ranlib15"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/arm-none-eabi-gcc-ranlib15"
     found: "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc-ranlib"
     search_context:
       ENV{PATH}:
@@ -1967,8 +2009,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
       CMAKE_FIND_ROOT_PATH: "/Users/mathistelschow/arm-gnu-toolchain"
   -
     kind: "find-v1"
@@ -2032,8 +2075,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
       CMAKE_FIND_ROOT_PATH: "/Users/mathistelschow/arm-gnu-toolchain"
   -
     kind: "message-v1"
@@ -2139,8 +2183,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
       CMAKE_FIND_ROOT_PATH: "/Users/mathistelschow/arm-gnu-toolchain"
   -
     kind: "message-v1"
@@ -2214,8 +2259,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/"
     searched_directories:
       - "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc-ar-15.3"
       - "/opt/homebrew/opt/postgresql@15/bin/arm-none-eabi-gcc-ar-15.3"
@@ -2244,8 +2290,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/arm-none-eabi-gcc-ar-15.3"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/arm-none-eabi-gcc-ar-15.3"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/arm-none-eabi-gcc-ar-15.3"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/arm-none-eabi-gcc-ar-15.3"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/arm-none-eabi-gcc-ar-15.3"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/arm-none-eabi-gcc-ar-15.3"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/arm-none-eabi-gcc-ar-15.3"
       - "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc-ar-15"
       - "/opt/homebrew/opt/postgresql@15/bin/arm-none-eabi-gcc-ar-15"
       - "/Users/mathistelschow/.bun/bin/arm-none-eabi-gcc-ar-15"
@@ -2273,8 +2320,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/arm-none-eabi-gcc-ar-15"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/arm-none-eabi-gcc-ar-15"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/arm-none-eabi-gcc-ar-15"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/arm-none-eabi-gcc-ar-15"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/arm-none-eabi-gcc-ar-15"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/arm-none-eabi-gcc-ar-15"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/arm-none-eabi-gcc-ar-15"
       - "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc-ar15"
       - "/opt/homebrew/opt/postgresql@15/bin/arm-none-eabi-gcc-ar15"
       - "/Users/mathistelschow/.bun/bin/arm-none-eabi-gcc-ar15"
@@ -2302,8 +2350,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/arm-none-eabi-gcc-ar15"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/arm-none-eabi-gcc-ar15"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/arm-none-eabi-gcc-ar15"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/arm-none-eabi-gcc-ar15"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/arm-none-eabi-gcc-ar15"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/arm-none-eabi-gcc-ar15"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/arm-none-eabi-gcc-ar15"
     found: "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc-ar"
     search_context:
       ENV{PATH}:
@@ -2341,8 +2390,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
       CMAKE_FIND_ROOT_PATH: "/Users/mathistelschow/arm-gnu-toolchain"
   -
     kind: "find-v1"
@@ -2394,8 +2444,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/"
     searched_directories:
       - "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc-ranlib-15.3"
       - "/opt/homebrew/opt/postgresql@15/bin/arm-none-eabi-gcc-ranlib-15.3"
@@ -2424,8 +2475,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/arm-none-eabi-gcc-ranlib-15.3"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/arm-none-eabi-gcc-ranlib-15.3"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/arm-none-eabi-gcc-ranlib-15.3"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/arm-none-eabi-gcc-ranlib-15.3"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/arm-none-eabi-gcc-ranlib-15.3"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/arm-none-eabi-gcc-ranlib-15.3"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/arm-none-eabi-gcc-ranlib-15.3"
       - "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc-ranlib-15"
       - "/opt/homebrew/opt/postgresql@15/bin/arm-none-eabi-gcc-ranlib-15"
       - "/Users/mathistelschow/.bun/bin/arm-none-eabi-gcc-ranlib-15"
@@ -2453,8 +2505,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/arm-none-eabi-gcc-ranlib-15"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/arm-none-eabi-gcc-ranlib-15"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/arm-none-eabi-gcc-ranlib-15"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/arm-none-eabi-gcc-ranlib-15"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/arm-none-eabi-gcc-ranlib-15"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/arm-none-eabi-gcc-ranlib-15"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/arm-none-eabi-gcc-ranlib-15"
       - "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc-ranlib15"
       - "/opt/homebrew/opt/postgresql@15/bin/arm-none-eabi-gcc-ranlib15"
       - "/Users/mathistelschow/.bun/bin/arm-none-eabi-gcc-ranlib15"
@@ -2482,8 +2535,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/arm-none-eabi-gcc-ranlib15"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/arm-none-eabi-gcc-ranlib15"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/arm-none-eabi-gcc-ranlib15"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/arm-none-eabi-gcc-ranlib15"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/arm-none-eabi-gcc-ranlib15"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/arm-none-eabi-gcc-ranlib15"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/arm-none-eabi-gcc-ranlib15"
     found: "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc-ranlib"
     search_context:
       ENV{PATH}:
@@ -2521,8 +2575,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
       CMAKE_FIND_ROOT_PATH: "/Users/mathistelschow/arm-gnu-toolchain"
   -
     kind: "message-v1"
@@ -2587,8 +2642,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/"
     searched_directories:
       - "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc-ar-"
       - "/opt/homebrew/opt/postgresql@15/bin/arm-none-eabi-gcc-ar-"
@@ -2617,8 +2673,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/arm-none-eabi-gcc-ar-"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/arm-none-eabi-gcc-ar-"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/arm-none-eabi-gcc-ar-"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/arm-none-eabi-gcc-ar-"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/arm-none-eabi-gcc-ar-"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/arm-none-eabi-gcc-ar-"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/arm-none-eabi-gcc-ar-"
       - "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc-ar-"
       - "/opt/homebrew/opt/postgresql@15/bin/arm-none-eabi-gcc-ar-"
       - "/Users/mathistelschow/.bun/bin/arm-none-eabi-gcc-ar-"
@@ -2646,8 +2703,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/arm-none-eabi-gcc-ar-"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/arm-none-eabi-gcc-ar-"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/arm-none-eabi-gcc-ar-"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/arm-none-eabi-gcc-ar-"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/arm-none-eabi-gcc-ar-"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/arm-none-eabi-gcc-ar-"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/arm-none-eabi-gcc-ar-"
     found: "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc-ar"
     search_context:
       ENV{PATH}:
@@ -2685,8 +2743,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
       CMAKE_FIND_ROOT_PATH: "/Users/mathistelschow/arm-gnu-toolchain"
   -
     kind: "find-v1"
@@ -2738,8 +2797,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/"
     searched_directories:
       - "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc-ranlib-"
       - "/opt/homebrew/opt/postgresql@15/bin/arm-none-eabi-gcc-ranlib-"
@@ -2768,8 +2828,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/arm-none-eabi-gcc-ranlib-"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/arm-none-eabi-gcc-ranlib-"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/arm-none-eabi-gcc-ranlib-"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/arm-none-eabi-gcc-ranlib-"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/arm-none-eabi-gcc-ranlib-"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/arm-none-eabi-gcc-ranlib-"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/arm-none-eabi-gcc-ranlib-"
       - "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc-ranlib-"
       - "/opt/homebrew/opt/postgresql@15/bin/arm-none-eabi-gcc-ranlib-"
       - "/Users/mathistelschow/.bun/bin/arm-none-eabi-gcc-ranlib-"
@@ -2797,8 +2858,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/arm-none-eabi-gcc-ranlib-"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/arm-none-eabi-gcc-ranlib-"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/arm-none-eabi-gcc-ranlib-"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/arm-none-eabi-gcc-ranlib-"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/arm-none-eabi-gcc-ranlib-"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/arm-none-eabi-gcc-ranlib-"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/arm-none-eabi-gcc-ranlib-"
     found: "/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc-ranlib"
     search_context:
       ENV{PATH}:
@@ -2836,8 +2898,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
       CMAKE_FIND_ROOT_PATH: "/Users/mathistelschow/arm-gnu-toolchain"
   -
     kind: "try_compile-v1"
@@ -2848,8 +2911,8 @@ events:
     checks:
       - "Detecting C compiler ABI info"
     directories:
-      source: "/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/CMakeScratch/TryCompile-NmvAqF"
-      binary: "/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/CMakeScratch/TryCompile-NmvAqF"
+      source: "/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/CMakeScratch/TryCompile-ynDtLg"
+      binary: "/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/CMakeScratch/TryCompile-ynDtLg"
     cmakeVariables:
       CMAKE_CXX_STDLIB_MODULES_JSON: ""
       CMAKE_C_FLAGS: "-mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp"
@@ -2861,12 +2924,12 @@ events:
       variable: "CMAKE_C_ABI_COMPILED"
       cached: false
       stdout: |
-        Change Dir: '/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/CMakeScratch/TryCompile-NmvAqF'
+        Change Dir: '/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/CMakeScratch/TryCompile-ynDtLg'
         
-        Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_7a41b/fast
-        /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_7a41b.dir/build.make CMakeFiles/cmTC_7a41b.dir/build
-        Building C object CMakeFiles/cmTC_7a41b.dir/CMakeCCompilerABI.c.o
-        /Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc   -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp    -v -o CMakeFiles/cmTC_7a41b.dir/CMakeCCompilerABI.c.o -c /opt/homebrew/share/cmake/Modules/CMakeCCompilerABI.c
+        Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_d4299/fast
+        /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_d4299.dir/build.make CMakeFiles/cmTC_d4299.dir/build
+        Building C object CMakeFiles/cmTC_d4299.dir/CMakeCCompilerABI.c.o
+        /Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc   -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp    -v -o CMakeFiles/cmTC_d4299.dir/CMakeCCompilerABI.c.o -c /opt/homebrew/share/cmake/Modules/CMakeCCompilerABI.c
         Using built-in specs.
         COLLECT_GCC=/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc
         Target: arm-none-eabi
@@ -2874,8 +2937,8 @@ events:
         Thread model: single
         Supported LTO compression algorithms: zlib zstd
         gcc version 15.3.1 20260627 (Arm GNU Toolchain 15.3.Rel1 (Build arm-15.149)) 
-        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-v' '-o' 'CMakeFiles/cmTC_7a41b.dir/CMakeCCompilerABI.c.o' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_7a41b.dir/'
-         /Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/cc1 -quiet -v -imultilib thumb/v8-m.main+fp/softfp -iprefix /Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/ -isysroot /Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi -D__USES_INITFINI__ /opt/homebrew/share/cmake/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_7a41b.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=softfp -mlibarch=armv8-m.main+dsp+fp -march=armv8-m.main+dsp+fp -version -o /var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//cc8OJRAC.s
+        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-v' '-o' 'CMakeFiles/cmTC_d4299.dir/CMakeCCompilerABI.c.o' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_d4299.dir/'
+         /Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/cc1 -quiet -v -imultilib thumb/v8-m.main+fp/softfp -iprefix /Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/ -isysroot /Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi -D__USES_INITFINI__ /opt/homebrew/share/cmake/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_d4299.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=softfp -mlibarch=armv8-m.main+dsp+fp -march=armv8-m.main+dsp+fp -version -o /var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//cc6l18vV.s
         GNU C23 (Arm GNU Toolchain 15.3.Rel1 (Build arm-15.149)) version 15.3.1 20260627 (arm-none-eabi)
         	compiled by GNU C version Apple LLVM 13.0.0 (clang-1300.0.29.3), GMP version 6.2.1, MPFR version 3.1.6, MPC version 1.0.3, isl version isl-0.15-1-g835ea3a-GMP
         
@@ -2892,14 +2955,14 @@ events:
          /Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/include
         End of search list.
         Compiler executable checksum: 8eabf2d82f9563bc8d0caf1a705d4244
-        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-v' '-o' 'CMakeFiles/cmTC_7a41b.dir/CMakeCCompilerABI.c.o' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_7a41b.dir/'
-         /Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/as -v -march=armv8-m.main+dsp+fp -mfloat-abi=softfp -meabi=5 -o CMakeFiles/cmTC_7a41b.dir/CMakeCCompilerABI.c.o /var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//cc8OJRAC.s
+        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-v' '-o' 'CMakeFiles/cmTC_d4299.dir/CMakeCCompilerABI.c.o' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_d4299.dir/'
+         /Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/as -v -march=armv8-m.main+dsp+fp -mfloat-abi=softfp -meabi=5 -o CMakeFiles/cmTC_d4299.dir/CMakeCCompilerABI.c.o /var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//cc6l18vV.s
         GNU assembler version 2.45.1 (arm-none-eabi) using BFD version (Arm GNU Toolchain 15.3.Rel1 (Build arm-15.149)) 2.45.1.20260126
         COMPILER_PATH=/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/:/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/
         LIBRARY_PATH=/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/thumb/v8-m.main+fp/softfp/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/:/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/:/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/
-        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-v' '-o' 'CMakeFiles/cmTC_7a41b.dir/CMakeCCompilerABI.c.o' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_7a41b.dir/CMakeCCompilerABI.c.'
-        Linking C executable cmTC_7a41b.elf
-        /opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_7a41b.dir/link.txt --verbose=1
+        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-v' '-o' 'CMakeFiles/cmTC_d4299.dir/CMakeCCompilerABI.c.o' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_d4299.dir/CMakeCCompilerABI.c.'
+        Linking C executable cmTC_d4299.elf
+        /opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_d4299.dir/link.txt --verbose=1
         Using built-in specs.
         COLLECT_GCC=/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc
         COLLECT_LTO_WRAPPER=/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/lto-wrapper
@@ -2910,11 +2973,11 @@ events:
         gcc version 15.3.1 20260627 (Arm GNU Toolchain 15.3.Rel1 (Build arm-15.149)) 
         COMPILER_PATH=/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/:/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/
         LIBRARY_PATH=/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/thumb/v8-m.main+fp/softfp/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/:/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/:/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/
-        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-nostdlib' '-v' '-o' 'cmTC_7a41b.elf' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'cmTC_7a41b.elf.'
-         /Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/collect2 -plugin /Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/liblto_plugin.so -plugin-opt=/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/lto-wrapper -plugin-opt=-fresolution=/var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//ccmNsc2b.res --sysroot=/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi -X -o cmTC_7a41b.elf -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/thumb/v8-m.main+fp/softfp -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp -L/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1 -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib -L/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib --build-id=none CMakeFiles/cmTC_7a41b.dir/CMakeCCompilerABI.c.o
+        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-nostdlib' '-v' '-o' 'cmTC_d4299.elf' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'cmTC_d4299.elf.'
+         /Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/collect2 -plugin /Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/liblto_plugin.so -plugin-opt=/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/lto-wrapper -plugin-opt=-fresolution=/var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//ccfRHMXW.res --sysroot=/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi -X -o cmTC_d4299.elf -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/thumb/v8-m.main+fp/softfp -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp -L/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1 -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib -L/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib --build-id=none CMakeFiles/cmTC_d4299.dir/CMakeCCompilerABI.c.o
         /Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: warning: cannot find entry symbol _start; defaulting to 00008000
-        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-nostdlib' '-v' '-o' 'cmTC_7a41b.elf' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'cmTC_7a41b.elf.'
-        /Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp  -Wl,--build-id=none -nostdlib  -v CMakeFiles/cmTC_7a41b.dir/CMakeCCompilerABI.c.o -o cmTC_7a41b.elf
+        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-nostdlib' '-v' '-o' 'cmTC_d4299.elf' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'cmTC_d4299.elf.'
+        /Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp  -Wl,--build-id=none -nostdlib  -v CMakeFiles/cmTC_d4299.dir/CMakeCCompilerABI.c.o -o cmTC_d4299.elf
         
       exitCode: 0
   -
@@ -2947,12 +3010,12 @@ events:
       Parsed C implicit link information:
         link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|wild|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
         linker tool regex: [^[ 	]*(->|"|[0-9]+>[ 	-]*Build:[ 	0-9]+ ms[ 	]*)?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|wild))("|,| |$)]
-        ignore line: [Change Dir: '/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/CMakeScratch/TryCompile-NmvAqF']
+        ignore line: [Change Dir: '/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/CMakeScratch/TryCompile-ynDtLg']
         ignore line: []
-        ignore line: [Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_7a41b/fast]
-        ignore line: [/Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_7a41b.dir/build.make CMakeFiles/cmTC_7a41b.dir/build]
-        ignore line: [Building C object CMakeFiles/cmTC_7a41b.dir/CMakeCCompilerABI.c.o]
-        ignore line: [/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc   -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp    -v -o CMakeFiles/cmTC_7a41b.dir/CMakeCCompilerABI.c.o -c /opt/homebrew/share/cmake/Modules/CMakeCCompilerABI.c]
+        ignore line: [Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_d4299/fast]
+        ignore line: [/Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_d4299.dir/build.make CMakeFiles/cmTC_d4299.dir/build]
+        ignore line: [Building C object CMakeFiles/cmTC_d4299.dir/CMakeCCompilerABI.c.o]
+        ignore line: [/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc   -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp    -v -o CMakeFiles/cmTC_d4299.dir/CMakeCCompilerABI.c.o -c /opt/homebrew/share/cmake/Modules/CMakeCCompilerABI.c]
         ignore line: [Using built-in specs.]
         ignore line: [COLLECT_GCC=/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc]
         ignore line: [Target: arm-none-eabi]
@@ -2960,8 +3023,8 @@ events:
         ignore line: [Thread model: single]
         ignore line: [Supported LTO compression algorithms: zlib zstd]
         ignore line: [gcc version 15.3.1 20260627 (Arm GNU Toolchain 15.3.Rel1 (Build arm-15.149)) ]
-        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-v' '-o' 'CMakeFiles/cmTC_7a41b.dir/CMakeCCompilerABI.c.o' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_7a41b.dir/']
-        ignore line: [ /Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/cc1 -quiet -v -imultilib thumb/v8-m.main+fp/softfp -iprefix /Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/ -isysroot /Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi -D__USES_INITFINI__ /opt/homebrew/share/cmake/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_7a41b.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=softfp -mlibarch=armv8-m.main+dsp+fp -march=armv8-m.main+dsp+fp -version -o /var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//cc8OJRAC.s]
+        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-v' '-o' 'CMakeFiles/cmTC_d4299.dir/CMakeCCompilerABI.c.o' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_d4299.dir/']
+        ignore line: [ /Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/cc1 -quiet -v -imultilib thumb/v8-m.main+fp/softfp -iprefix /Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/ -isysroot /Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi -D__USES_INITFINI__ /opt/homebrew/share/cmake/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_d4299.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=softfp -mlibarch=armv8-m.main+dsp+fp -march=armv8-m.main+dsp+fp -version -o /var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//cc6l18vV.s]
         ignore line: [GNU C23 (Arm GNU Toolchain 15.3.Rel1 (Build arm-15.149)) version 15.3.1 20260627 (arm-none-eabi)]
         ignore line: [	compiled by GNU C version Apple LLVM 13.0.0 (clang-1300.0.29.3)  GMP version 6.2.1  MPFR version 3.1.6  MPC version 1.0.3  isl version isl-0.15-1-g835ea3a-GMP]
         ignore line: []
@@ -2978,14 +3041,14 @@ events:
         ignore line: [ /Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/include]
         ignore line: [End of search list.]
         ignore line: [Compiler executable checksum: 8eabf2d82f9563bc8d0caf1a705d4244]
-        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-v' '-o' 'CMakeFiles/cmTC_7a41b.dir/CMakeCCompilerABI.c.o' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_7a41b.dir/']
-        ignore line: [ /Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/as -v -march=armv8-m.main+dsp+fp -mfloat-abi=softfp -meabi=5 -o CMakeFiles/cmTC_7a41b.dir/CMakeCCompilerABI.c.o /var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//cc8OJRAC.s]
+        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-v' '-o' 'CMakeFiles/cmTC_d4299.dir/CMakeCCompilerABI.c.o' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_d4299.dir/']
+        ignore line: [ /Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/as -v -march=armv8-m.main+dsp+fp -mfloat-abi=softfp -meabi=5 -o CMakeFiles/cmTC_d4299.dir/CMakeCCompilerABI.c.o /var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//cc6l18vV.s]
         ignore line: [GNU assembler version 2.45.1 (arm-none-eabi) using BFD version (Arm GNU Toolchain 15.3.Rel1 (Build arm-15.149)) 2.45.1.20260126]
         ignore line: [COMPILER_PATH=/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/:/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/]
         ignore line: [LIBRARY_PATH=/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/thumb/v8-m.main+fp/softfp/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/:/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/:/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/]
-        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-v' '-o' 'CMakeFiles/cmTC_7a41b.dir/CMakeCCompilerABI.c.o' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_7a41b.dir/CMakeCCompilerABI.c.']
-        ignore line: [Linking C executable cmTC_7a41b.elf]
-        ignore line: [/opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_7a41b.dir/link.txt --verbose=1]
+        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-v' '-o' 'CMakeFiles/cmTC_d4299.dir/CMakeCCompilerABI.c.o' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_d4299.dir/CMakeCCompilerABI.c.']
+        ignore line: [Linking C executable cmTC_d4299.elf]
+        ignore line: [/opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_d4299.dir/link.txt --verbose=1]
         ignore line: [Using built-in specs.]
         ignore line: [COLLECT_GCC=/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc]
         ignore line: [COLLECT_LTO_WRAPPER=/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/lto-wrapper]
@@ -2996,17 +3059,17 @@ events:
         ignore line: [gcc version 15.3.1 20260627 (Arm GNU Toolchain 15.3.Rel1 (Build arm-15.149)) ]
         ignore line: [COMPILER_PATH=/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/:/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/]
         ignore line: [LIBRARY_PATH=/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/thumb/v8-m.main+fp/softfp/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/:/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/:/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/]
-        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-nostdlib' '-v' '-o' 'cmTC_7a41b.elf' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'cmTC_7a41b.elf.']
-        link line: [ /Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/collect2 -plugin /Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/liblto_plugin.so -plugin-opt=/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/lto-wrapper -plugin-opt=-fresolution=/var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//ccmNsc2b.res --sysroot=/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi -X -o cmTC_7a41b.elf -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/thumb/v8-m.main+fp/softfp -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp -L/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1 -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib -L/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib --build-id=none CMakeFiles/cmTC_7a41b.dir/CMakeCCompilerABI.c.o]
+        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-nostdlib' '-v' '-o' 'cmTC_d4299.elf' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'cmTC_d4299.elf.']
+        link line: [ /Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/collect2 -plugin /Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/liblto_plugin.so -plugin-opt=/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/lto-wrapper -plugin-opt=-fresolution=/var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//ccfRHMXW.res --sysroot=/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi -X -o cmTC_d4299.elf -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/thumb/v8-m.main+fp/softfp -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp -L/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1 -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib -L/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib --build-id=none CMakeFiles/cmTC_d4299.dir/CMakeCCompilerABI.c.o]
           arg [/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/collect2] ==> ignore
           arg [-plugin] ==> ignore
           arg [/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/liblto_plugin.so] ==> ignore
           arg [-plugin-opt=/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/lto-wrapper] ==> ignore
-          arg [-plugin-opt=-fresolution=/var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//ccmNsc2b.res] ==> ignore
+          arg [-plugin-opt=-fresolution=/var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//ccfRHMXW.res] ==> ignore
           arg [--sysroot=/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi] ==> ignore
           arg [-X] ==> ignore
           arg [-o] ==> ignore
-          arg [cmTC_7a41b.elf] ==> ignore
+          arg [cmTC_d4299.elf] ==> ignore
           arg [-L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/thumb/v8-m.main+fp/softfp] ==> dir [/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/thumb/v8-m.main+fp/softfp]
           arg [-L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp] ==> dir [/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp]
           arg [-L/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp] ==> dir [/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp]
@@ -3015,11 +3078,11 @@ events:
           arg [-L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib] ==> dir [/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib]
           arg [-L/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib] ==> dir [/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib]
           arg [--build-id=none] ==> ignore
-          arg [CMakeFiles/cmTC_7a41b.dir/CMakeCCompilerABI.c.o] ==> ignore
+          arg [CMakeFiles/cmTC_d4299.dir/CMakeCCompilerABI.c.o] ==> ignore
         ignore line: [/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: warning: cannot find entry symbol _start]
         ignore line: [ defaulting to 00008000]
-        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-nostdlib' '-v' '-o' 'cmTC_7a41b.elf' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'cmTC_7a41b.elf.']
-        ignore line: [/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp  -Wl --build-id=none -nostdlib  -v CMakeFiles/cmTC_7a41b.dir/CMakeCCompilerABI.c.o -o cmTC_7a41b.elf]
+        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-nostdlib' '-v' '-o' 'cmTC_d4299.elf' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'cmTC_d4299.elf.']
+        ignore line: [/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp  -Wl --build-id=none -nostdlib  -v CMakeFiles/cmTC_d4299.dir/CMakeCCompilerABI.c.o -o cmTC_d4299.elf]
         ignore line: []
         ignore line: []
         collapse library dir [/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/thumb/v8-m.main+fp/softfp] ==> [/Users/mathistelschow/arm-gnu-toolchain/lib/gcc/arm-none-eabi/15.3.1/thumb/v8-m.main+fp/softfp]
@@ -3044,8 +3107,8 @@ events:
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/CMakeScratch/TryCompile-zpHiak"
-      binary: "/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/CMakeScratch/TryCompile-zpHiak"
+      source: "/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/CMakeScratch/TryCompile-L99ew3"
+      binary: "/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/CMakeScratch/TryCompile-L99ew3"
     cmakeVariables:
       CMAKE_CXX_FLAGS: "-mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp"
       CMAKE_CXX_FLAGS_DEBUG: "-Og -g"
@@ -3058,12 +3121,12 @@ events:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: false
       stdout: |
-        Change Dir: '/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/CMakeScratch/TryCompile-zpHiak'
+        Change Dir: '/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/CMakeScratch/TryCompile-L99ew3'
         
-        Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_adaaf/fast
-        /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_adaaf.dir/build.make CMakeFiles/cmTC_adaaf.dir/build
-        Building CXX object CMakeFiles/cmTC_adaaf.dir/CMakeCXXCompilerABI.cpp.o
-        /Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-g++   -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp    -v -o CMakeFiles/cmTC_adaaf.dir/CMakeCXXCompilerABI.cpp.o -c /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp
+        Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_0d6e8/fast
+        /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_0d6e8.dir/build.make CMakeFiles/cmTC_0d6e8.dir/build
+        Building CXX object CMakeFiles/cmTC_0d6e8.dir/CMakeCXXCompilerABI.cpp.o
+        /Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-g++   -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp    -v -o CMakeFiles/cmTC_0d6e8.dir/CMakeCXXCompilerABI.cpp.o -c /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp
         Using built-in specs.
         COLLECT_GCC=/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-g++
         Target: arm-none-eabi
@@ -3071,8 +3134,8 @@ events:
         Thread model: single
         Supported LTO compression algorithms: zlib zstd
         gcc version 15.3.1 20260627 (Arm GNU Toolchain 15.3.Rel1 (Build arm-15.149)) 
-        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-v' '-o' 'CMakeFiles/cmTC_adaaf.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_adaaf.dir/'
-         /Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/cc1plus -quiet -v -imultilib thumb/v8-m.main+fp/softfp -iprefix /Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/ -isysroot /Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi -D__USES_INITFINI__ /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_adaaf.dir/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=softfp -mlibarch=armv8-m.main+dsp+fp -march=armv8-m.main+dsp+fp -version -o /var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//ccNOozSy.s
+        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-v' '-o' 'CMakeFiles/cmTC_0d6e8.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_0d6e8.dir/'
+         /Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/cc1plus -quiet -v -imultilib thumb/v8-m.main+fp/softfp -iprefix /Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/ -isysroot /Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi -D__USES_INITFINI__ /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_0d6e8.dir/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=softfp -mlibarch=armv8-m.main+dsp+fp -march=armv8-m.main+dsp+fp -version -o /var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//cctPSoU8.s
         GNU C++17 (Arm GNU Toolchain 15.3.Rel1 (Build arm-15.149)) version 15.3.1 20260627 (arm-none-eabi)
         	compiled by GNU C version Apple LLVM 13.0.0 (clang-1300.0.29.3), GMP version 6.2.1, MPFR version 3.1.6, MPC version 1.0.3, isl version isl-0.15-1-g835ea3a-GMP
         
@@ -3095,14 +3158,14 @@ events:
          /Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/include
         End of search list.
         Compiler executable checksum: fd9cee8fdfbf79b80fabeace9c8e78ac
-        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-v' '-o' 'CMakeFiles/cmTC_adaaf.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_adaaf.dir/'
-         /Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/as -v -march=armv8-m.main+dsp+fp -mfloat-abi=softfp -meabi=5 -o CMakeFiles/cmTC_adaaf.dir/CMakeCXXCompilerABI.cpp.o /var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//ccNOozSy.s
+        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-v' '-o' 'CMakeFiles/cmTC_0d6e8.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_0d6e8.dir/'
+         /Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/as -v -march=armv8-m.main+dsp+fp -mfloat-abi=softfp -meabi=5 -o CMakeFiles/cmTC_0d6e8.dir/CMakeCXXCompilerABI.cpp.o /var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//cctPSoU8.s
         GNU assembler version 2.45.1 (arm-none-eabi) using BFD version (Arm GNU Toolchain 15.3.Rel1 (Build arm-15.149)) 2.45.1.20260126
         COMPILER_PATH=/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/:/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/
         LIBRARY_PATH=/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/thumb/v8-m.main+fp/softfp/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/:/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/:/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/
-        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-v' '-o' 'CMakeFiles/cmTC_adaaf.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_adaaf.dir/CMakeCXXCompilerABI.cpp.'
-        Linking CXX executable cmTC_adaaf.elf
-        /opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_adaaf.dir/link.txt --verbose=1
+        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-v' '-o' 'CMakeFiles/cmTC_0d6e8.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_0d6e8.dir/CMakeCXXCompilerABI.cpp.'
+        Linking CXX executable cmTC_0d6e8.elf
+        /opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_0d6e8.dir/link.txt --verbose=1
         Using built-in specs.
         COLLECT_GCC=/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-g++
         COLLECT_LTO_WRAPPER=/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/lto-wrapper
@@ -3113,11 +3176,11 @@ events:
         gcc version 15.3.1 20260627 (Arm GNU Toolchain 15.3.Rel1 (Build arm-15.149)) 
         COMPILER_PATH=/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/:/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/
         LIBRARY_PATH=/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/thumb/v8-m.main+fp/softfp/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/:/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/:/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/
-        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-nostdlib' '-v' '-o' 'cmTC_adaaf.elf' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'cmTC_adaaf.elf.'
-         /Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/collect2 -plugin /Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/liblto_plugin.so -plugin-opt=/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/lto-wrapper -plugin-opt=-fresolution=/var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//ccp37m7v.res --sysroot=/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi -X -o cmTC_adaaf.elf -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/thumb/v8-m.main+fp/softfp -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp -L/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1 -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib -L/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib --build-id=none CMakeFiles/cmTC_adaaf.dir/CMakeCXXCompilerABI.cpp.o
+        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-nostdlib' '-v' '-o' 'cmTC_0d6e8.elf' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'cmTC_0d6e8.elf.'
+         /Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/collect2 -plugin /Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/liblto_plugin.so -plugin-opt=/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/lto-wrapper -plugin-opt=-fresolution=/var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//ccuK1cKy.res --sysroot=/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi -X -o cmTC_0d6e8.elf -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/thumb/v8-m.main+fp/softfp -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp -L/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1 -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib -L/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib --build-id=none CMakeFiles/cmTC_0d6e8.dir/CMakeCXXCompilerABI.cpp.o
         /Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: warning: cannot find entry symbol _start; defaulting to 00008000
-        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-nostdlib' '-v' '-o' 'cmTC_adaaf.elf' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'cmTC_adaaf.elf.'
-        /Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-g++ -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp  -Wl,--build-id=none -nostdlib  -v CMakeFiles/cmTC_adaaf.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_adaaf.elf
+        COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-nostdlib' '-v' '-o' 'cmTC_0d6e8.elf' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'cmTC_0d6e8.elf.'
+        /Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-g++ -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp  -Wl,--build-id=none -nostdlib  -v CMakeFiles/cmTC_0d6e8.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_0d6e8.elf
         
       exitCode: 0
   -
@@ -3156,12 +3219,12 @@ events:
       Parsed CXX implicit link information:
         link line regex: [^( *|.*[/\\])(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|wild|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
         linker tool regex: [^[ 	]*(->|"|[0-9]+>[ 	-]*Build:[ 	0-9]+ ms[ 	]*)?[ 	]*(([^"]*[/\\])?(ld[0-9]*(|\\.[a-rt-z][a-z]*|\\.s[a-np-z][a-z]*|\\.so[a-z]+)|wild))("|,| |$)]
-        ignore line: [Change Dir: '/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/CMakeScratch/TryCompile-zpHiak']
+        ignore line: [Change Dir: '/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/CMakeScratch/TryCompile-L99ew3']
         ignore line: []
-        ignore line: [Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_adaaf/fast]
-        ignore line: [/Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_adaaf.dir/build.make CMakeFiles/cmTC_adaaf.dir/build]
-        ignore line: [Building CXX object CMakeFiles/cmTC_adaaf.dir/CMakeCXXCompilerABI.cpp.o]
-        ignore line: [/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-g++   -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp    -v -o CMakeFiles/cmTC_adaaf.dir/CMakeCXXCompilerABI.cpp.o -c /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_0d6e8/fast]
+        ignore line: [/Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_0d6e8.dir/build.make CMakeFiles/cmTC_0d6e8.dir/build]
+        ignore line: [Building CXX object CMakeFiles/cmTC_0d6e8.dir/CMakeCXXCompilerABI.cpp.o]
+        ignore line: [/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-g++   -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp    -v -o CMakeFiles/cmTC_0d6e8.dir/CMakeCXXCompilerABI.cpp.o -c /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp]
         ignore line: [Using built-in specs.]
         ignore line: [COLLECT_GCC=/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-g++]
         ignore line: [Target: arm-none-eabi]
@@ -3169,8 +3232,8 @@ events:
         ignore line: [Thread model: single]
         ignore line: [Supported LTO compression algorithms: zlib zstd]
         ignore line: [gcc version 15.3.1 20260627 (Arm GNU Toolchain 15.3.Rel1 (Build arm-15.149)) ]
-        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-v' '-o' 'CMakeFiles/cmTC_adaaf.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_adaaf.dir/']
-        ignore line: [ /Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/cc1plus -quiet -v -imultilib thumb/v8-m.main+fp/softfp -iprefix /Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/ -isysroot /Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi -D__USES_INITFINI__ /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_adaaf.dir/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=softfp -mlibarch=armv8-m.main+dsp+fp -march=armv8-m.main+dsp+fp -version -o /var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//ccNOozSy.s]
+        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-v' '-o' 'CMakeFiles/cmTC_0d6e8.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_0d6e8.dir/']
+        ignore line: [ /Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/cc1plus -quiet -v -imultilib thumb/v8-m.main+fp/softfp -iprefix /Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/ -isysroot /Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi -D__USES_INITFINI__ /opt/homebrew/share/cmake/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_0d6e8.dir/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mcpu=cortex-m33 -mthumb -mcmse -mfloat-abi=softfp -mlibarch=armv8-m.main+dsp+fp -march=armv8-m.main+dsp+fp -version -o /var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//cctPSoU8.s]
         ignore line: [GNU C++17 (Arm GNU Toolchain 15.3.Rel1 (Build arm-15.149)) version 15.3.1 20260627 (arm-none-eabi)]
         ignore line: [	compiled by GNU C version Apple LLVM 13.0.0 (clang-1300.0.29.3)  GMP version 6.2.1  MPFR version 3.1.6  MPC version 1.0.3  isl version isl-0.15-1-g835ea3a-GMP]
         ignore line: []
@@ -3193,14 +3256,14 @@ events:
         ignore line: [ /Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/include]
         ignore line: [End of search list.]
         ignore line: [Compiler executable checksum: fd9cee8fdfbf79b80fabeace9c8e78ac]
-        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-v' '-o' 'CMakeFiles/cmTC_adaaf.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_adaaf.dir/']
-        ignore line: [ /Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/as -v -march=armv8-m.main+dsp+fp -mfloat-abi=softfp -meabi=5 -o CMakeFiles/cmTC_adaaf.dir/CMakeCXXCompilerABI.cpp.o /var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//ccNOozSy.s]
+        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-v' '-o' 'CMakeFiles/cmTC_0d6e8.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_0d6e8.dir/']
+        ignore line: [ /Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/as -v -march=armv8-m.main+dsp+fp -mfloat-abi=softfp -meabi=5 -o CMakeFiles/cmTC_0d6e8.dir/CMakeCXXCompilerABI.cpp.o /var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//cctPSoU8.s]
         ignore line: [GNU assembler version 2.45.1 (arm-none-eabi) using BFD version (Arm GNU Toolchain 15.3.Rel1 (Build arm-15.149)) 2.45.1.20260126]
         ignore line: [COMPILER_PATH=/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/:/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/]
         ignore line: [LIBRARY_PATH=/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/thumb/v8-m.main+fp/softfp/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/:/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/:/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/]
-        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-v' '-o' 'CMakeFiles/cmTC_adaaf.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_adaaf.dir/CMakeCXXCompilerABI.cpp.']
-        ignore line: [Linking CXX executable cmTC_adaaf.elf]
-        ignore line: [/opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_adaaf.dir/link.txt --verbose=1]
+        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-v' '-o' 'CMakeFiles/cmTC_0d6e8.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'CMakeFiles/cmTC_0d6e8.dir/CMakeCXXCompilerABI.cpp.']
+        ignore line: [Linking CXX executable cmTC_0d6e8.elf]
+        ignore line: [/opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_0d6e8.dir/link.txt --verbose=1]
         ignore line: [Using built-in specs.]
         ignore line: [COLLECT_GCC=/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-g++]
         ignore line: [COLLECT_LTO_WRAPPER=/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/lto-wrapper]
@@ -3211,17 +3274,17 @@ events:
         ignore line: [gcc version 15.3.1 20260627 (Arm GNU Toolchain 15.3.Rel1 (Build arm-15.149)) ]
         ignore line: [COMPILER_PATH=/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/:/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/]
         ignore line: [LIBRARY_PATH=/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/thumb/v8-m.main+fp/softfp/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/:/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/:/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/:/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/]
-        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-nostdlib' '-v' '-o' 'cmTC_adaaf.elf' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'cmTC_adaaf.elf.']
-        link line: [ /Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/collect2 -plugin /Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/liblto_plugin.so -plugin-opt=/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/lto-wrapper -plugin-opt=-fresolution=/var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//ccp37m7v.res --sysroot=/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi -X -o cmTC_adaaf.elf -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/thumb/v8-m.main+fp/softfp -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp -L/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1 -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib -L/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib --build-id=none CMakeFiles/cmTC_adaaf.dir/CMakeCXXCompilerABI.cpp.o]
+        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-nostdlib' '-v' '-o' 'cmTC_0d6e8.elf' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'cmTC_0d6e8.elf.']
+        link line: [ /Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/collect2 -plugin /Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/liblto_plugin.so -plugin-opt=/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/lto-wrapper -plugin-opt=-fresolution=/var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//ccuK1cKy.res --sysroot=/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi -X -o cmTC_0d6e8.elf -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/thumb/v8-m.main+fp/softfp -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp -L/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1 -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc -L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib -L/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib --build-id=none CMakeFiles/cmTC_0d6e8.dir/CMakeCXXCompilerABI.cpp.o]
           arg [/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/collect2] ==> ignore
           arg [-plugin] ==> ignore
           arg [/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/liblto_plugin.so] ==> ignore
           arg [-plugin-opt=/Users/mathistelschow/arm-gnu-toolchain/bin/../libexec/gcc/arm-none-eabi/15.3.1/lto-wrapper] ==> ignore
-          arg [-plugin-opt=-fresolution=/var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//ccp37m7v.res] ==> ignore
+          arg [-plugin-opt=-fresolution=/var/folders/yj/xclx02cj4h3c7gryh6c70rmh0000gn/T//ccuK1cKy.res] ==> ignore
           arg [--sysroot=/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi] ==> ignore
           arg [-X] ==> ignore
           arg [-o] ==> ignore
-          arg [cmTC_adaaf.elf] ==> ignore
+          arg [cmTC_0d6e8.elf] ==> ignore
           arg [-L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/thumb/v8-m.main+fp/softfp] ==> dir [/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/thumb/v8-m.main+fp/softfp]
           arg [-L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp] ==> dir [/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp]
           arg [-L/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp] ==> dir [/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib/thumb/v8-m.main+fp/softfp]
@@ -3230,11 +3293,11 @@ events:
           arg [-L/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib] ==> dir [/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/lib]
           arg [-L/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib] ==> dir [/Users/mathistelschow/arm-gnu-toolchain/bin/../arm-none-eabi/lib]
           arg [--build-id=none] ==> ignore
-          arg [CMakeFiles/cmTC_adaaf.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+          arg [CMakeFiles/cmTC_0d6e8.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
         ignore line: [/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/../../../../arm-none-eabi/bin/ld: warning: cannot find entry symbol _start]
         ignore line: [ defaulting to 00008000]
-        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-nostdlib' '-v' '-o' 'cmTC_adaaf.elf' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'cmTC_adaaf.elf.']
-        ignore line: [/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-g++ -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp  -Wl --build-id=none -nostdlib  -v CMakeFiles/cmTC_adaaf.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_adaaf.elf]
+        ignore line: [COLLECT_GCC_OPTIONS='-mcpu=cortex-m33' '-mthumb'  '-mcmse' '-mfloat-abi=softfp' '-nostdlib' '-v' '-o' 'cmTC_0d6e8.elf' '-mlibarch=armv8-m.main+dsp+fp' '-march=armv8-m.main+dsp+fp' '-dumpdir' 'cmTC_0d6e8.elf.']
+        ignore line: [/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-g++ -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp  -Wl --build-id=none -nostdlib  -v CMakeFiles/cmTC_0d6e8.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_0d6e8.elf]
         ignore line: []
         ignore line: []
         collapse library dir [/Users/mathistelschow/arm-gnu-toolchain/bin/../lib/gcc/arm-none-eabi/15.3.1/thumb/v8-m.main+fp/softfp] ==> [/Users/mathistelschow/arm-gnu-toolchain/lib/gcc/arm-none-eabi/15.3.1/thumb/v8-m.main+fp/softfp]
@@ -3433,8 +3496,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
       CMAKE_INSTALL_PREFIX: "/usr/local"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "/usr/local"
@@ -3665,8 +3729,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
       CMAKE_INSTALL_PREFIX: "/usr/local"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "/usr/local"
@@ -3699,15 +3764,15 @@ events:
       stdout: |
         Change Dir: '/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pico-sdk/src/rp2_common/pico_thread_local/CMakeFiles/CMakeTmp'
         
-        Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_5432f/fast
-        /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_5432f.dir/build.make CMakeFiles/cmTC_5432f.dir/build
-        Building C object CMakeFiles/cmTC_5432f.dir/tls_check.c.o
-        /Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc   -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp  -std=gnu11 -o CMakeFiles/cmTC_5432f.dir/tls_check.c.o -c /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pico-sdk/src/rp2_common/pico_thread_local/tls_check.c
-        Linking C static library libcmTC_5432f.a
-        /opt/homebrew/bin/cmake -P CMakeFiles/cmTC_5432f.dir/cmake_clean_target.cmake
-        /opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_5432f.dir/link.txt --verbose=1
-        /Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-ar qc libcmTC_5432f.a CMakeFiles/cmTC_5432f.dir/tls_check.c.o
-        /Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-ranlib libcmTC_5432f.a
+        Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_39f24/fast
+        /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_39f24.dir/build.make CMakeFiles/cmTC_39f24.dir/build
+        Building C object CMakeFiles/cmTC_39f24.dir/tls_check.c.o
+        /Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc   -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp  -std=gnu11 -o CMakeFiles/cmTC_39f24.dir/tls_check.c.o -c /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pico-sdk/src/rp2_common/pico_thread_local/tls_check.c
+        Linking C static library libcmTC_39f24.a
+        /opt/homebrew/bin/cmake -P CMakeFiles/cmTC_39f24.dir/cmake_clean_target.cmake
+        /opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_39f24.dir/link.txt --verbose=1
+        /Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-ar qc libcmTC_39f24.a CMakeFiles/cmTC_39f24.dir/tls_check.c.o
+        /Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-ranlib libcmTC_39f24.a
         
       exitCode: 0
   -
@@ -3730,15 +3795,15 @@ events:
       stdout: |
         Change Dir: '/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pico-sdk/src/rp2_common/pico_clib_interface/CMakeFiles/CMakeTmp'
         
-        Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_dfc3c/fast
-        /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_dfc3c.dir/build.make CMakeFiles/cmTC_dfc3c.dir/build
-        Building C object CMakeFiles/cmTC_dfc3c.dir/clib_check.c.o
-        /Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc -Dnewlib=1  -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp  -std=gnu11 -o CMakeFiles/cmTC_dfc3c.dir/clib_check.c.o -c /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pico-sdk/src/rp2_common/pico_clib_interface/clib_check.c
-        Linking C static library libcmTC_dfc3c.a
-        /opt/homebrew/bin/cmake -P CMakeFiles/cmTC_dfc3c.dir/cmake_clean_target.cmake
-        /opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_dfc3c.dir/link.txt --verbose=1
-        /Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-ar qc libcmTC_dfc3c.a CMakeFiles/cmTC_dfc3c.dir/clib_check.c.o
-        /Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-ranlib libcmTC_dfc3c.a
+        Run Build Command(s): /opt/homebrew/bin/cmake -E env VERBOSE=1 /usr/bin/make -f Makefile cmTC_e99a1/fast
+        /Library/Developer/CommandLineTools/usr/bin/make  -f CMakeFiles/cmTC_e99a1.dir/build.make CMakeFiles/cmTC_e99a1.dir/build
+        Building C object CMakeFiles/cmTC_e99a1.dir/clib_check.c.o
+        /Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc -Dnewlib=1  -mcpu=cortex-m33 -mthumb -march=armv8-m.main+fp+dsp -mcmse -mfloat-abi=softfp  -std=gnu11 -o CMakeFiles/cmTC_e99a1.dir/clib_check.c.o -c /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pico-sdk/src/rp2_common/pico_clib_interface/clib_check.c
+        Linking C static library libcmTC_e99a1.a
+        /opt/homebrew/bin/cmake -P CMakeFiles/cmTC_e99a1.dir/cmake_clean_target.cmake
+        /opt/homebrew/bin/cmake -E cmake_link_script CMakeFiles/cmTC_e99a1.dir/link.txt --verbose=1
+        /Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-ar qc libcmTC_e99a1.a CMakeFiles/cmTC_e99a1.dir/clib_check.c.o
+        /Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-ranlib libcmTC_e99a1.a
         
       exitCode: 0
   -
@@ -4164,23 +4229,23 @@ events:
         mode: "cps"
         reason: "no_exist"
       -
-        path: "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/pioasmConfig.cmake"
+        path: "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/pioasmConfig.cmake"
         mode: "config"
         reason: "no_exist"
       -
-        path: "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/pioasm-config.cmake"
+        path: "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/pioasm-config.cmake"
         mode: "config"
         reason: "no_exist"
       -
-        path: "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/lib32/cps/pioasm.cps"
+        path: "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/lib32/cps/pioasm.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/lib/cps/pioasm.cps"
+        path: "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/lib/cps/pioasm.cps"
         mode: "cps"
         reason: "no_exist"
       -
-        path: "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/share/cps/pioasm.cps"
+        path: "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/share/cps/pioasm.cps"
         mode: "cps"
         reason: "no_exist"
       -
@@ -4201,6 +4266,26 @@ events:
         reason: "no_exist"
       -
         path: "/Users/mathistelschow/.claude/skills/humanizer/share/cps/pioasm.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/pioasmConfig.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/pioasm-config.cmake"
+        mode: "config"
+        reason: "no_exist"
+      -
+        path: "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/lib32/cps/pioasm.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/lib/cps/pioasm.cps"
+        mode: "cps"
+        reason: "no_exist"
+      -
+        path: "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/share/cps/pioasm.cps"
         mode: "cps"
         reason: "no_exist"
       -
@@ -4280,8 +4365,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
       CMAKE_INSTALL_PREFIX: "/usr/local"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "/usr/local"
@@ -4339,8 +4425,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/"
       - "/usr/local/bin/"
       - "/usr/local/sbin/"
       - "/usr/local/"
@@ -4392,8 +4479,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/doxygen"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/doxygen"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/doxygen"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/doxygen"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/doxygen"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/doxygen"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/doxygen"
       - "/usr/local/bin/doxygen"
       - "/usr/local/sbin/doxygen"
       - "/usr/local/doxygen"
@@ -4455,8 +4543,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
       CMAKE_INSTALL_PREFIX: "/usr/local"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "/usr/local"
@@ -4514,8 +4603,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/"
       - "/usr/local/bin/"
       - "/usr/local/sbin/"
       - "/usr/local/"
@@ -4571,8 +4661,9 @@ events:
       - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/dot"
       - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts/dot"
       - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin/dot"
-      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin/dot"
+      - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin/dot"
       - "/Users/mathistelschow/.claude/skills/humanizer/bin/dot"
+      - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin/dot"
       - "/usr/local/bin/dot"
       - "/usr/local/sbin/dot"
       - "/usr/local/dot"
@@ -4638,8 +4729,9 @@ events:
         - "/Applications/Visual Studio Code.app/Contents/Resources/app/bin"
         - "/Users/mathistelschow/Library/Application Support/JetBrains/Toolbox/scripts"
         - "/Users/mathistelschow/.claude/plugins/cache/caveman/caveman/18e45320a0b1/bin"
-        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/fa59bc903774/bin"
+        - "/Users/mathistelschow/.claude/plugins/cache/claude-plugins-official/frontend-design/c447c3207a42/bin"
         - "/Users/mathistelschow/.claude/skills/humanizer/bin"
+        - "/Users/mathistelschow/.claude/plugins/synced/c5154ba3-6b56-42fe-864b-65510a87a2ea_ba65da2a-f180-478e-9e9c-acd85f1b2420/cowork-plugin-management/bin"
       CMAKE_INSTALL_PREFIX: "/usr/local"
       CMAKE_SYSTEM_PREFIX_PATH:
         - "/usr/local"

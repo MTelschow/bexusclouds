@@ -1,0 +1,30 @@
+CMakeFiles/clouds_fsw_mcu.dir/src/core/autonomy.c.o: \
+ /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/autonomy.c \
+ /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/autonomy.h \
+ /Users/mathistelschow/arm-gnu-toolchain/lib/gcc/arm-none-eabi/15.3.1/include/stdbool.h \
+ /Users/mathistelschow/arm-gnu-toolchain/lib/gcc/arm-none-eabi/15.3.1/include/stdint.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/stdint.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/machine/_default_types.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/features.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/_newlib_version.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/_intsup.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/_stdint.h \
+ /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/config.h \
+ /Users/mathistelschow/arm-gnu-toolchain/lib/gcc/arm-none-eabi/15.3.1/include/limits.h \
+ /Users/mathistelschow/arm-gnu-toolchain/lib/gcc/arm-none-eabi/15.3.1/include/syslimits.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/limits.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/newlib.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/cdefs.h \
+ /Users/mathistelschow/arm-gnu-toolchain/lib/gcc/arm-none-eabi/15.3.1/include/stddef.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/syslimits.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/stdlib.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/machine/ieeefp.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/_ansi.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/config.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/reent.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/_ansi.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/_types.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/machine/_types.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/lock.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/machine/stdlib.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/alloca.h

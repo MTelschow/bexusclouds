@@ -19,6 +19,7 @@
 #include "../../src/core/crc16.h"
 #include "../../src/core/frame.h"
 #include "../../src/core/link.h"
+#include "../../src/core/motor_enc.h"
 #include "../../src/core/pulse.h"
 #include "../../src/core/sequencer.h"
 #include "../../src/hw/board.h" /* pin map + timing constants only, no SDK */
@@ -138,12 +139,16 @@ static void test_hk_pack_layout(void)
     hk.chm_accel_mg[2] = -981; /* chamber BNO055 (0x28): differs, so a
                                 * pack that crossed the two is caught */
     hk.chm_gyro_ddps[0] = 25;  /* 2.5 dps */
+    hk.pm_status = PM_OBSTRUCTED | PM_STALE; /* 0x0A, the byte at offset 2 */
+    hk.pm2_5_ugm3 = 412;       /* BMV080 on SPI_1, ug/m3 */
+    hk.motor_rpm = -1234;      /* encoder, signed: the sign is direction */
     hk_pack(&hk, out);
     TEST_ASSERT_EQUAL_UINT8(5, out[0]);
-    /* Byte 2 was `fired`, the pinch-valve bits. The valves are gone and the
-     * byte is reserved: it must stay in the packet at zero, because every
+    /* Byte 2 was `fired`, the pinch-valve bits, then reserved at 0, and is
+     * now pm_status - the BMV080's state, which had to go somewhere because
+     * error_flags has no bits left. The byte itself never moved, so every
      * field after it keeps the offset a logged session was written with. */
-    TEST_ASSERT_EQUAL_UINT8(0x00, out[2]);
+    TEST_ASSERT_EQUAL_HEX8(0x0A, out[2]);
     /* temp1_cc LE at offset 6: -5512 = 0xEA78 */
     TEST_ASSERT_EQUAL_HEX8(0x78, out[6]);
     TEST_ASSERT_EQUAL_HEX8(0xEA, out[7]);
@@ -191,7 +196,127 @@ static void test_hk_pack_layout(void)
     TEST_ASSERT_EQUAL_HEX8(0xFC, out[69]);
     TEST_ASSERT_EQUAL_HEX8(0x19, out[70]); /* 25 = 0x0019 */
     TEST_ASSERT_EQUAL_HEX8(0x00, out[71]);
-    TEST_ASSERT_EQUAL_UINT32(76, (uint32_t)HK_SIZE);
+    /* pm2_5_ugm3 LE u16 at offset 76, appended after the chamber IMU. Two
+     * bytes and not the six floats the vendor library produces: the packet is
+     * already over its 67 B ceiling, so PM1, PM10 and all three number
+     * concentrations are dropped at the MCU rather than binned on the
+     * ground. */
+    TEST_ASSERT_EQUAL_HEX8(0x9C, out[76]); /* 412 = 0x019C */
+    TEST_ASSERT_EQUAL_HEX8(0x01, out[77]);
+    /* motor_rpm LE i16 at offset 78, appended after pm2_5_ugm3 */
+    TEST_ASSERT_EQUAL_HEX8(0x2E, out[78]); /* -1234 = 0xFB2E */
+    TEST_ASSERT_EQUAL_HEX8(0xFB, out[79]);
+    TEST_ASSERT_EQUAL_UINT32(80, (uint32_t)HK_SIZE);
+
+    /* The no-encoder sentinel goes out as 0x8000, never as 0 rpm. */
+    hk.motor_rpm = MOTOR_RPM_INVALID;
+    hk_pack(&hk, out);
+    TEST_ASSERT_EQUAL_HEX8(0x00, out[78]);
+    TEST_ASSERT_EQUAL_HEX8(0x80, out[79]);
+}
+
+/* ---- motor encoder --------------------------------------------------------- */
+
+/* 1024 counts/rev (x1): 1024 counts in 1000 ms is 60 rpm, and the sign
+ * follows. */
+static void test_motor_enc_rpm_scaling(void)
+{
+    TEST_ASSERT_EQUAL_INT(60, motor_enc_rpm(MOTOR_ENC_COUNTS_PER_REV, 1000));
+    TEST_ASSERT_EQUAL_INT(-60, motor_enc_rpm(-MOTOR_ENC_COUNTS_PER_REV, 1000));
+    TEST_ASSERT_EQUAL_INT(3000, motor_enc_rpm(5 * MOTOR_ENC_COUNTS_PER_REV, 100));
+    TEST_ASSERT_EQUAL_INT(0, motor_enc_rpm(12345, 0));
+    /* saturates, and never reaches the INT16_MIN sentinel */
+    TEST_ASSERT_EQUAL_INT(INT16_MAX, motor_enc_rpm(INT32_MAX, 1));
+    TEST_ASSERT_EQUAL_INT(-INT16_MAX, motor_enc_rpm(INT32_MIN, 1));
+    TEST_ASSERT_TRUE(motor_enc_rpm(INT32_MIN, 1) != MOTOR_RPM_INVALID);
+}
+
+/* The HK speed is the mean since the previous take, and a count that wraps
+ * through INT32_MAX in between is still a forward count. */
+static void test_motor_enc_take_rpm_mean_and_wrap(void)
+{
+    motor_enc_t m;
+    int32_t c = INT32_MAX - 1000;
+
+    motor_enc_init(&m);
+    TEST_ASSERT_EQUAL_INT(0, motor_enc_take_rpm(&m, c, 0)); /* primes */
+    /* 2000 rpm for 1 s = 2000/60 rev x counts/rev (34133 at x1), crossing
+     * the wrap */
+    c = (int32_t)((uint32_t)c + (uint32_t)(2000 * MOTOR_ENC_COUNTS_PER_REV / 60));
+    TEST_ASSERT_TRUE(c < 0);
+    TEST_ASSERT_EQUAL_INT(1999, motor_enc_take_rpm(&m, c, 1000));
+    TEST_ASSERT_EQUAL_INT(0, motor_enc_take_rpm(&m, c, 2000));
+}
+
+/* Drive a motor_enc_t at a steady speed for dur_ms in 10 ms loop passes. */
+static int32_t spin(motor_enc_t *m, int32_t count, uint64_t *now,
+                    int32_t counts_per_10ms, bool driving, uint32_t dur_ms)
+{
+    for (uint32_t t = 0; t < dur_ms; t += 10) {
+        *now += 10;
+        count += counts_per_10ms;
+        motor_enc_service(m, count, driving, *now);
+    }
+    return count;
+}
+
+static void test_motor_enc_stall_after_grace(void)
+{
+    motor_enc_t m;
+    uint64_t now = 0;
+    int32_t c = 0;
+
+    motor_enc_init(&m);
+    c = spin(&m, c, &now, 0, false, 200);
+    /* Drive on, shaft still: nothing during the spin-up grace... */
+    c = spin(&m, c, &now, 0, true, MOTOR_ENC_STALL_GRACE_MS - 10);
+    TEST_ASSERT_FALSE(motor_enc_take_stalled(&m));
+    /* ...then a stall once a whole window past the grace has been judged. */
+    c = spin(&m, c, &now, 0, true, 300);
+    TEST_ASSERT_TRUE(motor_enc_take_stalled(&m));
+    /* Consumed: the next packet starts clean, and a stall still in progress
+     * latches again. */
+    TEST_ASSERT_FALSE(motor_enc_take_stalled(&m));
+    c = spin(&m, c, &now, 0, true, 200);
+    TEST_ASSERT_TRUE(motor_enc_take_stalled(&m));
+    (void)c;
+}
+
+static void test_motor_enc_turning_or_idle_is_not_a_stall(void)
+{
+    motor_enc_t m;
+    uint64_t now = 0;
+    int32_t c = 0;
+
+    motor_enc_init(&m);
+    /* 20 counts / 10 ms = 2000 counts/s = ~29 rpm: under the floor, but the
+     * drive is off - a coasting or resting motor is never a stall. */
+    c = spin(&m, c, &now, 20, false, 2000);
+    TEST_ASSERT_FALSE(motor_enc_take_stalled(&m));
+    /* 1000 rpm = 683 counts / 10 ms, forward and reverse: turning. */
+    c = spin(&m, c, &now, 683, true, 2000);
+    TEST_ASSERT_FALSE(motor_enc_take_stalled(&m));
+    c = spin(&m, c, &now, 0, false, 100);
+    c = spin(&m, c, &now, -683, true, 2000);
+    TEST_ASSERT_FALSE(motor_enc_take_stalled(&m));
+    (void)c;
+}
+
+/* A drive that starts while the shaft is still gets the full grace again,
+ * even after an earlier drive: the grace restarts on every drive edge. */
+static void test_motor_enc_grace_restarts_each_drive(void)
+{
+    motor_enc_t m;
+    uint64_t now = 0;
+    int32_t c = 0;
+
+    motor_enc_init(&m);
+    c = spin(&m, c, &now, 683, true, 2000);
+    c = spin(&m, c, &now, 0, false, 500);
+    (void)motor_enc_take_stalled(&m);
+    c = spin(&m, c, &now, 0, true, MOTOR_ENC_STALL_GRACE_MS - 10);
+    TEST_ASSERT_FALSE(motor_enc_take_stalled(&m));
+    (void)c;
 }
 
 /* ---- config ------------------------------------------------------------ */
@@ -1665,6 +1790,11 @@ int main(void)
     RUN_TEST(test_frame_roundtrip);
     RUN_TEST(test_frame_corrupt_rejected);
     RUN_TEST(test_hk_pack_layout);
+    RUN_TEST(test_motor_enc_rpm_scaling);
+    RUN_TEST(test_motor_enc_take_rpm_mean_and_wrap);
+    RUN_TEST(test_motor_enc_stall_after_grace);
+    RUN_TEST(test_motor_enc_turning_or_idle_is_not_a_stall);
+    RUN_TEST(test_motor_enc_grace_restarts_each_drive);
     RUN_TEST(test_config_defaults_and_limits);
     RUN_TEST(test_pulse_outlasts_the_watchdog_without_blocking);
     RUN_TEST(test_repeat_requests_coalesce);

@@ -84,6 +84,7 @@ set(CMAKE_TARGET_DEFINITIONS_ASM
   "PICO_ON_DEVICE=1"
   "PICO_RP2040_USB_DEVICE_UFRAME_FIX=1"
   "PICO_RP2350=1"
+  "PICO_STACK_SIZE=0x4000"
   [[PICO_TARGET_NAME="membrane_switch_probe"]]
   "PICO_THREAD_LOCAL_MODE_PER_THREAD=1"
   "PICO_THREAD_LOCAL_THREAD_POINTER_ARM_AEABI_CONFIRMED=1"
@@ -93,6 +94,8 @@ set(CMAKE_TARGET_DEFINITIONS_ASM
 
 # The include file search paths:
 set(CMAKE_ASM_TARGET_INCLUDE_PATH
+  "/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/../../../sensor-driver/api/inc"
+  "."
   "/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/include"
   "/Users/mathistelschow/pico-sdk/lib/tinyusb/src"
   "/Users/mathistelschow/pico-sdk/src/common/pico_stdlib_headers/include"
@@ -159,6 +162,7 @@ set(CMAKE_ASM_TARGET_INCLUDE_PATH
   "/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/include"
   "/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/include"
   "/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pwm/include"
+  "/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/include"
   )
 
 # The set of dependency files which are needed:
@@ -201,6 +205,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c" "CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.o" "gcc" "CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.o.d"
   "/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c" "CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.o" "gcc" "CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.o.d"
   "/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c" "CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.o" "gcc" "CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.o.d"
+  "/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c" "CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.o" "gcc" "CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.o.d"
   "/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c" "CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.o" "gcc" "CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.o.d"
   "/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c" "CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.o" "gcc" "CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.o.d"
   "/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c" "CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.o" "gcc" "CMakeFiles/membrane_switch_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.o.d"
@@ -244,11 +249,14 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/crc16.c" "CMakeFiles/membrane_switch_probe.dir/src/core/crc16.c.o" "gcc" "CMakeFiles/membrane_switch_probe.dir/src/core/crc16.c.o.d"
   "/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/frame.c" "CMakeFiles/membrane_switch_probe.dir/src/core/frame.c.o" "gcc" "CMakeFiles/membrane_switch_probe.dir/src/core/frame.c.o.d"
   "/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/link.c" "CMakeFiles/membrane_switch_probe.dir/src/core/link.c.o" "gcc" "CMakeFiles/membrane_switch_probe.dir/src/core/link.c.o.d"
+  "/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/motor_enc.c" "CMakeFiles/membrane_switch_probe.dir/src/core/motor_enc.c.o" "gcc" "CMakeFiles/membrane_switch_probe.dir/src/core/motor_enc.c.o.d"
   "/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/pulse.c" "CMakeFiles/membrane_switch_probe.dir/src/core/pulse.c.o" "gcc" "CMakeFiles/membrane_switch_probe.dir/src/core/pulse.c.o.d"
   "/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/pwmdiv.c" "CMakeFiles/membrane_switch_probe.dir/src/core/pwmdiv.c.o" "gcc" "CMakeFiles/membrane_switch_probe.dir/src/core/pwmdiv.c.o.d"
   "/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/sequencer.c" "CMakeFiles/membrane_switch_probe.dir/src/core/sequencer.c.o" "gcc" "CMakeFiles/membrane_switch_probe.dir/src/core/sequencer.c.o.d"
   "/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/sqwave.c" "CMakeFiles/membrane_switch_probe.dir/src/core/sqwave.c.o" "gcc" "CMakeFiles/membrane_switch_probe.dir/src/core/sqwave.c.o.d"
   "/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bme280.c" "CMakeFiles/membrane_switch_probe.dir/src/hw/bme280.c.o" "gcc" "CMakeFiles/membrane_switch_probe.dir/src/hw/bme280.c.o.d"
+  "/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bmv080_dev.c" "CMakeFiles/membrane_switch_probe.dir/src/hw/bmv080_dev.c.o" "gcc" "CMakeFiles/membrane_switch_probe.dir/src/hw/bmv080_dev.c.o.d"
+  "/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bmv080_port.c" "CMakeFiles/membrane_switch_probe.dir/src/hw/bmv080_port.c.o" "gcc" "CMakeFiles/membrane_switch_probe.dir/src/hw/bmv080_port.c.o.d"
   "/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bno055.c" "CMakeFiles/membrane_switch_probe.dir/src/hw/bno055.c.o" "gcc" "CMakeFiles/membrane_switch_probe.dir/src/hw/bno055.c.o.d"
   "/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/hw.c" "CMakeFiles/membrane_switch_probe.dir/src/hw/hw.c.o" "gcc" "CMakeFiles/membrane_switch_probe.dir/src/hw/hw.c.o.d"
   "/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/ina226.c" "CMakeFiles/membrane_switch_probe.dir/src/hw/ina226.c.o" "gcc" "CMakeFiles/membrane_switch_probe.dir/src/hw/ina226.c.o.d"

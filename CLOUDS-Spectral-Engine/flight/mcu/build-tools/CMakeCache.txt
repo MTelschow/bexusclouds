@@ -14,6 +14,9 @@
 # EXTERNAL cache entries
 ########################
 
+//Unpacked Bosch BMV080 SDK (contains api/inc and api/lib)
+CLOUDS_BMV080_SDK_DIR:PATH=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/../../../sensor-driver
+
 //No help, variable specified on the command line.
 CLOUDS_BUILD_TOOLS:UNINITIALIZED=ON
 
@@ -274,7 +277,7 @@ FETCHCONTENT_UPDATES_DISCONNECTED:BOOL=OFF
 PICO_BOARD:STRING=clouds_carrier
 
 //PICO board header directories
-PICO_BOARD_HEADER_DIRS:STRING=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/boards
+PICO_BOARD_HEADER_DIRS:STRING=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/boards;/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/boards;/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/boards;/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/boards
 
 //Build HTML Doxygen docs
 PICO_BUILD_DOCS:BOOL=OFF

@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pioasm/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

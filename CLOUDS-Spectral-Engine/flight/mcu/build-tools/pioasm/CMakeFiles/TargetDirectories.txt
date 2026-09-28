@@ -1,0 +1,7 @@
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pioasm/CMakeFiles/pioasm.dir
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pioasm/CMakeFiles/edit_cache.dir
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pioasm/CMakeFiles/rebuild_cache.dir
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pioasm/CMakeFiles/list_install_components.dir
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pioasm/CMakeFiles/install.dir
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pioasm/CMakeFiles/install/local.dir
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pioasm/CMakeFiles/install/strip.dir

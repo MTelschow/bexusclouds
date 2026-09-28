@@ -72,3 +72,47 @@ picotool load -f -x flight/mcu/build/clouds_fsw_mcu.uf2   # -f: no BOOTSEL neede
 
 `PICO_BOARD` is cached — **reconfigure `flight/mcu/build` from scratch** after
 a board-header change.
+
+The build needs the Bosch BMV080 archives from the sibling `sensor-driver/`
+tree (`-DCLOUDS_BMV080_SDK_DIR=` to point elsewhere); `flight/mcu/README.md`
+says why and which archive.
+
+## Bench probes (sensor bring-up, never flight images)
+
+Gated behind `-DCLOUDS_BUILD_TOOLS=ON` so a normal build cannot emit a `.uf2`
+that is not the flight image. Each prints to USB CDC and commands no actuator.
+
+```sh
+cmake -S flight/mcu -B flight/mcu/build-tools -DPICO_PLATFORM=rp2350 \
+      -DCLOUDS_BUILD_TOOLS=ON
+cmake --build flight/mcu/build-tools -j8
+picotool load -f -x flight/mcu/build-tools/bme280_probe.uf2   # chip id 0x60?
+picotool load -f -x flight/mcu/build-tools/bmv080_probe.uf2   # sensor id + PM
+picotool load -f -x flight/mcu/build-tools/bno055_probe.uf2
+picotool load -f -x flight/mcu/build-tools/membrane_switch_probe.uf2
+picotool load -f -x flight/mcu/build-tools/encoder_pin_probe.uf2     # which pins move with the shaft (DRIVES THE MOTOR)
+picotool load -f -x flight/mcu/build-tools/encoder_trace_probe.uf2   # 80 ns trace of GP19..GP22 (DRIVES THE MOTOR)
+```
+
+`bme280_probe` sweeps all four SPI_1 chip selects at two modes and two bauds,
+plus i2c0, and bit-bangs a read in case MOSI/MISO are crossed.
+`bmv080_probe` does raw 16-bit reads per free chip select, then
+`bmv080_open()` per select, then PM lines — and prints what to check when
+nothing answers.
+
+### Reading `bme280_probe`, in order
+
+It prints three bus-integrity tests **before** the chip-id table, because the
+table is meaningless while the bus cannot carry a transaction — every chip
+select returns `0x00` when nothing is on the bus, so the sweep cannot tell
+them apart (`docs/TRAPS.md`).
+
+| Test | Question | How to read it |
+|---|---|---|
+| **(a)** | does asserting a chip select **change** what MISO reads? | The baseline must be `1` — an idle bus with a pull-up. A select that *changes* it has something behind it. A select that merely *reads* `1` says nothing |
+| **(b)** | can each bus pin be driven high **and** low at the pad? | `cannot drive it high` = held by something low-impedance. **Only meaningful if the pin is not floating** |
+| **(c)** | are any two bus pins tied together? | Same caveat, and it is the one that misleads: an unconnected RP2350 pad latches and couples to neighbours, which prints as `TIED TOGETHER` |
+
+**Confirm the harness is plugged in and the part powered before believing (b)
+or (c)** — the probe says so under its own output. Anything reporting
+`UNSTABLE` changed under the five samples, which is a result, not noise.

@@ -1,0 +1,27 @@
+CMakeFiles/bmv080_probe.dir/src/core/frame.c.o: \
+ /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/frame.c \
+ /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/frame.h \
+ /Users/mathistelschow/arm-gnu-toolchain/lib/gcc/arm-none-eabi/15.3.1/include/stdbool.h \
+ /Users/mathistelschow/arm-gnu-toolchain/lib/gcc/arm-none-eabi/15.3.1/include/stddef.h \
+ /Users/mathistelschow/arm-gnu-toolchain/lib/gcc/arm-none-eabi/15.3.1/include/stdint.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/stdint.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/machine/_default_types.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/features.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/_newlib_version.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/_intsup.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/_stdint.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/string.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/_ansi.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/newlib.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/config.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/machine/ieeefp.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/reent.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/_ansi.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/cdefs.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/_types.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/machine/_types.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/lock.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/_locale.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/strings.h \
+ /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/string.h \
+ /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/crc16.h

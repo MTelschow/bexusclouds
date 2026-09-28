@@ -13,6 +13,7 @@
 #include "hardware/clocks.h"
 #include "hardware/gpio.h"
 #include "hardware/i2c.h"
+#include "hardware/pio.h"
 #include "hardware/pwm.h"
 #include "hardware/spi.h"
 #include "hardware/watchdog.h"
@@ -20,13 +21,16 @@
 
 #include "../core/config.h"
 #include "../core/crc16.h"
+#include "../core/motor_enc.h"
 #include "../core/pulse.h"
 #include "../core/pwmdiv.h"
 #include "../core/sqwave.h"
 #include "bme280.h"
+#include "bmv080_dev.h"
 #include "bno055.h"
 #include "ina226.h"
 #include "board.h"
+#include "quadrature_encoder.pio.h"
 
 /* ---- time base (S.4) ---------------------------------------------------- */
 
@@ -148,11 +152,96 @@ static void drive_pin(void *ctx, uint8_t pin, bool level)
 static bool sense_last_pulled;
 static bool sense_changed;
 
+/* Dispersion motor encoder (board.h PIN_ENC_A/B): GP19's falling edges
+ * counted by a PIO state machine after a deglitch hold, each signed by the
+ * level of GP21 (the resistor midpoint of the two channels - see board.h and
+ * hw/quadrature_encoder.pio for why the board has no clean second channel),
+ * turned into speed and a stall verdict by core/motor_enc. The guard mirrors
+ * the other pins': a build whose board lacks the pin downlinks
+ * MOTOR_RPM_INVALID rather than 0. */
+#define HAVE_ENCODER (PIN_ENC_B < NUM_BANK0_GPIOS)
+static motor_enc_t motor_enc;
+static bool enc_ok;       /* counter running; false = no encoder source */
+static PIO enc_pio;
+static uint enc_sm;
+static int32_t enc_count;
+
+/* The latest count. The state machine pushes the count on every counted
+ * edge (non-blocking, so a fast shaft fills the FIFO with recent copies);
+ * reading the entries that are there and keeping the last is the newest
+ * value.
+ *
+ * BOUNDED, NEVER "until empty": the x4 program this replaced pushed every
+ * ~7 PIO cycles, faster than the CPU can pop, so a drain-until-empty loop
+ * never ended and the 2 s watchdog reset the MCU - exactly what the first
+ * flashed image did (2026-09-28). At 3000 rpm the current program still
+ * pushes 51 k/s. The level is read once and at most that many entries (<= 4)
+ * are popped. An empty FIFO keeps the previous count. */
+static int32_t encoder_count(void)
+{
+    uint n = pio_sm_get_rx_fifo_level(enc_pio, enc_sm);
+
+    while (n--)
+        enc_count = (int32_t)pio_sm_get(enc_pio, enc_sm);
+    return enc_count;
+}
+
+static void encoder_init(void)
+{
+#if HAVE_ENCODER
+    uint offset;
+    pio_sm_config c;
+
+    /* Inputs at their reset pull-down, deliberately (board.h): the encoder's
+     * line driver holds the levels while it is plugged in, and an unplugged
+     * encoder then reads a steady 0 - no edges, a stall while driving, never
+     * a phantom speed. Never a pull-up: the schematic calls these nets driver
+     * inputs. */
+    gpio_init(PIN_ENC_A);
+    gpio_init(PIN_ENC_B);
+    gpio_set_dir(PIN_ENC_A, GPIO_IN);
+    gpio_set_dir(PIN_ENC_B, GPIO_IN);
+    gpio_pull_down(PIN_ENC_A);
+    gpio_pull_down(PIN_ENC_B);
+
+    /* Claims a PIO whose 32-pin window holds both pins (GP19..GP21 fit the
+     * base-0 window on either RP2350) and loads the program anywhere: it has
+     * no computed jumps. A is the IN base (WAIT/IN read it), B the JMP pin. */
+    if (!pio_claim_free_sm_and_add_program_for_gpio_range(
+            &quadrature_encoder_program, &enc_pio, &enc_sm, &offset,
+            PIN_ENC_A, PIN_ENC_B - PIN_ENC_A + 1, true))
+        return;
+    pio_sm_set_consecutive_pindirs(enc_pio, enc_sm, PIN_ENC_A, 1, false);
+    pio_sm_set_consecutive_pindirs(enc_pio, enc_sm, PIN_ENC_B, 1, false);
+    c = quadrature_encoder_program_get_default_config(offset);
+    sm_config_set_in_pins(&c, PIN_ENC_A);
+    sm_config_set_jmp_pin(&c, PIN_ENC_B);
+    sm_config_set_in_shift(&c, false, false, 32);
+    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_NONE);
+    /* Full speed: the deglitch hold is counted in PIO cycles (46 = 0.31 us at
+     * 150 MHz) and must stay long against the 80 ns glitch and short against
+     * the other channel's 90 deg lead (0.58 us at the rated 430 kHz). */
+    sm_config_set_clkdiv(&c, 1.0f);
+    if (pio_sm_init(enc_pio, enc_sm, offset, &c) != PICO_OK)
+        return;
+    pio_sm_set_enabled(enc_pio, enc_sm, true);
+    enc_ok = true;
+#endif
+    motor_enc_init(&motor_enc);
+}
+
 void hw_actuators_service(uint64_t now_ms)
 {
     bool pulled;
 
     pulse_service(&pulses, now_ms, DISPERSE_PULSE_MS, drive_pin, NULL);
+    /* Encoder every pass too: the stall verdict is over 100 ms windows. The
+     * drive state is the same one hw_actuator_status() reports as
+     * HKV_DISPERSE. */
+    if (enc_ok)
+        motor_enc_service(&motor_enc, encoder_count(),
+                          pulses.active_pin == PIN_DISPERSE_FWD || motor_held,
+                          now_ms);
     /* The membrane's low-frequency edges are released here too, for the same
      * reason the valve pulses are: a hung loop must not be able to leave a
      * solenoid energized. Only touch the pin when an edge actually falls due. */
@@ -176,7 +265,7 @@ void hw_actuators_service(uint64_t now_ms)
  * not have - and says so in HK via HKE_NO_MEMBRANE_SENSE. */
 #define HAVE_MEMBRANE_SENSE (PIN_MEMBRANE_SENSE < NUM_BANK0_GPIOS)
 
-/* The push-pull solenoid's current sense (ACT_HB_SENS) is on GP46, an ADC
+/* The dispersion motor's current sense (ACT_HB_SENS) is on GP46, an ADC
  * pin that likewise exists only on the RP2350B. Same guard, same reason: a
  * pico2 build must not call adc_gpio_init() on a pin outside its ADC range
  * (the SDK asserts on it), so the read is compiled out and the field carries
@@ -251,6 +340,9 @@ uint8_t hw_actuator_status(void)
         bits |= HKV_MEMBRANE_CYCLING;
         sense_changed = false;
     }
+    /* Latched by hw_actuators_service() the same way, consumed here. */
+    if (enc_ok && motor_enc_take_stalled(&motor_enc))
+        bits |= HKV_DISPERSE_STALLED;
     return bits;
 }
 
@@ -489,13 +581,56 @@ const seq_ops_t hw_seq_ops = {
 
 static uint32_t last_p_amb_pa = P_AMB_COLD_START_PA;
 
+/* Re-init on a failed read, rate-limited to SENSOR_RETRY_MS (board.h). Each
+ * bme280_init() is a chip-id read, two calibration bursts and three register
+ * writes, every one timeout-bounded on I2C and a plain clocked burst on SPI -
+ * nothing here sleeps, so it can run from the 1 Hz sweep. The first retry is
+ * held off for one period after boot: a part that answered its probe needs
+ * that long to run its first conversion, and re-initialising it for reporting
+ * 0x80000 would only restart that clock. */
+static uint64_t bme280_ambient_retry_ms = SENSOR_RETRY_MS;
+static uint64_t bme280_chamber_retry_ms = SENSOR_RETRY_MS;
+static uint64_t ina226_retry_ms = SENSOR_RETRY_MS;
+
+static void bme280_retry(bme280_t *dev, uint64_t *next_ms)
+{
+    uint64_t now = hw_monotonic_ms();
+
+    if (now < *next_ms)
+        return;
+    *next_ms = now + SENSOR_RETRY_MS;
+    (void)bme280_init(dev);
+}
+
+/* Same rule for the rail monitors, taken as a set: ina226_init() probes every
+ * fitted address and rebuilds its own present[] table, so it is only worth
+ * re-running when none of them answered this sweep. One rail out of three
+ * failing is a fault to downlink (HKE_RAIL_FAIL), not a table to rebuild. */
+static void ina226_retry(void)
+{
+    uint64_t now = hw_monotonic_ms();
+
+    if (now < ina226_retry_ms)
+        return;
+    ina226_retry_ms = now + SENSOR_RETRY_MS;
+    (void)ina226_init();
+}
+
+void hw_pm_service(uint64_t now_ms)
+{
+    bmv080_dev_service(now_ms);
+}
+
 void hw_read_sensors(hk_t *hk)
 {
     int16_t bme_temp_cc;
     uint16_t rh_cpct;
     uint32_t p_pa;
+    uint16_t pm2_5_ugm3;
+    bool pm_fresh, pm_obstructed, pm_out_of_range;
 
     hk->error_flags = 0;
+    hk->pm_status = 0;
 
     /* The STLM20 pair is not fitted (board.h), and the pin the old map used
      * for ADC_TEMP1 is the membrane solenoid. Sampling an unconnected input
@@ -517,6 +652,12 @@ void hw_read_sensors(hk_t *hk)
      * build", never 0, because 0 counts is what an idle solenoid reads. */
     hk->hb_sense_raw = hw_hb_sense_raw();
 
+    /* Motor speed, mean since the previous packet; the sentinel says "no
+     * encoder", never 0, because 0 rpm is what a stall reads. */
+    hk->motor_rpm = enc_ok ? motor_enc_take_rpm(&motor_enc, encoder_count(),
+                                                hw_monotonic_ms())
+                           : MOTOR_RPM_INVALID;
+
     if (bme280_read(&bme280_ambient, &bme_temp_cc, &rh_cpct, &p_pa)) {
         hk->bme_temp_cc = bme_temp_cc;
         hk->rh1_cpct = rh_cpct;
@@ -528,6 +669,7 @@ void hw_read_sensors(hk_t *hk)
         hk->rh1_cpct = 0;
         hk->p_amb_pa = last_p_amb_pa;
         hk->error_flags |= HKE_BME280_FAIL | HKE_P_AMB_STALE;
+        bme280_retry(&bme280_ambient, &bme280_ambient_retry_ms);
     }
 
     /* The chamber part, on SPI_1. Zeroed rather than held on a failed read,
@@ -545,6 +687,7 @@ void hw_read_sensors(hk_t *hk)
         hk->chm_rh_cpct = 0;
         hk->chm_p_pa = 0;
         hk->error_flags |= HKE_BME280_CHM_FAIL;
+        bme280_retry(&bme280_chamber, &bme280_chamber_retry_ms);
     }
 
     /* The IMU is allowed to be late: bno055_read() returns false through the
@@ -570,6 +713,31 @@ void hw_read_sensors(hk_t *hk)
         hk->error_flags |= HKE_IMU_CHM_FAIL;
     }
 
+    /* The particulate sensor, on SPI_1. Zeroed rather than held on a failed
+     * read, by the chamber BME280's rule above and not p_amb_pa's: nothing in
+     * core/ reads this, so a held value would only be an old number that
+     * looks current.
+     *
+     * pm_status carries more than a fail bit because this part has more than
+     * one way of having no usable answer. An obstructed sensor is answering
+     * correctly and still cannot measure; a saturated one is reporting a
+     * floor, not a value; and a repeat is the normal consequence of a
+     * 0.97 Hz part on a 1 Hz sweep. Collapsing those into "failed" would
+     * make an enclosure blocking the optics look like a dead sensor. */
+    if (bmv080_dev_read(&pm2_5_ugm3, &pm_fresh, &pm_obstructed,
+                        &pm_out_of_range)) {
+        hk->pm2_5_ugm3 = pm2_5_ugm3;
+        if (pm_obstructed)
+            hk->pm_status |= PM_OBSTRUCTED;
+        if (pm_out_of_range)
+            hk->pm_status |= PM_RANGE;
+        if (!pm_fresh)
+            hk->pm_status |= PM_STALE;
+    } else {
+        hk->pm2_5_ugm3 = 0;
+        hk->pm_status |= PM_FAIL;
+    }
+
     /* Rail voltage and shunt voltage, per rail. A rail that does not answer
      * reports RAIL_MV_INVALID and not 0: 0 mV is a legitimate reading for a
      * rail whose supply is absent (V_in on a USB-powered bench), and
@@ -581,6 +749,8 @@ void hw_read_sensors(hk_t *hk)
      * over the same bus microseconds apart, so a half-read entry would be a
      * distinction without a use - and a shunt_raw kept alongside an invalid
      * rail_mv is an amp reading for a rail whose voltage is unknown. */
+    unsigned rails_answered = 0;
+
     for (unsigned i = 0; i < INA_RAIL_COUNT; i++) {
         uint16_t mv;
         int16_t shunt;
@@ -589,6 +759,7 @@ void hw_read_sensors(hk_t *hk)
             ina226_read_shunt_raw((enum ina226_rail)i, &shunt)) {
             hk->rail_mv[i] = mv;
             hk->shunt_raw[i] = shunt;
+            rails_answered++;
         } else {
             hk->rail_mv[i] = RAIL_MV_INVALID;
             hk->shunt_raw[i] = 0;
@@ -599,9 +770,31 @@ void hw_read_sensors(hk_t *hk)
                 hk->error_flags |= HKE_RAIL_FAIL;
         }
     }
+    if (rails_answered == 0)
+        ina226_retry();
 }
 
 /* ---- init ----------------------------------------------------------------- */
+
+/* Every SPI_1 chip select driven HIGH before the bus sees its first clock
+ * edge - the two with parts behind them and the two without. An RP2350 pad
+ * out of reset is a pulled-down input, and an active-low select left there
+ * is asserted (board.h, PIN_SPI1_CS3). GP47 is above the RP2350A's GP29 and
+ * is compiled out of a pico2 build like every other pin up there. */
+static void spi1_park_chip_selects(void)
+{
+    static const uint8_t cs[] = {PIN_BME_CHAMBER_CS, PIN_BMV080_CS,
+                                 PIN_SPI1_CS3, PIN_SPI1_CS4};
+
+    for (size_t i = 0; i < sizeof cs; i++) {
+        if (cs[i] >= NUM_BANK0_GPIOS)
+            continue;
+        gpio_init(cs[i]);
+        gpio_put(cs[i], 1);
+        gpio_set_dir(cs[i], GPIO_OUT);
+        gpio_put(cs[i], 1);
+    }
+}
 
 void hw_init(void)
 {
@@ -642,6 +835,7 @@ void hw_init(void)
     adc_init();
     adc_gpio_init(PIN_HB_SENSE);
 #endif
+    encoder_init();
 
     /* i2c0 at 100 kHz: the speed the bus was surveyed and the devices
      * identified at. Internal pull-ups are belt-and-braces; the carrier has
@@ -671,17 +865,31 @@ void hw_init(void)
      * CS is driven high BEFORE spi_init() touches the bus pins, so the part
      * never sees a clock edge while selected by an undriven line.
      *
+     * NO spi_set_format() HERE, deliberately. Two parts share this bus and
+     * they do not agree on the frame width: the BME280 transfers bytes, the
+     * BMV080 transfers 16-bit words (a 16-bit header then 16-bit payload
+     * words - hw/bmv080_port.c). A format set once at init is whatever the
+     * last driver to touch the bus left behind, so each driver sets its own
+     * width inside its own chip-select window instead. Both do it before
+     * pulling CS low, which is the only time SSPCR0 can be changed without
+     * cutting into a transfer.
+     *
      * Failure is not fatal here either - and unlike the ambient part, this
      * one is not in the sequencer's path at all. */
-    gpio_init(PIN_BME_CHAMBER_CS);
-    gpio_set_dir(PIN_BME_CHAMBER_CS, GPIO_OUT);
-    gpio_put(PIN_BME_CHAMBER_CS, 1);
+    spi1_park_chip_selects();
     spi_init(spi1, SPI1_BAUD_HZ);
-    spi_set_format(spi1, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
     gpio_set_function(PIN_SPI1_MISO, GPIO_FUNC_SPI);
     gpio_set_function(PIN_SPI1_SCK, GPIO_FUNC_SPI);
     gpio_set_function(PIN_SPI1_MOSI, GPIO_FUNC_SPI);
     (void)bme280_init(&bme280_chamber);
+
+    /* The particulate sensor, on SPI_1_CS2 (GP12). Runs from here rather
+     * than from the 1 Hz sweep because the vendor library delays internally
+     * during bring-up, and hw_init() is called before hw_watchdog_enable()
+     * (main.c) - the only window in which a delay costs nothing. A failure
+     * leaves hk_t.pm_status at PM_FAIL and is not fatal: nothing in core/
+     * reads particulate mass. */
+    (void)bmv080_dev_init();
     /* Arms the IMU's bring-up without touching the bus: the BNO055 is still
      * inside its own 400 ms start-up (datasheet TSup) while this runs, so the
      * reset that starts its 650 ms boot is issued from the 1 Hz sweep once

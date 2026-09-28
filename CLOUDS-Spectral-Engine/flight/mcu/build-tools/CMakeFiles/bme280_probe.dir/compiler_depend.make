@@ -2007,6 +2007,67 @@ CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardwar
   generated/pico_base/pico/config_autogen.h \
   generated/pico_base/pico/version.h
 
+CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/_ansi.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/_newlib_version.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/assert.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/machine/_default_types.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/machine/ieeefp.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/newlib.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/stdint.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/_intsup.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/_stdint.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/cdefs.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/config.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/features.h \
+  /Users/mathistelschow/arm-gnu-toolchain/lib/gcc/arm-none-eabi/15.3.1/include/stdbool.h \
+  /Users/mathistelschow/arm-gnu-toolchain/lib/gcc/arm-none-eabi/15.3.1/include/stddef.h \
+  /Users/mathistelschow/arm-gnu-toolchain/lib/gcc/arm-none-eabi/15.3.1/include/stdint.h \
+  /Users/mathistelschow/pico-sdk/src/common/hardware_claim/include/hardware/claim.h \
+  /Users/mathistelschow/pico-sdk/src/common/pico_base_headers/include/pico.h \
+  /Users/mathistelschow/pico-sdk/src/common/pico_base_headers/include/pico/assert.h \
+  /Users/mathistelschow/pico-sdk/src/common/pico_base_headers/include/pico/config.h \
+  /Users/mathistelschow/pico-sdk/src/common/pico_base_headers/include/pico/error.h \
+  /Users/mathistelschow/pico-sdk/src/common/pico_base_headers/include/pico/types.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/platform_defs.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/accessctrl.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/addressmap.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/dreq.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/intctrl.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/io_bank0.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/m33.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/pads_bank0.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/pio.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/sio.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/accessctrl.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/interp.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/io_bank0.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/m33.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/nvic.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/pads_bank0.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/pio.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/scb.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/sio.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/systick.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/include/pico/platform.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/include/pico/platform/cpu_regs.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/cmsis/include/cmsis/rename_exceptions.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_base/include/hardware/address_mapped.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/include/hardware/gpio.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/include/hardware/gpio_coproc.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/include/hardware/irq.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/include/hardware/pio.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/include/hardware/pio_instructions.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/include/hardware/sync.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/include/hardware/sync/spin_lock.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/include/pico/platform/common.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_compiler/include/pico/platform/compiler.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/include/pico/platform/panic.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_sections/include/pico/platform/sections.h \
+  /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/boards/clouds_carrier.h \
+  generated/pico_base/pico/config_autogen.h \
+  generated/pico_base/pico/version.h
+
 CMakeFiles/bme280_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c \
   /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/_ansi.h \
   /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/_newlib_version.h \
@@ -4074,6 +4135,17 @@ CMakeFiles/bme280_probe.dir/src/core/link.c.o: /Users/mathistelschow/repos/activ
   /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/config.h \
   /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/link.h
 
+CMakeFiles/bme280_probe.dir/src/core/motor_enc.c.o: /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/motor_enc.c \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/_newlib_version.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/machine/_default_types.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/stdint.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/_intsup.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/_stdint.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/features.h \
+  /Users/mathistelschow/arm-gnu-toolchain/lib/gcc/arm-none-eabi/15.3.1/include/stdbool.h \
+  /Users/mathistelschow/arm-gnu-toolchain/lib/gcc/arm-none-eabi/15.3.1/include/stdint.h \
+  /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/motor_enc.h
+
 CMakeFiles/bme280_probe.dir/src/core/pulse.c.o: /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/pulse.c \
   /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/_newlib_version.h \
   /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/machine/_default_types.h \
@@ -4202,6 +4274,141 @@ CMakeFiles/bme280_probe.dir/src/hw/bme280.c.o: /Users/mathistelschow/repos/activ
   /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bme280.h \
   /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/board.h
 
+CMakeFiles/bme280_probe.dir/src/hw/bmv080_dev.c.o: /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bmv080_dev.c \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/_ansi.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/_newlib_version.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/assert.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/machine/_default_types.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/machine/_types.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/machine/ieeefp.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/newlib.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/stdint.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/string.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/strings.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/_intsup.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/_locale.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/_stdint.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/_types.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/cdefs.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/config.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/features.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/lock.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/reent.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/string.h \
+  /Users/mathistelschow/arm-gnu-toolchain/lib/gcc/arm-none-eabi/15.3.1/include/stdbool.h \
+  /Users/mathistelschow/arm-gnu-toolchain/lib/gcc/arm-none-eabi/15.3.1/include/stddef.h \
+  /Users/mathistelschow/arm-gnu-toolchain/lib/gcc/arm-none-eabi/15.3.1/include/stdint.h \
+  /Users/mathistelschow/pico-sdk/src/common/pico_base_headers/include/pico.h \
+  /Users/mathistelschow/pico-sdk/src/common/pico_base_headers/include/pico/assert.h \
+  /Users/mathistelschow/pico-sdk/src/common/pico_base_headers/include/pico/config.h \
+  /Users/mathistelschow/pico-sdk/src/common/pico_base_headers/include/pico/error.h \
+  /Users/mathistelschow/pico-sdk/src/common/pico_base_headers/include/pico/types.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/platform_defs.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/accessctrl.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/addressmap.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/dreq.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/resets.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/sio.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/spi.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/accessctrl.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/resets.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/spi.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/include/pico/platform.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/cmsis/include/cmsis/rename_exceptions.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_base/include/hardware/address_mapped.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_resets/include/hardware/resets.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/include/hardware/spi.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/include/pico/platform/common.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_compiler/include/pico/platform/compiler.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/include/pico/platform/panic.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_sections/include/pico/platform/sections.h \
+  /Users/mathistelschow/repos/active/bexusclouds/sensor-driver/api/inc/bmv080.h \
+  /Users/mathistelschow/repos/active/bexusclouds/sensor-driver/api/inc/bmv080_defs.h \
+  /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/boards/clouds_carrier.h \
+  generated/pico_base/pico/config_autogen.h \
+  generated/pico_base/pico/version.h \
+  /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bmv080_dev.h \
+  /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bmv080_port.h \
+  /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/board.h
+
+CMakeFiles/bme280_probe.dir/src/hw/bmv080_port.c.o: /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bmv080_port.c \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/_ansi.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/_newlib_version.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/assert.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/machine/_default_types.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/machine/ieeefp.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/newlib.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/stdint.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/_intsup.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/_stdint.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/cdefs.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/config.h \
+  /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/features.h \
+  /Users/mathistelschow/arm-gnu-toolchain/lib/gcc/arm-none-eabi/15.3.1/include/stdarg.h \
+  /Users/mathistelschow/arm-gnu-toolchain/lib/gcc/arm-none-eabi/15.3.1/include/stdbool.h \
+  /Users/mathistelschow/arm-gnu-toolchain/lib/gcc/arm-none-eabi/15.3.1/include/stddef.h \
+  /Users/mathistelschow/arm-gnu-toolchain/lib/gcc/arm-none-eabi/15.3.1/include/stdint.h \
+  /Users/mathistelschow/pico-sdk/src/common/pico_base_headers/include/pico.h \
+  /Users/mathistelschow/pico-sdk/src/common/pico_base_headers/include/pico/assert.h \
+  /Users/mathistelschow/pico-sdk/src/common/pico_base_headers/include/pico/config.h \
+  /Users/mathistelschow/pico-sdk/src/common/pico_base_headers/include/pico/error.h \
+  /Users/mathistelschow/pico-sdk/src/common/pico_base_headers/include/pico/types.h \
+  /Users/mathistelschow/pico-sdk/src/common/pico_stdlib_headers/include/pico/stdlib.h \
+  /Users/mathistelschow/pico-sdk/src/common/pico_time/include/pico/time.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/platform_defs.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/accessctrl.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/addressmap.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/dreq.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/intctrl.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/io_bank0.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/m33.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/pads_bank0.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/resets.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/sio.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/spi.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/timer.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/uart.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/accessctrl.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/interp.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/io_bank0.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/m33.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/nvic.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/pads_bank0.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/resets.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/scb.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/sio.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/spi.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/systick.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/timer.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/uart.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/include/pico/platform.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/include/pico/platform/cpu_regs.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/cmsis/include/cmsis/rename_exceptions.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_base/include/hardware/address_mapped.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/include/hardware/gpio.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/include/hardware/gpio_coproc.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/include/hardware/irq.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_resets/include/hardware/resets.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/include/hardware/spi.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/include/hardware/timer.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/include/hardware/uart.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/include/pico/platform/common.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_compiler/include/pico/platform/compiler.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/include/pico/platform/panic.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_sections/include/pico/platform/sections.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/include/pico/stdio.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/include/pico/stdio_usb.h \
+  /Users/mathistelschow/repos/active/bexusclouds/sensor-driver/api/inc/bmv080_defs.h \
+  /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/boards/clouds_carrier.h \
+  generated/pico_base/pico/config_autogen.h \
+  generated/pico_base/pico/version.h \
+  /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/autonomy.h \
+  /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/config.h \
+  /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/frame.h \
+  /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/sequencer.h \
+  /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bmv080_port.h \
+  /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/hw.h
+
 CMakeFiles/bme280_probe.dir/src/hw/bno055.c.o: /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bno055.c \
   /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/_ansi.h \
   /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/_newlib_version.h \
@@ -4305,6 +4512,7 @@ CMakeFiles/bme280_probe.dir/src/hw/hw.c.o: /Users/mathistelschow/repos/active/be
   /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/io_bank0.h \
   /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/m33.h \
   /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/pads_bank0.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/pio.h \
   /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/pwm.h \
   /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/resets.h \
   /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/sio.h \
@@ -4321,6 +4529,7 @@ CMakeFiles/bme280_probe.dir/src/hw/hw.c.o: /Users/mathistelschow/repos/active/be
   /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/m33.h \
   /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/nvic.h \
   /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/pads_bank0.h \
+  /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/pio.h \
   /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/pwm.h \
   /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/resets.h \
   /Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/scb.h \
@@ -4340,6 +4549,8 @@ CMakeFiles/bme280_probe.dir/src/hw/hw.c.o: /Users/mathistelschow/repos/active/be
   /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/include/hardware/gpio_coproc.h \
   /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/include/hardware/i2c.h \
   /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/include/hardware/irq.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/include/hardware/pio.h \
+  /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/include/hardware/pio_instructions.h \
   /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pwm/include/hardware/pwm.h \
   /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_resets/include/hardware/resets.h \
   /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/include/hardware/spi.h \
@@ -4355,15 +4566,18 @@ CMakeFiles/bme280_probe.dir/src/hw/hw.c.o: /Users/mathistelschow/repos/active/be
   /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/boards/clouds_carrier.h \
   generated/pico_base/pico/config_autogen.h \
   generated/pico_base/pico/version.h \
+  quadrature_encoder.pio.h \
   /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/autonomy.h \
   /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/config.h \
   /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/crc16.h \
   /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/frame.h \
+  /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/motor_enc.h \
   /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/pulse.h \
   /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/pwmdiv.h \
   /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/sequencer.h \
   /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/sqwave.h \
   /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bme280.h \
+  /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bmv080_dev.h \
   /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bno055.h \
   /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/board.h \
   /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/hw.h \
@@ -4588,15 +4802,21 @@ CMakeFiles/bme280_probe.dir/src/tools/bme280_probe.c.o: /Users/mathistelschow/re
 
 /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/uart_io.c:
 
+quadrature_encoder.pio.h:
+
 /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pwm/include/hardware/pwm.h:
 
 /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/hw.c:
 
 /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bno055.c:
 
-/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bme280.c:
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bmv080_port.h:
 
-/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/sqwave.h:
+/Users/mathistelschow/repos/active/bexusclouds/sensor-driver/api/inc/bmv080_defs.h:
+
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bmv080_dev.c:
+
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bme280.c:
 
 /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/sqwave.c:
 
@@ -4607,6 +4827,12 @@ CMakeFiles/bme280_probe.dir/src/tools/bme280_probe.c.o: /Users/mathistelschow/re
 /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/pwmdiv.h:
 
 /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/pwmdiv.c:
+
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/motor_enc.h:
+
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/sqwave.h:
+
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/motor_enc.c:
 
 /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/frame.h:
 
@@ -4752,11 +4978,15 @@ CMakeFiles/bme280_probe.dir/src/tools/bme280_probe.c.o: /Users/mathistelschow/re
 
 /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c:
 
-/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c:
+/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/include/hardware/pio_instructions.h:
 
-/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c:
+/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/include/hardware/pio.h:
+
+/Users/mathistelschow/pico-sdk/src/rp2350/hardware_structs/include/hardware/structs/pio.h:
 
 /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/config.c:
+
+/Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/pio.h:
 
 /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c:
 
@@ -4811,6 +5041,8 @@ CMakeFiles/bme280_probe.dir/src/tools/bme280_probe.c.o: /Users/mathistelschow/re
 /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/resets.h:
 
 /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/include/hardware/boot_lock.h:
+
+/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c:
 
 /Users/mathistelschow/pico-sdk/src/rp2350/hardware_regs/include/hardware/regs/psm.h:
 
@@ -4883,6 +5115,8 @@ CMakeFiles/bme280_probe.dir/src/tools/bme280_probe.c.o: /Users/mathistelschow/re
 /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/time.h:
 
 /Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c:
+
+/Users/mathistelschow/repos/active/bexusclouds/sensor-driver/api/inc/bmv080.h:
 
 /Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c:
 
@@ -5074,6 +5308,8 @@ CMakeFiles/bme280_probe.dir/src/tools/bme280_probe.c.o: /Users/mathistelschow/re
 
 /Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_common.h:
 
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bmv080_dev.h:
+
 /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bme280.h:
 
 /Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c:
@@ -5164,11 +5400,17 @@ CMakeFiles/bme280_probe.dir/src/tools/bme280_probe.c.o: /Users/mathistelschow/re
 
 /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/stdio.h:
 
+/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c:
+
+/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c:
+
 /Users/mathistelschow/arm-gnu-toolchain/arm-none-eabi/include/sys/timespec.h:
 
 /Users/mathistelschow/arm-gnu-toolchain/lib/gcc/arm-none-eabi/15.3.1/include/stdint.h:
 
 /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/hw.h:
+
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bmv080_port.c:
 
 /Users/mathistelschow/pico-sdk/src/common/pico_binary_info/include/pico/binary_info.h:
 

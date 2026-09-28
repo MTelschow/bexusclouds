@@ -1,0 +1,5 @@
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pioasm-install/pioasm/pioasm
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pioasm-install/pioasm/pioasmTargets.cmake
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pioasm-install/pioasm/pioasmTargets-release.cmake
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pioasm-install/pioasm/pioasmConfig.cmake
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pioasm-install/pioasm/pioasmConfigVersion.cmake

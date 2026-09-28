@@ -204,15 +204,16 @@ def _bit(mask: int):
 
 
 def _sensed(attr: str):
-    """A membrane switch property (`membrane_pulled` / `membrane_cycling`) as
-    1.0 / 0.0, passing its None - no GP30 in this build - through as a gap."""
+    """A sensed property (`membrane_pulled` / `membrane_cycling` /
+    `motor_stalled`) as 1.0 / 0.0, passing its None - no GP30 or no encoder
+    in this build - through as a gap."""
     def get(h):
         v = getattr(h, attr)
         return None if v is None else float(bool(v))
     return get
 
 
-#: Everything the 64-byte housekeeping packet carries that varies over time.
+#: Everything the 80-byte housekeeping packet carries that varies over time.
 #: `state` and the link flags are deliberately absent - they are enumerations,
 #: and a step plot of "AUTO_DISPERSE = 3" invites reading the number. The
 #: `valve_status` bits are not: each one is a single line that is energized or
@@ -235,6 +236,15 @@ SERIES: tuple[Series, ...] = (
            lambda h: h.chm_temp_cc / 100.0, HkErrors.BME280_CHM_FAIL),
     Series("chm_rh", "Chamber RH", "%", "BME280 chamber", "#4d8fd1",
            lambda h: h.chm_rh_cpct / 100.0, HkErrors.BME280_CHM_FAIL),
+    # The BMV080 on SPI_1. No flag column, because its state is not in
+    # `error_flags` - that byte is full, so the part carries `pm_status` at
+    # offset 2 - and `pm_measured` is the equivalent: it goes to a gap when
+    # the sensor gave nothing or gave a reading it cannot stand behind
+    # (obstructed), on the same rule as an unreadable rail. A saturated
+    # reading is plotted at 1000 rather than dropped: it is a true floor, and
+    # a gap there would hide a real excursion.
+    Series("pm2_5", "PM2.5", "ug/m3", "BMV080", "#8a97a3",
+           lambda h: float(h.pm2_5_ugm3) if h.pm_measured else None),
 ) + tuple(
     Series(f"acc_{ax}", f"Accel {ax.upper()}", "mg", "BNO055", _AXIS_C[i],
            _vec("accel_mg", i), HkErrors.IMU_FAIL)
@@ -273,6 +283,13 @@ SERIES: tuple[Series, ...] = (
     # A sentinel is a gap, like an unreadable rail.
     Series("hb_sense", "Dispersion motor current", "A", "Actuators", "#b0413e",
            lambda h: h.hb_sense_a()),
+    # The same motor's shaft speed, from its encoder: mean over the second
+    # before each packet, signed by direction. Beside the current because the
+    # pair is the diagnosis - current up and speed 0 is a jam, speed tracking
+    # the duty is a healthy drive. No encoder in the build is a gap.
+    Series("motor_rpm", "Dispersion motor speed", "rpm", "Actuators",
+           "#01386a",
+           lambda h: float(h.motor_rpm) if h.motor_rpm_valid else None),
 ) + tuple(
     # The actuator lines themselves, one lane each. The panel's `Driving` row
     # answers "is a line energized now"; nothing answered "when did it run,
@@ -302,6 +319,10 @@ SERIES: tuple[Series, ...] = (
     Series("membrane_cycling", "Membrane cycling", DIGITAL_UNIT,
            "Actuator lines", "#8a97a3", _sensed("membrane_cycling"),
            HkErrors.NO_MEMBRANE_SENSE),
+    # Sensed too: the MCU's stall verdict from the encoder, beside the drive
+    # lane it judges. No encoder is a gap, not "not stalled".
+    Series("motor_stalled", "Dispersion stalled", DIGITAL_UNIT,
+           "Actuator lines", "#E8821E", _sensed("motor_stalled")),
 )
 
 SERIES_BY_KEY = {s.key: s for s in SERIES}

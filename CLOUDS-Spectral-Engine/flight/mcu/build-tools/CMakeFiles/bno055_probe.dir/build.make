@@ -226,10 +226,24 @@ CMakeFiles/bno055_probe.dir/src/core/sqwave.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/bno055_probe.dir/src/core/sqwave.c.s"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/sqwave.c -o CMakeFiles/bno055_probe.dir/src/core/sqwave.c.s
 
+CMakeFiles/bno055_probe.dir/src/core/motor_enc.c.o: CMakeFiles/bno055_probe.dir/flags.make
+CMakeFiles/bno055_probe.dir/src/core/motor_enc.c.o: /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/motor_enc.c
+CMakeFiles/bno055_probe.dir/src/core/motor_enc.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building C object CMakeFiles/bno055_probe.dir/src/core/motor_enc.c.o"
+	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/src/core/motor_enc.c.o -MF CMakeFiles/bno055_probe.dir/src/core/motor_enc.c.o.d -o CMakeFiles/bno055_probe.dir/src/core/motor_enc.c.o -c /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/motor_enc.c
+
+CMakeFiles/bno055_probe.dir/src/core/motor_enc.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/bno055_probe.dir/src/core/motor_enc.c.i"
+	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/motor_enc.c > CMakeFiles/bno055_probe.dir/src/core/motor_enc.c.i
+
+CMakeFiles/bno055_probe.dir/src/core/motor_enc.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/bno055_probe.dir/src/core/motor_enc.c.s"
+	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/core/motor_enc.c -o CMakeFiles/bno055_probe.dir/src/core/motor_enc.c.s
+
 CMakeFiles/bno055_probe.dir/src/hw/hw.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/src/hw/hw.c.o: /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/hw.c
 CMakeFiles/bno055_probe.dir/src/hw/hw.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building C object CMakeFiles/bno055_probe.dir/src/hw/hw.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building C object CMakeFiles/bno055_probe.dir/src/hw/hw.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/src/hw/hw.c.o -MF CMakeFiles/bno055_probe.dir/src/hw/hw.c.o.d -o CMakeFiles/bno055_probe.dir/src/hw/hw.c.o -c /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/hw.c
 
 CMakeFiles/bno055_probe.dir/src/hw/hw.c.i: cmake_force
@@ -243,7 +257,7 @@ CMakeFiles/bno055_probe.dir/src/hw/hw.c.s: cmake_force
 CMakeFiles/bno055_probe.dir/src/hw/bme280.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/src/hw/bme280.c.o: /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bme280.c
 CMakeFiles/bno055_probe.dir/src/hw/bme280.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building C object CMakeFiles/bno055_probe.dir/src/hw/bme280.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building C object CMakeFiles/bno055_probe.dir/src/hw/bme280.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/src/hw/bme280.c.o -MF CMakeFiles/bno055_probe.dir/src/hw/bme280.c.o.d -o CMakeFiles/bno055_probe.dir/src/hw/bme280.c.o -c /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bme280.c
 
 CMakeFiles/bno055_probe.dir/src/hw/bme280.c.i: cmake_force
@@ -254,10 +268,38 @@ CMakeFiles/bno055_probe.dir/src/hw/bme280.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/bno055_probe.dir/src/hw/bme280.c.s"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bme280.c -o CMakeFiles/bno055_probe.dir/src/hw/bme280.c.s
 
+CMakeFiles/bno055_probe.dir/src/hw/bmv080_dev.c.o: CMakeFiles/bno055_probe.dir/flags.make
+CMakeFiles/bno055_probe.dir/src/hw/bmv080_dev.c.o: /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bmv080_dev.c
+CMakeFiles/bno055_probe.dir/src/hw/bmv080_dev.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building C object CMakeFiles/bno055_probe.dir/src/hw/bmv080_dev.c.o"
+	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/src/hw/bmv080_dev.c.o -MF CMakeFiles/bno055_probe.dir/src/hw/bmv080_dev.c.o.d -o CMakeFiles/bno055_probe.dir/src/hw/bmv080_dev.c.o -c /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bmv080_dev.c
+
+CMakeFiles/bno055_probe.dir/src/hw/bmv080_dev.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/bno055_probe.dir/src/hw/bmv080_dev.c.i"
+	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bmv080_dev.c > CMakeFiles/bno055_probe.dir/src/hw/bmv080_dev.c.i
+
+CMakeFiles/bno055_probe.dir/src/hw/bmv080_dev.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/bno055_probe.dir/src/hw/bmv080_dev.c.s"
+	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bmv080_dev.c -o CMakeFiles/bno055_probe.dir/src/hw/bmv080_dev.c.s
+
+CMakeFiles/bno055_probe.dir/src/hw/bmv080_port.c.o: CMakeFiles/bno055_probe.dir/flags.make
+CMakeFiles/bno055_probe.dir/src/hw/bmv080_port.c.o: /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bmv080_port.c
+CMakeFiles/bno055_probe.dir/src/hw/bmv080_port.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building C object CMakeFiles/bno055_probe.dir/src/hw/bmv080_port.c.o"
+	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/src/hw/bmv080_port.c.o -MF CMakeFiles/bno055_probe.dir/src/hw/bmv080_port.c.o.d -o CMakeFiles/bno055_probe.dir/src/hw/bmv080_port.c.o -c /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bmv080_port.c
+
+CMakeFiles/bno055_probe.dir/src/hw/bmv080_port.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/bno055_probe.dir/src/hw/bmv080_port.c.i"
+	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bmv080_port.c > CMakeFiles/bno055_probe.dir/src/hw/bmv080_port.c.i
+
+CMakeFiles/bno055_probe.dir/src/hw/bmv080_port.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/bno055_probe.dir/src/hw/bmv080_port.c.s"
+	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bmv080_port.c -o CMakeFiles/bno055_probe.dir/src/hw/bmv080_port.c.s
+
 CMakeFiles/bno055_probe.dir/src/hw/bno055.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/src/hw/bno055.c.o: /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bno055.c
 CMakeFiles/bno055_probe.dir/src/hw/bno055.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building C object CMakeFiles/bno055_probe.dir/src/hw/bno055.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building C object CMakeFiles/bno055_probe.dir/src/hw/bno055.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/src/hw/bno055.c.o -MF CMakeFiles/bno055_probe.dir/src/hw/bno055.c.o.d -o CMakeFiles/bno055_probe.dir/src/hw/bno055.c.o -c /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/bno055.c
 
 CMakeFiles/bno055_probe.dir/src/hw/bno055.c.i: cmake_force
@@ -271,7 +313,7 @@ CMakeFiles/bno055_probe.dir/src/hw/bno055.c.s: cmake_force
 CMakeFiles/bno055_probe.dir/src/hw/ina226.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/src/hw/ina226.c.o: /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/ina226.c
 CMakeFiles/bno055_probe.dir/src/hw/ina226.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building C object CMakeFiles/bno055_probe.dir/src/hw/ina226.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building C object CMakeFiles/bno055_probe.dir/src/hw/ina226.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/src/hw/ina226.c.o -MF CMakeFiles/bno055_probe.dir/src/hw/ina226.c.o.d -o CMakeFiles/bno055_probe.dir/src/hw/ina226.c.o -c /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/ina226.c
 
 CMakeFiles/bno055_probe.dir/src/hw/ina226.c.i: cmake_force
@@ -285,7 +327,7 @@ CMakeFiles/bno055_probe.dir/src/hw/ina226.c.s: cmake_force
 CMakeFiles/bno055_probe.dir/src/hw/uart_io.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/src/hw/uart_io.c.o: /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/uart_io.c
 CMakeFiles/bno055_probe.dir/src/hw/uart_io.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building C object CMakeFiles/bno055_probe.dir/src/hw/uart_io.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building C object CMakeFiles/bno055_probe.dir/src/hw/uart_io.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/src/hw/uart_io.c.o -MF CMakeFiles/bno055_probe.dir/src/hw/uart_io.c.o.d -o CMakeFiles/bno055_probe.dir/src/hw/uart_io.c.o -c /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/src/hw/uart_io.c
 
 CMakeFiles/bno055_probe.dir/src/hw/uart_io.c.i: cmake_force
@@ -299,7 +341,7 @@ CMakeFiles/bno055_probe.dir/src/hw/uart_io.c.s: cmake_force
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdlib/stdlib.c.i: cmake_force
@@ -313,7 +355,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_st
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.i: cmake_force
@@ -327,7 +369,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardwar
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.o: /Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.o -c /Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/platform.c.i: cmake_force
@@ -341,7 +383,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2350/pico_platfo
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_common/common.c.i: cmake_force
@@ -355,7 +397,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_pl
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/panic.c.i: cmake_force
@@ -368,7 +410,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_pl
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/custom_panic_function.S.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/custom_panic_function.S.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/custom_panic_function.S
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building ASM object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/custom_panic_function.S.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building ASM object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/custom_panic_function.S.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(ASM_DEFINES) $(ASM_INCLUDES) $(ASM_FLAGS) -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/custom_panic_function.S.o   -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/custom_panic_function.S
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_platform_panic/custom_panic_function.S.i: cmake_force
@@ -382,7 +424,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_pl
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.o: /Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.o -c /Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_claim/claim.c.i: cmake_force
@@ -396,7 +438,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/hardware_cl
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_27) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync/sync.c.i: cmake_force
@@ -410,7 +452,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardwar
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_28) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_sync_spin_lock/sync_spin_lock.c.i: cmake_force
@@ -424,7 +466,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardwar
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_29) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq.c.i: cmake_force
@@ -437,7 +479,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardwar
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq_handler_chain.S.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq_handler_chain.S.o: /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq_handler_chain.S
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_27) "Building ASM object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq_handler_chain.S.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_30) "Building ASM object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq_handler_chain.S.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(ASM_DEFINES) $(ASM_INCLUDES) $(ASM_FLAGS) -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq_handler_chain.S.o   -c /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq_handler_chain.S
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_irq/irq_handler_chain.S.i: cmake_force
@@ -451,7 +493,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardwar
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.o: /Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_28) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_31) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.o -c /Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/sem.c.i: cmake_force
@@ -465,7 +507,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/s
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.o: /Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_29) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_32) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.o -c /Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/lock_core.c.i: cmake_force
@@ -479,7 +521,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/l
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.o: /Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_30) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_33) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.o -c /Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/mutex.c.i: cmake_force
@@ -493,7 +535,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/m
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.o: /Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_31) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_34) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.o -c /Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/critical_section.c.i: cmake_force
@@ -507,7 +549,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_sync/c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.o: /Users/mathistelschow/pico-sdk/src/common/pico_time/time.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_32) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_35) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.o -c /Users/mathistelschow/pico-sdk/src/common/pico_time/time.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/time.c.i: cmake_force
@@ -521,7 +563,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/t
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.o: /Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_33) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_36) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.o -c /Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/timeout_helper.c.i: cmake_force
@@ -535,7 +577,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_time/t
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_34) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_37) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_timer/timer.c.i: cmake_force
@@ -549,7 +591,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardwar
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.o: /Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_35) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_38) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.o -c /Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/datetime.c.i: cmake_force
@@ -563,7 +605,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/d
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.o: /Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_36) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_39) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.o -c /Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/fixed_bitset.c.i: cmake_force
@@ -577,7 +619,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/f
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.o: /Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_37) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_40) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.o -c /Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/pheap.c.i: cmake_force
@@ -591,7 +633,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/p
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.o: /Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_38) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_41) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.o -c /Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/queue.c.i: cmake_force
@@ -605,7 +647,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/common/pico_util/q
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_39) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_42) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_uart/uart.c.i: cmake_force
@@ -619,7 +661,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardwar
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_40) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_43) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.i: cmake_force
@@ -633,7 +675,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardwar
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_41) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_44) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pll/pll.c.i: cmake_force
@@ -647,7 +689,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardwar
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_42) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_45) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_vreg/vreg.c.i: cmake_force
@@ -661,7 +703,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardwar
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_43) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_46) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.i: cmake_force
@@ -675,7 +717,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardwar
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_44) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_47) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_ticks/ticks.c.i: cmake_force
@@ -689,7 +731,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardwar
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_45) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_48) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.i: cmake_force
@@ -703,7 +745,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bo
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_46) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_49) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bootrom/bootrom_lock.c.i: cmake_force
@@ -717,7 +759,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bo
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_47) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_50) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_boot_lock/boot_lock.c.i: cmake_force
@@ -731,7 +773,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardwar
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_48) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_51) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_flash/flash.c.i: cmake_force
@@ -745,7 +787,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fl
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_49) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_52) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.i: cmake_force
@@ -759,7 +801,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardwar
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_50) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_53) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_divider/divider.c.i: cmake_force
@@ -773,7 +815,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardwar
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_51) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_54) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime/runtime.c.i: cmake_force
@@ -787,7 +829,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_ru
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_52) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_55) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init.c.i: cmake_force
@@ -801,7 +843,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_ru
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_53) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_56) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_clocks.c.i: cmake_force
@@ -815,7 +857,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_ru
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_54) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_57) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_runtime_init/runtime_init_stack_guard.c.i: cmake_force
@@ -828,7 +870,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_ru
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_55) "Building ASM object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_58) "Building ASM object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(ASM_DEFINES) $(ASM_INCLUDES) $(ASM_FLAGS) -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.o   -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.i: cmake_force
@@ -842,7 +884,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_bi
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_56) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_59) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_divider/divider_compiler.c.i: cmake_force
@@ -856,7 +898,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_di
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_57) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_60) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_math.c.i: cmake_force
@@ -869,7 +911,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_do
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_aeabi_dcp.S.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_aeabi_dcp.S.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_aeabi_dcp.S
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_58) "Building ASM object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_aeabi_dcp.S.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_61) "Building ASM object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_aeabi_dcp.S.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(ASM_DEFINES) $(ASM_INCLUDES) $(ASM_FLAGS) -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_aeabi_dcp.S.o   -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_aeabi_dcp.S
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_aeabi_dcp.S.i: cmake_force
@@ -882,7 +924,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_do
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_fma_dcp.S.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_fma_dcp.S.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_fma_dcp.S
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_59) "Building ASM object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_fma_dcp.S.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_62) "Building ASM object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_fma_dcp.S.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(ASM_DEFINES) $(ASM_INCLUDES) $(ASM_FLAGS) -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_fma_dcp.S.o   -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_fma_dcp.S
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_fma_dcp.S.i: cmake_force
@@ -895,7 +937,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_do
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_sci_m33.S.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_sci_m33.S.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_sci_m33.S
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_60) "Building ASM object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_sci_m33.S.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_63) "Building ASM object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_sci_m33.S.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(ASM_DEFINES) $(ASM_INCLUDES) $(ASM_FLAGS) -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_sci_m33.S.o   -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_sci_m33.S
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_sci_m33.S.i: cmake_force
@@ -908,7 +950,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_do
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_conv_m33.S.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_conv_m33.S.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_conv_m33.S
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_61) "Building ASM object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_conv_m33.S.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_64) "Building ASM object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_conv_m33.S.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(ASM_DEFINES) $(ASM_INCLUDES) $(ASM_FLAGS) -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_conv_m33.S.o   -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_conv_m33.S
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_double/double_conv_m33.S.i: cmake_force
@@ -922,7 +964,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_do
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_62) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_65) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_math.c.i: cmake_force
@@ -935,7 +977,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fl
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_conv32_vfp.S.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_conv32_vfp.S.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_conv32_vfp.S
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_63) "Building ASM object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_conv32_vfp.S.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_66) "Building ASM object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_conv32_vfp.S.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(ASM_DEFINES) $(ASM_INCLUDES) $(ASM_FLAGS) -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_conv32_vfp.S.o   -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_conv32_vfp.S
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_conv32_vfp.S.i: cmake_force
@@ -948,7 +990,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fl
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_common_m33.S.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_common_m33.S.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_common_m33.S
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_64) "Building ASM object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_common_m33.S.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_67) "Building ASM object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_common_m33.S.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(ASM_DEFINES) $(ASM_INCLUDES) $(ASM_FLAGS) -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_common_m33.S.o   -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_common_m33.S
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_common_m33.S.i: cmake_force
@@ -961,7 +1003,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fl
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_sci_m33_vfp.S.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_sci_m33_vfp.S.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_sci_m33_vfp.S
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_65) "Building ASM object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_sci_m33_vfp.S.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_68) "Building ASM object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_sci_m33_vfp.S.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(ASM_DEFINES) $(ASM_INCLUDES) $(ASM_FLAGS) -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_sci_m33_vfp.S.o   -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_sci_m33_vfp.S
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_float/float_sci_m33_vfp.S.i: cmake_force
@@ -975,7 +1017,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fl
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_66) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_69) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_malloc/malloc.c.i: cmake_force
@@ -989,7 +1031,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_ma
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_67) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_70) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_atomic/atomic.c.i: cmake_force
@@ -1003,7 +1045,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_at
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_68) "Building CXX object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_71) "Building CXX object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cxx_options/new_delete.cpp.i: cmake_force
@@ -1017,7 +1059,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cx
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_69) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_72) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_binary_info/standard_binary_info.c.i: cmake_force
@@ -1031,7 +1073,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_st
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_70) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_73) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_printf/printf.c.i: cmake_force
@@ -1044,7 +1086,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_pr
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_crt0/crt0.S.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_crt0/crt0.S.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_crt0/crt0.S
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_71) "Building ASM object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_crt0/crt0.S.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_74) "Building ASM object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_crt0/crt0.S.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(ASM_DEFINES) $(ASM_INCLUDES) $(ASM_FLAGS) -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_crt0/crt0.S.o   -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_crt0/crt0.S
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_crt0/crt0.S.i: cmake_force
@@ -1058,7 +1100,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cr
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_72) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_75) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/newlib_interface.c.i: cmake_force
@@ -1072,7 +1114,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cl
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_73) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_76) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_clib_interface/cxa_guard.c.i: cmake_force
@@ -1086,7 +1128,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_cl
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_74) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_77) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio/stdio.c.i: cmake_force
@@ -1100,7 +1142,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_st
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_75) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_78) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.i: cmake_force
@@ -1114,7 +1156,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_st
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_76) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_79) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.i: cmake_force
@@ -1128,7 +1170,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_st
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_77) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_80) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.i: cmake_force
@@ -1142,7 +1184,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_un
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_78) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_81) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_flash/flash.c.i: cmake_force
@@ -1156,7 +1198,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardwar
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_79) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_82) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_xip_cache/xip_cache.c.i: cmake_force
@@ -1170,7 +1212,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardwar
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_80) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_83) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_usb_reset/usb_reset.c.i: cmake_force
@@ -1184,7 +1226,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_us
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.o: /Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_81) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_84) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.o -c /Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.i: cmake_force
@@ -1198,7 +1240,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portab
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.o: /Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_82) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_85) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.o -c /Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.i: cmake_force
@@ -1212,7 +1254,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/portab
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.o: /Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_83) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_86) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.o -c /Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd.c.i: cmake_force
@@ -1226,7 +1268,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.o: /Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_84) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_87) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.o -c /Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device/usbd_control.c.i: cmake_force
@@ -1240,7 +1282,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/device
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.o: /Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_85) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_88) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.o -c /Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.i: cmake_force
@@ -1254,7 +1296,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.o: /Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_86) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_89) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.o -c /Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.i: cmake_force
@@ -1268,7 +1310,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.o: /Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_87) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_90) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.o -c /Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c.i: cmake_force
@@ -1282,7 +1324,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.o: /Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_88) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_91) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.o -c /Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/dfu/dfu_rt_device.c.i: cmake_force
@@ -1296,7 +1338,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.o: /Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_89) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_92) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.o -c /Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/hid/hid_device.c.i: cmake_force
@@ -1310,7 +1352,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.o: /Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_90) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_93) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.o -c /Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/midi/midi_device.c.i: cmake_force
@@ -1324,7 +1366,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.o: /Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_91) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_94) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.o -c /Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/msc/msc_device.c.i: cmake_force
@@ -1338,7 +1380,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.o: /Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_92) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_95) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.o -c /Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ecm_rndis_device.c.i: cmake_force
@@ -1352,7 +1394,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.o: /Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_93) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_96) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.o -c /Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/net/ncm_device.c.i: cmake_force
@@ -1366,7 +1408,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.o: /Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_94) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_97) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.o -c /Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/usbtmc/usbtmc_device.c.i: cmake_force
@@ -1380,7 +1422,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.o: /Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_95) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_98) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.o -c /Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/vendor/vendor_device.c.i: cmake_force
@@ -1394,7 +1436,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.o: /Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_96) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_99) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.o -c /Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/video/video_device.c.i: cmake_force
@@ -1408,7 +1450,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/class/
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.o: /Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_97) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_100) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.o -c /Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c.i: cmake_force
@@ -1422,7 +1464,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/tusb.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.o: /Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_98) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_101) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.o -c /Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.i: cmake_force
@@ -1436,7 +1478,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/lib/tinyusb/src/common
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_99) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_102) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/rp2040_usb_device_enumeration.c.i: cmake_force
@@ -1450,7 +1492,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_fi
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_100) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_103) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.i: cmake_force
@@ -1464,7 +1506,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_th
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_101) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_104) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.i: cmake_force
@@ -1478,7 +1520,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardwar
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_102) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_105) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.i: cmake_force
@@ -1492,7 +1534,7 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardwar
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.o: CMakeFiles/bno055_probe.dir/flags.make
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_103) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_106) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.o"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c
 
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.i: cmake_force
@@ -1502,6 +1544,20 @@ CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardwar
 CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.s"
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.s
+
+CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.o: CMakeFiles/bno055_probe.dir/flags.make
+CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.o: /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c
+CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.o: CMakeFiles/bno055_probe.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_107) "Building C object CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.o"
+	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.o -MF CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.o.d -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.o -c /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c
+
+CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.i"
+	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c > CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.i
+
+CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.s"
+	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c -o CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.s
 
 # Object files for target bno055_probe
 bno055_probe_OBJECTS = \
@@ -1516,8 +1572,11 @@ bno055_probe_OBJECTS = \
 "CMakeFiles/bno055_probe.dir/src/core/pulse.c.o" \
 "CMakeFiles/bno055_probe.dir/src/core/pwmdiv.c.o" \
 "CMakeFiles/bno055_probe.dir/src/core/sqwave.c.o" \
+"CMakeFiles/bno055_probe.dir/src/core/motor_enc.c.o" \
 "CMakeFiles/bno055_probe.dir/src/hw/hw.c.o" \
 "CMakeFiles/bno055_probe.dir/src/hw/bme280.c.o" \
+"CMakeFiles/bno055_probe.dir/src/hw/bmv080_dev.c.o" \
+"CMakeFiles/bno055_probe.dir/src/hw/bmv080_port.c.o" \
 "CMakeFiles/bno055_probe.dir/src/hw/bno055.c.o" \
 "CMakeFiles/bno055_probe.dir/src/hw/ina226.c.o" \
 "CMakeFiles/bno055_probe.dir/src/hw/uart_io.c.o" \
@@ -1607,7 +1666,8 @@ bno055_probe_OBJECTS = \
 "CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/pico_thread_local/thread_local.c.o" \
 "CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.o" \
 "CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.o" \
-"CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.o"
+"CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.o" \
+"CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.o"
 
 # External object files for target bno055_probe
 bno055_probe_EXTERNAL_OBJECTS =
@@ -1623,8 +1683,11 @@ bno055_probe.elf: CMakeFiles/bno055_probe.dir/src/core/sequencer.c.o
 bno055_probe.elf: CMakeFiles/bno055_probe.dir/src/core/pulse.c.o
 bno055_probe.elf: CMakeFiles/bno055_probe.dir/src/core/pwmdiv.c.o
 bno055_probe.elf: CMakeFiles/bno055_probe.dir/src/core/sqwave.c.o
+bno055_probe.elf: CMakeFiles/bno055_probe.dir/src/core/motor_enc.c.o
 bno055_probe.elf: CMakeFiles/bno055_probe.dir/src/hw/hw.c.o
 bno055_probe.elf: CMakeFiles/bno055_probe.dir/src/hw/bme280.c.o
+bno055_probe.elf: CMakeFiles/bno055_probe.dir/src/hw/bmv080_dev.c.o
+bno055_probe.elf: CMakeFiles/bno055_probe.dir/src/hw/bmv080_port.c.o
 bno055_probe.elf: CMakeFiles/bno055_probe.dir/src/hw/bno055.c.o
 bno055_probe.elf: CMakeFiles/bno055_probe.dir/src/hw/ina226.c.o
 bno055_probe.elf: CMakeFiles/bno055_probe.dir/src/hw/uart_io.c.o
@@ -1715,8 +1778,11 @@ bno055_probe.elf: CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/
 bno055_probe.elf: CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_adc/adc.c.o
 bno055_probe.elf: CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_i2c/i2c.c.o
 bno055_probe.elf: CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_spi/spi.c.o
+bno055_probe.elf: CMakeFiles/bno055_probe.dir/Users/mathistelschow/pico-sdk/src/rp2_common/hardware_pio/pio.c.o
 bno055_probe.elf: CMakeFiles/bno055_probe.dir/build.make
 bno055_probe.elf: pico-sdk/src/rp2350/boot_stage2/CMakeFiles/bs2_default_library.dir/bs2_default_padded.S.o
+bno055_probe.elf: /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/../../../sensor-driver/api/lib/arm_cortex_m33/arm_none_eabi_gcc/release/lib_bmv080.a
+bno055_probe.elf: /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/../../../sensor-driver/api/lib/arm_cortex_m33/arm_none_eabi_gcc/release/lib_postProcessor.a
 bno055_probe.elf: /Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/memmap_default.ld
 bno055_probe.elf: /Users/mathistelschow/pico-sdk/src/rp2350/pico_platform/script_include/section_platform_end.incl
 bno055_probe.elf: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_link/script_include/default_rodata_excludes.incl
@@ -1763,7 +1829,7 @@ bno055_probe.elf: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_li
 bno055_probe.elf: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_link/script_include/sections_stack.incl
 bno055_probe.elf: /Users/mathistelschow/pico-sdk/src/rp2_common/pico_standard_link/script_include/set_memory_locations.incl
 bno055_probe.elf: CMakeFiles/bno055_probe.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_104) "Linking CXX executable bno055_probe.elf"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles --progress-num=$(CMAKE_PROGRESS_108) "Linking CXX executable bno055_probe.elf"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/bno055_probe.dir/link.txt --verbose=$(VERBOSE)
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-objdump -h /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/bno055_probe.elf > bno055_probe.dis
 	/Users/mathistelschow/arm-gnu-toolchain/bin/arm-none-eabi-objdump -d /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/bno055_probe.elf >> bno055_probe.dis

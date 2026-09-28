@@ -27,13 +27,22 @@ sends **two** packets, one per channel.
 
 ## Downlink budget
 
-**That 1 Hz depends on HK staying lean.** The budget leaves ~83 B for a framed
-HK packet, i.e. an **HK payload ceiling of 67 B**; `hk.SIZE` is **64 B** since
-the chamber BME280 landed (2026-09-17), framed 80 B, total 1.974 of
-2.0 kbit/s. That is **3 B of payload margin left** - one more `uint32_t` in
-`Housekeeping` and the packet is over. The spec originally allowed ~180 B, at
-which size 1 Hz quick-look totals ~2.9 kbit/s and busts the limit. Grow
-`Housekeeping` past 67 B and you must bin the quick-look harder or slow its
-cadence - `tests/test_fsw_telemetry.py::TestDownlinkBudget` fails first, by
-design.
+**That 1 Hz depends on HK staying lean, and it is no longer lean.** The budget
+leaves ~83 B for a framed HK packet, i.e. an **HK payload ceiling of 67 B**.
+`hk.SIZE` is **80 B**, framed 96 B, total **2.102 of 2.0 kbit/s** - so the
+continuous budget is **over by ~5 %** and `TestDownlinkBudget` is red.
+
+That is a decision, not an accident, and it happened in two steps on
+2026-09-28: the chamber BNO055's 12 B went on by operator instruction to get
+both IMUs on screen (76 B, 2.070 kbit/s), and the BMV080's 2 B followed
+(78 B), then the dispersion motor encoder's 2 B speed (80 B, 2.102 kbit/s).
+The budget was explicitly deferred each time. The spec originally
+allowed ~180 B, at which size 1 Hz quick-look totals ~2.9 kbit/s.
+
+**Settling it means one of three things**, and the test stays red until one is
+chosen: bin the quick-look harder, slow its cadence below 1 Hz, or drop
+fields. The last is the cheapest if the chamber IMU is not earning its 12 B -
+it is six i16 where the BMV080 spends 2 B on the one number its whole vendor
+library exists to produce. `tests/test_fsw_telemetry.py::TestDownlinkBudget`
+is the arithmetic; it fails first, by design, and is doing exactly that.
 

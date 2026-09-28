@@ -44,6 +44,20 @@ class TestNoBlockingActuation:
         assert _define(board, "DISPERSE_PULSE_MS") > _define(
             board, "WATCHDOG_TIMEOUT_MS")
 
+    #: The ONE file in src/hw/ allowed to block, and the reason.
+    #:
+    #: The BMV080's vendor library takes a delay callback and calls it
+    #: synchronously from inside bmv080_serve_interrupt(). There is no version
+    #: of that which can be scheduled across loop passes: the library does not
+    #: return to us mid-wait, and the API has no asynchronous form. So the
+    #: rule cannot be kept here, and the exemption is named rather than left
+    #: to a regex that happens not to look.
+    #:
+    #: test_the_one_sleeping_file_still_protects_the_watchdog below is what
+    #: makes the exemption cost something - it asserts the properties the rule
+    #: was protecting, which a bare `sleep_ms(duration)` would not have.
+    SLEEP_EXEMPT = ("bmv080_port.c",)
+
     @pytest.mark.parametrize("src", sorted(
         os.path.basename(p) for p in glob.glob(os.path.join(MCU, "src", "hw",
                                                             "*.c"))))
@@ -51,10 +65,39 @@ class TestNoBlockingActuation:
         """Every file in src/hw/, not just hw.c: the 1 Hz sweep runs under the
         same 2 s watchdog whether the delay hides in an actuator path or in a
         sensor driver."""
+        if src in self.SLEEP_EXEMPT:
+            pytest.skip("%s is exempt by name; see "
+                        "test_the_one_sleeping_file_still_protects_the_"
+                        "watchdog" % src)
         offenders = BLOCKING_CALL.findall(_read("src", "hw", src))
         assert not offenders, (
             "blocking delay in src/hw/%s: %s - schedule the work across loop "
             "passes instead of sleeping" % (src, offenders))
+
+    def test_the_one_sleeping_file_still_protects_the_watchdog(self):
+        """The exempt file must earn it: sliced wait, kick, and a hard cap.
+
+        A vendor callback we cannot restructure is a reason to bound the wait,
+        not a reason to stop caring how long it is. Without the cap, a library
+        asking for a multi-second delay would be served indefinitely and the
+        watchdog would be fed through the exact hang it exists to catch.
+        """
+        src = _read("src", "hw", "bmv080_port.c")
+        body = src.split("int8_t bmv080_port_delay_ms", 1)[1]
+        body = body.split("\n}", 1)[0]
+        assert "hw_watchdog_kick(" in body, (
+            "a blocking wait in src/hw/ must kick the watchdog while it waits")
+        assert "BMV080_DELAY_MAX_MS" in body, (
+            "a blocking wait in src/hw/ must refuse an unbounded delay")
+        assert re.search(r"return\s+E_COMBRIDGE_ERROR_DELAY", body), (
+            "an over-long delay must be refused to the library, not served")
+        # The slice is what makes the kick meaningful: one kick before a
+        # single long sleep_ms() would satisfy the assertion above and still
+        # cross the 2 s timeout.
+        assert "slice_ms" in body, "the wait must be sliced around the kick"
+        cap = _define(_read("src", "hw", "bmv080_port.h"),
+                      "BMV080_DELAY_MAX_MS")
+        assert cap > 0
 
     def test_drives_go_through_the_scheduler(self):
         hw = _read("src", "hw", "hw.c")
@@ -100,6 +143,48 @@ class TestSensorFailureIsSafe:
         detection needs a fall, so a high default cannot trigger it."""
         hw = _read("src", "hw", "hw.c")
         assert _define(hw, "P_AMB_COLD_START_PA") >= 100000
+
+
+class TestPmStatusMirror:
+    """X-01, for the byte the BMV080 got when error_flags ran out of bits."""
+
+    def test_c_and_python_pm_bits_agree(self):
+        from clouds_link.hk import PmStatus
+
+        frame_h = _read("src", "core", "frame.h")
+        c_bits = dict(
+            (m.group(1), int(m.group(2)))
+            for m in re.finditer(r"#define PM_(\w+) \(1u << (\d+)\)", frame_h))
+        py_bits = dict((e.name, e.value.bit_length() - 1) for e in PmStatus)
+        assert c_bits == py_bits, (
+            "frame.h PM_* and clouds_link.hk.PmStatus disagree: %s vs %s"
+            % (c_bits, py_bits))
+
+    def test_the_status_byte_took_the_retired_valve_byte(self):
+        """It must reuse offset 2, not append.
+
+        Appending a status byte instead would have moved nothing either, but
+        it would have spent a byte on a packet already over its downlink
+        ceiling while a free one sat at offset 2 - which frame.h has promised
+        to the next field that needs it since the valves were removed.
+        """
+        frame_h = _read("src", "core", "frame.h")
+        # The struct's first six bytes, in order, with pm_status third.
+        assert re.search(
+            r"uint8_t state, flags, pm_status, valve_status, "
+            r"membrane_duty, error_flags;", frame_h)
+        assert "reserved0" not in frame_h, (
+            "the reserved byte is now pm_status; the old name must not linger")
+        frame_c = _read("src", "core", "frame.c")
+        assert "hk->pm_status" in frame_c
+
+    def test_particulate_is_not_in_the_sequencer_path(self):
+        """Same rule as the chamber BME280: a second sensor able to influence
+        actuation is a second sensor able to fire one by failing."""
+        for name in ("autonomy.c", "sequencer.c"):
+            src = _read("src", "core", name)
+            assert "pm2_5" not in src and "pm_status" not in src, (
+                "core/%s reads the particulate sensor" % name)
 
 
 class TestErrorFlagsMirror:
@@ -656,7 +741,7 @@ class TestMotorCurrentSense:
         assert "uint16_t hb_sense_raw;" in frame_h
         assert int(re.search(r"#define HB_SENSE_INVALID (0x[0-9A-Fa-f]+)u",
                              frame_h).group(1), 16) == hk.HB_SENSE_INVALID
-        assert _define(frame_h, "HK_SIZE") == hk.SIZE == 76
+        assert _define(frame_h, "HK_SIZE") == hk.SIZE == 80
 
     def test_the_ground_scale_is_the_ipropi_chain(self):
         """The board comment and the ground constant have to agree on which
@@ -667,6 +752,97 @@ class TestMotorCurrentSense:
         assert "DRV8251A" in board and "dispersion motor" in board.lower()
         assert hk.HB_SENSE_A_PER_V == pytest.approx(
             1.0 / (hk.IPROPI_R_OHM * hk.IPROPI_GAIN_A_PER_A))
+
+
+class TestMotorEncoder:
+    """The dispersion motor encoder: counted by PIO, compiled out where its
+    pins do not exist, and downlinked behind a sentinel that is never 0."""
+
+    def test_sentinel_and_field_are_mirrored(self):
+        from clouds_link import hk
+        frame_h = _read("src", "core", "frame.h")
+        assert "int16_t motor_rpm;" in frame_h
+        m = re.search(r"#define MOTOR_RPM_INVALID \(\(int16_t\)(-?\d+)\)",
+                      frame_h)
+        assert m and int(m.group(1)) == hk.MOTOR_RPM_INVALID == -32768
+
+    def test_encoder_pins_are_the_measured_act_ec_nets(self, board):
+        """GP19 carries a channel and GP21 the midpoint of both - measured
+        2026-09-28 with tools/encoder_trace_probe, not a placeholder."""
+        a, b = _define(board, "PIN_ENC_A"), _define(board, "PIN_ENC_B")
+        assert (a, b) == (19, 21)
+        others = {int(v) for n, v in re.findall(
+            r"^#define\s+(PIN_\w+)\s+(\d+)", board, re.M)
+            if not n.startswith("PIN_ENC_")}
+        assert not {a, b} & others
+        assert 22 not in others and 20 not in others, (
+            "GP20/GP22 are on the encoder connector: never an output")
+
+    def test_encoder_pins_keep_their_reset_pull_down(self):
+        """Unplugged = steady 0 = no edges = stall while driving, never a
+        phantom speed; and the schematic calls these nets driver inputs, so
+        no pull-up either."""
+        hw = _read("src", "hw", "hw.c")
+        init = hw.split("static void encoder_init", 1)[1].split("\n}", 1)[0]
+        assert "gpio_pull_down(PIN_ENC_A)" in init
+        assert "gpio_pull_down(PIN_ENC_B)" in init
+        assert "gpio_pull_up(PIN_ENC" not in init
+
+    def test_the_pio_program_deglitches_and_signs_each_edge(self):
+        """~37 % of GP19 periods carry an 80 ns glitch, and GP21 is only a
+        direction at A's falling edge: the program must hold before it
+        believes an edge, re-read A, and take B through JMP PIN."""
+        pio = _read("src", "hw", "quadrature_encoder.pio")
+        body = pio.split(".program quadrature_encoder", 1)[1]
+        assert "wait 0 pin 0" in body, "counts A's falling edge"
+        assert re.search(r"in pins, 1[^\n]*\n\s*mov x, isr[^\n]*\n\s*jmp x--", body), (
+            "re-reads A after the hold and restarts on a glitch")
+        assert "jmp pin," in body, "direction is B's level via JMP PIN"
+        assert "push noblock" in body
+        assert ".origin" not in body, "no computed jumps any more"
+        hw = _read("src", "hw", "hw.c")
+        init = hw.split("static void encoder_init", 1)[1].split("\n}", 1)[0]
+        assert "sm_config_set_jmp_pin(&c, PIN_ENC_B)" in init
+        assert "sm_config_set_in_pins(&c, PIN_ENC_A)" in init
+
+    def test_counts_per_rev_is_x1(self):
+        enc_h = _read("src", "core", "motor_enc.h")
+        assert re.search(r"#define MOTOR_ENC_COUNTS_PER_REV MOTOR_ENC_LINES\b",
+                         enc_h)
+
+    def test_counter_is_guarded_and_the_sentinel_is_the_fallback(self):
+        hw = _read("src", "hw", "hw.c")
+        assert "#define HAVE_ENCODER (PIN_ENC_B < NUM_BANK0_GPIOS)" in hw
+        sensors = hw.split("void hw_read_sensors", 1)[1]
+        assert "MOTOR_RPM_INVALID" in sensors.split("hk->motor_rpm", 1)[1][:200]
+
+    def test_stall_is_latched_per_pass_and_consumed_per_packet(self):
+        hw = _read("src", "hw", "hw.c")
+        service = hw.split("void hw_actuators_service", 1)[1].split("\n}", 1)[0]
+        assert "motor_enc_service(" in service
+        status = hw.split("uint8_t hw_actuator_status", 1)[1].split("\n}", 1)[0]
+        assert "motor_enc_take_stalled(" in status
+        assert "HKV_DISPERSE_STALLED" in status
+
+    def test_the_fifo_read_is_bounded(self):
+        """The counter pushes every ~7 PIO cycles, faster than the CPU pops:
+        a drain-until-empty loop never ends and the watchdog resets the MCU
+        (the first flashed image, 2026-09-28). Read the level once."""
+        hw = _read("src", "hw", "hw.c")
+        body = hw.split("static int32_t encoder_count(void)", 1)[1] \
+                 .split("\n}", 1)[0]
+        assert "pio_sm_get_rx_fifo_level" in body
+        assert "rx_fifo_empty" not in body
+
+    def test_every_hw_target_builds_the_pio_counter(self):
+        cm = _read("CMakeLists.txt")
+        targets = re.findall(r"add_executable\((\w+)\s+([^)]*)\)", cm)
+        hw_targets = [t for t, srcs in targets if "src/hw/hw.c" in srcs]
+        assert hw_targets
+        for t, srcs in targets:
+            if t in hw_targets:
+                assert "src/core/motor_enc.c" in srcs, t
+                assert "clouds_add_encoder(%s)" % t in cm, t
 
 
 class TestRailMonitors:
@@ -705,3 +881,79 @@ class TestRailMonitors:
         assert "(int16_t)" in body
         assert "0x7FFF" not in body, (
             "masking the top bit off would discard the sign, not the noise")
+
+
+class TestSpi1ChipSelects:
+    """An RP2350 pad out of reset is a pulled-down input, so an active-low
+    chip select that nobody configures is ASSERTED. Until 2026-09-28 the
+    flight image drove only GP9 before clocking the chamber BME280; GP12 was
+    claimed later inside bmv080_dev_init() and GP13/GP47 never. With parts
+    fitted that is two drivers on MISO and a part that never sees a falling
+    edge on its own select."""
+
+    CS = ("PIN_BME_CHAMBER_CS", "PIN_BMV080_CS", "PIN_SPI1_CS3", "PIN_SPI1_CS4")
+
+    def test_all_four_selects_are_named(self, board):
+        assert [_define(board, n) for n in self.CS] == [9, 12, 13, 47]
+
+    def test_no_other_pin_claims_a_select(self, board):
+        for gp in (9, 12, 13, 47):
+            owners = re.findall(r"^#define\s+(PIN_\w+)\s+%d\b" % gp, board, re.M)
+            assert len(owners) == 1, "GP%d claimed by %s" % (gp, owners)
+
+    def test_every_select_is_parked_high_before_the_first_clock(self):
+        hw = _read("src", "hw", "hw.c")
+        park = hw.split("static void spi1_park_chip_selects", 1)[1]
+        park = park.split("\n}", 1)[0]
+        for name in self.CS:
+            assert name in park, "%s is not parked" % name
+        assert "GPIO_OUT" in park and "gpio_put(cs[i], 1)" in park
+        init = hw.split("void hw_init(void)", 1)[1]
+        assert init.index("spi1_park_chip_selects();") < init.index(
+            "spi_init(spi1"), "selects must be high before spi1 is clocked"
+
+    def test_the_probes_park_them_too(self):
+        for tool in ("bme280_probe.c", "bmv080_probe.c"):
+            src = _read("src", "tools", tool)
+            assert "hw_init();" in src, "%s must inherit the parking" % tool
+
+
+class TestSensorReinit:
+    """A part that misses its boot-time probe must not stay failed until the
+    next power cycle: for the ambient BME280 that would pin p_amb_pa at the
+    cold-start value for the whole flight, and on the bench it means a
+    harness plugged in after boot never comes up."""
+
+    def test_retry_period_is_slow_against_the_sweep(self, board):
+        assert _define(board, "SENSOR_RETRY_MS") >= 1000
+
+    def test_both_bme280s_and_the_rails_are_retried_from_the_sweep(self):
+        hw = _read("src", "hw", "hw.c")
+        body = hw.split("void hw_read_sensors", 1)[1].split("\n}", 1)[0]
+        assert "bme280_retry(&bme280_ambient" in body
+        assert "bme280_retry(&bme280_chamber" in body
+        assert "ina226_retry()" in body
+        helper = hw.split("static void bme280_retry", 1)[1].split("\n}", 1)[0]
+        assert "SENSOR_RETRY_MS" in helper and "bme280_init(" in helper
+        helper = hw.split("static void ina226_retry", 1)[1].split("\n}", 1)[0]
+        assert "SENSOR_RETRY_MS" in helper and "ina226_init(" in helper
+
+    def test_the_sleeping_bring_up_is_not_retried(self):
+        """bmv080_open() sleeps through the vendor delay callback; inside the
+        1 Hz sweep that would stall the sequencer past the watchdog."""
+        hw = _read("src", "hw", "hw.c")
+        body = hw.split("void hw_read_sensors", 1)[1].split("\n}", 1)[0]
+        assert "bmv080_dev_init(" not in body
+
+    def test_a_flat_spi_frame_is_a_failure_not_a_reading(self):
+        """Eight identical 0x00 or 0xFF bytes are an undriven MISO. The SPI
+        transport cannot fail, so this guard is the only thing that stops a
+        chamber part that went away after init from downlinking a compensated
+        idle level as weather."""
+        bme = _read("src", "hw", "bme280.c")
+        read = bme.split("bool bme280_read", 1)[1].split("\n}", 1)[0]
+        assert "raw_is_flat(raw" in read
+        assert "dev->ready = false" in read, (
+            "a flat frame must force the next retry through the chip-id check")
+        flat = bme.split("static bool raw_is_flat", 1)[1].split("\n}", 1)[0]
+        assert "0x00" in flat and "0xFF" in flat

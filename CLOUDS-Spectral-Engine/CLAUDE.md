@@ -44,12 +44,52 @@ behaviour changes.
   loads. `docs/HARDWARE.md`.
 - **Never `printf` on the MCU's `uart0`** — `pico_enable_stdio_uart` stays 0,
   it is the HK downlink.
-- **HK payload ceiling is 67 B**; `hk.SIZE` is **76 B — 9 B over**, since the
-  chamber BNO055's 12 B were appended (2026-09-28, operator deferred the
-  budget). `tests/test_fsw_telemetry.py::TestDownlinkBudget` fails until that
-  is settled — expected, don't "fix" it by editing the test. Retired `fired`
-  byte at offset 2 stays 0 so no field moved; `error_flags` has no free bit
-  left (bit 7 = `IMU_CHM_FAIL`).
+- **HK payload ceiling is 67 B**; `hk.SIZE` is **80 B — 13 B over**: the
+  chamber BNO055's 12 B, the BMV080's 2 B, then the motor encoder's 2 B
+  (all 2026-09-28, operator deferred the budget). `tests/test_fsw_telemetry.py::TestDownlinkBudget`
+  fails until that is settled — expected, don't "fix" it by editing the test.
+  `error_flags` has **no free bit left** (bit 7 = `IMU_CHM_FAIL`), which is
+  why the retired `fired` byte at offset 2 is now `pm_status`; the byte never
+  moved, but a session logged before 2026-09-18 decodes valve bits there.
+  `valve_status` bit 7 is `HKV_DISPERSE_STALLED` (sensed, from the encoder).
+- **The motor encoder is digital, not analog** — Faulhaber IE3-1024L,
+  differential TIA-422 A/B/I, 5 V, **no receiver on the carrier**. Measured
+  2026-09-28: **GP19 = one channel (with 80 ns glitches on 37 % of periods),
+  GP21 = the resistor midpoint of both channels (a direction sample at GP19's
+  fall, not a channel)**. `hw/quadrature_encoder.pio` is therefore a
+  deglitched x1 edge counter with `JMP PIN` direction, **1024 counts/rev**,
+  not the pico-examples x4 decoder. Verified ~2190 rpm at 50 % duty. Never
+  drive GP19..GP22. `docs/HARDWARE.md`.
+- **Three parts on SPI_1, two frame widths.** Chamber BME280 (CS1/GP9, 8-bit)
+  and BMV080 (CS2/GP12, 16-bit words) share one bus, so **neither `hw_init()`
+  nor `spi_init()` sets a frame format** — each driver sets its own inside its
+  `cs_select()`, while CS is still high. Don't hoist it back to bus init.
+  **All four SPI_1 selects (GP9/12/13/47) are parked high in `hw_init()`
+  before `spi_init(spi1)`** - an unconfigured RP2350 pad is a pulled-down
+  input, so an undriven active-low CS is asserted. Don't drop CS3/CS4 as
+  "unused". Both BME280s and the INA226s re-init from the sweep every
+  `SENSOR_RETRY_MS` while failing; the BMV080 cannot (it sleeps).
+- **SPI_1 is dead on the bench (2026-09-28) — the bus, not the drivers.**
+  Nothing answers on any of the four chip selects: not the BMV080, not the
+  chamber BME280. MISO idles high correctly and **no select changes it**, so
+  the pins look floating (harness, fit, or supply rails). Don't debug the
+  drivers against this, and don't trust a pin-level result without reading
+  `docs/TRAPS.md` first: a floating RP2350 pad latches and couples to its
+  neighbours, which reads exactly like a short, and every pin not under test
+  must be parked hi-Z or you measure the SPI peripheral instead of the board.
+  Both of those cost a wrong conclusion here already.
+- **The BMV080 has no register map.** It only works through Bosch's prebuilt
+  archives in the sibling `sensor-driver/` tree — plain `arm_cortex_m33`
+  (soft-float ABI), never `m33f`, and both archives inside one `--start-group`.
+  They are Bosch-confidential with no redistribution grant, and the flight
+  image now needs them to link. The library also wants a 10 kB stack, so the
+  core-0 stack is moved out of SCRATCH_Y by three linker `--defsym`s
+  (`flight/mcu/CMakeLists.txt` explains the arithmetic).
+- **`bmv080_port.c` is the one file in `src/hw/` allowed to sleep**, because
+  the vendor library calls its delay callback synchronously. It slices the
+  wait, kicks the watchdog and refuses anything over `BMV080_DELAY_MAX_MS`.
+  The exemption is named in `tests/test_fsw_mcu_actuators.py`; nothing else
+  in `hw/` may block.
 - **Two BNO055s on i2c0, fixed addresses**: ambient `0x29` (`accel_mg`,
   `IMU_FAIL`), chamber `0x28` (`chm_accel_mg`, `IMU_CHM_FAIL`). One
   `bno055_t` each; never re-add address discovery — it would claim the wrong

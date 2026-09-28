@@ -75,13 +75,15 @@ typedef struct {
     uint16_t plen;
 } frame_view_t;
 
-/* Housekeeping payload - 76 bytes, mirror of clouds_link/hk.py.
+/* Housekeeping payload - 80 bytes, mirror of clouds_link/hk.py.
  *
  * Chamber temperature, humidity and pressure come from a SECOND BME280 on
  * SPI_1 (hw/board.h PIN_BME_CHAMBER_CS), at the end of the packet and
  * behind a flag of their own. Chamber acceleration and rate come from a
  * SECOND BNO055 on i2c0 at 0x28, appended after those, behind
- * HKE_IMU_CHM_FAIL.
+ * HKE_IMU_CHM_FAIL. PM2.5 comes from a BMV080, also on SPI_1
+ * (PIN_BMV080_CS), last on the wire and behind pm_status - a byte of its
+ * own, because error_flags has no bits left.
  *
  * There is no second humidity channel on i2c0.
  *
@@ -94,11 +96,17 @@ typedef struct {
  * binning the quick-look harder or slowing its cadence, and
  * tests/test_fsw_telemetry.py::TestDownlinkBudget fails first, by design.
  *
- * 76 B is OVER that ceiling: the chamber IMU's 12 B were added on the
+ * 78 B is OVER that ceiling: the chamber IMU's 12 B were added on the
  * operator's instruction (2026-09-28) to get both IMUs on screen, with the
- * downlink budget explicitly deferred. The budget test fails until that is
- * settled. */
-#define HK_SIZE 76
+ * downlink budget explicitly deferred, and the BMV080's 2 B followed the
+ * same day. The budget test fails until that is settled. PM2.5 is a single
+ * u16 rather than the six floats the vendor library produces precisely
+ * because of this - PM1, PM10 and all three number concentrations are
+ * dropped at the MCU, not binned on the ground.
+ *
+ * 80 B: the dispersion motor encoder's speed (motor_rpm, i16) followed on
+ * the operator's instruction the same day, 13 B over. */
+#define HK_SIZE 80
 
 /* "No reading" for a rail_mv entry - mirror of RAIL_MV_INVALID in
  * clouds_link/hk.py. Not 0: a rail can legitimately *be* at 0 mV when its
@@ -121,20 +129,30 @@ typedef struct {
  * legitimately produces. */
 #define HB_SENSE_INVALID 0xFFFFu
 
+/* "No reading" for hk_t.motor_rpm - mirror of MOTOR_RPM_INVALID in
+ * clouds_link/hk.py. INT16_MIN, which motor_enc_rpm() never returns (it
+ * saturates at +-INT16_MAX). Downlinked by a build that cannot reach the
+ * encoder pins (pico2 / RP2350A) or whose counter did not start - where 0
+ * would read as "motor stopped", the reading a stall produces. */
+#define MOTOR_RPM_INVALID ((int16_t)-32768)
+
 /* Rails carried in hk_t, in wire order: V_in, 24 V, 5 V, 3.3 V. One more
  * than the monitors that exist - see the note above HK_SIZE. Indexed by
  * enum ina226_rail in hw/ina226.h. */
 #define RAIL_COUNT 4
 
-/* `reserved0` was `fired`, the two pinch-valve bits, until the valves were
- * removed from the experiment (2026-09-18). The byte stays, always 0: the HK
- * packet has only ever grown by appending, and every field after this one
- * keeps the offset that every logged session and every flashed image was
- * written with. Dropping the byte instead would have moved all of them for a
- * saving of one byte in eighty. The next field that needs a byte takes this
- * one. */
+/* The byte at offset 2 was `fired`, the two pinch-valve bits, until the
+ * valves were removed from the experiment (2026-09-18); it then sat reserved
+ * at 0, on the rule that this packet only ever grows by appending and no
+ * field after it may move. It said the next field needing a byte should take
+ * it, and the BMV080 is that field (2026-09-28): error_flags has no bits
+ * left, so the particulate sensor's state lives here as pm_status.
+ *
+ * Cost of that, stated plainly: a session logged BEFORE 2026-09-18 decodes
+ * its real valve bits into pm_status. Read an old log against the HK_SIZE
+ * its frames carry. */
 typedef struct {
-    uint8_t state, flags, reserved0, valve_status, membrane_duty, error_flags;
+    uint8_t state, flags, pm_status, valve_status, membrane_duty, error_flags;
     int16_t temp1_cc, temp2_cc, bme_temp_cc;
     uint16_t rh1_cpct;
     uint32_t p_amb_pa;
@@ -188,6 +206,27 @@ typedef struct {
      * field keeps its offset. Zeros behind HKE_IMU_CHM_FAIL when the part has
      * nothing to give. Instrumentation only - nothing in core/ reads it. */
     int16_t chm_accel_mg[3], chm_gyro_ddps[3];
+    /* BMV080 PM2.5 mass concentration (SPI_1, chip select GP12), ug/m3,
+     * saturated at the part's specified 1000 ug/m3 range ceiling. Appended
+     * after chm_gyro_ddps so every older field keeps its offset.
+     *
+     * Whether this is a measurement at all is in pm_status, not here: 0 is a
+     * reading clean air legitimately produces, so there is no in-band
+     * sentinel available. PM_FAIL means no sample; PM_STALE means this sweep
+     * repeats the last one, which happens about one sweep in thirty-three
+     * because the part's maximum output rate is 0.97 Hz against a 1 Hz
+     * sweep.
+     *
+     * INSTRUMENTATION ONLY, like the chamber fields - nothing in core/ reads
+     * it. Zeroed, not held, on a failed read. */
+    uint16_t pm2_5_ugm3;
+    /* Dispersion motor speed from its encoder (hw/board.h PIN_ENC_A), rpm,
+     * the MEAN over the time since the previous packet (core/motor_enc.h),
+     * signed - the sign is the direction, and which sign is forward is
+     * unverified. No gearhead, so this is the output shaft too. Appended
+     * after pm2_5_ugm3 so every older field keeps its offset.
+     * MOTOR_RPM_INVALID when there is no encoder in this build. */
+    int16_t motor_rpm;
 } hk_t;
 
 /* MCU flag bits (hk_t.flags) - mirror of clouds_link/hk.py McuFlags. */
@@ -226,7 +265,31 @@ typedef struct {
                                      * RAIL_MV_INVALID */
 #define HKE_IMU_CHM_FAIL (1u << 7)  /* chamber IMU (0x28) absent or faulted:
                                      * chm_accel_mg / chm_gyro_ddps are
-                                     * zeros. The last free bit. */
+                                     * zeros. The last free bit - which is
+                                     * why the BMV080 got a byte of its own
+                                     * instead (PM_* below). */
+
+/* BMV080 state bits (hk_t.pm_status) - mirror of clouds_link/hk.py PmStatus.
+ * A byte rather than more error_flags bits because that field is full, and
+ * because this part needs to say more than "failed": an obstructed sensor is
+ * answering correctly and still has no usable number.
+ *
+ * PM_FAIL clear and every other bit clear is the only state in which
+ * pm2_5_ugm3 is a measurement. */
+#define PM_FAIL (1u << 0)        /* no sample: open/start failed, the part
+                                  * stopped answering, or the first reading
+                                  * (~1.9 s after start) has not arrived */
+#define PM_OBSTRUCTED (1u << 1)  /* something static is in the optical path,
+                                  * within the datasheet's ~350 mm
+                                  * obstruction-sensitive cone. The library
+                                  * filters a passing hand; it cannot filter
+                                  * an enclosure */
+#define PM_RANGE (1u << 2)       /* outside the specified 0..1000 ug/m3
+                                  * range, so pm2_5_ugm3 is saturated at
+                                  * 1000 and is a floor, not a value */
+#define PM_STALE (1u << 3)       /* this sweep repeats the previous sample.
+                                  * Expected, not a fault: the part produces
+                                  * 0.97 samples/s against a 1 Hz sweep */
 
 /* Actuator drive bits (hk_t.valve_status) - mirror of clouds_link/hk.py
  * ValveStatus. A set bit means that line is energized *now*, which is how
@@ -263,6 +326,12 @@ typedef struct {
 #define HKV_DISPERSE (1u << 4)
 #define HKV_MEMBRANE_PULLED (1u << 5)
 #define HKV_MEMBRANE_CYCLING (1u << 6)
+/* Bit 7 is sensed too, from the motor encoder: a drive was on, past its
+ * spin-up grace, while the shaft turned slower than the stall floor, at any
+ * point since the previous packet (core/motor_enc.h, latched every pass,
+ * consumed per packet). A flag for ground, nothing on the MCU acts on it.
+ * Never set while motor_rpm is MOTOR_RPM_INVALID - no encoder, no verdict. */
+#define HKV_DISPERSE_STALLED (1u << 7)
 
 size_t frame_encode(uint8_t type, uint16_t seq, uint32_t t_s, uint16_t t_ms,
                     const uint8_t *payload, uint16_t plen,

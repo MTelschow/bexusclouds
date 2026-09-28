@@ -62,9 +62,15 @@ bme280_t bme280_chamber = {
  * LOW across the whole address-then-data transaction. Hardware CSn on the
  * RP2350 deasserts between bytes, which the BME280 reads as the end of the
  * transaction: the burst would restart from the address register every byte
- * and return the same register over and over. */
+ * and return the same register over and over.
+ *
+ * The frame width is set here, per transaction, and not once at bus init:
+ * the BMV080 shares spi1 and transfers 16-bit words, so whatever format the
+ * bus was left in is not ours to assume. Setting it while CS is still high
+ * is what makes this safe - SSPCR0 must not change mid-transfer. */
 static void cs_select(const bme280_t *dev)
 {
+    spi_set_format(spi1, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
     gpio_put(dev->cs_pin, 0);
 }
 
@@ -169,6 +175,17 @@ static uint32_t compensate_h(const bme280_t *dev, int32_t adc)
     return (uint32_t)(v >> 12); /* Q22.10 %RH */
 }
 
+/* True when every byte equals the first and that byte is 0x00 or 0xFF. */
+static bool raw_is_flat(const uint8_t *raw, size_t n)
+{
+    if (raw[0] != 0x00 && raw[0] != 0xFF)
+        return false;
+    for (size_t i = 1; i < n; i++)
+        if (raw[i] != raw[0])
+            return false;
+    return true;
+}
+
 /* ---- public -------------------------------------------------------------- */
 
 bool bme280_init(bme280_t *dev)
@@ -234,6 +251,20 @@ bool bme280_read(bme280_t *dev, int16_t *temp_cc, uint16_t *rh_cpct,
     /* 0x80000 in both slots is the reset value: conversion has never run. */
     if (adc_t == 0x80000 || adc_p == 0x80000)
         return false;
+
+    /* Eight identical bytes of 0x00 or 0xFF are not a measurement - they are
+     * an undriven MISO, read back through the RP2350's pull or the bus's own.
+     * The SPI transport above cannot fail (a clocked read always returns
+     * something), so this is the only place a chamber part that went away
+     * after init announces itself; without it the compensation would turn
+     * the line's idle level into a plausible temperature and pressure.
+     * Dropping ready makes the next bme280_init() re-run the chip-id check
+     * instead of trusting calibration from a part that may have been
+     * swapped. */
+    if (raw_is_flat(raw, sizeof raw)) {
+        dev->ready = false;
+        return false;
+    }
 
     tc = compensate_t(dev, adc_t); /* must run first: it sets t_fine */
     pa = compensate_p(dev, adc_p);

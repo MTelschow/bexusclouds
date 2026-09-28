@@ -4,7 +4,6 @@ Partical sensor
 Chamber multi sensor
 Electrical controller for the dispersion motor
 
-Remove Release 1 and 2 (not relevant anymore)
 
 Adjust IP to match what we were given
 Investiage spectrometer flight data (binned version seems wrong
@@ -19,7 +18,6 @@ Add automatic activation cycle when connection is present as options to enable a
 
 IN PROGRESS:
 
-Fix UI (visal bugs, and bad layout)
 Fix spectrometer data (clipping values even at minimal exposure time and low light exposure) Investigate.
 
 Fix/adjust automatic mode
@@ -31,6 +29,8 @@ VALIDATE:
 
 DONE:
 
+Fix UI (visal bugs, and bad layout)
+Remove Release 1 and 2 (not relevant anymore)
 Default motor percentage is coerrectly at 50% but just the display right after starting says 100% by mistake.
 Add solenoid over time activity
 Add import logs 

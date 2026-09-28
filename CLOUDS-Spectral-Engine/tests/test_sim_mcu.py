@@ -122,6 +122,57 @@ def test_sensor_picture_matches_the_carrier(sim):
         assert h.rail_a(i) is not None
 
 
+def test_the_mock_exercises_the_particulate_row(sim):
+    """`--mock` has to put a real number on the PM2.5 row, and the absent and
+    stale cases too - they are the ones the panel gets wrong if untested.
+
+    The BMV080 has never answered on any board, so this simulator is the only
+    thing that exercises the success path at all. That makes it worth checking
+    it produces each state rather than a constant.
+    """
+    mcu, pi = sim
+    # Before the part's ~1.9 s warm-up there is no sample, and that must not
+    # render as clean air - 0 ug/m3 is a real reading.
+    h = mcu.housekeeping()
+    assert h.pm_status & hk.PmStatus.FAIL
+    assert not h.pm_measured and h.pm_text == "-"
+
+    mcu._pm_next_s = time.monotonic()           # jump the warm-up
+    fresh = mcu.housekeeping()
+    assert fresh.pm_measured and fresh.pm2_5_ugm3 > 0
+    assert not fresh.pm_status & hk.PmStatus.STALE
+
+    # The next packet inside the same 1.03 s sample is a repeat, and says so
+    # without becoming a fault: the part makes 0.97 samples/s against a 1 Hz
+    # sweep, so ground sees this regularly.
+    again = mcu.housekeeping()
+    assert again.pm_status & hk.PmStatus.STALE
+    assert again.pm_measured and again.pm2_5_ugm3 == fresh.pm2_5_ugm3
+
+
+def test_the_mock_can_have_no_particulate_sensor(sim):
+    """The part is not fitted on every board, and `pm=False` is how a panel
+    with a dead BMV080 gets exercised."""
+    near, far = PipeTransport.pair()
+    mcu = SimMcu(far, pm=False)
+    h = mcu.housekeeping()
+    assert h.pm_status & hk.PmStatus.FAIL
+    assert h.pm2_5_ugm3 == 0 and not h.pm_measured
+
+
+def test_dispersing_moves_the_particulate_reading(sim):
+    """The experiment exists to put CaCO3 in the chamber, so the motor is the
+    one thing that should move this number. A mock where PM ignored the
+    actuators would make the row look like decoration."""
+    mcu, pi = sim
+    mcu._pm_next_s = time.monotonic()
+    idle = mcu.housekeeping().pm2_5_ugm3
+    mcu.motor_running = True
+    mcu._pm_next_s = time.monotonic()
+    running = mcu.housekeeping().pm2_5_ugm3
+    assert running > idle * 2, (idle, running)
+
+
 def test_release_is_a_command_the_build_cannot_act_on(sim):
     """The pinch valves are off the experiment (2026-09-18): no line to
     drive, so RELEASE is INVALID like any other unimplemented command."""
@@ -254,6 +305,31 @@ def test_motor_current_sense_follows_the_dispersion_drive(sim):
         highs += h.hb_sense_a() > 0.2
         time.sleep(0.02)
     assert highs, "the sense should rise while the motor drive is up"
+
+
+def test_motor_encoder_speed_follows_the_drive_and_duty(sim):
+    """The simulated encoder: 0 rpm at rest (a real speed, not the
+    sentinel), a speed that tracks DISPERSE_DUTY while running, and a jammed
+    shaft reads 0 rpm with the stall bit up - which never comes up with the
+    drive off."""
+    mcu, pi = sim
+    h = mcu.housekeeping()
+    assert h.motor_rpm == 0 and h.motor_rpm_valid and h.motor_stalled is False
+    assert pi.command(Command.SET_PARAM, key=Param.DISPERSE_DUTY,
+                      value=30) == AckResult.OK
+    assert pi.command(Command.DISPERSE, key=DisperseKey.RUN) == AckResult.OK
+    slow = mcu.housekeeping().motor_rpm
+    assert pi.command(Command.SET_PARAM, key=Param.DISPERSE_DUTY,
+                      value=90) == AckResult.OK
+    fast = mcu.housekeeping().motor_rpm
+    assert 0 < slow < fast
+    assert mcu.housekeeping().motor_stalled is False
+    mcu.motor_jammed = True
+    h = mcu.housekeeping()
+    assert h.motor_rpm == 0 and h.motor_stalled is True
+    assert h.actuator_text == "DISPERSE"
+    assert pi.command(Command.DISPERSE, key=DisperseKey.STOP) == AckResult.OK
+    assert mcu.housekeeping().motor_stalled is False
 
 
 def test_a_stop_de_energizes_but_does_not_lock_out(sim):

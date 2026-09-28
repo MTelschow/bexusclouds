@@ -1,7 +1,15 @@
 /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/clouds_fsw_mcu.dir
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/clouds_fsw_mcu_quadrature_encoder_pio_h.dir
 /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/bno055_probe.dir
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/bno055_probe_quadrature_encoder_pio_h.dir
 /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/membrane_switch_probe.dir
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/membrane_switch_probe_quadrature_encoder_pio_h.dir
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/encoder_pin_probe.dir
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/encoder_trace_probe.dir
 /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/bme280_probe.dir
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/bme280_probe_quadrature_encoder_pio_h.dir
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/bmv080_probe.dir
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/bmv080_probe_quadrature_encoder_pio_h.dir
 /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/edit_cache.dir
 /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/CMakeFiles/rebuild_cache.dir
 /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pico-sdk/CMakeFiles/edit_cache.dir
@@ -205,7 +213,6 @@
 /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pico-sdk/src/rp2_common/pico_fix/CMakeFiles/rebuild_cache.dir
 /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/CMakeFiles/edit_cache.dir
 /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pico-sdk/src/rp2_common/pico_fix/rp2040_usb_device_enumeration/CMakeFiles/rebuild_cache.dir
-/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pico-sdk/src/rp2_common/pico_status_led/CMakeFiles/pioasmBuild.dir
 /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pico-sdk/src/rp2_common/pico_status_led/CMakeFiles/pico_status_led_ws2812_pio_h.dir
 /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pico-sdk/src/rp2_common/pico_status_led/CMakeFiles/edit_cache.dir
 /Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pico-sdk/src/rp2_common/pico_status_led/CMakeFiles/rebuild_cache.dir

@@ -26,7 +26,8 @@ def _fmt_hk(h) -> str:
             # Second line on purpose: four rails with volts and amps do not
             # fit a terminal width alongside the state, and truncating the
             # power picture is how a browning-out rail goes unnoticed.
-            f"{'':13s} rails {h.rail_text}  motor {h.hb_sense_text}")
+            f"{'':13s} rails {h.rail_text}  motor {h.hb_sense_text}  "
+            f"pm2.5 {h.pm_text}")
 
 
 class ConsoleMonitor:

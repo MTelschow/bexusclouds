@@ -20,12 +20,24 @@ extern const seq_ops_t hw_seq_ops;
  * actuation ever blocks past the 2 s watchdog (S.9). Never waits. */
 void hw_actuators_service(uint64_t now_ms);
 
+/* Services the BMV080's vendor library. Must also be called every pass of the
+ * main loop: the library requires at least one service call per second or it
+ * misses events, and the 1 Hz sensor sweep leaves no margin for that. It
+ * rate-limits itself to 100 ms internally, so calling it more often is free.
+ *
+ * The one thing in hw/ that can wait, and only through the vendor library's
+ * delay callback, which kicks the watchdog and refuses an unreasonable delay
+ * (hw/bmv080_port.c). */
+void hw_pm_service(uint64_t now_ms);
+
 /* Which actuator line is energized right now, as HKV_* bits (core/frame.h),
  * for hk_t.valve_status. The motor pulse is a bounded drive that finishes
  * between two 1 Hz housekeeping packets, so this is the only way ground sees
  * a commanded drive actually happen. Also carries
- * HKV_MEMBRANE_PULLED, the one sensed bit: the membrane position switch on
- * GP30, read at the moment of the call. */
+ * HKV_MEMBRANE_PULLED, the membrane position switch on GP30 read at the
+ * moment of the call, and the latched sensed bits HKV_MEMBRANE_CYCLING and
+ * HKV_DISPERSE_STALLED (the motor encoder's stall verdict), consumed here
+ * once per packet. */
 uint8_t hw_actuator_status(void);
 
 /* The membrane position switch (board.h PIN_MEMBRANE_SENSE), decoded: true

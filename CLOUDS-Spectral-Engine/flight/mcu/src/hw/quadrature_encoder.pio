@@ -1,0 +1,59 @@
+;
+; Dispersion motor encoder counter (Faulhaber IE3-1024L, hw/board.h
+; PIN_ENC_A / PIN_ENC_B) for the carrier AS WIRED on 2026-09-28: no TIA-422
+; receiver, single legs of the differential pairs on the ACT_EC nets.
+;
+; What the pins carry (tools/encoder_trace_probe, 18 000 transitions at
+; 80 ns resolution, motor at 50 %, 25 % and coasting; docs/HARDWARE.md):
+;   PIN_ENC_A (GP19)  one channel, clean 50 % square wave, 2048 edges/rev -
+;                     but with a ~80 ns LOW GLITCH riding on ~37 % of its
+;                     periods, so a raw edge count over-reads by a third.
+;   PIN_ENC_B (GP21)  NOT a channel: the resistor midpoint of that channel and
+;                     the other one. Low only while both legs are low; with one
+;                     high it sits at ~2.5 V and reads high (marginal). Under
+;                     the flight forward drive the other channel LEADS A by
+;                     90 deg, so at every genuine falling edge of A this pin is
+;                     a solid low (99.7 % of 3381 edges). Reverse would read
+;                     it high there.
+;
+; So this program is NOT the pico-examples x4 quadrature decoder (that needs
+; two clean channels on consecutive pins, which this board does not have; it
+; is in git history for the day a receiver is fitted). It is:
+;
+;   wait for a falling edge of A,
+;   hold ~0.3 us and re-read A - still high means it was a glitch, restart,
+;   sample B: low -> forward, count up; high -> reverse, count down,
+;   publish the count (push noblock, the CPU keeps the newest).
+;
+; One count per encoder line (x1), MOTOR_ENC_COUNTS_PER_REV = 1024. The
+; 0.3 us hold is 46 PIO cycles at 150 MHz: long against the 80 ns glitch,
+; short against the 90 deg lead of the other channel even at the encoder's
+; rated 430 kHz (0.58 us). The direction sample uses JMP PIN, so B may be any
+; pin in the PIO's window; A is the IN base. No computed jumps, so no .origin.
+;
+; The FIFO is written on every counted edge, not every loop, so it fills only
+; as fast as the shaft turns; hw.c still reads it bounded (docs/TRAPS.md).
+
+.program quadrature_encoder
+
+.wrap_target
+start:
+    wait 1 pin 0            ; A high
+    wait 0 pin 0 [31]       ; A falling edge, then hold
+    nop [13]                ; 46 cycles = 0.31 us at 150 MHz
+    mov isr, null
+    in pins, 1              ; A again
+    mov x, isr
+    jmp x--, start          ; A back high: an ~80 ns glitch, not an edge
+    jmp pin, reverse        ; B high at A's fall = the other channel lags
+    mov y, ~y               ; forward: Y = ~(~Y - 1) = Y + 1
+    jmp y--, forward_cont
+forward_cont:
+    mov y, ~y
+    jmp publish
+reverse:
+    jmp y--, publish        ; the target is the next address: a pure Y - 1
+publish:
+    mov isr, y
+    push noblock
+.wrap

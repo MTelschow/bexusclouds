@@ -51,6 +51,25 @@ cmake --build build                    # -> clouds_fsw_mcu.uf2
 picotool load -f -x build/clouds_fsw_mcu.uf2   # -f forces BOOTSEL over USB
 ```
 
+**The build needs the Bosch BMV080 SDK.** The particulate sensor has no
+public register map, so its measurement algorithm is two prebuilt archives and
+the flight image does not link without them. They are expected in the sibling
+`sensor-driver/` tree (same git repo, one level above
+`CLOUDS-Spectral-Engine`); point elsewhere with
+`-DCLOUDS_BMV080_SDK_DIR=/path/to/sdk`, and CMake fails with that message if
+the archive is missing rather than erroring somewhere in the link. The
+`arm_cortex_m33` archive is the right one - **not `m33f`**, which is hard-float
+and the SDK builds RP2350 `softfp`. The archives and the vendor headers are
+Bosch-confidential with no redistribution grant
+(`sensor-driver/LICENSE.md`): anyone handed this repo needs their own copy from
+Bosch.
+
+**The core-0 stack is moved out of the scratch banks** for the same sensor -
+its library wants 10 kB where SCRATCH_Y holds 4 - by four linker `--defsym`s
+in `CMakeLists.txt`, which explains the arithmetic. Two consequences worth
+knowing before touching memory here: RAM is 504 kB rather than 512, and
+SCRATCH_X is zero-length, so a `__scratch_x` placement now fails the link.
+
 **The board is the carrier, not a Pico 2.** The CLOUDS carrier is an RP2350B
 (QFN80, GP0..GP47); `boards/clouds_carrier.h` tells the SDK so
 (`PICO_RP2350A 0`), and `CMakeLists.txt` selects it by default. The old
@@ -118,12 +137,37 @@ unplugged, and nothing on the link may delay a state transition (S.7).
   T/RH/pressure, verified on the board). Everything else on this carrier has
   no source and is flagged through `error_flags`: the **STLM20 pair is not
   populated** (and GP26, the pin the old map gave `ADC_TEMP1`, is the membrane
-  solenoid), and the BNO055 at 0x28 answers with a valid chip id while its
-  accel/mag/gyro IDs read 0x00. The SED baselines no IMU at all, so there is
+  solenoid), and **neither BNO055 answers on i2c0** (0/50 ACK at 0x28 and
+  0x29 on 2026-09-11 and again 2026-09-28 while the other four parts on the
+  bus answer - `docs/HARDWARE.md`; the 2026-08-31 part that answered
+  `CHIP_ID 0xA0` is gone). The SED baselines no IMU at all, so there is
   nothing to verify that integration against (DEVLOG 2026-08-31). Chamber
   pressure and the second RH channel come from a **second BME280 on SPI_1**
   (chip select GP9), downlinked as `chm_*` behind `HKE_BME280_CHM_FAIL` -
-  added 2026-09-17 and **not yet run against the fitted part**.
+  added 2026-09-17 and **not yet run against the fitted part**. Particulate
+  mass comes from a **BMV080, the second part on SPI_1** (chip select GP12),
+  downlinked as `pm2_5_ugm3` behind the `pm_status` byte - added 2026-09-28
+  and **never answered on any board yet** (chip-id mismatch 107 on the
+  2026-09-11 bench run, MISO undriven). Its driver is `src/hw/bmv080_dev.c`
+  over `src/hw/bmv080_port.c` and the vendor archives; it is the one file in
+  `src/hw/` allowed to block, because the library's delay callback is
+  synchronous. Bring it up with `src/tools/bmv080_probe.c` before trusting the
+  flight image, and check PS-low-at-power-up and all four supply rails first -
+  neither is fixable in firmware.
+- **SPI_1 itself is the open item, not either part.** Measured 2026-09-28:
+  nothing answers on any of the four chip selects, and `src/tools/bme280_probe`
+  now runs three bus-integrity tests ahead of its chip-id table to say why.
+  The result that holds is test (a) - MISO idles high correctly and **no chip
+  select changes it**, so nothing is responding. The drive and cross-short
+  results (b)/(c) are **not** trustworthy while the pins may be floating: an
+  unconnected RP2350 pad latches and couples to its neighbours, which reads
+  exactly like a short, and this project has measured that behaviour before
+  (DEVLOG 2026-09-11). Two rules came out of it, worth keeping for any future
+  pin test here: **park every pin not under test as a high-impedance input**
+  or you measure the SPI peripheral instead of the board, and **settle "is it
+  floating" physically** - unplug the harness and re-run, or fit an external
+  10k pull-up - before reading anything into a level. `docs/TRAPS.md` has both
+  as traps; `docs/DEVLOG.md` has the captures.
 - **M-09 rails**: the three fitted INA226 monitors are done
   (`src/hw/ina226.c`) - bus voltage in `rail_mv[]` and the raw shunt-voltage
   register in `shunt_raw[]`, both absolute registers. The calibration register

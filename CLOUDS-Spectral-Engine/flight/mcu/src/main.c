@@ -192,6 +192,12 @@ int main(void)
          * the 5 s pulse outlives the 2 s watchdog, so it is timed across
          * loop passes instead of slept through (S.9). */
         hw_actuators_service(hw_monotonic_ms());
+        /* The BMV080's library must be served at least once a second or it
+         * drops events; it rate-limits itself to 100 ms inside, so calling it
+         * from every 10 ms pass costs a comparison. It is out here rather
+         * than in hw_read_sensors() because the 1 Hz sweep is too slow to
+         * satisfy it with any margin. */
+        hw_pm_service(hw_monotonic_ms());
         sleep_ms(10);
     }
 }

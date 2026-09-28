@@ -111,8 +111,8 @@ class TestFrame:
 
 
 class TestHousekeeping:
-    def test_size_is_76(self):
-        assert hk.SIZE == 76
+    def test_size_is_80(self):
+        assert hk.SIZE == 80
 
     def test_roundtrip(self):
         h = hk.Housekeeping(state=hk.SeqState.AUTO_MEMBRANE,
@@ -121,7 +121,8 @@ class TestHousekeeping:
                             rail_mv=(24012, hk.RAIL_MV_INVALID, 5003, 3298),
                             mission_t_s=4210,
                             chm_temp_cc=2450, chm_rh_cpct=3812,
-                            chm_p_pa=98_765)
+                            chm_p_pa=98_765,
+                            pm_status=hk.PmStatus.STALE, pm2_5_ugm3=412)
         g = hk.Housekeeping.unpack(h.pack())
         assert g == h
         assert g.state_name == "AUTO_MEMBRANE"
@@ -134,6 +135,7 @@ class TestHousekeeping:
         # numbers.
         assert (g.chm_temp_cc, g.chm_rh_cpct, g.chm_p_pa) == (2450, 3812, 98_765)
         assert g.p_amb_pa == 5300 and g.chm_p_pa == 98_765
+        assert g.pm2_5_ugm3 == 412 and g.pm_status == hk.PmStatus.STALE
 
     def test_link_flags_are_rendered_for_displays(self):
         """The whole link story is in `flags`, so it must be readable: an
@@ -316,6 +318,104 @@ class TestHousekeeping:
         assert g.accel_mg == (1, -2, 981) and g.chm_p_pa == 98_765
         assert g.error_flags & hk.HkErrors.IMU_CHM_FAIL
         assert g.chm_accel_mg == (0, 0, 0) and g.chm_gyro_ddps == (0, 0, 0)
+
+    def test_hk_before_the_bmv080_still_decodes(self):
+        """A 76 B packet from an MCU flashed before the BMV080 decodes in
+        full, with the particulate reading declared absent rather than 0.
+
+        0 ug/m3 is what clean air reads, so unlike every other field on this
+        wire there is no value that can mean "no sensor". That is the whole
+        reason pm_status exists, and this is the case that proves it: an older
+        MCU must not look like a sensor reporting perfectly clean air.
+        """
+        g0 = hk.Housekeeping(chm_gyro_ddps=(25, 0, 0), pm2_5_ugm3=412,
+                             pm_status=0)
+        payload = g0.pack()[:hk.SIZE_PRE_PM]
+        assert hk.SIZE_PRE_PM == 76
+        g = hk.Housekeeping.unpack(payload)
+        assert g.chm_gyro_ddps == (25, 0, 0)
+        assert g.pm_status & hk.PmStatus.FAIL
+        assert g.pm2_5_ugm3 == 0
+        assert g.pm_text == "-"
+        assert not g.pm_measured
+
+    def test_hk_before_the_encoder_still_decodes(self):
+        """A 78 B packet from an MCU flashed before the motor encoder decodes
+        in full, with the speed as MOTOR_RPM_INVALID - no encoder, never a
+        stopped motor, which is what a stall reads."""
+        g0 = hk.Housekeeping(pm2_5_ugm3=412, pm_status=0, motor_rpm=1500)
+        payload = g0.pack()[:hk.SIZE_PRE_ENC]
+        assert hk.SIZE_PRE_ENC == 78
+        g = hk.Housekeeping.unpack(payload)
+        assert g.pm2_5_ugm3 == 412 and g.pm_measured
+        assert g.motor_rpm == hk.MOTOR_RPM_INVALID
+        assert not g.motor_rpm_valid and g.motor_stalled is None
+        assert g.motor_speed_text == "-"
+
+    def test_motor_rpm_roundtrips_signed(self):
+        for rpm in (0, 1480, -1480, 32767, -32767):
+            g = hk.Housekeeping.unpack(hk.Housekeeping(motor_rpm=rpm).pack())
+            assert g.motor_rpm == rpm and g.motor_rpm_valid
+        assert hk.Housekeeping.unpack(
+            hk.Housekeeping().pack()).motor_rpm == hk.MOTOR_RPM_INVALID
+
+    def test_motor_speed_row_and_stall(self):
+        run = hk.Housekeeping(motor_rpm=1480,
+                              valve_status=hk.ValveStatus.DISPERSE)
+        assert run.motor_speed_text == "1480 rpm" and run.motor_stalled is False
+        stuck = hk.Housekeeping(motor_rpm=0, valve_status=(
+            hk.ValveStatus.DISPERSE | hk.ValveStatus.DISPERSE_STALLED))
+        assert stuck.motor_stalled is True
+        assert stuck.motor_speed_text == "0 rpm  STALLED"
+        # The stall bit is sensed, not a drive: it must not show up as a
+        # second driven line in the actuator row.
+        assert stuck.actuator_text == "DISPERSE"
+        # No encoder: no verdict, whatever the bit says.
+        blind = hk.Housekeeping(valve_status=hk.ValveStatus.DISPERSE_STALLED)
+        assert blind.motor_stalled is None and blind.motor_speed_text == "-"
+
+    def test_motor_columns_in_the_session_row(self):
+        row = hk.Housekeeping(motor_rpm=900, valve_status=(
+            hk.ValveStatus.DISPERSE | hk.ValveStatus.DISPERSE_STALLED)).to_row()
+        assert row["motor_rpm"] == 900 and row["motor_rpm_measured"] == 900
+        assert row["motor_stalled"] == 1
+        assert "valve_disperse_stalled" not in row
+        none = hk.Housekeeping().to_row()
+        assert none["motor_rpm_measured"] == "" and none["motor_stalled"] == ""
+
+    def test_pm_status_separates_no_reading_from_clean_air(self):
+        """Every pm_status state must render as something an operator can
+        act on, and only one of them may show a bare number."""
+        clean = hk.Housekeeping(pm_status=0, pm2_5_ugm3=0)
+        assert clean.pm_measured and clean.pm_text == "0 ug/m3"
+        # ...and the same 0 with no sensor behind it must not look like it.
+        absent = hk.Housekeeping(pm_status=hk.PmStatus.FAIL, pm2_5_ugm3=0)
+        assert not absent.pm_measured and not any(
+            c.isdigit() for c in absent.pm_text)
+        # An obstructed part is answering correctly and still cannot measure.
+        blocked = hk.Housekeeping(pm_status=hk.PmStatus.OBSTRUCTED,
+                                  pm2_5_ugm3=37)
+        assert not blocked.pm_measured
+        assert "obstruct" in blocked.pm_text
+        # A saturated reading is a floor, and is still a measurement.
+        hot = hk.Housekeeping(pm_status=hk.PmStatus.RANGE, pm2_5_ugm3=1000)
+        assert hot.pm_measured and hot.pm_text.startswith(">")
+        # A repeat is expected at 0.97 samples/s against a 1 Hz sweep, so it
+        # is a measurement too - just an old one, and it says so.
+        old = hk.Housekeeping(pm_status=hk.PmStatus.STALE, pm2_5_ugm3=412)
+        assert old.pm_measured and "stale" in old.pm_text
+        # An unknown bit from a newer MCU stays visible as a mask.
+        assert "0x40" in hk.Housekeeping(pm_status=0x40).pm_status_text
+
+    def test_pm_column_in_a_session_row_is_blank_without_a_reading(self):
+        """G-05: a CSV of zeros is indistinguishable from clean air, and a
+        reader should not have to mask pm_status by hand."""
+        assert hk.Housekeeping(pm_status=0,
+                               pm2_5_ugm3=412).to_row()[
+                                   "pm2_5_measured_ugm3"] == 412
+        assert hk.Housekeeping(pm_status=hk.PmStatus.FAIL,
+                               pm2_5_ugm3=0).to_row()[
+                                   "pm2_5_measured_ugm3"] == ""
 
     def test_the_two_imus_roundtrip_separately(self):
         """Ambient (0x29) and chamber (0x28) vectors must not cross: values

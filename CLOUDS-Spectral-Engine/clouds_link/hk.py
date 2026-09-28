@@ -1,4 +1,4 @@
-"""Housekeeping payload (PacketType.HK) - 64 bytes, little-endian.
+"""Housekeeping payload (PacketType.HK) - 78 bytes, little-endian.
 
 Produced by the RP2350 at 1 Hz (C mirror flight/mcu/src/core/frame.c),
 relayed unchanged by the Pi, decoded by the GSE.
@@ -21,6 +21,19 @@ as ``RAIL_MV_INVALID`` until the part is populated. A reserved slot is the
 cheaper mistake: the alternative is a wire format that changes on the day
 the part arrives, on an instrument that is already flying its protocol.
 
+**The last two bytes are PM2.5**, from a BMV080 particulate sensor also on
+SPI_1, behind the chip select on GP12. Its state does not fit in
+``error_flags`` - that byte's eight bits are all assigned - so it has a byte
+of its own, ``pm_status``, at offset 2. That byte was ``fired``, the retired
+pinch-valve bits, and then sat reserved at 0; the consequence of reusing it
+is that **a session logged before 2026-09-18 decodes its real valve bits as
+``pm_status``**. Read an old log against the ``SIZE`` its frames carry.
+
+PM2.5 is one ``uint16`` where the vendor library produces six floats (PM1,
+PM2.5 and PM10, each as mass and number concentration). The other five are
+dropped at the MCU, not binned on the ground, because this packet is already
+over its 67 B downlink ceiling.
+
 Two bytes before those, after ``mission_t_s``, are the CaCO3 dispersion
 motor's current sense, the ``ACT_HB_SENS`` net on GP46 read by the RP2350B's ADC: raw 12-bit counts,
 scaled to volts and amps here (``hb_sense_v()`` / ``hb_sense_a()``), for the
@@ -36,8 +49,23 @@ import struct
 from dataclasses import dataclass, field, asdict
 from enum import IntEnum
 
-_HK = struct.Struct("<BBBBBBhhhHIhhhhhhHHHHhhhhIIHhHIhhhhhh")
-SIZE = _HK.size  # 76
+_HK = struct.Struct("<BBBBBBhhhHIhhhhhhHHHHhhhhIIHhHIhhhhhhHh")
+SIZE = _HK.size  # 80
+
+#: The layout before the dispersion motor encoder's two bytes were appended
+#: (2026-09-28): ends at ``pm2_5_ugm3``. Decoded with ``motor_rpm`` as
+#: ``MOTOR_RPM_INVALID`` - no encoder, not a stopped motor.
+_HK_PRE_ENC = struct.Struct("<BBBBBBhhhHIhhhhhhHHHHhhhhIIHhHIhhhhhhH")
+SIZE_PRE_ENC = _HK_PRE_ENC.size  # 78
+
+#: The layout before the BMV080's two bytes were appended (2026-09-28): ends
+#: at ``chm_gyro_ddps``. Decoded with ``pm2_5_ugm3`` zero behind
+#: ``PmStatus.FAIL``, and with ``pm_status`` taken from the wire byte anyway -
+#: an MCU flashed before this change sends 0 there, which reads as "no
+#: particulate sensor", and one flashed before 2026-09-18 sends valve bits,
+#: which is the cost noted in the module docstring.
+_HK_PRE_PM = struct.Struct("<BBBBBBhhhHIhhhhhhHHHHhhhhIIHhHIhhhhhh")
+SIZE_PRE_PM = _HK_PRE_PM.size  # 76
 
 #: The layout before the chamber BNO055's twelve bytes were appended
 #: (2026-09-28): ends at ``chm_p_pa``. Decoded with the chamber IMU fields as
@@ -66,7 +94,8 @@ _HK_PRE_CHAMBER = struct.Struct("<BBBBBBhhhHIhhhhhhHHHHhhhhIIH")
 SIZE_PRE_CHAMBER = _HK_PRE_CHAMBER.size  # 56
 
 #: Payload sizes this decoder understands, smallest first.
-KNOWN_SIZES = (SIZE_PRE_CHAMBER, SIZE_PRE_CHM_IMU, SIZE)
+KNOWN_SIZES = (SIZE_PRE_CHAMBER, SIZE_PRE_CHM_IMU, SIZE_PRE_PM, SIZE_PRE_ENC,
+               SIZE)
 
 
 class SeqState(IntEnum):
@@ -156,6 +185,12 @@ RAIL_SHUNT_MOHM = (10.0, 15.0, 50.0, 50.0)
 #: an idle motor reads, and the two must stay distinguishable.
 HB_SENSE_INVALID = 0xFFFF
 
+#: "No reading" for ``motor_rpm`` - mirror of MOTOR_RPM_INVALID in
+#: flight/mcu/src/core/frame.h. INT16_MIN, which the MCU never produces as a
+#: speed (it saturates at +-32767). Downlinked by a build with no encoder
+#: counter (pico2 / RP2350A); not 0, because 0 rpm is what a stall reads.
+MOTOR_RPM_INVALID = -32768
+
 #: Full scale of the RP2350 ADC and the reference it is measured against, in
 #: volts. 3.3 V is the SDK's nominal ADC_VREF; the carrier's actual reference
 #: has not been measured, so an amp value carries that assumption too.
@@ -224,11 +259,16 @@ class ValveStatus(IntEnum):
     DISPERSE = 1 << 4        # CaCO3 dispersion motor, forward line (pulse or run)
     MEMBRANE_PULLED = 1 << 5  # sensed, not driven: GP30 switch pressed (LOW) now
     MEMBRANE_CYCLING = 1 << 6  # sensed: GP30 switch changed since the last HK
+    #: Sensed, from the motor encoder: a drive was on, past its 500 ms
+    #: spin-up grace, while the shaft turned under 100 rpm, at some point
+    #: since the last HK. A flag only - nothing on the MCU acts on it.
+    DISPERSE_STALLED = 1 << 7
 
 
 #: The ``ValveStatus`` bits that are drives - what ``actuator_text`` lists.
 #: The two membrane sense bits are positions, and belong with the membrane row.
-SENSE_BITS = (ValveStatus.MEMBRANE_PULLED, ValveStatus.MEMBRANE_CYCLING)
+SENSE_BITS = (ValveStatus.MEMBRANE_PULLED, ValveStatus.MEMBRANE_CYCLING,
+              ValveStatus.DISPERSE_STALLED)
 DRIVE_BITS = tuple(v for v in ValveStatus if v not in SENSE_BITS)
 
 
@@ -260,16 +300,47 @@ class HkErrors(IntEnum):
                             # chm_accel_mg / chm_gyro_ddps are zeros
 
 
+class PmStatus(IntEnum):
+    """Mirror of the PM_* bits in flight/mcu/src/core/frame.h.
+
+    A byte of its own rather than more ``HkErrors`` bits, because that field
+    is full - and because this part needs to say more than "failed". An
+    obstructed BMV080 is answering correctly and still has no usable number,
+    and a saturated one is reporting a floor rather than a value. Collapsing
+    those into one fail bit would make an enclosure blocking the optics look
+    like a dead sensor.
+
+    ``FAIL`` clear and every other bit clear is the only state in which
+    ``pm2_5_ugm3`` is a measurement.
+    """
+    FAIL = 1 << 0         # no sample: open/start failed, the part stopped
+                          # answering, or the first reading (~1.9 s after the
+                          # measurement starts) has not arrived yet
+    OBSTRUCTED = 1 << 1   # something static is in the optical path, inside
+                          # the datasheet's ~350 mm obstruction-sensitive
+                          # cone. The library filters a passing hand; it
+                          # cannot filter an enclosure
+    RANGE = 1 << 2        # outside the specified 0..1000 ug/m3 range, so
+                          # pm2_5_ugm3 is saturated at 1000 - a floor, not a
+                          # value
+    STALE = 1 << 3        # this packet repeats the previous sample. Expected,
+                          # not a fault: the part produces 0.97 samples/s
+                          # against a 1 Hz housekeeping sweep
+
+
 @dataclass
 class Housekeeping:
     state: int = 0
     flags: int = 0
-    #: Was ``fired``, the two pinch-valve bits, until the valves were removed
-    #: from the experiment (2026-09-18). The byte stays on the wire at 0: this
-    #: packet has only ever grown by appending, and every field after it keeps
-    #: the offset that every logged session was written with. Old sessions
-    #: still decode their real value here.
-    reserved0: int = 0
+    #: ``PmStatus`` bits: whether ``pm2_5_ugm3`` is a measurement, and if
+    #: not, why. This byte was ``fired``, the two pinch-valve bits, until the
+    #: valves were removed from the experiment (2026-09-18), and then sat
+    #: reserved at 0 until the BMV080 took it (2026-09-28) because
+    #: ``error_flags`` had no bits left. The byte never moved, so every field
+    #: after it keeps the offset that every logged session was written with -
+    #: but a session logged before 2026-09-18 decodes its real valve bits
+    #: here.
+    pm_status: int = PmStatus.FAIL
     valve_status: int = 0     # ValveStatus bits: line energized right now
     membrane_duty: int = 0    # percent
     error_flags: int = 0
@@ -315,9 +386,24 @@ class Housekeeping:
     #: has nothing to give.
     chm_accel_mg: tuple = field(default=(0, 0, 0))
     chm_gyro_ddps: tuple = field(default=(0, 0, 0))
+    #: BMV080 PM2.5 mass concentration (SPI_1, chip select GP12), ug/m3,
+    #: saturated at the part's specified 1000 ug/m3 ceiling. Whether it is a
+    #: measurement at all is in ``pm_status``, not here: 0 ug/m3 is a reading
+    #: clean air legitimately produces, so unlike ``rail_mv`` there is no
+    #: in-band sentinel available. Hence the ``pm_status`` default of
+    #: ``PmStatus.FAIL`` - a ``Housekeeping()`` built in a test asserts no
+    #: particulate reading rather than perfectly clean air.
+    pm2_5_ugm3: int = 0
+    #: Dispersion motor speed from its Faulhaber IE3-1024L encoder, rpm, the
+    #: mean over the second before the packet. Signed - the sign is the
+    #: direction, and which sign is forward is unverified. No gearhead, so
+    #: motor and output shaft agree. ``MOTOR_RPM_INVALID`` when the MCU has
+    #: no encoder counter, which is also the default: a ``Housekeeping()``
+    #: built in a test asserts no encoder rather than a stopped motor.
+    motor_rpm: int = MOTOR_RPM_INVALID
 
     def pack(self) -> bytes:
-        return _HK.pack(self.state, self.flags, self.reserved0,
+        return _HK.pack(self.state, self.flags, self.pm_status,
                         self.valve_status,
                         self.membrane_duty, self.error_flags,
                         self.temp1_cc, self.temp2_cc, self.bme_temp_cc,
@@ -327,7 +413,8 @@ class Housekeeping:
                         self.uptime_s, self.mission_t_s,
                         self.hb_sense_raw,
                         self.chm_temp_cc, self.chm_rh_cpct, self.chm_p_pa,
-                        *self.chm_accel_mg, *self.chm_gyro_ddps)
+                        *self.chm_accel_mg, *self.chm_gyro_ddps,
+                        self.pm2_5_ugm3, self.motor_rpm)
 
     @classmethod
     def unpack(cls, payload: bytes) -> "Housekeeping":
@@ -342,15 +429,38 @@ class Housekeeping:
 
         One that is ``SIZE_PRE_CHM_IMU`` long predates the chamber BNO055 and
         is decoded the same way, with the chamber IMU fields zero behind
-        ``HkErrors.IMU_CHM_FAIL``.
+        ``HkErrors.IMU_CHM_FAIL``. One that is ``SIZE_PRE_PM`` long predates
+        the BMV080, and reports no particulate reading behind
+        ``PmStatus.FAIL``. One that is ``SIZE_PRE_ENC`` long predates the
+        motor encoder, and reports ``MOTOR_RPM_INVALID``.
 
         Anything shorter than that is genuinely undecodable and raises, as
         before - a truncated frame is not an old one.
         """
         n = len(payload)
         chm_imu = dict(chm_accel_mg=(0, 0, 0), chm_gyro_ddps=(0, 0, 0))
-        if n >= SIZE:
-            v = _HK.unpack_from(payload)
+        # No particulate reading, and PmStatus.FAIL added to whatever the wire
+        # byte carries. An MCU flashed before the BMV080 sends 0 in that byte,
+        # which already reads as "no sensor"; one flashed before the valves
+        # were removed sends valve bits there, which is why an old log has to
+        # be read against the SIZE its frames carry.
+        pm = dict(pm2_5_ugm3=0)
+        pm_extra_status = PmStatus.FAIL
+        enc = dict(motor_rpm=MOTOR_RPM_INVALID)
+        if n >= SIZE_PRE_ENC:
+            if n >= SIZE:
+                v = _HK.unpack_from(payload)
+                enc = dict(motor_rpm=v[38])
+            else:
+                v = _HK_PRE_ENC.unpack_from(payload)
+            chm = dict(chm_temp_cc=v[28], chm_rh_cpct=v[29], chm_p_pa=v[30])
+            chm_imu = dict(chm_accel_mg=(v[31], v[32], v[33]),
+                           chm_gyro_ddps=(v[34], v[35], v[36]))
+            pm = dict(pm2_5_ugm3=v[37])
+            pm_extra_status = 0
+            err = v[5]
+        elif n >= SIZE_PRE_PM:
+            v = _HK_PRE_PM.unpack_from(payload)
             chm = dict(chm_temp_cc=v[28], chm_rh_cpct=v[29], chm_p_pa=v[30])
             chm_imu = dict(chm_accel_mg=(v[31], v[32], v[33]),
                            chm_gyro_ddps=(v[34], v[35], v[36]))
@@ -371,7 +481,8 @@ class Housekeeping:
             # screen that no sensor produced.
             chm = dict(chm_temp_cc=0, chm_rh_cpct=0, chm_p_pa=0)
             err = v[5] | HkErrors.BME280_CHM_FAIL | HkErrors.IMU_CHM_FAIL
-        return cls(state=v[0], flags=v[1], reserved0=v[2], valve_status=v[3],
+        return cls(state=v[0], flags=v[1],
+                   pm_status=v[2] | pm_extra_status, valve_status=v[3],
                    membrane_duty=v[4], error_flags=err,
                    temp1_cc=v[6], temp2_cc=v[7], bme_temp_cc=v[8],
                    rh1_cpct=v[9], p_amb_pa=v[10],
@@ -380,7 +491,7 @@ class Housekeeping:
                    rail_mv=(v[17], v[18], v[19], v[20]),
                    shunt_raw=(v[21], v[22], v[23], v[24]),
                    uptime_s=v[25], mission_t_s=v[26],
-                   hb_sense_raw=v[27], **chm, **chm_imu)
+                   hb_sense_raw=v[27], **chm, **chm_imu, **pm, **enc)
 
     def rail_uv(self, i: int) -> float | None:
         """Shunt voltage of rail ``i`` in microvolts, or None if that monitor
@@ -434,6 +545,31 @@ class Housekeeping:
             return "-"
         a = self.hb_sense_a()
         return f"{v:.3f}V" if a is None else f"{a:.3f}A"
+
+    @property
+    def motor_rpm_valid(self) -> bool:
+        """Is ``motor_rpm`` a speed an encoder produced?"""
+        return self.motor_rpm != MOTOR_RPM_INVALID
+
+    @property
+    def motor_stalled(self) -> bool | None:
+        """Whether the MCU saw the motor driven but not turning since the
+        previous packet, or ``None`` when there is no encoder to judge by."""
+        if not self.motor_rpm_valid:
+            return None
+        return bool(self.valve_status & ValveStatus.DISPERSE_STALLED)
+
+    @property
+    def motor_speed_text(self) -> str:
+        """The motor speed row for HK displays: ``1480 rpm``, with
+        ``STALLED`` appended when the MCU saw a stall in the last second,
+        ``-`` when there is no encoder."""
+        if not self.motor_rpm_valid:
+            return "-"
+        text = f"{self.motor_rpm} rpm"
+        if self.motor_stalled:
+            text += "  STALLED"
+        return text
 
     @property
     def link_text(self) -> str:
@@ -539,6 +675,47 @@ class Housekeeping:
         return " ".join(names) if names else "-"
 
     @property
+    def pm_measured(self) -> bool:
+        """Is ``pm2_5_ugm3`` a number a sensor produced?
+
+        False whenever the BMV080 gave nothing (``FAIL``) or gave something it
+        cannot stand behind (``OBSTRUCTED``). ``STALE`` and ``RANGE`` do not
+        clear this: a repeated sample is still the last real measurement, and
+        a saturated one is a true floor.
+        """
+        return not (self.pm_status & (PmStatus.FAIL | PmStatus.OBSTRUCTED))
+
+    @property
+    def pm_text(self) -> str:
+        """The particulate row for HK displays.
+
+        ``-`` where there is no reading, rather than 0: clean air reads 0 too,
+        and the whole point of ``pm_status`` is that the two must not look the
+        same. A saturated reading is shown with a leading ``>``, because 1000
+        is a floor.
+        """
+        if self.pm_status & PmStatus.FAIL:
+            return "-"
+        if self.pm_status & PmStatus.OBSTRUCTED:
+            return "obstructed"
+        lead = ">" if self.pm_status & PmStatus.RANGE else ""
+        tail = "  (stale)" if self.pm_status & PmStatus.STALE else ""
+        return f"{lead}{self.pm2_5_ugm3} ug/m3{tail}"
+
+    @property
+    def pm_status_text(self) -> str:
+        """Which ``pm_status`` bits are set, by name; unknown bits kept as a
+        mask, on the same rule as ``error_text``."""
+        names = [e.name for e in PmStatus if self.pm_status & e]
+        known = 0
+        for e in PmStatus:
+            known |= e
+        rest = self.pm_status & ~known
+        if rest:
+            names.append(f"{rest:#04x}")
+        return " ".join(names) if names else "-"
+
+    @property
     def state_name(self) -> str:
         try:
             return SeqState(self.state).name
@@ -556,6 +733,12 @@ class Housekeeping:
         d["error_text"] = self.error_text
         d["rail_text"] = self.rail_text
         d["hb_sense_text"] = self.hb_sense_text
+        d["pm_status_text"] = self.pm_status_text
+        # Blank, not 0, where there is no reading - the same rule the rails
+        # follow. A CSV column of zeros is indistinguishable from clean air,
+        # and pm_status is a byte the reader would have to mask by hand.
+        d["pm2_5_measured_ugm3"] = (self.pm2_5_ugm3 if self.pm_measured
+                                    else "")
         ax, ay, az = d.pop("accel_mg")
         gx, gy, gz = d.pop("gyro_ddps")
         d.update(accel_x_mg=ax, accel_y_mg=ay, accel_z_mg=az,
@@ -585,4 +768,11 @@ class Housekeeping:
         v, a = self.hb_sense_v(), self.hb_sense_a()
         d["hb_sense_v"] = "" if v is None else round(v, 4)
         d["hb_sense_a"] = "" if a is None else round(a, 4)
+        # Speed blank rather than the sentinel where there is no encoder, and
+        # the stall verdict as a 1/0 lane beside it (blank with no encoder);
+        # the raw motor_rpm stays in the row via asdict().
+        d["motor_rpm_measured"] = (self.motor_rpm if self.motor_rpm_valid
+                                   else "")
+        st = self.motor_stalled
+        d["motor_stalled"] = "" if st is None else int(st)
         return d

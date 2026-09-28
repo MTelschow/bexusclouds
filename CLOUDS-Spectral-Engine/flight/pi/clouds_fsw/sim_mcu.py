@@ -28,7 +28,14 @@ both BME280s answering - the ambient one on i2c0 and the chamber one on
 SPI_1 - three INA226 rails live, the 24 V slot unfitted
 (``RAIL_MV_INVALID``), no STLM20 pair (``NO_TEMP``) and no IMU
 (``IMU_FAIL`` / ``IMU_CHM_FAIL``, zeroed vectors). Pass ``imu=True`` for a
-board with both BNO055s fitted (ambient 0x29, chamber 0x28).
+board with both BNO055s fitted (ambient 0x29, chamber 0x28), ``pm=False`` for
+one without the BMV080.
+
+The BMV080 is the one part reported here that has never answered anywhere -
+the bench attempt on 2026-09-11 got a chip-id mismatch. Its readings are
+simulated so the panel row and the timeline series have something to render,
+and they respond to the dispersion motor because that is the physics the
+experiment is for; none of it is evidence about the part.
 
 The chamber part answering here is an assumption, not a measurement: it has
 never been run against the fitted hardware. ``--mock`` therefore exercises
@@ -67,13 +74,19 @@ class SimMcu:
     ``auto_s`` for the three automatic phases (120 / 180 / 300 s in flight).
     All demo numbers - see the module docstring. ``valve_pulse_s`` is the
     real 5 s drive; only the tests shorten it.
+
+    ``imu`` and ``pm`` say whether those parts answer. The BNO055 pair does
+    not answer on the real carrier, so ``imu`` defaults off; the BMV080
+    defaults on, because a mock that never produced a particulate reading
+    would leave that panel row permanently unsourced and nothing would
+    exercise it.
     """
 
     def __init__(self, transport, *, hk_interval_s: float = 1.0,
                  ascent_s: float = 45.0, linkloss_s: float = 30.0,
                  auto_s: tuple[float, float, float] = (12.0, 18.0, 30.0),
                  valve_pulse_s: float = VALVE_PULSE_S,
-                 imu: bool = False, log=None):
+                 imu: bool = False, pm: bool = True, log=None):
         self._t = transport
         self._hk_interval = hk_interval_s
         self._ascent_s = ascent_s
@@ -83,6 +96,9 @@ class SimMcu:
                         hk.SeqState.AUTO_WAIT: auto_s[2]}
         self._valve_pulse_s = valve_pulse_s
         self._imu = imu
+        self._pm = pm
+        self._pm_last: int | None = None
+        self._pm_next_s = 0.0   # seeded from _t0 below: the part's warm-up
         self._log = log or (lambda *_: None)
 
         self._hk_seq = SeqCounter()
@@ -101,7 +117,16 @@ class SimMcu:
         self.disperse_duty = 50          # PARAM_DISPERSE_DUTY, motor speed
         self.motor_running = False       # held on: DISPERSE RUN, or the
                                          # motor phase of automatic mode
+        # Test hook: the motor shaft is jammed. A drive then reads 0 rpm on
+        # the encoder and the MCU's stall bit comes up, as on the carrier
+        # once the 500 ms spin-up grace has passed.
+        self.motor_jammed = False
         self._t0 = time.monotonic()
+        # The real part is silent for ~1.9 s after the measurement starts, so
+        # the first packets carry PM_FAIL. Without this the very first
+        # housekeeping already has a reading, and the startup case - the one
+        # an operator sees every single time - would never be exercised.
+        self._pm_next_s = self._t0 + 1.9
         self._state_entered = self._t0
         self._mission_start: float | None = None
         self._launch_detected = False
@@ -477,6 +502,18 @@ class SimMcu:
             # not a measured one.
             hb_sense = int(random.gauss(
                 980 if valves & hk.ValveStatus.DISPERSE else 3, 8))
+            # Encoder speed: proportional to duty while driven, 0 at rest. 60
+            # rpm per percent (6000 rpm at full duty) is a plausible small DC
+            # motor, not a measured one. A jammed shaft reads 0 and latches
+            # the stall bit, which the MCU never sets with no drive.
+            driving = bool(valves & hk.ValveStatus.DISPERSE)
+            if driving and not self.motor_jammed:
+                motor_rpm = int(random.gauss(60 * self.disperse_duty, 15))
+            else:
+                motor_rpm = 0
+                if driving:
+                    valves |= hk.ValveStatus.DISPERSE_STALLED
+            pm_status, pm2_5 = self._particulate(now, valves)
             return hk.Housekeeping(
                 state=int(self.state), flags=self._flags(now),
                 valve_status=valves,
@@ -498,7 +535,45 @@ class SimMcu:
                 chm_temp_cc=int(random.gauss(2450, 20)),
                 chm_rh_cpct=int(random.gauss(3800, 50)),
                 chm_p_pa=int(random.gauss(P_GROUND_PA, 30)),
-                chm_accel_mg=chm_accel, chm_gyro_ddps=chm_gyro)
+                chm_accel_mg=chm_accel, chm_gyro_ddps=chm_gyro,
+                pm_status=int(pm_status), pm2_5_ugm3=pm2_5,
+                motor_rpm=motor_rpm)
+
+    def _particulate(self, now: float, valves: int) -> tuple[int, int]:
+        """A BMV080 reading and its status byte.
+
+        Two behaviours of the real part are modelled, because both are things
+        the panel has to render correctly and neither is obvious from a
+        steady number:
+
+        - **the sample is slower than the packet.** The part produces 0.97
+          samples/s against a 1 Hz sweep, so roughly one packet in thirty-three
+          repeats the last one and carries ``STALE``. Held here as a 1.03 s
+          interval rather than a random draw, so the flag appears at the rate
+          the hardware produces it.
+        - **dispersing raises PM.** The experiment's whole purpose is putting
+          CaCO3 into the chamber, so the motor running is the one thing that
+          should move this number. A sim where PM ignored the actuators would
+          make the row look like decoration.
+        """
+        if not self._pm:
+            return int(hk.PmStatus.FAIL), 0
+
+        fresh = now >= self._pm_next_s
+        if fresh:
+            self._pm_next_s = now + 1.03
+            base = 240.0 if valves & hk.ValveStatus.DISPERSE else 12.0
+            self._pm_last = max(0, int(random.gauss(base, base * 0.12)))
+
+        if self._pm_last is None:
+            # Before the first sample. The real part is silent for ~1.9 s
+            # after the measurement starts and PM_FAIL stands until then.
+            return int(hk.PmStatus.FAIL), 0
+
+        status = 0 if fresh else int(hk.PmStatus.STALE)
+        if self._pm_last > 1000:
+            return status | int(hk.PmStatus.RANGE), 1000
+        return status, self._pm_last
 
     def _membrane_phase_ms(self) -> float:
         """How long the simulated drive holds one level, in ms - the longer

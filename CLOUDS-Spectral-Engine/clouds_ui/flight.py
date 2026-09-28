@@ -92,7 +92,7 @@ def _rail_row(i: int):
     return fmt
 
 
-#: One row per sensor reading in the 64-byte housekeeping packet: the label, the
+#: One row per sensor reading in the 78-byte housekeeping packet: the label, the
 #: part that produces it, how to render it, and the `HkErrors` bit that means
 #: **this number has no sensor behind it**.
 #:
@@ -135,6 +135,19 @@ SENSOR_FIELDS = [
      lambda h: f"{h.chm_temp_cc / 100:.1f} C", HkErrors.BME280_CHM_FAIL),
     ("Chamber RH", "BME280 SPI_1",
      lambda h: f"{h.chm_rh_cpct / 100:.1f} %", HkErrors.BME280_CHM_FAIL),
+    # The BMV080, the second part on SPI_1, behind the chip select on GP12.
+    # `None` for the flag even though this reading can be absent, because its
+    # state is not in `error_flags` at all - that byte's eight bits are all
+    # assigned, so the particulate sensor got `pm_status` at offset 2 instead.
+    # `pm_text` reads that byte and is the sentinel: `-` for no sample,
+    # `obstructed` for a sensor that is answering and cannot measure, a
+    # leading `>` for a saturated one, and `(stale)` for the roughly one
+    # packet in thirty-three that repeats the last sample because the part
+    # produces 0.97 of them a second against a 1 Hz sweep. So this row never
+    # shows a number no sensor produced, which is the rule the flag column
+    # exists to enforce - 0 ug/m3 is what clean air reads, and it must not
+    # look like a dead sensor.
+    ("PM2.5", "BMV080 SPI_1", lambda h: h.pm_text, None),
     ("Accel", "BNO055 0x29",
      lambda h: "  ".join(f"{v:+d}" for v in h.accel_mg) + " mg",
      HkErrors.IMU_FAIL),
@@ -169,6 +182,11 @@ SENSOR_FIELDS = [
     # Amps via HB_SENSE_A_PER_V; `-` when the MCU build has no GP46. `None`
     # for the flag: the field carries its own sentinel, like the rails.
     ("Motor I", "DRV8251A IPROPI, ADC GP46", lambda h: h.hb_sense_text, None),
+    # Its shaft speed from the IE3-1024L encoder (PIO on GP19/GP21), mean
+    # over the last second, with the MCU's stall verdict appended. `-` when
+    # the build has no encoder counter; the sentinel is the flag here too.
+    ("Motor speed", "IE3-1024L encoder, GP19/GP21",
+     lambda h: h.motor_speed_text, None),
 ]
 
 #: The longest reading any `SENSOR_FIELDS` formatter can produce, used to

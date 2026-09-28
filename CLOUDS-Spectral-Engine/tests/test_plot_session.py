@@ -152,6 +152,22 @@ class TestMasking:
         assert np.allclose(d["p_chm_hpa"], 1013.0)
 
 
+    def test_no_encoder_is_a_gap_not_zero_rpm(self, tmp_path):
+        fields = HK_FIELDS + ["motor_rpm_measured", "motor_stalled"]
+        rows = [_hk_row(1.0, 0, motor_rpm_measured=1480, motor_stalled=0),
+                _hk_row(2.0, 1, motor_rpm_measured=0, motor_stalled=1),
+                _hk_row(3.0, 2, motor_rpm_measured="", motor_stalled="")]
+        d = PS.load_hk(_write(tmp_path / "session_e_hk.csv", fields, rows))
+        assert list(d["motor_rpm"][:2]) == [1480.0, 0.0]
+        assert np.isnan(d["motor_rpm"][2])
+        assert list(d["motor_stalled"][:2]) == [0.0, 1.0]
+        assert np.isnan(d["motor_stalled"][2])
+
+    def test_a_log_from_before_the_encoder_has_no_speed(self, session):
+        d = PS.load_hk(str(session / "session_test_hk.csv"))
+        assert "motor_rpm" not in d and "motor_stalled" not in d
+
+
 class TestGaps:
     def test_a_dropout_breaks_the_trace(self):
         t = np.array([0.0, 1.0, 2.0, 40.0, 41.0])
