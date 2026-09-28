@@ -29,6 +29,7 @@ def _qt_msg(mode, ctx, msg):
 QtCore.qInstallMessageHandler(_qt_msg)
 from clouds_ui import window as clouds_ui_window
 from clouds_ui import style as _style
+from clouds_ui import sections as _sections
 
 FAILS = []
 
@@ -1211,6 +1212,44 @@ try:
           not _win._tl_boxes["rail_v1"].isEnabled()
           and not _win._tl_boxes["rail_i1"].isEnabled()
           and _win._tl_boxes["rail_v0"].isEnabled())
+
+    # The series toggles must not run into each other. This is the check that
+    # the 2 px row spacing failed for months: a stylesheet-styled QCheckBox
+    # paints 20 px tall while its *layout item* reports 13 on macOS, so the
+    # grid packed the rows 16 px apart and every row overlapped the one below
+    # it. Offscreen the layout item is 20 and nothing is wrong, which is why
+    # this is worth running as `QT_QPA_PLATFORM=cocoa python verify_qt.py`
+    # after touching the sidebar - the platform here is a `setdefault`.
+    # See docs/TRAPS.md.
+    _tl_sec = next(s for s in _win.findChildren(_sections.Section)
+                   if s.title_key == "TIMELINE")
+    _tl_sec.set_open(True)
+    _win._reflow_panel()
+    for _ in range(4):
+        app.processEvents()
+    _lanes = {}
+    for _b in _win._tl_boxes.values():
+        if _b.isVisible():
+            _p = _b.mapTo(_tl_sec, QtCore.QPoint(0, 0))
+            _lanes.setdefault(_p.x(), []).append((_p.y(), _b.height(),
+                                                  _b.full_text()))
+    _gaps = [(_y1 - (_y0 + _h0), _t0, _t1)
+             for _col in _lanes.values()
+             for (_y0, _h0, _t0), (_y1, _h1, _t1)
+             in zip(sorted(_col), sorted(_col)[1:])]
+    _worst = min(_gaps, default=(0, "", ""))
+    check("timeline: the series toggles do not overlap",
+          bool(_gaps) and _worst[0] >= 0,
+          f"tightest {_worst[0]} px, {_worst[1]!r} over {_worst[2]!r}"
+          f" ({len(_lanes)} columns, {app.platformName()})")
+
+    # And the long label is shortened rather than sliced through a glyph.
+    _long = _win._tl_boxes["hb_sense"]
+    check("timeline: a label that cannot fit elides instead of clipping",
+          isinstance(_long, _sections.ElidingCheckBox)
+          and _long.minimumSizeHint().width() < _long.sizeHint().width(),
+          f"hint {_long.sizeHint().width()} px, "
+          f"floor {_long.minimumSizeHint().width()} px")
 
     # Toggling a box reaches the plot, and every unit that is selected gets
     # its own axis rather than sharing a scale with amps.

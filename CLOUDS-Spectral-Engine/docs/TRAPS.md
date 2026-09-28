@@ -146,6 +146,32 @@ into each other). `SectionFlow.relayout` floors each column holder at
 native indicator, not the 15 px styled one - `checkbox_style()` carries a
 `min-height`.
 
+**A styled `QCheckBox` paints 20 px tall and measures 13.** The `min-height`
+above fixes what is *drawn*; on macOS it never reaches the *layout*. A
+`QCheckBox` carrying `checkbox_style()` paints 20 px tall while its
+`QWidgetItem` reports 13, so a `QGridLayout` at 2 px vertical spacing packed
+the Timeline series toggles 16 px apart and every row overlapped the one below
+it by 4 px. `setMinimumHeight`, `setFixedHeight` and removing the `min-height`
+from the stylesheet all leave the layout item at 13 - only
+`QGridLayout.setRowMinimumHeight` moves it, which is what `sections.ToggleGrid`
+does (row = the box's polished `sizeHint().height()` + `TL_ROW_GAP`).
+**Offscreen the layout item is 20 and none of this is visible**, so neither a
+`QT_QPA_PLATFORM=offscreen` screenshot nor `verify_qt.py` on its default
+platform can catch it. `verify_qt.py` carries the geometry assertion
+("timeline: the series toggles do not overlap"); run it as
+`QT_QPA_PLATFORM=cocoa python -u verify_qt.py` after touching the sidebar - the
+platform is a `setdefault`. Measured 2026-09-28.
+
+**A widget that has a layout cannot answer `heightForWidth`.** Qt5's
+`QWidgetItem::heightForWidth` asks the widget's *layout*, never the widget, and
+a plain `QGridLayout` answers -1. So overriding `heightForWidth` on a container
+does nothing, and additionally advertising `hasHeightForWidth` makes the
+enclosing box layout route the size hint through the same path and get 0 - the
+Timeline section collapsed to its header alone. `ToggleGrid` therefore pins
+`sizeHint()` to the arrangement at `SectionFlow.COL_W`, which is the narrowest
+a sidebar column goes and so the tallest the group ever is: over-reporting
+costs a row of air, under-reporting costs a scrollbar.
+
 **`socketserver.shutdown()` blocks forever if `serve_forever()` never ran.**
 Guard `stop()` on "was it started", or an error path unwinding before `start()`
 hangs the app instead of exiting.

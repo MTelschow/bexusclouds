@@ -107,6 +107,172 @@ def rule() -> QtWidgets.QFrame:
     return line
 
 
+class ElidingCheckBox(QtWidgets.QCheckBox):
+    """A checkbox whose label shortens instead of being cut off.
+
+    A plain `QCheckBox` neither wraps nor elides: given less width than its
+    text it draws as much as fits and the last glyph is sliced through the
+    middle, which reads as a rendering fault rather than as "there is more
+    here". `Dispersion motor current` is the label that does it in the
+    Timeline section, and it is the same length in the plot legend and the
+    session CSV, so it cannot simply be shortened.
+
+    `sizeHint()` is left alone - it is still the full-text width, so a layout
+    that *can* give the label its full width still does, and only
+    `minimumSizeHint()` is allowed to shrink. That pair is what lets
+    `ToggleGrid` prefer two columns and fall back to one rather than eliding
+    at the first opportunity.
+    """
+
+    def __init__(self, text: str, parent=None):
+        super().__init__(text, parent)
+        self._full = text
+
+    def setText(self, text: str) -> None:       # keep `_full` authoritative
+        self._full = text
+        super().setText(text)
+
+    def full_text(self) -> str:
+        return self._full
+
+    def _contents_x(self, opt) -> int:
+        """Left edge of the label, i.e. everything the indicator and its
+        spacing take. Asked of the style rather than computed from the
+        stylesheet, because the stylesheet is what answers."""
+        r = self.style().subElementRect(QtWidgets.QStyle.SE_CheckBoxContents,
+                                        opt, self)
+        return max(r.x(), 0)
+
+    def paintEvent(self, ev) -> None:
+        opt = QtWidgets.QStyleOptionButton()
+        self.initStyleOption(opt)
+        avail = self.width() - self._contents_x(opt)
+        if avail > 0:
+            opt.text = self.fontMetrics().elidedText(
+                self._full, QtCore.Qt.ElideRight, avail)
+        # Through QStylePainter, so QStyleSheetStyle stays in charge and the
+        # 15 px indicator from style.checkbox_style() still draws.
+        QtWidgets.QStylePainter(self).drawControl(
+            QtWidgets.QStyle.CE_CheckBox, opt)
+
+    def minimumSizeHint(self) -> QtCore.QSize:
+        """The indicator plus an ellipsis. Without this a layout treats the
+        full text as a floor and the widget is never given the chance to
+        elide - it is simply clipped by whatever contains it."""
+        hint = super().minimumSizeHint()
+        opt = QtWidgets.QStyleOptionButton()
+        self.initStyleOption(opt)
+        floor = self._contents_x(opt) + self.fontMetrics().width("…") + 2
+        return QtCore.QSize(min(hint.width(), floor), hint.height())
+
+
+class ToggleGrid(QtWidgets.QWidget):
+    """A group of checkboxes in as many columns as its real width allows.
+
+    The column count has to be decided from the width the widget actually
+    gets, not from `SectionFlow.COL_W`: the sidebar column is 340 px only at
+    its narrowest, it widens as the splitter is dragged out, and the text
+    metrics differ per platform - a build-time decision taken against a
+    constant is right on one machine and wrong on the next.
+
+    Two columns when every label fits one, otherwise one. The whole group
+    moves together so that the groups which stay in two columns still break
+    at the same place; a group laid out per-row would step sideways down the
+    section, which is the thing the equal column stretch exists to prevent.
+    """
+
+    def __init__(self, boxes, hgap: int, row_gap: int, parent=None):
+        super().__init__(parent)
+        self._boxes = list(boxes)
+        self._hgap = hgap
+        self._row_gap = row_gap
+        self._ncols = 0
+        self._grid = QtWidgets.QGridLayout(self)
+        self._grid.setContentsMargins(0, 0, 0, 0)
+        self._grid.setHorizontalSpacing(hgap)
+        # Zero, because the row height below is explicit. Spacing on top of it
+        # would be a second, invisible contribution to the same gap.
+        self._grid.setVerticalSpacing(0)
+        self._grid.setColumnStretch(0, 1)
+        self._grid.setColumnStretch(1, 1)
+        for b in self._boxes:
+            b.setParent(self)
+            b.ensurePolished()
+        self._row_h = (max((b.sizeHint().height() for b in self._boxes),
+                           default=20) + row_gap)
+        self._repack(self._ncols_for(SectionFlow.COL_W))
+        # Measured, not computed: Qt allocates a little more than the row
+        # minimum asked for, so a height worked out from `_row_h` alone
+        # under-reports and the group is handed less than it draws in. Taken
+        # here because the pack above is the `COL_W` one - see `sizeHint`.
+        self._pinned_h = self._grid.sizeHint().height()
+
+    # -- geometry -----------------------------------------------------------
+
+    def _ncols_for(self, width: int) -> int:
+        if len(self._boxes) < 2:
+            return 1
+        half = (width - self._hgap) // 2
+        return 1 if any(b.sizeHint().width() > half
+                        for b in self._boxes) else 2
+
+    def _rows_for(self, ncols: int) -> int:
+        return (len(self._boxes) + ncols - 1) // ncols
+
+    def _repack(self, ncols: int) -> None:
+        if ncols == self._ncols:
+            return
+        self._ncols = ncols
+        for b in self._boxes:
+            self._grid.removeWidget(b)
+        for i, b in enumerate(self._boxes):
+            if ncols == 1:
+                self._grid.addWidget(b, i, 0, 1, 2)
+            else:
+                self._grid.addWidget(b, i // 2, i % 2)
+        # An explicit row height, not vertical spacing. On macOS a
+        # stylesheet-styled QCheckBox paints 20 px tall while its *layout
+        # item* reports 13, so a grid left to size its own rows packs them
+        # 16 px apart and every row overlaps the one below it by 4 px. The
+        # offscreen platform reports 20 and shows none of it - see
+        # docs/TRAPS.md.
+        for r in range(self._rows_for(ncols)):
+            self._grid.setRowMinimumHeight(r, self._row_h)
+        for r in range(self._rows_for(ncols), len(self._boxes)):
+            self._grid.setRowMinimumHeight(r, 0)
+        self.updateGeometry()
+
+    def resizeEvent(self, ev):
+        super().resizeEvent(ev)
+        # Only on an actual change: `_repack` calls `updateGeometry`, which
+        # can come back here, and re-adding the widgets on every pixel of a
+        # splitter drag is a relayout the sidebar does not need.
+        self._repack(self._ncols_for(self.width()))
+
+    # -- what SectionFlow asks -----------------------------------------------
+
+    #  `heightForWidth` is deliberately NOT implemented, and `hasHeightForWidth`
+    #  is deliberately left False. It is the obvious thing to reach for here and
+    #  it silently empties the section: Qt5's `QWidgetItem::heightForWidth` asks
+    #  the *layout* of a widget that has one, never the widget, and a plain
+    #  `QGridLayout` answers -1. Advertising the flag and answering -1 is worse
+    #  than not advertising it, because the enclosing box layout then routes the
+    #  size hint through the same path and gets 0 - the Timeline section
+    #  collapsed to its header. See docs/TRAPS.md.
+
+    def sizeHint(self) -> QtCore.QSize:
+        """Pinned to the arrangement at `SectionFlow.COL_W`.
+
+        That is the narrowest a sidebar column goes and therefore the tallest
+        this group ever is, since it only ever goes one column -> two as it
+        widens. `SectionFlow` packs by height and already measures at `COL_W`
+        for the same reason (`relayout`), so over-reporting costs one row of
+        air in one group on a dragged-out sidebar, and under-reporting would
+        cost a scrollbar.
+        """
+        return QtCore.QSize(super().sizeHint().width(), self._pinned_h)
+
+
 class SectionFlow(QtWidgets.QWidget):
     """Sidebar sections packed into as many columns as the window is short.
 

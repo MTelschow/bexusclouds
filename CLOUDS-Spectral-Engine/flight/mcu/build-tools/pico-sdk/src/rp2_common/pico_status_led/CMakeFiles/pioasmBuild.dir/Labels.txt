@@ -1,0 +1,13 @@
+# Target labels
+ pioasmBuild
+# Source files and their labels
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pico-sdk/src/rp2_common/pico_status_led/CMakeFiles/pioasmBuild
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pico-sdk/src/rp2_common/pico_status_led/CMakeFiles/pioasmBuild.rule
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pico-sdk/src/rp2_common/pico_status_led/CMakeFiles/pioasmBuild-complete.rule
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pico-sdk/src/rp2_common/pico_status_led/pioasm/src/pioasmBuild-stamp/pioasmBuild-build.rule
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pico-sdk/src/rp2_common/pico_status_led/pioasm/src/pioasmBuild-stamp/pioasmBuild-configure.rule
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pico-sdk/src/rp2_common/pico_status_led/pioasm/src/pioasmBuild-stamp/pioasmBuild-download.rule
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pico-sdk/src/rp2_common/pico_status_led/pioasm/src/pioasmBuild-stamp/pioasmBuild-install.rule
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pico-sdk/src/rp2_common/pico_status_led/pioasm/src/pioasmBuild-stamp/pioasmBuild-mkdir.rule
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pico-sdk/src/rp2_common/pico_status_led/pioasm/src/pioasmBuild-stamp/pioasmBuild-patch.rule
+/Users/mathistelschow/repos/active/bexusclouds/CLOUDS-Spectral-Engine/flight/mcu/build-tools/pico-sdk/src/rp2_common/pico_status_led/pioasm/src/pioasmBuild-stamp/pioasmBuild-update.rule

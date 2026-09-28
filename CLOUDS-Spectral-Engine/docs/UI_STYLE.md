@@ -117,3 +117,14 @@ same numbers:
   of them and a checkbox strip that wide would cost the timeline the height
   it exists for. A part the carrier does not have keeps its row, disabled - an
   absent checkbox teaches the operator nothing.
+
+A grid of interactive controls spaces its rows at ~6 px, the gap the command
+buttons already use (`flight._build_commands`); 2 px is the density of the
+read-only housekeeping readouts and is wrong for anything clickable. Toggle
+grids set that as an explicit **row minimum height** rather than as layout
+spacing, because a styled `QCheckBox` does not report its painted height to
+the layout on macOS - `sections.ToggleGrid`, and docs/TRAPS.md for the
+measurement. Those grids also pick one or two columns from the width they are
+actually given and elide a label that still will not fit
+(`sections.ElidingCheckBox`), so a long series name shortens with the full
+text on its tooltip instead of being sliced at the sidebar edge.

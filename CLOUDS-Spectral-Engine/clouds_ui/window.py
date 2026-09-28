@@ -39,7 +39,8 @@ from spectro import processing as P
 from . import style
 from . import timeline
 from .flight import FlightPanel
-from .sections import Section, SectionFlow, group_label
+from .sections import (ElidingCheckBox, Section, SectionFlow, ToggleGrid,
+                       group_label)
 from .traffic import TrafficIndicator
 from .timeline import TimelineBuffer, TimelineView, fig_to_pixmap
 
@@ -1006,6 +1007,9 @@ class CloudsWindow(QtWidgets.QMainWindow):
         row.addWidget(self.cmb_tl_window, 1)
         btn = QtWidgets.QPushButton("Clear")
         btn.setStyleSheet(self._flat_btn())
+        # The combo's border and padding make it two pixels taller than a flat
+        # button's, which reads as a misaligned control rather than as a row.
+        btn.setFixedHeight(self.cmb_tl_window.sizeHint().height())
         btn.setToolTip("Discard the recorded history. The session log on disk "
                        "is not touched.")
         btn.clicked.connect(self._clear_timeline)
@@ -1015,23 +1019,7 @@ class CloudsWindow(QtWidgets.QMainWindow):
         self._tl_boxes: dict[str, QtWidgets.QCheckBox] = {}
         for group, members in timeline.GROUPS:
             v.addWidget(group_label(group))
-            grid = QtWidgets.QGridLayout()
-            grid.setContentsMargins(0, 0, 0, 0)
-            grid.setSpacing(2)
-            for i, s in enumerate(members):
-                box = QtWidgets.QCheckBox(s.label)
-                box.setStyleSheet(self._checkbox_style())
-                box.setChecked(s.key in timeline.DEFAULT_KEYS)
-                if not s.fitted:
-                    box.setEnabled(False)
-                    box.setToolTip("No part fitted on this carrier - there is "
-                                   "no reading to plot.")
-                else:
-                    box.setToolTip(f"{s.label} [{s.unit}] from {s.group}")
-                box.toggled.connect(self._on_tl_series)
-                self._tl_boxes[s.key] = box
-                grid.addWidget(box, i // 2, i % 2)
-            v.addLayout(grid)
+            v.addWidget(self._tl_group_grid(members))
 
         note = QtWidgets.QLabel(
             "1 Hz from the downlink. Series sharing a unit share an axis; a "
@@ -1043,6 +1031,47 @@ class CloudsWindow(QtWidgets.QMainWindow):
         note.setStyleSheet(f"color:{style.SECTION}; font-size:10px;"
                            "font-style:italic;")
         v.addWidget(note)
+
+    #: Space between the two columns of series toggles. It is the gap a label
+    #: needs in front of the next column's box: without it "Membrane duty"
+    #: ended flush against the checkbox beside it and the two read as one
+    #: overlapping control.
+    TL_COL_GAP = 10
+
+    #: Clear space between one row of series toggles and the next, added to the
+    #: checkbox's own height to give the grid an explicit row height - on macOS
+    #: the grid cannot work that height out for itself (`ToggleGrid._repack`,
+    #: docs/TRAPS.md). It lands at ~6 px on screen, which is what the command
+    #: grid already puts between two buttons (`flight._build_commands`). The
+    #: 2 px this section used to have is the spacing of the read-only
+    #: housekeeping grids, and two dozen click targets are not those.
+    TL_ROW_GAP = 3
+
+    def _tl_group_grid(self, members):
+        """One group's series toggles, as a `sections.ToggleGrid`.
+
+        The boxes elide rather than clip (`Dispersion motor current` is longer
+        than half a sidebar column), the group picks one or two columns from
+        the width it is actually given, and the rows are spaced by an explicit
+        row height. All three live in `ToggleGrid`; what is left here is which
+        series get a box and what each one says.
+        """
+        boxes = []
+        for s in members:
+            box = ElidingCheckBox(s.label)
+            box.setStyleSheet(self._checkbox_style())
+            box.setChecked(s.key in timeline.DEFAULT_KEYS)
+            if not s.fitted:
+                box.setEnabled(False)
+                box.setToolTip("No part fitted on this carrier - there is "
+                               "no reading to plot.")
+            else:
+                # Also what an elided label is read back from.
+                box.setToolTip(f"{s.label} [{s.unit}] from {s.group}")
+            box.toggled.connect(self._on_tl_series)
+            self._tl_boxes[s.key] = box
+            boxes.append(box)
+        return ToggleGrid(boxes, self.TL_COL_GAP, self.TL_ROW_GAP)
 
     # ------------------------------------------------------------- timeline
     def _on_tl_series(self, *_):

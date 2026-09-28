@@ -153,4 +153,38 @@ if(CLOUDS_BUILD_TOOLS)
     pico_enable_stdio_uart(membrane_switch_probe 0)
     pico_enable_stdio_usb(membrane_switch_probe 1)
     pico_add_extra_outputs(membrane_switch_probe)
+
+    # bme280_probe: which chip select / SPI mode / i2c0 address does a
+    # BME280 answer on? Reads CHIP_ID only; commands no actuator.
+    add_executable(bme280_probe
+        src/tools/bme280_probe.c
+        src/core/crc16.c
+        src/core/cobs.c
+        src/core/frame.c
+        src/core/config.c
+        src/core/link.c
+        src/core/autonomy.c
+        src/core/sequencer.c
+        src/core/pulse.c
+        src/core/pwmdiv.c
+        src/core/sqwave.c
+        src/hw/hw.c
+        src/hw/bme280.c
+        src/hw/bno055.c
+        src/hw/ina226.c
+        src/hw/uart_io.c
+    )
+    target_compile_options(bme280_probe PRIVATE -Wall -Wextra)
+    target_link_libraries(bme280_probe
+        pico_stdlib
+        hardware_adc
+        hardware_i2c
+        hardware_spi
+        hardware_pwm
+        hardware_uart
+        hardware_watchdog
+    )
+    pico_enable_stdio_uart(bme280_probe 0)
+    pico_enable_stdio_usb(bme280_probe 1)
+    pico_add_extra_outputs(bme280_probe)
 endif()
